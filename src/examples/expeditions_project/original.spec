@@ -9,20 +9,21 @@ pickup, 1
 deliver, 1
 
 CompileOptions:
-convexify: True
+convexify: False
 fastslow: False
 
 CurrentConfigName:
-Nao
+Original
 
 Customs: # List of custom propositions
 OrderReceived
 FoodObtained
 
 RegionFile: # Relative path of region description file
-original_res.regions
+original.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
+orderFood, 1
 foodReady, 1
 order_rice, 1
 
@@ -35,7 +36,7 @@ kitchen_rice = p2
 others = p5, p6, p7, p8, p9, p10, p11
 
 Spec: # Specification in structured English
-Robot starts in kitchen_rice
+#if windy and wet then do cold
 
 #Assumptions of the environment
 Infinitely often foodReady
@@ -51,6 +52,11 @@ if you were sensing start of order_rice then stay there
 if you are sensing OrderReceived and foodReady and not FoodObtained then go to kitchen_rice
 do pickup if and only if you are in kitchen_rice and OrderReceived and foodReady and not FoodObtained
 FoodObtained is set on pickup and reset on  deliver
+
+#Guarantee that the robot needs to fulfill
+# 1.
+# 2.
+#if deliver then do cold
 
 ## Food Delivering ##
 if you are sensing OrderReceived and FoodObtained then go to customer and deliver
