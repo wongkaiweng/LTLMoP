@@ -13,6 +13,10 @@ say_imfound, 1
 say_hider, 1
 say_seeker, 1
 
+CompileOptions:
+convexify: True
+fastslow: False
+
 CurrentConfigName:
 Basic simulation
 

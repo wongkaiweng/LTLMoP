@@ -12,6 +12,23 @@ Obstacles: # Names of regions to treat as obstacles
 Regions: # Stored as JSON string
 [
     {
+        "name": "customer2", 
+        "color": [
+            255, 
+            165, 
+            0
+        ], 
+        "position": [
+            371, 
+            374
+        ], 
+        "type": "rect", 
+        "size": [
+            188, 
+            139
+        ]
+    }, 
+    {
         "name": "boundary", 
         "color": [
             255, 
@@ -36,8 +53,8 @@ Regions: # Stored as JSON string
             0
         ], 
         "position": [
-            332, 
-            156
+            347, 
+            107
         ], 
         "type": "rect", 
         "size": [
@@ -46,7 +63,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "customer", 
+        "name": "customer1", 
         "color": [
             255, 
             0, 
