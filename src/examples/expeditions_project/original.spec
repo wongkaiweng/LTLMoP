@@ -38,6 +38,8 @@ others = p5, p6, p7, p8, p9, p10, p11
 Spec: # Specification in structured English
 #if windy and wet then do cold
 
+Robot starts in appetizer
+# change to the group later?
 #Assumptions of the environment
 Infinitely often foodReady
 #if you were activating OrderReceived then do not order_rice
