@@ -16,59 +16,66 @@ CurrentConfigName:
 Original
 
 Customs: # List of custom propositions
-cold
-doNotOrder
-EndOfQueue
-reachCustomer
+OrderReceived
+GoToPickup
+FoodObtained
+FoodDelivered
 
 RegionFile: # Relative path of region description file
-original.regions
+../../../../Dropbox/NSF ExCAPE/restaurant.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-orderFood, 1
 foodReady, 1
-orderFooda, 1
+order_soup, 1
+order_rice, 1
+order_sake, 1
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-customer1 = p3
-customer2 = p2
+kitchen_soup = p2
 others = p1
-appetizer = p4
+kitchen_sake = p3
+c2 = p5
+c1 = p6
+kitchen_rice = p4
 
 Spec: # Specification in structured English
-#if windy and wet then do cold
+Robot starts in kitchen_rice
+group kitchen is kitchen_rice, kitchen_soup,kitchen_sake
+group orderFood is order_rice, order_soup, order_sake
 
-Robot starts in appetizer
-# change to the group later?
 #Assumptions of the environment
 # 1.
-if orderFood then do deliver
-#do toCustomer if and only if deliver and you are in customer
-Do not orderFood unless you were in customer1
-
+OrderReceived is set on any orderFood and reset on deliver
+FoodObtained is set on pickup and reset on  deliver
+if you were activating OrderReceived  then do not (order_rice or order_soup or order_sake)
 # 2.
 Infinitely often foodReady
 # 3.
-#if foodReady then do not foodReady
-#do not foodReady if and only if you were in appetizer and pickup
-#do cold if and only if you are not activating foodReady and you were in appetizer and pickup
-#if you were sensing foodReady then do cold
-
-if you were sensing foodReady and you were not activating cold and pickup then do foodReady
-if you were sensing foodReady and you were activating cold and pickup then do not foodReady
+if you were sensing foodReady and you were not activating any kitchen and pickup then do foodReady
+#kitchen_rice and pickup then do foodReady
+if you were sensing foodReady and you were activating any kitchen and pickup then do not foodReady
+#kitchen_rice and pickup then do not foodReady
 
 #Guarantee that the robot needs to fulfill
-# 1.
+# 1. in LTLMoP
 # 2.
-#if deliver then do cold
+#GoToPickup is set on deliver and reset on pickup
+#If you are activating GoToPickup then do not deliver
+#If you are not activating GoToPickup then do not pickup
 
 # 3.
+if you are sensing OrderReceived and not FoodObtained then go to all kitchen
+#kitchen_rice and pickup
+if you are sensing OrderReceived and FoodObtained then go to c1
+do deliver if and only if you were in c1 and OrderReceived and FoodObtained
+#FoodDelivered is set on deliver and c1 and reset on orderFood
 # 4.
 #if orderFood then do reachCustomer
 #not reachCustomer is set on deliver and not customer1 and reset on pickup and appetizer and EndOfQueue
 #not EndOfQueue is set on not deliver and reset on deliver and  customer1
-# 5.
+# 5. ????
+If you are not sensing OrderReceived then do not deliver
 
