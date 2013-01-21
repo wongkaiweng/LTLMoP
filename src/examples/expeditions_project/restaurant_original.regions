@@ -1,0 +1,300 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+Table
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            204, 
+            204, 
+            204
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                727, 
+                586
+            ], 
+            [
+                0, 
+                586
+            ], 
+            [
+                0, 
+                0
+            ], 
+            [
+                648, 
+                0
+            ], 
+            [
+                727, 
+                0
+            ], 
+            [
+                727, 
+                81
+            ], 
+            [
+                727, 
+                162
+            ], 
+            [
+                727, 
+                243
+            ]
+        ], 
+        "position": [
+            48, 
+            42
+        ], 
+        "type": "poly", 
+        "size": [
+            727, 
+            586
+        ]
+    }, 
+    {
+        "name": "c2", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                49, 
+                44
+            ], 
+            [
+                0, 
+                45
+            ], 
+            [
+                1, 
+                0
+            ], 
+            [
+                49, 
+                1
+            ]
+        ], 
+        "position": [
+            247, 
+            281
+        ], 
+        "type": "poly", 
+        "size": [
+            49, 
+            45
+        ]
+    }, 
+    {
+        "name": "c1", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0, 
+                48
+            ], 
+            [
+                1, 
+                1
+            ], 
+            [
+                43, 
+                0
+            ], 
+            [
+                43, 
+                50
+            ]
+        ], 
+        "position": [
+            390, 
+            326
+        ], 
+        "type": "poly", 
+        "size": [
+            43, 
+            50
+        ]
+    }, 
+    {
+        "name": "kitchen_rice", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            696, 
+            42
+        ], 
+        "type": "rect", 
+        "size": [
+            79, 
+            81
+        ]
+    }, 
+    {
+        "name": "kitchen_soup", 
+        "color": [
+            255, 
+            189, 
+            0
+        ], 
+        "position": [
+            696, 
+            123
+        ], 
+        "type": "rect", 
+        "size": [
+            79, 
+            81
+        ]
+    }, 
+    {
+        "name": "kitchen_sake", 
+        "color": [
+            247, 
+            255, 
+            0
+        ], 
+        "position": [
+            696, 
+            204
+        ], 
+        "type": "rect", 
+        "size": [
+            79, 
+            81
+        ]
+    }, 
+    {
+        "name": "Table", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0, 
+                94
+            ], 
+            [
+                0, 
+                146
+            ], 
+            [
+                44, 
+                145
+            ], 
+            [
+                45, 
+                186
+            ], 
+            [
+                91, 
+                189
+            ], 
+            [
+                94, 
+                231
+            ], 
+            [
+                137, 
+                231
+            ], 
+            [
+                139, 
+                193
+            ], 
+            [
+                192, 
+                194
+            ], 
+            [
+                192, 
+                147
+            ], 
+            [
+                236, 
+                148
+            ], 
+            [
+                236, 
+                94
+            ], 
+            [
+                193, 
+                92
+            ], 
+            [
+                194, 
+                45
+            ], 
+            [
+                147, 
+                44
+            ], 
+            [
+                146, 
+                1
+            ], 
+            [
+                99, 
+                0
+            ], 
+            [
+                99, 
+                43
+            ], 
+            [
+                50, 
+                44
+            ], 
+            [
+                50, 
+                92
+            ]
+        ], 
+        "position": [
+            197, 
+            282
+        ], 
+        "type": "poly", 
+        "size": [
+            236, 
+            231
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	kitchen_rice	696	42	775	42	775	42	775	123
+boundary	kitchen_soup	775	123	775	204
+boundary	kitchen_sake	775	204	775	285
+c2	Table	296	282	296	325	247	326	296	325
+c1	Table	390	374	433	376	390	374	391	327
+kitchen_rice	kitchen_soup	696	123	775	123
+kitchen_soup	kitchen_sake	696	204	775	204
+
