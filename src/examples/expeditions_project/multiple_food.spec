@@ -18,15 +18,19 @@ Original
 Customs: # List of custom propositions
 OrderReceived
 FoodObtained
+OrderSake_Rice
+OrderSakeSoup_
 
 RegionFile: # Relative path of region description file
 ../../../../Dropbox/NSF ExCAPE/restaurant.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-foodReady, 1
-order_soup, 0
+order_soup, 1
 order_rice, 1
-order_sake, 0
+order_sake, 1
+soup_ready, 1
+rice_ready, 1
+sake_ready, 1
 
 
 ======== SPECIFICATION ========
@@ -41,25 +45,25 @@ kitchen_rice = p4
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
-#group kitchen is kitchen_rice, kitchen_soup,kitchen_sake
-#group orderFood is order_rice, order_soup, order_sake
+group kitchen is kitchen_rice, kitchen_soup,kitchen_sake
+group orderFood is order_rice, order_soup, order_sake
+group foodReady is rice_ready,soup_ready,sake_ready
 # For tracking the type of food ordered
-
+# Rice: 01 , Soup: 10, Sake 11
+OrderSake_Rice is set on order_sake or order_rice and reset on deliver
+OrderSakeSoup_ is set on order_sake or order_soup and reset on deliver
 
 #Assumptions of the environment
 # 1.
-OrderReceived is set on order_rice and reset on deliver
-#any orderFood and reset on deliver
+OrderReceived is set on any orderFood and reset on deliver
+#FoodObtained is set on pickup and foodReady and reset on  deliver
 FoodObtained is set on pickup and reset on  deliver
-#if you were activating OrderReceived  then do not order_rice
-#(order_rice or order_soup or order_sake)
+#if you were activating OrderReceived  then do not (order_rice or order_soup or order_sake)
 # 2.
-Infinitely often foodReady
+Infinitely often all foodReady
 # 3.
-#if you were sensing foodReady and you were not activating kitchen_rice and pickup then do foodReady
-#any kitchen and pickup then do foodReady
-#if you were sensing foodReady and you were activating kitchen_rice and pickup then do not foodReady
-#any kitchen and pickup then do not foodReady
+#if you were sensing foodReady and you were not activating any kitchen and pickup then do foodReady
+#if you were sensing foodReady and you were activating any kitchen and pickup then do not foodReady
 
 #Guarantee that the robot needs to fulfill
 # 1. in LTLMoP
@@ -69,8 +73,9 @@ Infinitely often foodReady
 #If you are not activating GoToPickup then do not pickup
 
 # 3.
-if you are sensing OrderReceived and foodReady and not FoodObtained then go to kitchen_rice
-do pickup if and only if you are in kitchen_rice
+#if you are sensing OrderReceived and foodReady and not FoodObtained then go to all kitchen
+if you are sensing OrderReceived and not FoodObtained then go to all kitchen
+do pickup if and only if you are in kitchen_rice and rice_ready and not OrderSakeSoup_ and  OrderSake_Rice or you are in kitchen_soup and soup_ready and OrderSakeSoup_ and  not OrderSake_Rice or you are in kitchen_sake and sake_ready and OrderSakeSoup_ and  OrderSake_Rice
 #all kitchen
 if you are sensing OrderReceived and FoodObtained then go to c1
 do deliver if and only if you were in c1 and OrderReceived and FoodObtained
