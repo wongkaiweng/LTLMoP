@@ -20,7 +20,10 @@ class SpecCompiler(object):
             print "ERROR: Please define regions before compiling."
             return
     
-        if self.proj.specText.strip() == "":
+        # Remove comments
+        self.specText = re.sub(r"#.*$", "", self.proj.specText, flags=re.MULTILINE)
+
+        if self.specText.strip() == "":
             print "ERROR: Please write a specification before compiling."
             return
 
@@ -57,7 +60,7 @@ class SpecCompiler(object):
         self.proj.writeSpecFile()
         
         # substitute the regions name in specs
-        text = self.proj.specText
+        text = self.specText
         for m in re.finditer(r'near (?P<rA>\w+)', text):
             text=re.sub(r'near (?P<rA>\w+)', "("+' or '.join(self.parser.proj.regionMapping['near$'+m.group('rA')+'$'+str(50)])+")", text)
         for m in re.finditer(r'within (?P<dist>\d+) (from|of) (?P<rA>\w+)', text):
@@ -86,7 +89,7 @@ class SpecCompiler(object):
         if self.decomposedSpecText is not None:
             text = self.decomposedSpecText
         else:
-            text = self.proj.specText
+            text = self.specText
 
         spec, traceback, failed = writeSpec(text, sensorList, regionList, robotPropList)
 
@@ -150,10 +153,6 @@ class SpecCompiler(object):
             return (False, False, [], "")
 
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
-
-        # TODO: Make this output live
-        while subp.poll():
-            time.sleep(0.1)
 
         realizable = False    
         nonTrivial = False
@@ -247,10 +246,6 @@ class SpecCompiler(object):
 
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
-        # TODO: Make this output live
-        while subp.poll():
-            time.sleep(0.1)
-
         realizable = False
         realizableFS = False
 
@@ -267,14 +262,18 @@ class SpecCompiler(object):
         return (realizable, realizableFS, output)
 
     def compile(self, with_safety_aut=False):
+        print "--> Decomposing..."
         self._decompose()
-        self._writeSMVFile()
+        print "--> Writing LTL file..."
         tb = self._writeLTLFile()
+        print "--> Writing SMV file..."
+        self._writeSMVFile()
 
         if tb is None:
             print "ERROR: Compilation aborted"
             return 
 
         #self._checkForEmptyGaits()
-        self._synthesize(with_safety_aut)
+        print "--> Synthesizing..."
+        return self._synthesize(with_safety_aut)
 

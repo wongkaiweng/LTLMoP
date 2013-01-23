@@ -82,12 +82,15 @@ class SimGUI_Frame(wx.Frame):
         # Create new thread to communicate with subwindow
         print >>sys.__stdout__, "(GUI) Starting controller listen thread..."
         self.controllerListenThread = threading.Thread(target = self.controllerListen)
+        self.controllerListenThread.daemon = True
         self.controllerListenThread.start()
     
         self.robotPos = None
         self.robotVel = (0,0)
 
         self.markerPos = None
+
+        self.Bind( wx.EVT_CLOSE, self.onClose)
 
         # Let everyone know we're ready
         self.UDPSockTo.sendto("Hello!",self.addrTo)
@@ -133,6 +136,10 @@ class SimGUI_Frame(wx.Frame):
                 self.markerPos = (x, y)
                 wx.CallAfter(self.onPaint)
             elif input.startswith("VEL:"):
+                # We can't plot anything before we have a map
+                if self.mapBitmap is None:
+                    print "Received drawing command before map.  You probably have an old execute.py process running; please kill it and try again."
+                    continue
                 [x,y] = map(float, input.split(":")[1].split(","))
                 [x,y] = map(int, (self.mapScale*x, self.mapScale*y)) 
                 self.robotVel = (x, y)
@@ -212,7 +219,7 @@ class SimGUI_Frame(wx.Frame):
     def onResize(self, event=None): # wxGlade: SimGUI_Frame.<event_handler>
         size = self.window_1_pane_1.GetSize()
         self.mapBitmap = wx.EmptyBitmap(size.x, size.y)
-        self.mapScale = mapRenderer.drawMap(self.mapBitmap, self.proj.rfi, scaleToFit=True, drawLabels=False, memory=True)
+        self.mapScale = mapRenderer.drawMap(self.mapBitmap, self.proj.rfi, scaleToFit=True, drawLabels=mapRenderer.LABELS_ALL_EXCEPT_OBSTACLES, memory=True)
 
         self.Refresh()
         self.Update()
@@ -272,7 +279,7 @@ class SimGUI_Frame(wx.Frame):
             text = re.sub(r'\b'+p_reg+r'\b', '%s (%s)' % (p_reg, rname), text)
 
         self.text_ctrl_sim_log.BeginTextColour(color)
-        self.text_ctrl_sim_log.AppendText("["+time.strftime("%H:%M:%S", time.gmtime())+"] "+text)
+        self.text_ctrl_sim_log.AppendText("["+time.strftime("%H:%M:%S")+"] "+text)
         self.text_ctrl_sim_log.EndTextColour()
         self.text_ctrl_sim_log.ShowPosition(self.text_ctrl_sim_log.GetLastPosition())
         self.text_ctrl_sim_log.Refresh()
@@ -333,6 +340,12 @@ class SimGUI_Frame(wx.Frame):
         print >>f, str(self.text_ctrl_sim_log.GetValue())
 
         f.close()
+
+    def onClose(self, event):
+        print >>sys.__stderr__, "Telling execute.py to quit!"
+        self.UDPSockTo.sendto("QUIT",self.addrTo) # This goes to the controller
+        #time.sleep(2)
+        event.Skip()
 
     def onSimClear(self, event): # wxGlade: SimGUI_Frame.<event_handler>
         self.text_ctrl_sim_log.Clear()

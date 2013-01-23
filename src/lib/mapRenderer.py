@@ -1,13 +1,29 @@
 import wx
 import sys, os
 from regions import *
-from itertools import chain
+
+LABELS_NONE = False
+LABELS_ALL = True
+LABELS_ALL_EXCEPT_OBSTACLES = 2
 
 #----------------------------------------------------------------------------
 
 class DrawableRegion(Region):
     """ Extends the Region class to allow drawing.
     """
+
+    def __init__(self, *args, **kwds):
+        super(DrawableRegion, self).__init__(*args, **kwds)
+
+    @classmethod
+    def fromRegion(cls, region):
+        # Create a new DrawableRegion object
+        obj = cls(region.type)
+    
+        # Copy over the data from the Region object
+        obj.setData(region.getData())
+
+        return obj
 
     # ============================
     # == Object Drawing Methods ==
@@ -21,7 +37,7 @@ class DrawableRegion(Region):
         """
 
         if self.name.lower() == "boundary":
-            dc.SetPen(wx.Pen(self.color, 3, wx.SOLID))
+            dc.SetPen(wx.Pen(wx.Colour(*self.color), 3, wx.SOLID))
             dc.SetBrush(wx.Brush(wx.Colour(self.color.Red(), self.color.Green(),
                          self.color.Blue(), 0), wx.TRANSPARENT))
         else:
@@ -31,7 +47,7 @@ class DrawableRegion(Region):
                 dc.SetBrush(wx.Brush(wx.Colour(newcolor.Red(), newcolor.Green(),
                              newcolor.Blue(), 128), wx.SOLID))
             else: 
-                dc.SetPen(wx.Pen(self.color, 1, wx.SOLID))
+                dc.SetPen(wx.Pen(wx.Colour(*self.color), 1, wx.SOLID))
                 dc.SetBrush(wx.Brush(wx.Colour(self.color.Red(), self.color.Green(),
                              self.color.Blue(), 128), wx.SOLID))
 
@@ -128,7 +144,7 @@ class DrawableRegion(Region):
 
 #----------------------------------------------------------------------------
 
-def drawMap(target, rfi, scaleToFit=True, drawLabels=True, highlightList=[], deemphasizeList=[], memory=False):
+def drawMap(target, rfi, scaleToFit=True, drawLabels=LABELS_ALL, highlightList=[], deemphasizeList=[], memory=False):
     """ Draw the map contained in the given RegionFileInterface onto the target canvas.
     """
 
@@ -143,8 +159,7 @@ def drawMap(target, rfi, scaleToFit=True, drawLabels=True, highlightList=[], dee
         if isinstance(region, DrawableRegion):
             continue
 
-        obj = DrawableRegion(region.type)
-        obj.setData(region.getData())
+        obj = DrawableRegion.fromRegion(region)
         rfi.regions[i] = obj
         del region
 
@@ -200,7 +215,8 @@ def drawMap(target, rfi, scaleToFit=True, drawLabels=True, highlightList=[], dee
 
         obj.draw(dc, pdc, False, mapScale, showAlignmentPoints=False, highlight=doHighlight, deemphasize=doDeemphasize)
 
-        if drawLabels:
+        if (drawLabels == LABELS_ALL) or \
+           (drawLabels == LABELS_ALL_EXCEPT_OBSTACLES and not (obj.isObstacle or obj.name.lower() == "boundary")):
             # Draw region labels
             dc.SetTextForeground(wx.BLACK)
             dc.SetBackgroundMode(wx.TRANSPARENT)
@@ -215,8 +231,8 @@ def drawMap(target, rfi, scaleToFit=True, drawLabels=True, highlightList=[], dee
                 dc.SetBrush(wx.Brush(newcolor, wx.SOLID))
                 dc.SetPen(wx.Pen(newcolor, 1, wx.SOLID))
             else:
-                dc.SetBrush(wx.Brush(obj.color, wx.SOLID))
-                dc.SetPen(wx.Pen(obj.color, 1, wx.SOLID))
+                dc.SetBrush(wx.Brush(wx.Colour(*obj.color), wx.SOLID))
+                dc.SetPen(wx.Pen(wx.Colour(*obj.color), 1, wx.SOLID))
 
             center = obj.getCenter()
             if obj.name.lower() == "boundary":
