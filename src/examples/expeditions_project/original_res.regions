@@ -1,0 +1,142 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+Table
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "Table", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            253.0, 
+            314.0
+        ], 
+        "type": "rect", 
+        "size": [
+            198.0, 
+            69.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            204, 
+            204, 
+            204
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                728.0, 
+                586.0
+            ], 
+            [
+                0.0, 
+                584.0
+            ], 
+            [
+                1.0, 
+                0.0
+            ], 
+            [
+                649.0, 
+                0.0
+            ], 
+            [
+                728.0, 
+                0.0
+            ], 
+            [
+                728.0, 
+                81.0
+            ], 
+            [
+                728.0, 
+                162.0
+            ], 
+            [
+                728.0, 
+                243.0
+            ]
+        ], 
+        "position": [
+            47.0, 
+            42.0
+        ], 
+        "type": "poly", 
+        "size": [
+            728.0, 
+            586.0
+        ]
+    }, 
+    {
+        "name": "customer", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                69.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                66.0, 
+                13.0
+            ], 
+            [
+                66.0, 
+                63.0
+            ]
+        ], 
+        "position": [
+            451.0, 
+            314.0
+        ], 
+        "type": "poly", 
+        "size": [
+            66.0, 
+            69.0
+        ]
+    }, 
+    {
+        "name": "kitchen_rice", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            696.0, 
+            42.0
+        ], 
+        "type": "rect", 
+        "size": [
+            79.0, 
+            81.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+Table	customer	451.0	383.0	451.0	314.0
+boundary	kitchen_rice	696.0	42.0	775.0	42.0	775.0	123.0	775.0	42.0
+
