@@ -13,7 +13,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Original
+Nao
 
 Customs: # List of custom propositions
 OrderReceived
