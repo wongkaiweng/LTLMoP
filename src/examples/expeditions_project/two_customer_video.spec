@@ -12,9 +12,6 @@ CompileOptions:
 convexify: True
 fastslow: False
 
-CurrentConfigName:
-Nao
-
 Customs: # List of custom propositions
 FoodObtained
 Orderc1c2
@@ -36,11 +33,11 @@ c2_order, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
+kitchen_sake = p2
 c2 = p4
 c1 = p5
-kitchen_sake = p2
 kitchen_rice = p3
-others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
@@ -57,6 +54,8 @@ SakeOrdered is set on order_sake and reset on deliver
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
 if you were sensing start of c1_order then stay there
+if you were sensing start of c2_order then stay there
+always not c1_order and c2_order
 
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice
