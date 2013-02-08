@@ -57,6 +57,9 @@ SakeOrdered is set on order_sake and reset on deliver
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
 if you were sensing start of c1_order then stay there
+#if you were sensing start of c2_order then stay there
+#always not (c1_order and c2_order)
+
 
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice
