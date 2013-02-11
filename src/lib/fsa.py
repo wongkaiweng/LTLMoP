@@ -13,7 +13,12 @@ import math, re, sys, random, os, subprocess, time
 from regions import *
 import numpy
 import fileMethods
-
+#### TO BE DELETED #####
+lib_path = os.path.abspath('../src/LTLparser')
+if lib_path not in sys.path:
+    sys.path.append(lib_path)
+import LTLcheck
+#### TO BE DELETED #####
 
 ###########################################################
 
@@ -313,7 +318,7 @@ class Automaton:
                 if state.outputs[key] == '1':
                     FILE.write( key + '\\n')
                 else:
-                    FILE.write( '¬' + key + '\\n')
+                    FILE.write( '\AC' + key + '\\n')
             #FILE.write( "("+state.rank + ')\\n ')
             FILE.write('\" ];\n')
 
@@ -326,7 +331,7 @@ class Automaton:
                     if nextState.inputs[key] == '1':
                         FILE.write( key + '\\n')
                     else:
-                        FILE.write( '¬' + key + '\\n')
+                        FILE.write( '\AC' + key + '\\n')
                 FILE.write('\" ];\n')
 
         FILE.write('} \n')
@@ -362,9 +367,9 @@ class Automaton:
 
         # Take a snapshot of our current sensor readings
         # This is so we don't risk the readings changing in the middle of our state search
-        sensor_state = {}
+        self.sensor_state = {}
         for sensor in self.sensors:
-            sensor_state[sensor] = eval(self.sensor_handler[sensor], {'self':self,'initial':False})
+            self.sensor_state[sensor] = eval(self.sensor_handler[sensor], {'self':self,'initial':False})
 
         for state in state_list:
             okay = True
@@ -389,7 +394,7 @@ class Automaton:
 
             # Now check whether our current sensor values match those of the state
             for key, value in state.inputs.iteritems():
-                if int(sensor_state[key]) != int(value):
+                if int(self.sensor_state[key]) != int(value):
                     okay = False
                     break
 
@@ -449,6 +454,19 @@ class Automaton:
         if len(next_states) == 0:
             # Well darn!
             print "(FSA) ERROR: Could not find a suitable state to transition to!"
+            ############# TO BE DELETED  ####################
+            print "self.current_state.outputs"
+            for key,value in self.current_state.outputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.current_state.inputs"
+            for key,value in self.current_state.inputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
+            for key,value in self.sensor_state.iteritems():
+                print str(key) + ": " + str(value)
+            path =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function
+            check = LTLcheck.LTL_Check(path,self.current_state,self.sensor_state)
+            ############ TO BE DELETED #####################
             return
 
 

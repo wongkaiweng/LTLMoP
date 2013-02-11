@@ -35,5 +35,5 @@ FinallyOperator: '<' '>';
 NextOperator: "next";
 GloballyOperator: '[' ']' ;
 NotOperator: '!' | '~';
-Assignment: id | id '=' 0 | id '=' 1 ;
+Assignment: id ;
 
