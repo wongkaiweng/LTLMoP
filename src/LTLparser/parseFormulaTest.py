@@ -9,7 +9,7 @@ import sys
 import resource
 import subprocess
 import signal
-from parser import Parser
+from custom_parser import Parser
 from re import match
 import StringIO
 
@@ -116,8 +116,9 @@ def clean_tree(tree):
         return clean_tree(tree[1])
     elif (tree[0]=="Assignment"):
         # Flatten "id" case
-        A = [tree[0],tree[1][1]]
-        A.extend(tree[2:])
+        A = [tree[0],[tree[1][1]]]    ### CHANGED HERE
+        #A.extend(tree[2:])           ### CHANGED HERE
+
         return A
     else:
         A = [tree[0]]
