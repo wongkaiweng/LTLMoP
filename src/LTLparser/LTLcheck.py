@@ -16,13 +16,7 @@ class LTL_Check:
     def __init__(self,path,cur_state,sen_state):
         """Print a parse tree to stdout."""
         self.current_state = cur_state
-        self.sensor_state  = sen_state
-        
-        
-        #os.path.join(self.project_root,self.proj.getFilenamePrefix())+".ltl")  # path of ltl file to be passed to the function
-        #shutil.copyfile(src, dst)
-        
-        #path = '/home/catherine/LTLMoP/src/examples/firefighting/firefighting.ltl'    
+        self.sensor_state  = sen_state 
 
         with open(path, 'r') as f:
             read_data = ""
@@ -36,8 +30,8 @@ class LTL_Check:
         removed_always_true = read_data.replace("[]<>(TRUE)", "")
         removed_tab = removed_always_true.replace("\t", "")
         removed_nextline = removed_tab.replace("\n", "")
-        print "Here's the pure ltl from spec"
-        print removed_nextline  #read_data
+        print  >>sys.__stdout__, "Here's the pure ltl from spec:"
+        #print removed_nextline  #read_data
         
         """
         LTLtree = {'expression':{},'parsedFormula':{}}
@@ -53,28 +47,13 @@ class LTL_Check:
             print LTLtree['parsedFormula'][key]
         """
         tree = parseFormulaTest.parseLTL(removed_nextline)
-        print >>sys.__stdout__,tree
+        #print >>sys.__stdout__,tree
         
         
-        #self.print_tree(tree,parseFormulaTest.p.terminals) 
-        """
-        indent = 0
-        terminals = parseFormulaTest.p.terminals
-        prefix = "    "*indent
-        if tree[0] in terminals:        
-            print prefix + repr(tree)
-            print "lala"
-        else:
-            print prefix + unicode(tree[0])
-            for x in tree[1:]:
-                if indent == 0:
-                    print "haha:"+ str(x)
-                self.print_tree(x, terminals, indent+1)
-        """
+        self.print_tree(tree,parseFormulaTest.p.terminals) 
+
         value, negate, next = self.evaluate_subtree(tree, parseFormulaTest.p.terminals)
-        while (True):
-            time.sleep(2)
-        
+
 
     def print_tree(self,tree, terminals, indent=0):
         """Print a parse tree to stdout."""
@@ -87,18 +66,33 @@ class LTL_Check:
             print >>sys.__stdout__, prefix + unicode(tree[0])
             for x in tree[1:]:
                 if indent == 0:
-                    #pass
-                    print >>sys.__stdout__, "haha:"+ str(x)
+                    pass
+                    #print >>sys.__stdout__, "haha:"+ str(x)
                 self.print_tree(x, terminals, indent+1)
               
-                
+    def find_element(self,tree,element):
+        """
+        Return a boolean True value if the element is found in tree or otherwise False
+        """
+        v = False
+        if element in tree[0]:
+            return True
+        else:       
+            for x in tree[1:]:
+                value = self.find_element(x,element)
+                #if element in x:
+                #    return True
+                v = v or value
+            return v
+               
     def evaluate_subtree(self, tree, terminals, level=0, negate = False, next = False, disjunction = False):
         """Print a parse tree to stdout."""
         final_value  = True     # final value to be returned. for conjunction and disjunction operations
-        prefix = "    "*level
+        disjunction = None
+        implication = None
         if not tree[0] in terminals:
-            print prefix + unicode(tree[0])
-            print tree[0]
+            #print prefix + unicode(tree[0])
+            #print tree[0]
             """
             if tree[0] == 'UnaryFormula':
                 return True
@@ -106,11 +100,18 @@ class LTL_Check:
                 return True
             elif tree[0] == 'GloballyOperator':
                 return True
-            elif tree[0] =='Implication':
-                return True
             """    
+            
+            # check for implication (->)    
+            if tree[0] =='Implication':
+                implication = True
+                
+            # check for biimplication (->)      
+            elif tree[0] =='Biimplication':
+                implication = False
+             
             # check for disjunction (or)
-            if tree[0] == "Disjunction":
+            elif tree[0] == "Disjunction":
                 disjunction = True
                 
             # check for conjunction (and)
@@ -128,7 +129,7 @@ class LTL_Check:
             # for system propositions
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
-                print "evaluating system propositions: " + str(key)
+                #print "evaluating system propositions: " + str(key)
                 if negate is True:
                     return not self.current_state.outputs[key], negate, next
                 else:
@@ -136,14 +137,16 @@ class LTL_Check:
                     
             # for environement propositions
             elif "e." in tree[0]:
-                print "negate: " + str(negate)  + " next: " + str(next)
+                #print "negate: " + str(negate)  + " next: " + str(next)
                 key = tree[0].replace("e.","")
-                print "evaluating env propositions: " + str(key)
+                #print "evaluating env propositions: " + str(key)
                 if negate is True:
                     if next is True:
-                        print "shoudl go to this route"
+                        #print "shoudl go to this route"
                         return not self.sensor_state[key], negate, next 
                     else:
+
+                        print key, self.current_state.inputs[key]
                         return not self.current_state.inputs[key], negate, next 
                 else:
                     if next is True:
@@ -152,35 +155,63 @@ class LTL_Check:
                         return self.current_state.inputs[key], negate, next
             
             
-            """
-            if x not in ['UnaryFormula', 'Assignment', 'GloballyOperator','Implication',"Disjunction","Conjunction"
-                ,'NotOperator','NextOperator']:
-            """
-          
+            negate_in_loop = negate
+            next_in_loop   = next
+            node_count = 1
             for x in tree[1:]:
-                time.sleep(1)
-                if level == 0:
-                    print "LTL:"+ str(x)
-                value, negate, next = self.evaluate_subtree(x, terminals, level+1, negate, next, disjunction)
-                print "value: " + str(value) + ", final_value: " + str(final_value)
+                # skip ltl that does not contain a global operator
+                if level == 0 :                  
+                    if not self.find_element(x,'GloballyOperator'):
+                        print "Skipped this line because there's no global opreator."
+                        continue                    
+                        
+                value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, negate_in_loop, next_in_loop, disjunction)
+                #print "value: " + str(value) + ", final_value: " + str(final_value)
 
-                if not value is None:
-                    if disjunction is True:
-                        final_value = final_value or value
-                        print final_value
-                    else:
-                        final_value = final_value and value
-                        print final_value
+                
+                
+                if disjunction is True:
+                    final_value = final_value or value
+                    #print final_value
+                elif disjunction is False::
+                    final_value = final_value and value
+                    #print final_value
+                elif implication is True:
+                    if node_count == 1:
+                        implication_first = value
+                elif implication is False: # biimplication
+                
+                
                 if level == 0:
-                    print "haha:"+ str(x)
-                    print "expression value: " + str(final_value)
-                    time.sleep(10)
+                    
+                    if final_value is False:
+                        print "This environement safety assumption is violated."
+                        print "------------------------------------------------"
+                        print parseFormulaTest.parseLTLTree(x)[0]
+                        print "------------------------------------------------"
+                        tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])
+                        #print >>sys.__stdout__,tree        
+                        self.print_tree(tree,parseFormulaTest.p.terminals)
+                        
+                    else:
+                        print parseFormulaTest.parseLTLTree(x)
+                        #print "haha:"+ str(x)
+                        print "Expression value: " + str(final_value)
+                
+                node_count += 1
+            
+            if level == 0:
+                while (True):
+                    time.sleep(30)
+                    
+                                
             return final_value, negate, next
-        
+                  
+            
         else:
             return True, negate, next
 
-"""
+
 def print___tree(tree, terminals, indent=0):
     prefix = "    "*indent
     if tree[0] in terminals:
@@ -195,6 +226,7 @@ def print___tree(tree, terminals, indent=0):
                 print >>sys.__stdout__, "haha:"+ str(x)
             print___tree(x, terminals, indent+1)       
 
+"""
 sample = ' []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.hazardous_item)) ) & []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.person)) ) '
 tree = parseFormulaTest.parseLTL(sample)
 print tree
@@ -202,6 +234,8 @@ print___tree(tree,parseFormulaTest.p.terminals)
 #evaluate_subtree(tree,parseFormulaTest.p.terminals)
 print parseFormulaTest.p.terminals
 
+print parseFormulaTest.parseLTLTree(tree)[0]
+print sample
 #evaluate_tree('a')
 """
 
