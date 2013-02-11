@@ -204,4 +204,109 @@ def parseLTL(ltlTxt):
     simplified_tree = flatten_as_much_as_possible(cleaned_tree)
     # print simplified_tree
     return simplified_tree
+    
+def parseLTLTree(tree):
+    """
+    parse the LTL tree back to the string format in LTLMoP
+    """
+    disjunction = None
+    implication = None
+    biimplication = None
+    impli_count = False
+    biimpli_count = False
+    next        = False
+    final_txt = ""
+    to_be_added = ""
+    be_added    = ""
+
+    if not tree[0] in p.terminals:
+        if tree[0] == 'UnaryFormula':
+            final_txt += ""
+        elif tree[0] == 'Assignment':
+            final_txt += ""
+        elif tree[0] == 'GloballyOperator':
+            final_txt += "[]("
+            be_added += ")"
+        elif tree[0] == 'FinallyOperator':
+            final_txt += "<>("
+            be_added += ")"
+        elif tree[0] =='Implication':
+            implication = True
+            final_txt += "("
+
+        elif tree[0] =='Biimplication':
+            biimplication = True
+            final_txt += "("
+            
+        # check for disjunction (or)
+        elif tree[0] == "Disjunction":
+            final_txt += "("
+            disjunction = True
+            
+        # check for conjunction (and)
+        elif tree[0] == "Conjunction":
+            final_txt += "("
+            disjunction = False
+        
+        # change the negate flag
+        elif tree[0] == 'NotOperator':
+            final_txt += "!"
+            
+        # change the next flag 
+        elif tree[0] == 'NextOperator':
+            final_txt += "next("
+            next       =  True            
+            
+        # for system propositions
+        elif "s." in tree[0]:
+            final_txt += tree[0]
+                
+        # for environement propositions
+        elif "e." in tree[0]:
+            final_txt += tree[0]
+
+        node_count = 1
+        for x in tree[1:]:
+
+            if next is True:
+                be_added += ")" 
+                
+            a = ""
+            txt, a , next = parseLTLTree(x)
+            
+            final_txt += txt 
+            if disjunction is True: 
+                if node_count < len (tree[1:]):
+                    final_txt += ") | ("
+                else:
+                    final_txt += ")"
+            elif disjunction is False:
+                if node_count < len (tree[1:]):
+                    final_txt += ") & ("
+                else:
+                    final_txt += ")"
+            if implication is True and impli_count is False:
+                final_txt += ") -> ("
+                impli_count  = True
+            elif biimplication is True and biimpli_count is False:
+                final_txt += " <-> "
+                biimpli_count  = True
+                
+            
+            if implication is True and node_count == len (tree[1:]): 
+                final_txt += ")"   
+            elif biimplication is True and node_count == len (tree[1:]):
+                final_txt += ")"
+                          
+            node_count += 1
+            to_be_added += a
+
+
+        final_txt += to_be_added
+        #final_txt += s
+        return final_txt, be_added ,next
+    
+    else:
+        return "","",False
+
 
