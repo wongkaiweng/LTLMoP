@@ -5,35 +5,43 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
+pickup, 1
+deliver, 1
 
 CompileOptions:
 convexify: True
 fastslow: False
 
 CurrentConfigName:
-Untitled configuration
+iCreate
 
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-env_safety_violation.regions
+two_customer_res.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-flag, 1
-dig, 1
+order_rice, 0
+order_sake, 0
+rice_ready, 0
+sake_ready, 0
+c1_order, 1
+c2_order, 1
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r3 = p2
-r2 = p3
-others = p4, p5, p6, p7, p8, p9, p10, p11
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
+kitchen_sake = p2
+c2 = p4
+c1 = p5
+kitchen_rice = p3
 
 Spec: # Specification in structured English
-go to r2
-go to r3
+go to c1
+go to kitchen_rice
 
-do flag if and only if you are in r2
-do dig if and only if you are in r3
+if you are sensing c2_order then do pickup
+if you are sensing c1_order then do deliver
 

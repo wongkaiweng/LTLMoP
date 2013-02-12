@@ -8,13 +8,23 @@ import parseFormulaTest
     Check for violations of the automaton.
 """
 
+# Debugging stdouts (set to True to print)
+debug_implication = False        # print operations relating ->
+debug_disjunction = False        # print operations relating to & and |
+debug_negate      = False        # print operations relating to !
+debug_proposition_values = False # print system and env proposition values
+debug_true_ltl           = False # print ltl that are evaluated as true
+debug_tree_terminal      = False # print the entire tree in terminal
+
 class LTL_Check:
 
     """
-    Obtain .ltl of the current specification and trim the string to include only LTL.
+    Check which ltl statement was violated.
     """
     def __init__(self,path,cur_state,sen_state):
-        """Print a parse tree to stdout."""
+        """
+        Obtain .ltl of the current specification and trim the string to include only LTL.
+        """
         self.current_state = cur_state
         self.sensor_state  = sen_state 
 
@@ -22,14 +32,12 @@ class LTL_Check:
             read_data = self.parse_LTL_to_Tree(f)
         f.closed
         
-        print read_data
+        #print read_data
         removed_tab = read_data.replace("\t", "")
         removed_nextline = removed_tab.replace("\n", "")
         removed_space = removed_nextline.replace(" ", "")
         removed_always_true = removed_space.replace("&[]<>(TRUE)", "")
         
-        print  >>sys.__stdout__, "Here's the ltl of the environment assumptions from spec:"
-        print  >>sys.__stdout__, removed_always_true  #read_data
         
         """
         LTLtree = {'expression':{},'parsedFormula':{}}
@@ -45,9 +53,11 @@ class LTL_Check:
             print LTLtree['parsedFormula'][key]
         """
         tree = parseFormulaTest.parseLTL(removed_always_true)
-        #print >>sys.__stdout__,tree
-               
-        self.print_tree(tree,parseFormulaTest.p.terminals) 
+        if debug_tree_terminal == True: 
+            print  >>sys.__stdout__, "Here's the ltl of the environment assumptions from spec:"
+            #print  >>sys.__stdout__, removed_always_true  #read_data
+            print >>sys.__stdout__,tree
+            self.print_tree(tree,parseFormulaTest.p.terminals) 
 
         value, negate, next = self.evaluate_subtree(tree, parseFormulaTest.p.terminals)
 
@@ -91,19 +101,18 @@ class LTL_Check:
         else:       
             for x in tree[1:]:
                 value = self.find_element(x,element)
-                #if element in x:
-                #    return True
                 v = v or value
             return v
                
-    def evaluate_subtree(self, tree, terminals, level=0, negate = False, next = False, disjunction = False):
+    def evaluate_subtree(self, tree, terminals, level=0, next = False, disjunction = False):
         """Print a parse tree to stdout."""
         final_value  = True     # final value to be returned. for conjunction and disjunction operations
-        disjunction = None
-        implication = None
+        disjunction  = None
+        implication  = None
+        negate       = False
+        to_negate    = False
         if not tree[0] in terminals:
-            #print prefix + unicode(tree[0])
-            #print tree[0]
+
             """
             if tree[0] == 'UnaryFormula':
                 return True
@@ -116,7 +125,6 @@ class LTL_Check:
             # check for implication (->)    
             if tree[0] =='Implication':
                 implication = True
-                print  "should set implication to true"
                 
             # check for biimplication (->)      
             elif tree[0] =='Biimplication':
@@ -141,35 +149,24 @@ class LTL_Check:
             # for system propositions
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
-                #print "key: " + str(key) + " value: " + str(self.current_state.outputs[key])
+                if debug_proposition_values == True:
+                    print "key: " + str(key) + " value: " + str(self.current_state.outputs[key])
+                    print "evaluating system propositions: " + str(key)
 
-                #print "evaluating system propositions: " + str(key)
-                if negate == True:  
-                    #print "didn't go here"                    
-                    return (not int(self.current_state.outputs[key])), negate, next
-                else:
-                    return int(self.current_state.outputs[key]), negate, next
+                return int(self.current_state.outputs[key]), negate, next
                     
             # for environement propositions
-            elif "e." in tree[0]:
-                #print "negate: " + str(negate)  + " next: " + str(next)
+            elif "e." in tree[0]:                
                 key = tree[0].replace("e.","")
-                #print "evaluating env propositions: " + str(key)
-                if negate == True:
-                    if next == True:
-                        #print "shoudl go to this route"
-                        return (not int(self.sensor_state[key])), negate, next 
-                    else:
-                        print key, self.current_state.inputs[key]
-                        return (not int(self.current_state.inputs[key])), negate, next 
+                if debug_proposition_values == True:
+                    print "negate: " + str(negate)  + " next: " + str(next)
+                    print "evaluating env propositions: " + str(key)
+
+                if next == True:
+                    return int(self.sensor_state[key]), negate, False
                 else:
-                    if next == True:
-                        return int(self.sensor_state[key]), negate, next
-                    else:
-                        return int(self.current_state.inputs[key]), negate, next
+                    return int(self.current_state.inputs[key]), negate,  next
             
-            
-            negate_in_loop = negate
             next_in_loop   = next
             node_count = 1
             for x in tree[1:]:
@@ -180,43 +177,69 @@ class LTL_Check:
                         print "Skipped this line because there's no global opreator."
                         continue                    
                         
-                value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, negate_in_loop, next_in_loop, disjunction)
-                #print "value: " + str(value) + ", final_value: " + str(final_value)
+                value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
                 
-                #print tree[1:],x
+                # for negating value returned in the ltl
+                if negate_in_loop == True:
+                    to_negate = True
                 
+                if to_negate == True:
+                    if debug_negate == True:
+                        print "in negate in loop " + str(node_count)
+                    if node_count == 2:
+                        if debug_negate ==True:
+                            print "NEGATE here"
+                            print x
+                        value = not value
+                
+                # Disjunction(|)  
                 if disjunction == True:
+                    if debug_disjunction  ==True:
+                        print "Disjunction(|)"
+                        print "value: " + str(value) + ", final_value: " + str(final_value)
                     final_value = final_value or value
-                    #print final_value
-                elif disjunction == False:
-                    print x
-                    print "node_count: " + str(node_count)
-                    print "should be & value"
-                    print "value: " + str(value) + ", final_value: " + str(final_value)
-                    final_value = final_value and value                    
-                    #print final_value
+                
+                # Conjunction(&)
+                elif disjunction == False: 
+                    if debug_disjunction == True:                  
+                        print "Conjunction(&)"
+                        print "value: " + str(value) + ", final_value: " + str(final_value)                   
+                    final_value = final_value and value 
+                
+                # Implication(->)                       
                 elif implication == True:
-                    print  "#######################should set implication to true"
-                    print "disjunction: " + str(disjunction) + ", implication: " + str(implication)
-                    print node_count 
+                    if debug_implication == True:
+                        print  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                        print "Implication: " + str(implication)
+                        print node_count 
+                    
                     if node_count == 1:
                         implication_first = value
-                        print x
+                        
                     else:
+                        if debug_implication == True:
+                            print "ImplicationElse: Implication_first: " + str(implication_first)
+                            print "value: " + str(value) + ", final_value: " + str(final_value)
+                            
                         if implication_first == True:
-                            print "should come here and complain"
+                            if debug_implication == True:                                                          
+                                print "Final value  = value"
+                                print  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                             final_value = value
                         else:
+                            if debug_implication == True: 
+                                print "Final value  = True"
+                                print  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                             final_value = True
-                    print "value:" + str(value)
-                    print "final_value" + str(final_value)
-                    print "implication_first: " + str(implication_first)
-                   
-                elif implication == False: # biimplication
+                             
+                                               
+                # Biimplication (<->)   
+                elif implication == False: 
                     if node_count == 1:
                         biimplication_first = value
                     else:
                         final_value = biimplication_first == value
+                        
                 else:
                     final_value = final_value and value
                     #print "there's actually some other cases"
@@ -226,30 +249,30 @@ class LTL_Check:
                 if level == 0:
                     
                     if value == False:
-                        print "################################################"
+                        print "###############################################"
                         print "This environement safety assumption is violated."                       
                         print parseFormulaTest.parseLTLTree(x)[0]
-                        print "################################################"
+                        print "###############################################"
                         tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])
                         #print >>sys.__stdout__,tree        
                         self.print_tree(tree,parseFormulaTest.p.terminals)
 
                     else:
-                        print "------------------------------------------------"
-                        print "Expression value: " + str(final_value)    
-                        print parseFormulaTest.parseLTLTree(x)
-                        print "------------------------------------------------"
-                        
-                
+                        if debug_true_ltl == True:                        
+                            print "-----------------------------------------------"
+                            print "Expression value: " + str(final_value)    
+                            print parseFormulaTest.parseLTLTree(x)[0]
+                            print "-----------------------------------------------"
+                        else:
+                            pass
+          
                 node_count += 1
-             
+            
             if level == 0:
                 while (True):
-                    time.sleep(30)
-                    
+                    time.sleep(30)                    
                                 
-            return final_value, negate, next
-                  
+            return final_value, negate, next                 
             
         else:
             return True, negate, next

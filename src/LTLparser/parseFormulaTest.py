@@ -215,6 +215,7 @@ def parseLTLTree(tree):
     impli_count = False
     biimpli_count = False
     next        = False
+    negate      = False
     final_txt = ""
     to_be_added = ""
     be_added    = ""
@@ -240,17 +241,18 @@ def parseLTLTree(tree):
             
         # check for disjunction (or)
         elif tree[0] == "Disjunction":
-            final_txt += "("
+            final_txt += "(("
             disjunction = True
             
         # check for conjunction (and)
         elif tree[0] == "Conjunction":
-            final_txt += "("
+            final_txt += "(("
             disjunction = False
         
         # change the negate flag
         elif tree[0] == 'NotOperator':
-            final_txt += "!"
+            final_txt += "!("
+            negate      = True
             
         # change the next flag 
         elif tree[0] == 'NextOperator':
@@ -268,34 +270,37 @@ def parseLTLTree(tree):
         node_count = 1
         for x in tree[1:]:
 
-            if next is True:
-                be_added += ")" 
+            if next == True:
+                be_added += ")"
+            
+            if negate == True:
+                be_added += ")"  
                 
             a = ""
-            txt, a , next = parseLTLTree(x)
+            txt, a , next , negate = parseLTLTree(x)
             
             final_txt += txt 
-            if disjunction is True: 
+            if disjunction == True: 
                 if node_count < len (tree[1:]):
                     final_txt += ") | ("
                 else:
-                    final_txt += ")"
-            elif disjunction is False:
+                    final_txt += "))"
+            elif disjunction == False:
                 if node_count < len (tree[1:]):
                     final_txt += ") & ("
                 else:
-                    final_txt += ")"
-            if implication is True and impli_count is False:
+                    final_txt += "))"
+            if implication == True and impli_count == False:
                 final_txt += ") -> ("
                 impli_count  = True
-            elif biimplication is True and biimpli_count is False:
+            elif biimplication == True and biimpli_count == False:
                 final_txt += " <-> "
                 biimpli_count  = True
                 
             
-            if implication is True and node_count == len (tree[1:]): 
+            if implication == True and node_count == len (tree[1:]): 
                 final_txt += ")"   
-            elif biimplication is True and node_count == len (tree[1:]):
+            elif biimplication == True and node_count == len (tree[1:]):
                 final_txt += ")"
                           
             node_count += 1
@@ -304,9 +309,9 @@ def parseLTLTree(tree):
 
         final_txt += to_be_added
         #final_txt += s
-        return final_txt, be_added ,next
+        return final_txt, be_added ,next ,negate
     
     else:
-        return "","",False
+        return "","",False, False 
 
 
