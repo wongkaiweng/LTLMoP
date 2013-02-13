@@ -13,7 +13,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-iCreate
+BasicSim
 
 Customs: # List of custom propositions
 FoodObtained
@@ -22,7 +22,7 @@ SakeOrdered
 RiceOrdered
 
 RegionFile: # Relative path of region description file
-two_customer_res.regions
+../../../../Dropbox/NSF ExCAPE/restaurant.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 order_rice, 1
@@ -36,18 +36,23 @@ c2_order, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
-kitchen_sake = p2
 c2 = p4
 c1 = p5
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15
 kitchen_rice = p3
+kitchen_sake = p2
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
 
-#Assumptions of the environment
+###### ENVIRONMENT ASSUMPTIONS #######
+#Environment Liveness Assumptions
 if you are activating RiceOrdered and not FoodObtained then infinitely often rice_ready
 if you are activating SakeOrdered and not FoodObtained then infinitely often sake_ready
+
+#Environment Safety Assumptions
+if you were sensing rice_ready and you were not activating FoodObtained then do rice_ready
+if you were sensing sake_ready and you were not activating FoodObtained then do sake_ready
 
 ###### FOOD ORDERING ######
 ## Tracking the type of food ordered ##
@@ -59,9 +64,6 @@ if you were sensing start of SakeOrdered then stay there
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
 if you were sensing start of c1_order then stay there
-#if you were sensing start of c2_order then stay there
-#always not (c1_order and c2_order)
-
 
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice

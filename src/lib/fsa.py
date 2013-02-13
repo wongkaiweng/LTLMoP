@@ -82,6 +82,9 @@ class Automaton:
         self.current_outputs = {}
         self.arrived = False
 
+        ############### TO BE DELETED ##########################
+        self.violation_check = False
+        ############### TO BE DELETED ##########################
 
     def stateWithName(self, name):
         """
@@ -447,17 +450,19 @@ class Automaton:
             # Well darn!
             print "(FSA) ERROR: Could not find a suitable state to transition to!"
             ############# TO BE DELETED  ####################
-            print "self.current_state.outputs"
-            for key,value in self.current_state.outputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.current_state.inputs"
-            for key,value in self.current_state.inputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
-            for key,value in self.sensor_state.iteritems():
-                print str(key) + ": " + str(value)
-            path =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function
-            check = LTLcheck.LTL_Check(path,self.current_state,self.sensor_state)
+            if self.violation_check == False:
+                print "self.current_state.outputs"
+                for key,value in self.current_state.outputs.iteritems():
+                    print str(key) + ": " + str(value)
+                print "self.current_state.inputs"
+                for key,value in self.current_state.inputs.iteritems():
+                    print str(key) + ": " + str(value)
+                print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
+                for key,value in self.sensor_state.iteritems():
+                    print str(key) + ": " + str(value)
+                path =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function
+                check = LTLcheck.LTL_Check(path,self.current_state,self.sensor_state)
+                self.violation_check = True
             ############ TO BE DELETED #####################
             return
 

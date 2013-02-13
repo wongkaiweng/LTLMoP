@@ -36,11 +36,11 @@ c2_order, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-c2 = p4
-c1 = p5
-others = p7, p8, p9, p10, p11, p12, p13, p14, p15
-kitchen_rice = p3
 kitchen_sake = p2
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15
+c1 = p5
+kitchen_rice = p3
+c2 = p4
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
@@ -58,9 +58,12 @@ if you were sensing order_sake and you were activating kitchen_sake and pickup t
 ## Tracking the type of food ordered ##
 RiceOrdered is set on order_rice and reset on deliver
 SakeOrdered is set on order_sake and reset on deliver
+if you were sensing start of RiceOrdered then stay there
+if you were sensing start of SakeOrdered then stay there
 
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
+if you were sensing start of c1_order then stay there
 
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice
