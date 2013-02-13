@@ -51,8 +51,8 @@ if you are activating RiceOrdered and not FoodObtained then infinitely often ric
 if you are activating SakeOrdered and not FoodObtained then infinitely often sake_ready
 
 # Environment Safety Assumptions
-if you were activating RiceOrdered then do not order_sake
-if you were activating SakeOrdered then do not order_rice
+if you were activating c1_order then do not c2_order
+if you were activating c2_order then do not c1_order
 
 ###### FOOD ORDERING ######
 ## Tracking the type of food ordered ##

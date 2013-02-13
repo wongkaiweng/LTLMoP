@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+# This is a configuration definition file for the example "two_customer".
+=======
 # This is a configuration definition file for the example "two_customer_video".
+>>>>>>> expeditions_project
 # Format details are described at the beginning of each section below.
 
 
@@ -18,8 +22,13 @@ iCreate
 
 Sensor_Proposition_Mapping: # Mapping between sensor propositions and sensor handler functions
 order_sake = OptimusSecundus.iRobotCreateSensor.bump_right()
+<<<<<<< HEAD
 c2_order = share.dummySensor.buttonPress(button_name="c2_order",init_value=False)
 sake_ready = share.dummySensor.buttonPress(button_name="sake_ready",init_value=False)
+=======
+sake_ready = share.dummySensor.buttonPress(button_name="sake_ready",init_value=False)
+c2_order = share.dummySensor.buttonPress(button_name="c2_order",init_value=False)
+>>>>>>> expeditions_project
 c1_order = share.dummySensor.buttonPress(button_name="c1_order",init_value=False)
 order_rice = OptimusSecundus.iRobotCreateSensor.bump_left()
 rice_ready = share.dummySensor.buttonPress(button_name="rice_ready",init_value=False)

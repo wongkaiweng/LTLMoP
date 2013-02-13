@@ -13,7 +13,11 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
+<<<<<<< HEAD
 BasicSim
+=======
+Original
+>>>>>>> expeditions_project
 
 Customs: # List of custom propositions
 FoodObtained
@@ -45,30 +49,47 @@ c2 = p4
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
 
-###### ENVIRONMENT ASSUMPTIONS ######
-# Environment Liveness Assumptions
+#Assumptions of the environment
 if you are activating RiceOrdered and not FoodObtained then infinitely often rice_ready
 if you are activating SakeOrdered and not FoodObtained then infinitely often sake_ready
-
-# Environment Safety Assumptions
-if you were activating RiceOrdered then do not order_sake
-if you were activating SakeOrdered then do not order_rice
+<<<<<<< HEAD
+if you were activating RiceOrdered or  SakeOrdered then do not (order_rice or order_sake)
+if you were sensing order_rice and you were not activating kitchen_rice and pickup then do order_rice
+if you were sensing order_sake and you were not activating kitchen_sake and pickup then do  order_sake
+if you were sensing order_rice and you were activating kitchen_rice and pickup then do not order_rice
+if you were sensing order_sake and you were activating kitchen_sake and pickup then do not order_sake
+=======
+#if you were activating RiceOrdered or  SakeOrdered then do not (order_rice or order_sake)
+#if you were sensing (order_rice or order_sake) and you were not activating any kitchen and pickup then do (order_rice or order_sake)
+#if you were sensing order_rice and you were activating kitchen_rice and pickup then do not order_rice
+#if you were sensing order_sake and you were activating kitchen_sake and pickup then do not order_sake
+>>>>>>> expeditions_project
 
 ###### FOOD ORDERING ######
 ## Tracking the type of food ordered ##
 RiceOrdered is set on order_rice and reset on deliver
 SakeOrdered is set on order_sake and reset on deliver
+<<<<<<< HEAD
 if you were sensing start of RiceOrdered then stay there
 if you were sensing start of SakeOrdered then stay there
 
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
 if you were sensing start of c1_order then stay there
+=======
+
+## Tracking which customer ordered food ##
+Orderc1c2 is set on c1_order and reset on c2_order
+>>>>>>> expeditions_project
 
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice
 if you are sensing SakeOrdered and sake_ready and not FoodObtained then go to kitchen_sake
+<<<<<<< HEAD
 do pickup if and only if you are in kitchen_rice and rice_ready and RiceOrdered or you are in kitchen_sake and sake_ready and SakeOrdered
+=======
+do pickup if and only if you are in kitchen_rice and rice_ready and RiceOrdered or you are in kitchen_sake and sake_ready and SakeOrdered 
+>>>>>>> expeditions_project
 FoodObtained is set on pickup and reset on deliver
 
 ###### FOOD DELIVERING ######

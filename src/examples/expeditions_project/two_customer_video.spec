@@ -13,7 +13,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-iCreate
+BasicSim
 
 Customs: # List of custom propositions
 FoodObtained
@@ -36,11 +36,11 @@ c2_order, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
-kitchen_sake = p2
 c2 = p4
 c1 = p5
+kitchen_sake = p2
 kitchen_rice = p3
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
