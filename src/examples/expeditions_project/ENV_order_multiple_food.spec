@@ -13,7 +13,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Original
+BasicSim
 
 Customs: # List of custom propositions
 FoodObtained
@@ -36,22 +36,26 @@ c2_order, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-kitchen_sake = p2
-others = p7, p8, p9, p10, p11, p12, p13, p14, p15
-c1 = p5
-kitchen_rice = p3
 c2 = p4
+c1 = p5
+others = p7, p8, p9, p10, p11, p12, p13, p14, p15
+kitchen_rice = p3
+kitchen_sake = p2
 
 Spec: # Specification in structured English
 Robot starts in kitchen_sake
 
-#Assumptions of the environment
+###### ENVIRONMENT ASSUMPTIONS ######
+# Environment Liveness Assumptions
 if you are activating RiceOrdered and not FoodObtained then infinitely often rice_ready
 if you are activating SakeOrdered and not FoodObtained then infinitely often sake_ready
-#if you were activating RiceOrdered or  SakeOrdered then do not (order_rice or order_sake)
-#if you were sensing (order_rice or order_sake) and you were not activating any kitchen and pickup then do (order_rice or order_sake)
-#if you were sensing order_rice and you were activating kitchen_rice and pickup then do not order_rice
-#if you were sensing order_sake and you were activating kitchen_sake and pickup then do not order_sake
+
+# Environment Safety Assumptions
+if you were activating RiceOrdered or  SakeOrdered then do not (order_rice or order_sake)
+if you were sensing order_rice and you were not activating kitchen_rice and pickup then do order_rice
+if you were sensing order_sake and you were not activating kitchen_sake and pickup then do  order_sake
+if you were sensing order_rice and you were activating kitchen_rice and pickup then do not order_rice
+if you were sensing order_sake and you were activating kitchen_sake and pickup then do not order_sake
 
 ###### FOOD ORDERING ######
 ## Tracking the type of food ordered ##
@@ -67,7 +71,7 @@ if you were sensing start of c1_order then stay there
 ###### FOOD RECEIVING ######
 if you are sensing RiceOrdered and rice_ready and not FoodObtained then go to kitchen_rice
 if you are sensing SakeOrdered and sake_ready and not FoodObtained then go to kitchen_sake
-do pickup if and only if you are in kitchen_rice and rice_ready and RiceOrdered or you are in kitchen_sake and sake_ready and SakeOrdered 
+do pickup if and only if you are in kitchen_rice and rice_ready and RiceOrdered or you are in kitchen_sake and sake_ready and SakeOrdered
 FoodObtained is set on pickup and reset on deliver
 
 ###### FOOD DELIVERING ######

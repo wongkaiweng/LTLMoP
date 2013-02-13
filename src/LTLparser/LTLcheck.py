@@ -176,7 +176,10 @@ class LTL_Check:
                     if not self.find_element(x,'GloballyOperator'):
                         print "Skipped this line because there's no global opreator."
                         continue                    
-                        
+                    
+                    if self.find_element(x,'FinallyOperator'):
+                        print "Skipped this line because this is a liveness assumption."
+                        continue 
                 value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
                 
                 # for negating value returned in the ltl

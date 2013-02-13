@@ -53,6 +53,8 @@ if you are activating SakeOrdered and not FoodObtained then infinitely often sak
 ## Tracking the type of food ordered ##
 RiceOrdered is set on order_rice and reset on deliver
 SakeOrdered is set on order_sake and reset on deliver
+if you were sensing start of RiceOrdered then stay there
+if you were sensing start of SakeOrdered then stay there
 
 ## Tracking which customer ordered food ##
 Orderc1c2 is set on c1_order and reset on c2_order
