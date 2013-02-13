@@ -76,6 +76,9 @@ class Automaton:
             self.motion_handler = None
         self.h_instance = proj.h_instance
 
+        self.initialize()
+
+    def initialize(self):
         # Variables for keeping track of the current state
         self.current_state = None
         self.current_region = None
@@ -170,6 +173,9 @@ class Automaton:
 
         Basically just a lot of regexes.
         """
+        # Clear any existing states
+        self.states = []
+        self.initialize()
 
         # These will be used later by updateOutputs() and findTransitionableState()
         self.actuators = actuators
@@ -313,7 +319,7 @@ class Automaton:
                 if state.outputs[key] == '1':
                     FILE.write( key + '\\n')
                 else:
-                    FILE.write( '\AC' + key + '\\n')
+                    FILE.write( '¬' + key + '\\n')
             #FILE.write( "("+state.rank + ')\\n ')
             FILE.write('\" ];\n')
 
@@ -326,7 +332,7 @@ class Automaton:
                     if nextState.inputs[key] == '1':
                         FILE.write( key + '\\n')
                     else:
-                        FILE.write( '\AC' + key + '\\n')
+                        FILE.write( '¬' + key + '\\n')
                 FILE.write('\" ];\n')
 
         FILE.write('} \n')
