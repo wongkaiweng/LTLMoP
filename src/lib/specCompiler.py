@@ -91,8 +91,8 @@ class SpecCompiler(object):
         else:
             text = self.specText
 
-        spec, traceback, failed = writeSpec(text, sensorList, regionList, robotPropList)
-
+        spec, traceback, failed,LTL2LineNo = writeSpec(text, sensorList, regionList, robotPropList)
+        
         # Abort compilation if there were any errors
         if failed:
             return None
@@ -101,7 +101,7 @@ class SpecCompiler(object):
 
         createLTLfile(self.proj.getFilenamePrefix(), sensorList, robotPropList, adjData, spec)
 
-        return traceback
+        return traceback, LTL2LineNo
         
     def _checkForEmptyGaits(self):
         from simulator.ode.ckbot import CKBotLib
