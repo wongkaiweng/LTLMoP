@@ -13,12 +13,7 @@ import math, re, sys, random, os, subprocess, time
 from regions import *
 import numpy
 import fileMethods
-###### ENV VIOLATION CHECK ######
-lib_path = os.path.abspath('../src/LTLparser')
-if lib_path not in sys.path:
-    sys.path.append(lib_path)
-import LTLcheck
-#################################
+
 
 ###########################################################
 
@@ -461,15 +456,16 @@ class Automaton:
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            print "(FSA) ERROR: Could not find a suitable state to transition to!"
+            
             ###### ENV VIOLATION CHECK ######
             if self.violation_check == False:
-                path =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function                
-                check = LTLcheck.LTL_Check(path,self.current_state,self.sensor_state,self.LTL2LineNo)
-                self.violation_check = True
-            #################################
-            return
+                print "(FSA) ERROR: Could not find a suitable state to transition to!"
+                return "no state check"
+            return 
 
+        else:
+            self.violation_check = False
+            #################################
 
         # See if we're beginning a new transition
         if next_states != self.last_next_states:

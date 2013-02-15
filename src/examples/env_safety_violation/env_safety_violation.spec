@@ -26,9 +26,9 @@ dig, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r3 = p2
-r2 = p3
 others = p4, p5, p6, p7, p8, p9, p10, p11
+r2 = p3
+r3 = p2
 
 Spec: # Specification in structured English
 go to r2

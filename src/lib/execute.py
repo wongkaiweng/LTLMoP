@@ -27,6 +27,12 @@ from socket import *
 ###### ENV VIOLATION CHECK ######
 import copy
 import specCompiler
+
+lib_path = os.path.abspath('../src/LTLparser')
+if lib_path not in sys.path:
+    sys.path.append(lib_path)
+import LTLcheck
+
 #################################
 
 ####################
@@ -305,7 +311,7 @@ def main(argv):
     compiler.proj = proj #conservative
     #compiler.proj = copy.deepcopy(proj) #conservative
     traceback, LTL2LineNo = compiler._writeLTLFile()
-    FSA.LTL2LineNo = LTL2LineNo
+    #FSA.LTL2LineNo = LTL2LineNo
     ################################# 
 
     while not show_gui or guiListenThread.isAlive():
@@ -316,8 +322,12 @@ def main(argv):
         else:    
             tic = timer_func()
     
-            FSA.runIteration()
-    
+            r = FSA.runIteration()
+            if r == "no state check":
+                path =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function                
+                check = LTLcheck.LTL_Check(path,FSA.current_state,FSA.sensor_state, LTL2LineNo)
+                FSA.violation_check = True
+                
             toc = timer_func()
     
             # TODO: Possibly implement max rate-limiting?
