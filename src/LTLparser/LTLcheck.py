@@ -276,8 +276,7 @@ class LTL_Check:
                             removed_space = removed_nextline.replace(" ", "")
                             tree = parseFormulaTest.parseLTL(removed_space[:-1])
                             if tree == x:
-                                print"line " + str(value) + ": " + self.read_spec[value-1]
-                        print "###############################################"
+                                print"line " + str(value) + ": " + self.read_spec[value-1] +  "###############################################"
                         
                         #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
                         #self.print_tree(tree,parseFormulaTest.p.terminals)
@@ -293,11 +292,7 @@ class LTL_Check:
           
                 node_count += 1
             
-            # stop the printing in gui so that it doesn't freeze
-            if level == 0:
-                while (True):
-                    time.sleep(30)                    
-                                
+                            
             return final_value, negate, next                 
             
         else:
