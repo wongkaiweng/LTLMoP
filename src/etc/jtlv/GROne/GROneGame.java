@@ -234,7 +234,6 @@ public class GROneGame {
 	}
 
 
-
 	
 
     //COX_FS
@@ -779,6 +778,41 @@ public class GROneGame {
                     //when detecting environment unsatisfiability, all system actions should be valid from primed_cur_succ
                     //result = result & (candidate.equals(sys.trans().and(env.trans())));
                     result = result & (candidate.equals(primed_cur_succ));
+                }
+
+                /** Change by Ruediger, 14th of February, implementing the one-step-robustness */
+                if (det) {
+                	all_succs = env.succ(p_st).not();
+
+                    for (BDDIterator all_states = all_succs.iterator(env
+                        .moduleUnprimeVars()); all_states.hasNext();) {
+                        BDD primed_cur_succ = Env.prime((BDD)(all_states.next()));
+					    BDD next_op = Env
+                                .unprime(sys.trans().and(p_st).and(primed_cur_succ)
+                                        .exist(
+                                                env.moduleUnprimeVars().union(
+                                                        sys.moduleUnprimeVars())));
+													
+                        candidate = next_op;
+                        int jcand = p_j;
+
+                        BDDIterator candIter = candidate.iterator(env.moduleUnprimeVars().union(
+                                                    sys.moduleUnprimeVars()));
+                        if (candIter.hasNext()) {                        
+                            BDD one_cand = (BDD) candIter.next();
+                                           
+                            RawState gsucc = new RawState(aut.size(), one_cand, jcand);
+                            idx = aut.indexOf(gsucc); // the equals doesn't consider
+                                                      // the id number.
+                            if (idx == -1) {
+                                st_stack.push(one_cand);
+                                j_stack.push(jcand);
+                                aut.add(gsucc);
+                                idx = aut.indexOf(gsucc);
+                            }
+                            new_state.add_succ(aut.elementAt(idx));
+                        }
+                    }
                 }
             }
 		}

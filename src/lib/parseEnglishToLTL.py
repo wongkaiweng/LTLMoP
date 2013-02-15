@@ -710,13 +710,13 @@ def parseSafety(sentence,sensorList,allRobotProp,lineInd):
             formulaInfo['type'] = 'EnvTrans' # arbitrary
             return formulaInfo
 
-        if (prop in sensorList and formulaInfo['type'] == 'SysTrans') or \
-           (prop in allRobotProp and formulaInfo['type'] == 'EnvTrans'):
-            print 'ERROR(3): Could not parse the sentence in line '+ str(lineInd)+' containing:'
-            print sentence
-            print 'because both environment and robot propositions are used \n'
-            formulaInfo['type'] = 'EnvTrans' # arbitrary
-            return formulaInfo
+        #if (prop in sensorList and formulaInfo['type'] == 'SysTrans') or \
+        #   (prop in allRobotProp and formulaInfo['type'] == 'EnvTrans'):
+        #    print 'ERROR(3): Could not parse the sentence in line '+ str(lineInd)+' containing:'
+        #    print sentence
+        #    print 'because both environment and robot propositions are used \n'
+        #    formulaInfo['type'] = 'EnvTrans' # arbitrary
+        #    return formulaInfo
 
         if prop in sensorList and formulaInfo['type'] == '':
             formulaInfo['type'] = 'EnvTrans'
