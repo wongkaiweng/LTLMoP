@@ -9,10 +9,10 @@ import parseFormulaTest
 """
 
 # Debugging stdouts (set to True to print)
+debug_proposition_values = False # print system and env proposition values
 debug_implication = False        # print operations relating ->
 debug_disjunction = False        # print operations relating to & and |
 debug_negate      = False        # print operations relating to !
-debug_proposition_values = False # print system and env proposition values
 debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
@@ -21,48 +21,53 @@ class LTL_Check:
     """
     Check which ltl statement was violated.
     """
-    def __init__(self,path,cur_state,sen_state):
+    def __init__(self,path,cur_state,sen_state, LTL2LineNo):
         """
         Obtain .ltl of the current specification and trim the string to include only LTL.
         """
+        self.path_ltl      = path
         self.current_state = cur_state
-        self.sensor_state  = sen_state 
+        self.sensor_state  = sen_state
+        self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number
 
-        with open(path, 'r') as f:
-            read_data = self.parse_LTL_to_Tree(f)
+        if debug_proposition_values == True:
+            print "self.current_state.outputs"
+            for key,value in self.current_state.outputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.current_state.inputs"
+            for key,value in self.current_state.inputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
+            for key,value in self.sensor_state.iteritems():
+                print str(key) + ": " + str(value)        
+        
+        # obtain ltl from the .ltl file
+        with open(self.path_ltl, 'r') as f:
+            read_ltl = self.read_LTL_file(f)
         f.closed
         
-        #print read_data
-        removed_tab = read_data.replace("\t", "")
-        removed_nextline = removed_tab.replace("\n", "")
-        removed_space = removed_nextline.replace(" ", "")
-        removed_always_true = removed_space.replace("&[]<>(TRUE)", "")
+        # obtain spec from the .spec file
+        self.path_spec = path.replace(".ltl",".spec")
+        with open(self.path_spec, 'r') as f:
+            self.read_spec = self.read_spec_file(f)
+        f.closed
         
-        
-        """
-        LTLtree = {'expression':{},'parsedFormula':{}}
-        sentenceCount = 0
-        for e in removed_nextline.split('&'):
-            sentenceCount += 1
-            line = str(sentenceCount)
-            LTLtree['expression'][line]    = e
-            LTLtree['parsedFormula'][line] = parseFormulaTest.parseLTL(e)
-               
-        for key,value in LTLtree['expression'].iteritems():
-            print LTLtree['expression'][key]
-            print LTLtree['parsedFormula'][key]
-        """
-        tree = parseFormulaTest.parseLTL(removed_always_true)
+        # trim read_data so that it only includes ltl but not tabs and nextlines
+        read_ltl  = read_ltl.replace("\t", "")
+        read_ltl  = read_ltl.replace("\n", "")
+        read_ltl  = read_ltl.replace(" ", "")
+        read_ltl  = read_ltl.replace("&[]<>(TRUE)", "")    
+     
+        tree = parseFormulaTest.parseLTL(read_ltl)
         if debug_tree_terminal == True: 
             print  >>sys.__stdout__, "Here's the ltl of the environment assumptions from spec:"
-            #print  >>sys.__stdout__, removed_always_true  #read_data
             print >>sys.__stdout__,tree
             self.print_tree(tree,parseFormulaTest.p.terminals) 
 
         value, negate, next = self.evaluate_subtree(tree, parseFormulaTest.p.terminals)
 
 
-    def parse_LTL_to_Tree(self,f):
+    def read_LTL_file(self,f):
         """
         Read ltl file from LTLMoP and store the ltl in a string.
         """
@@ -72,9 +77,26 @@ class LTL_Check:
                 # len(line) > 4 for removing ( and );
                 read_data += line            
             elif (line.find("LTLSPEC -- Guarantees") != -1):
-                print "Here we skipped the ltl guarantees following."
+                #print "Here we skipped the ltl guarantees following."
                 return read_data
         return read_data
+        
+    def read_spec_file(self,f):
+        """
+        Read spec file from LTLMoP and store the spec in a string.
+        """
+        read_data = []
+        add_line = False
+        for line in f:   
+            if (line.find("Spec: # Specification in structured English") != -1):
+                add_line = True
+                continue
+             
+            if add_line == True:
+                read_data.append(line)
+                
+        return read_data    
+    
     
     def print_tree(self,tree, terminals, indent=0):
         """Print a parse tree to stdout."""
@@ -105,22 +127,15 @@ class LTL_Check:
             return v
                
     def evaluate_subtree(self, tree, terminals, level=0, next = False, disjunction = False):
-        """Print a parse tree to stdout."""
+        """
+        Evaluate the parsed tree and yell the environment assumptions violated.
+        """
         final_value  = True     # final value to be returned. for conjunction and disjunction operations
         disjunction  = None
         implication  = None
         negate       = False
         to_negate    = False
-        if not tree[0] in terminals:
-
-            """
-            if tree[0] == 'UnaryFormula':
-                return True
-            elif tree[0] == 'Assignment':
-                return True
-            elif tree[0] == 'GloballyOperator':
-                return True
-            """    
+        if not tree[0] in terminals:  
             
             # check for implication (->)    
             if tree[0] =='Implication':
@@ -133,6 +148,7 @@ class LTL_Check:
             # check for disjunction (or)
             elif tree[0] == "Disjunction":
                 disjunction = True
+                final_value = False
                 
             # check for conjunction (and)
             elif tree[0] == "Conjunction":
@@ -150,8 +166,7 @@ class LTL_Check:
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
                 if debug_proposition_values == True:
-                    print "key: " + str(key) + " value: " + str(self.current_state.outputs[key])
-                    print "evaluating system propositions: " + str(key)
+                    print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state.outputs[key])
 
                 return int(self.current_state.outputs[key]), negate, next
                     
@@ -159,8 +174,8 @@ class LTL_Check:
             elif "e." in tree[0]:                
                 key = tree[0].replace("e.","")
                 if debug_proposition_values == True:
-                    print "negate: " + str(negate)  + " next: " + str(next)
-                    print "evaluating env propositions: " + str(key)
+                    print " next: " + str(next)
+                    print "evaluating env propositions: " + str(key) 
 
                 if next == True:
                     return int(self.sensor_state[key]), negate, False
@@ -171,14 +186,15 @@ class LTL_Check:
             node_count = 1
             for x in tree[1:]:
                 # skip ltl that does not contain a global operator
-                if level == 0 :   
-                    #print x               
+                if level == 0 :                 
                     if not self.find_element(x,'GloballyOperator'):
-                        print "Skipped this line because there's no global opreator."
+                        if debug_tree_terminal == True:
+                            print "Skipped this line because there's no global opreator."
                         continue                    
                     
                     if self.find_element(x,'FinallyOperator'):
-                        print "Skipped this line because this is a liveness assumption."
+                        if  debug_tree_terminal == True:
+                            print "Skipped this line because this is a liveness assumption."
                         continue 
                 value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
                 
@@ -188,33 +204,30 @@ class LTL_Check:
                 
                 if to_negate == True:
                     if debug_negate == True:
-                        print "in negate in loop " + str(node_count)
+                        print "In negate loop: " + str(node_count)
                     if node_count == 2:
                         if debug_negate ==True:
-                            print "NEGATE here"
+                            print "NEGATE the value now"
                             print x
                         value = not value
                 
                 # Disjunction(|)  
                 if disjunction == True:
                     if debug_disjunction  ==True:
-                        print "Disjunction(|)"
-                        print "value: " + str(value) + ", final_value: " + str(final_value)
+                        print "Disjunction(|) node: "+ str(node_count) + " value: " + str(value) + ", final_value: " + str(final_value)
                     final_value = final_value or value
                 
                 # Conjunction(&)
                 elif disjunction == False: 
                     if debug_disjunction == True:                  
-                        print "Conjunction(&)"
-                        print "value: " + str(value) + ", final_value: " + str(final_value)                   
+                        print "Conjunction(&) node: "+ str(node_count) + "value: " + str(value) + ", final_value: " + str(final_value)                   
                     final_value = final_value and value 
                 
                 # Implication(->)                       
                 elif implication == True:
                     if debug_implication == True:
                         print  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-                        print "Implication: " + str(implication)
-                        print node_count 
+                        print "Implication: " + str(node_count)
                     
                     if node_count == 1:
                         implication_first = value
@@ -254,11 +267,20 @@ class LTL_Check:
                     if value == False:
                         print "###############################################"
                         print "This environement safety assumption is violated."                       
-                        print parseFormulaTest.parseLTLTree(x)[0]
+                        #print parseFormulaTest.parseLTLTree(x)[0]
+                        
+                        # find the line in spec 
+                        for key,value in self.LTL2LineNo.iteritems():
+                            removed_tab = key.replace("\t", "")
+                            removed_nextline = removed_tab.replace("\n", "")
+                            removed_space = removed_nextline.replace(" ", "")
+                            tree = parseFormulaTest.parseLTL(removed_space[:-1])
+                            if tree == x:
+                                print"line " + str(value) + ": " + self.read_spec[value-1]
                         print "###############################################"
-                        tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])
-                        #print >>sys.__stdout__,tree        
-                        self.print_tree(tree,parseFormulaTest.p.terminals)
+                        
+                        #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
+                        #self.print_tree(tree,parseFormulaTest.p.terminals)
 
                     else:
                         if debug_true_ltl == True:                        
@@ -271,6 +293,7 @@ class LTL_Check:
           
                 node_count += 1
             
+            # stop the printing in gui so that it doesn't freeze
             if level == 0:
                 while (True):
                     time.sleep(30)                    

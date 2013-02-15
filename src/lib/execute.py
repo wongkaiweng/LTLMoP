@@ -24,6 +24,10 @@ from numpy import *
 from handlers.motionControl.__is_inside import is_inside
 from socket import *
 
+###### ENV VIOLATION CHECK ######
+import copy
+import specCompiler
+#################################
 
 ####################
 # HELPER FUNCTIONS #
@@ -127,7 +131,7 @@ def main(argv):
     aut_file = None
     spec_file = None
     show_gui = True
-
+    
     try:
         opts, args = getopt.getopt(argv[1:], "hna:s:", ["help", "no-gui", "aut-file=", "spec-file="])
     except getopt.GetoptError, err:
@@ -158,7 +162,7 @@ def main(argv):
 
     print "\n[ LTLMOP HYBRID CONTROLLER EXECUTION MODULE ]\n"
     print "Hello. Let's do this!\n"
-
+    
     ############################
     # Load configuration files #
     ############################
@@ -294,6 +298,15 @@ def main(argv):
         timer_func = time.clock
     else:
         timer_func = time.time
+        
+    ###### ENV VIOLATION CHECK ######
+    compiler = specCompiler.SpecCompiler(spec_file)
+    compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+    compiler.proj = proj #conservative
+    #compiler.proj = copy.deepcopy(proj) #conservative
+    traceback, LTL2LineNo = compiler._writeLTLFile()
+    FSA.LTL2LineNo = LTL2LineNo
+    ################################# 
 
     while not show_gui or guiListenThread.isAlive():
         # Idle if we're not running
