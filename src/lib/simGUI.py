@@ -151,12 +151,16 @@ class SimGUI_Frame(wx.Frame):
                     wx.CallAfter(self.appendLog, input + "\n", color="GREEN") 
             elif input.startswith("Heading to"):
                 if self.checkbox_statusLog_targetRegion.GetValue():
+                    #self.appendLog(input + "\n", color="BLUE")
+                    
                     wx.CallAfter(self.appendLog, input + "\n", color="BLUE") 
             elif input.startswith("Crossed border"):
                 if self.checkbox_statusLog_border.GetValue():
                     wx.CallAfter(self.appendLog, input + "\n", color="CYAN") 
             elif input.startswith("BG:"):
                 wx.CallAfter(self.setMapImage, input.split(":",1)[1])
+            elif input.startswith("Violation:"):
+                wx.CallAfter(self.appendLog, input.split(":",1)[1] + "\n", color="RED") 
             else:
                 if self.checkbox_statusLog_other.GetValue():
                     if input != "":
@@ -278,11 +282,21 @@ class SimGUI_Frame(wx.Frame):
                     break
             text = re.sub(r'\b'+p_reg+r'\b', '%s (%s)' % (p_reg, rname), text)
 
+        """
         self.text_ctrl_sim_log.BeginTextColour(color)
         self.text_ctrl_sim_log.WriteText("["+time.strftime("%H:%M:%S")+"] "+text)
         self.text_ctrl_sim_log.EndTextColour()
         self.text_ctrl_sim_log.ShowPosition(self.text_ctrl_sim_log.GetLastPosition())
         self.text_ctrl_sim_log.Refresh()
+        """
+        
+        self.text_ctrl_sim_log.BeginTextColour(color)
+        self.text_ctrl_sim_log.WriteText("["+time.strftime("%H:%M:%S")+"] "+text)
+        self.text_ctrl_sim_log.EndTextColour()
+        self.text_ctrl_sim_log.ShowPosition(self.text_ctrl_sim_log.GetLastPosition())
+        self.text_ctrl_sim_log.Refresh()
+        wx.Yield() # Ensure update
+        
 
     def onSimStartPause(self, event): # wxGlade: SimGUI_Frame.<event_handler>
         btn_label = self.button_sim_startPause.GetLabel()

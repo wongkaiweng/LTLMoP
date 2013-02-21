@@ -32,9 +32,10 @@ yellow = p1
 others = 
 
 Spec: # Specification in structured English
-
-do move if and only if you were in green
-do stop if and only if you were in red
+if you were in green then do move
+if you were in red then do stop
+always (move or stop)
+always not (move and stop)
 
 go to green
 go to yellow
