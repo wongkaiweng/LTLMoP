@@ -133,13 +133,32 @@ public class GROneGame {
 				cy = 0;
 				y = Env.FALSE();
 				for (iterY = new FixPoint<BDD>(); iterY.advance(y);) {
-					BDD start = sys.justiceAt(j).and(env.yieldStates(sys, z))
-							.or(env.yieldStates(sys, y));
+
+                    /** Change, 20th of Februrary 2013 by Ruediger - Prefer progress for which we do not need to wait for liveness assumption progress **/
+                    /*BDD y2 = sys.justiceAt(j).and(env.yieldStates(sys, z)).or(y);
+                    for (FixPoint<BDD> iterY2 = new FixPoint<BDD>(); iterY2.advance(y2);) {
+                        y_mem[j][cy] = y2.id();
+                        for (int i = 0; i < envJustNum; i++) {
+                            x_mem[j][i][cy] = y2.id();
+                        }
+                        cy++;
+                        if (cy % 50 == 0) {
+						    x_mem = extend_size(x_mem, cy);
+						    y_mem = extend_size(y_mem, cy);
+					    }
+                        y2 = y2.or(env.yieldStates(sys, y2));
+                    }
+					BDD start = y2.id(); */
+                    BDD start = sys.justiceAt(j).and(env.yieldStates(sys, z))
+                        .or(env.yieldStates(sys, y));                   
+                    /** End Of Change **/
+
+
 					y = Env.FALSE();
 					for (int i = 0; i < envJustNum; i++) {
 						BDD negp = env.justiceAt(i).not();
 						x = z.id();
-						for (iterX = new FixPoint<BDD>(); iterX.advance(x);) {
+						for (iterX = new FixPoint<BDD>(); iterX.advance(x);) { 
 							x = negp.and(env.yieldStates(sys, x)).or(start);
 						}
 						x_mem[j][i][cy] = x.id();
@@ -639,7 +658,13 @@ public class GROneGame {
                 Vector<BDD> succs = new Vector<BDD>();
                 BDD all_succs = Env.FALSE();
                 if (det) {
-                	all_succs = env.succ(p_st);
+                    // Change by Ruediger - Add one-step-robustness
+                	// Old code: all_succs = env.succ(p_st);
+                    all_succs = sys.trans().and(p_st).and(Env.prime(z_mem[z_mem.length-1])).exist(
+                                                env.moduleUnprimeVars().union(
+                                                        sys.moduleUnprimeVars()).union(
+                                                        sys.modulePrimeVars()));
+
                 } else {
                 	all_succs = Env.TRUE();
                 }
@@ -745,7 +770,14 @@ public class GROneGame {
                         	if (strategy_kind == 3 && !det) return false;
 							//This next line is critical to finding transitions at the lowest "level sets"
 							else candidate = (next_op).and(y_mem[p_j][p_cy]);	
-							assert !(det && candidate.isZero()) : "No successor was found";
+                            // Change, R.E., Support for one-step robustness - me might need to worsen p_cy in some cases
+                            // -> Only report a problem if this doesn't work, either.
+                            if (p_cy != y_mem[p_j].length-1) {
+                                p_cy++;
+                                local_kind++; // Only done so it stays the same after the command a few lines below.
+                            } else {
+							    assert !(det && candidate.isZero()) : "No successor was found";
+                            }
 														
                         }
 
@@ -780,40 +812,6 @@ public class GROneGame {
                     result = result & (candidate.equals(primed_cur_succ));
                 }
 
-                /** Change by Ruediger, 14th of February, implementing the one-step-robustness */
-                if (det) {
-                	all_succs = env.succ(p_st).not();
-
-                    for (BDDIterator all_states = all_succs.iterator(env
-                        .moduleUnprimeVars()); all_states.hasNext();) {
-                        BDD primed_cur_succ = Env.prime((BDD)(all_states.next()));
-					    BDD next_op = Env
-                                .unprime(sys.trans().and(p_st).and(primed_cur_succ)
-                                        .exist(
-                                                env.moduleUnprimeVars().union(
-                                                        sys.moduleUnprimeVars())));
-													
-                        candidate = next_op;
-                        int jcand = p_j;
-
-                        BDDIterator candIter = candidate.iterator(env.moduleUnprimeVars().union(
-                                                    sys.moduleUnprimeVars()));
-                        if (candIter.hasNext()) {                        
-                            BDD one_cand = (BDD) candIter.next();
-                                           
-                            RawState gsucc = new RawState(aut.size(), one_cand, jcand);
-                            idx = aut.indexOf(gsucc); // the equals doesn't consider
-                                                      // the id number.
-                            if (idx == -1) {
-                                st_stack.push(one_cand);
-                                j_stack.push(jcand);
-                                aut.add(gsucc);
-                                idx = aut.indexOf(gsucc);
-                            }
-                            new_state.add_succ(aut.elementAt(idx));
-                        }
-                    }
-                }
             }
 		}
 
