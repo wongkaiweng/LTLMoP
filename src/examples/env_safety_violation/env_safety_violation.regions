@@ -12,37 +12,37 @@ Obstacles: # Names of regions to treat as obstacles
 Regions: # Stored as JSON string
 [
     {
-        "name": "r3", 
+        "name": "bedroom", 
         "color": [
             0, 
             0, 
             255
         ], 
         "position": [
-            497, 
-            109
+            106.0, 
+            99.0
         ], 
         "type": "rect", 
         "size": [
-            135, 
-            123
+            234.0, 
+            219.0
         ]
     }, 
     {
-        "name": "r2", 
+        "name": "kitchen", 
         "color": [
             0, 
             255, 
             0
         ], 
         "position": [
-            493, 
-            262
+            474.0, 
+            291.0
         ], 
         "type": "rect", 
         "size": [
-            167, 
-            148
+            231.0, 
+            209.0
         ]
     }, 
     {
@@ -53,13 +53,13 @@ Regions: # Stored as JSON string
             255
         ], 
         "position": [
-            70, 
-            47
+            70.0, 
+            47.0
         ], 
         "type": "rect", 
         "size": [
-            687, 
-            503
+            687.0, 
+            503.0
         ]
     }
 ]

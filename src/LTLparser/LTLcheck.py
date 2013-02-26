@@ -265,8 +265,9 @@ class LTL_Check:
                 if level == 0:
                     
                     if value == False:
-                        print "###############################################"
-                        print "This environement safety assumption is violated."                       
+                        #self.appendLog("Hehehehehehe\n", "BLUE")
+                        print "Violation:#######################################"
+                        print "Violation:This environement safety assumption is violated."                       
                         #print parseFormulaTest.parseLTLTree(x)[0]
                         
                         # find the line in spec 
@@ -276,7 +277,8 @@ class LTL_Check:
                             removed_space = removed_nextline.replace(" ", "")
                             tree = parseFormulaTest.parseLTL(removed_space[:-1])
                             if tree == x:
-                                print"line " + str(value) + ": " + self.read_spec[value-1] +  "###############################################"
+                                print"Violation:line " + str(value) + ": " + self.read_spec[value-1] 
+                                print "Violation:#######################################"
                         
                         #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
                         #self.print_tree(tree,parseFormulaTest.p.terminals)

@@ -1,0 +1,312 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                104.0
+            ], 
+            [
+                117.0, 
+                104.0
+            ], 
+            [
+                117.0, 
+                0.0
+            ], 
+            [
+                255.0, 
+                0.0
+            ], 
+            [
+                572.0, 
+                0.0
+            ], 
+            [
+                572.0, 
+                104.0
+            ], 
+            [
+                808.0, 
+                104.0
+            ], 
+            [
+                808.0, 
+                233.0
+            ], 
+            [
+                572.0, 
+                233.0
+            ], 
+            [
+                572.0, 
+                232.0
+            ], 
+            [
+                572.0, 
+                233.0
+            ], 
+            [
+                572.0, 
+                324.0
+            ], 
+            [
+                115.0, 
+                324.0
+            ], 
+            [
+                117.0, 
+                232.0
+            ], 
+            [
+                115.0, 
+                232.0
+            ], 
+            [
+                0.0, 
+                232.0
+            ]
+        ], 
+        "position": [
+            167.0, 
+            172.0
+        ], 
+        "type": "poly", 
+        "size": [
+            808.0, 
+            324.0
+        ]
+    }, 
+    {
+        "name": "emergency_exit", 
+        "color": [
+            0, 
+            207, 
+            255
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                236.0, 
+                0.0
+            ], 
+            [
+                236.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                129.0
+            ]
+        ], 
+        "position": [
+            739.0, 
+            276.0
+        ], 
+        "type": "poly", 
+        "size": [
+            236.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "restaurant", 
+        "color": [
+            255, 
+            0, 
+            173
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                117.0, 
+                0.0
+            ], 
+            [
+                117.0, 
+                128.0
+            ], 
+            [
+                115.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                128.0
+            ]
+        ], 
+        "position": [
+            167.0, 
+            276.0
+        ], 
+        "type": "poly", 
+        "size": [
+            117.0, 
+            128.0
+        ]
+    }, 
+    {
+        "name": "parking_lot", 
+        "color": [
+            255, 
+            25, 
+            0
+        ], 
+        "position": [
+            284.0, 
+            172.0
+        ], 
+        "type": "rect", 
+        "size": [
+            138.0, 
+            104.0
+        ]
+    }, 
+    {
+        "name": "shop1", 
+        "color": [
+            0, 
+            255, 
+            10
+        ], 
+        "position": [
+            422.0, 
+            172.0
+        ], 
+        "type": "rect", 
+        "size": [
+            317.0, 
+            104.0
+        ]
+    }, 
+    {
+        "name": "shop2", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                2.0, 
+                0.0
+            ], 
+            [
+                457.0, 
+                0.0
+            ], 
+            [
+                457.0, 
+                1.0
+            ], 
+            [
+                457.0, 
+                92.0
+            ], 
+            [
+                0.0, 
+                92.0
+            ]
+        ], 
+        "position": [
+            282.0, 
+            404.0
+        ], 
+        "type": "poly", 
+        "size": [
+            457.0, 
+            92.0
+        ]
+    }, 
+    {
+        "name": "aisle", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                138.0, 
+                0.0
+            ], 
+            [
+                455.0, 
+                0.0
+            ], 
+            [
+                455.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                128.0
+            ]
+        ], 
+        "position": [
+            284.0, 
+            276.0
+        ], 
+        "type": "poly", 
+        "size": [
+            455.0, 
+            128.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	emergency_exit	975.0	276.0	739.0	276.0	739.0	404.0	739.0	405.0	975.0	405.0	739.0	405.0	975.0	276.0	975.0	405.0
+boundary	restaurant	167.0	276.0	284.0	276.0	284.0	404.0	282.0	404.0	167.0	404.0	282.0	404.0	167.0	404.0	167.0	276.0
+boundary	parking_lot	422.0	172.0	284.0	172.0	284.0	276.0	284.0	172.0
+boundary	shop1	739.0	276.0	739.0	172.0	422.0	172.0	739.0	172.0
+boundary	shop2	739.0	404.0	739.0	405.0	739.0	496.0	739.0	405.0	739.0	496.0	282.0	496.0	284.0	404.0	282.0	404.0
+emergency_exit	shop2	739.0	404.0	739.0	405.0
+emergency_exit	aisle	739.0	276.0	739.0	404.0
+restaurant	shop2	284.0	404.0	282.0	404.0
+restaurant	aisle	284.0	276.0	284.0	404.0
+parking_lot	shop1	422.0	172.0	422.0	276.0
+parking_lot	aisle	422.0	276.0	284.0	276.0
+shop1	aisle	422.0	276.0	739.0	276.0
+shop2	aisle	284.0	404.0	739.0	404.0
+
