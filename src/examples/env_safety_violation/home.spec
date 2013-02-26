@@ -35,5 +35,5 @@ go to kitchen
 go to bedroom
 
 do cooking  if and only if you are in kitchen
-if you are in bedroom then do sleeping
+#if you are in bedroom then do sleeping
 
