@@ -6,7 +6,7 @@
 import math
 import os
 import sys
-import resource
+#import resource
 import subprocess
 import signal
 from custom_parser import Parser
@@ -22,7 +22,7 @@ def print_tree(tree, terminals, indent=0):
         print prefix + unicode(tree[0])
         for x in tree[1:]:
             print_tree(x, terminals, indent+1)
-            
+
 # Allocate global parser
 p = Parser()
 
@@ -33,7 +33,7 @@ def tokenize(str):
 
     res = []
     while str:
-        # Ignoring stuff        
+        # Ignoring stuff
         if str[0].isspace() or (str[0]=='\n'):
             str = str[1:]
             continue
@@ -57,7 +57,7 @@ def tokenize(str):
             else:
                 res.append(('id', m.group(0)))
                 str = str[m.end(0):]
-            
+
             continue
 
         res.append((str[0],))
@@ -204,7 +204,7 @@ def parseLTL(ltlTxt):
     simplified_tree = flatten_as_much_as_possible(cleaned_tree)
     # print simplified_tree
     return simplified_tree
-    
+
 def parseLTLTree(tree):
     """
     parse the LTL tree back to the string format in LTLMoP
@@ -238,31 +238,31 @@ def parseLTLTree(tree):
         elif tree[0] =='Biimplication':
             biimplication = True
             final_txt += "("
-            
+
         # check for disjunction (or)
         elif tree[0] == "Disjunction":
             final_txt += "(("
             disjunction = True
-            
+
         # check for conjunction (and)
         elif tree[0] == "Conjunction":
             final_txt += "(("
             disjunction = False
-        
+
         # change the negate flag
         elif tree[0] == 'NotOperator':
             final_txt += "!("
             negate      = True
-            
-        # change the next flag 
+
+        # change the next flag
         elif tree[0] == 'NextOperator':
             final_txt += "next("
-            next       =  True            
-            
+            next       =  True
+
         # for system propositions
         elif "s." in tree[0]:
             final_txt += tree[0]
-                
+
         # for environement propositions
         elif "e." in tree[0]:
             final_txt += tree[0]
@@ -272,15 +272,15 @@ def parseLTLTree(tree):
 
             if next == True:
                 be_added += ")"
-            
+
             if negate == True:
-                be_added += ")"  
-                
+                be_added += ")"
+
             a = ""
             txt, a , next , negate = parseLTLTree(x)
-            
-            final_txt += txt 
-            if disjunction == True: 
+
+            final_txt += txt
+            if disjunction == True:
                 if node_count < len (tree[1:]):
                     final_txt += ") | ("
                 else:
@@ -296,13 +296,13 @@ def parseLTLTree(tree):
             elif biimplication == True and biimpli_count == False:
                 final_txt += " <-> "
                 biimpli_count  = True
-                
-            
-            if implication == True and node_count == len (tree[1:]): 
-                final_txt += ")"   
+
+
+            if implication == True and node_count == len (tree[1:]):
+                final_txt += ")"
             elif biimplication == True and node_count == len (tree[1:]):
                 final_txt += ")"
-                          
+
             node_count += 1
             to_be_added += a
 
@@ -310,8 +310,8 @@ def parseLTLTree(tree):
         final_txt += to_be_added
         #final_txt += s
         return final_txt, be_added ,next ,negate
-    
+
     else:
-        return "","",False, False 
+        return "","",False, False
 
 

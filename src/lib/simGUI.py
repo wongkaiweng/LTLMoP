@@ -70,7 +70,7 @@ class SimGUI_Frame(wx.Frame):
         self.buf = 1024
         self.addrTo = (self.host,self.portTo)
         self.UDPSockTo = socket(AF_INET,SOCK_DGRAM)
-        
+
         #??# Set up socket for communication from executor
         print "(GUI) Starting socket for communication from controller"
         self.portFrom = 9563
@@ -84,7 +84,7 @@ class SimGUI_Frame(wx.Frame):
         self.controllerListenThread = threading.Thread(target = self.controllerListen)
         self.controllerListenThread.daemon = True
         self.controllerListenThread.start()
-    
+
         self.robotPos = None
         self.robotVel = (0,0)
 
@@ -114,7 +114,7 @@ class SimGUI_Frame(wx.Frame):
         # CONTROLLER LISTEN THREAD #
         ############################
 
-        while 1: 
+        while 1:
             # Wait for and receive a message from the controller
             input,self.addrFrom = self.UDPSockFrom.recvfrom(self.buf)
             if input == '':  # EOF indicates that the connection has been destroyed
@@ -141,30 +141,30 @@ class SimGUI_Frame(wx.Frame):
                     print "Received drawing command before map.  You probably have an old execute.py process running; please kill it and try again."
                     continue
                 [x,y] = map(float, input.split(":")[1].split(","))
-                [x,y] = map(int, (self.mapScale*x, self.mapScale*y)) 
+                [x,y] = map(int, (self.mapScale*x, self.mapScale*y))
                 self.robotVel = (x, y)
             elif input.startswith("PAUSE"):
                 # FIXME: Sometimes we'll still get rate updates AFTER a pause
                 wx.CallAfter(self.sb.SetStatusText, input, 0)
             elif input.startswith("Output proposition"):
                 if self.checkbox_statusLog_propChange.GetValue():
-                    wx.CallAfter(self.appendLog, input + "\n", color="GREEN") 
+                    wx.CallAfter(self.appendLog, input + "\n", color="GREEN")
             elif input.startswith("Heading to"):
                 if self.checkbox_statusLog_targetRegion.GetValue():
                     #self.appendLog(input + "\n", color="BLUE")
-                    
-                    wx.CallAfter(self.appendLog, input + "\n", color="BLUE") 
+
+                    wx.CallAfter(self.appendLog, input + "\n", color="BLUE")
             elif input.startswith("Crossed border"):
                 if self.checkbox_statusLog_border.GetValue():
-                    wx.CallAfter(self.appendLog, input + "\n", color="CYAN") 
+                    wx.CallAfter(self.appendLog, input + "\n", color="CYAN")
             elif input.startswith("BG:"):
                 wx.CallAfter(self.setMapImage, input.split(":",1)[1])
             elif input.startswith("Violation:"):
-                wx.CallAfter(self.appendLog, input.split(":",1)[1] + "\n", color="RED") 
+                wx.CallAfter(self.appendLog, input.split(":",1)[1] + "\n", color="RED")
             else:
                 if self.checkbox_statusLog_other.GetValue():
                     if input != "":
-                        wx.CallAfter(self.appendLog, input + "\n", color="BLACK") 
+                        wx.CallAfter(self.appendLog, input + "\n", color="BLACK")
 
     def __set_properties(self):
         # begin wxGlade: SimGUI_Frame.__set_properties
@@ -218,7 +218,7 @@ class SimGUI_Frame(wx.Frame):
         # end wxGlade
 
         self.window_1.SetSashPosition(self.GetSize().y/2)
-        self.window_1_pane_1.SetBackgroundColour(wx.WHITE)   
+        self.window_1_pane_1.SetBackgroundColour(wx.WHITE)
 
     def onResize(self, event=None): # wxGlade: SimGUI_Frame.<event_handler>
         size = self.window_1_pane_1.GetSize()
@@ -255,25 +255,25 @@ class SimGUI_Frame(wx.Frame):
 
         # Draw robot
         if self.robotPos is not None:
-            [x,y] = map(lambda x: int(self.mapScale*x), self.robotPos) 
+            [x,y] = map(lambda x: int(self.mapScale*x), self.robotPos)
             dc.DrawCircle(x, y, 5)
         if self.markerPos is not None:
-            [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos) 
+            [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos)
             dc.SetBrush(wx.Brush(wx.RED))
             dc.DrawCircle(m, n, 5)
 
         # Draw velocity vector of robot (for debugging)
-        #dc.DrawLine(self.robotPos[0], self.robotPos[1], 
+        #dc.DrawLine(self.robotPos[0], self.robotPos[1],
         #            self.robotPos[0] + self.robotVel[0], self.robotPos[1] + self.robotVel[1])
 
         dc.EndDrawing()
-        
+
         if event is not None:
             event.Skip()
 
     def appendLog(self, text, color="BLACK"):
         # for printing everything on the log
-            
+
         # annotate any pXXX region names with their human-friendly name
         # convert to set to avoid infinite explosion
         for p_reg in set(re.findall(r'\b(p\d+)\b',text)):
@@ -289,14 +289,14 @@ class SimGUI_Frame(wx.Frame):
         self.text_ctrl_sim_log.ShowPosition(self.text_ctrl_sim_log.GetLastPosition())
         self.text_ctrl_sim_log.Refresh()
         """
-        
+
         self.text_ctrl_sim_log.BeginTextColour(color)
         self.text_ctrl_sim_log.WriteText("["+time.strftime("%H:%M:%S")+"] "+text)
         self.text_ctrl_sim_log.EndTextColour()
         self.text_ctrl_sim_log.ShowPosition(self.text_ctrl_sim_log.GetLastPosition())
         self.text_ctrl_sim_log.Refresh()
-        wx.Yield() # Ensure update
-        
+        #wx.Yield() # Ensure update
+
 
     def onSimStartPause(self, event): # wxGlade: SimGUI_Frame.<event_handler>
         btn_label = self.button_sim_startPause.GetLabel()
@@ -319,9 +319,9 @@ class SimGUI_Frame(wx.Frame):
         Ask the user for a filename to save the Log as, and then save it.
         """
         default = 'StatusLog'
-    
+
         # Get a filename
-        fileName = wx.FileSelector("Save File As", 
+        fileName = wx.FileSelector("Save File As",
                                     os.path.join(os.getcwd(),'examples'),
                                     default_filename=default,
                                     default_extension="txt",
@@ -332,7 +332,7 @@ class SimGUI_Frame(wx.Frame):
         # Force a .txt extension.  How mean!!!
         if os.path.splitext(fileName)[1] != ".txt":
             fileName = fileName + ".txt"
-        
+
 
         # Save data to the file
         self.saveFile(fileName)
