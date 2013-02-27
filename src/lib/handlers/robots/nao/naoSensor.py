@@ -99,9 +99,11 @@ class naoSensorHandler:
             if "ltlmop_sensorhandler" in subs:
                 self.sttProxy.unsubscribe("ltlmop_sensorhandler")
 
-            self.sttVocabulary += [word]
-            self.sttProxy.setWordListAsVocabulary(self.sttVocabulary)
-
+            self.sttVocabulary = word.split(";")
+            #self.sttVocabulary += [word]
+            print self.sttVocabulary
+            #self.sttProxy.setWordListAsVocabulary(self.sttVocabulary)
+            self.sttProxy.setVocabulary(self.sttVocabulary,True)
             self.sttProxy.setLanguage("English")
             self.sttProxy.setAudioExpression(False)
             self.sttProxy.setVisualExpression(True)
@@ -113,8 +115,9 @@ class naoSensorHandler:
             return True
         else:
             # Check speech recognition state
-
+            detect = self.memProxy.getData("SpeechDetected",0)
             wds = self.memProxy.getData("WordRecognized",0)
+            print "wwwwww: " + str(wds) + str(detect)
 
             # HACK: reset the speech recognition register manually once per vocab-cycle
             self.sttVocabCounter += 1
@@ -123,7 +126,8 @@ class naoSensorHandler:
                 self.sttVocabCounter = 0
 
             for wd, prob in zip(wds[0::2], wds[1::2]):
-                if wd == word and prob > threshold:
+                #if wd == word and prob > threshold:
+                if wd in self.sttVocabulary and prob > threshold:
                     print "Recognized word '%s' with p = %f" % (wd, prob)
                     return True
 
