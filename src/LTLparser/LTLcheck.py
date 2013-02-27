@@ -72,21 +72,23 @@ class LTL_Check:
         """
         self.current_state = cur_state
         self.sensor_state  = sensor_state
-        
-        if debug_proposition_values == True:
-            print "self.current_state.outputs"
-            for key,value in self.current_state.outputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.current_state.inputs"
-            for key,value in self.current_state.inputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
-            for key,value in self.sensor_state.iteritems():
-                print str(key) + ": " + str(value) 
            
         # check for env violations     
         value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals)
 
+        if debug_proposition_values == True:
+            pass
+            #print "self.current_state.outputs"
+            #for key,value in self.current_state.outputs.iteritems():
+            #    print str(key) + ": " + str(value)
+        """
+        print >>sys.__stdout__,"self.current_state.inputs"
+        for key,value in self.current_state.inputs.iteritems():
+            print >>sys.__stdout__,str(key) + ": " + str(value)
+        print >>sys.__stdout__,"self.sensor_state" ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
+        for key,value in self.sensor_state.iteritems():
+            print >>sys.__stdout__,str(key) + ": " + str(value) 
+        """    
         # Environment Violations are removed
         if value == True:
             self.violated_spec_line_no = []
@@ -293,6 +295,8 @@ class LTL_Check:
                     if value == False:
                         treeNo = self.ltlTree_to_lineNo[str(x)]
                         if treeNo not in self.violated_spec_line_no:
+                       
+                        
                             print "Violation:#######################################"
                             print "Violation:This environement safety assumption is violated."                       
                             
