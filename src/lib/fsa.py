@@ -90,10 +90,6 @@ class Automaton:
         """
         Find the state with the given name
         """
-        for i in range(len(self.states)):
-            if(self.states[i].name == name):
-                return self.states[i]
-
         try:
             return self.stateNameToState[name]
         except KeyError:
@@ -321,7 +317,7 @@ class Automaton:
                 if state.outputs[key] == '1':
                     FILE.write( key + '\\n')
                 else:
-                    FILE.write( '\AC' + key + '\\n')
+                    FILE.write( '<AC>' + key + '\\n')
             #FILE.write( "("+state.rank + ')\\n ')
             FILE.write('\" ];\n')
 
@@ -334,7 +330,7 @@ class Automaton:
                     if nextState.inputs[key] == '1':
                         FILE.write( key + '\\n')
                     else:
-                        FILE.write( '\AC' + key + '\\n')
+                        FILE.write( '<AC>' + key + '\\n')
                 FILE.write('\" ];\n')
 
         FILE.write('} \n')
@@ -380,7 +376,7 @@ class Automaton:
             if initial:
                 # First see if we can be in the state given our current region
                 if self.regionFromState(state) != self.current_region: continue
-                
+
                 # Start only with Rank 0 states
                 #if int(state.rank) != 0: continue
 
@@ -456,12 +452,12 @@ class Automaton:
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            
+
             ###### ENV VIOLATION CHECK ######
             if self.violation_check == False:
                 print "(FSA) ERROR: Could not find a suitable state to transition to!"
                 return "no state check"
-            return 
+            return
 
         else:
             self.violation_check = False
@@ -516,4 +512,4 @@ class Automaton:
             print "Now in state %s (z = %s)" % (self.current_state.name, self.current_state.rank)
 
 
-         
+
