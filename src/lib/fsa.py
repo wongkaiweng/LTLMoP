@@ -56,7 +56,6 @@ class Automaton:
         self.proj = proj
 
         self.states = []    # A collection of state objects belonging to the automaton
-        self.stateNameToState = {}
 
         self.regions = proj.rfi.regions # a list of region objects
         self.regionMapping = proj.regionMapping # mapping between original regions and decomposed regions
@@ -513,4 +512,4 @@ class Automaton:
             print "Now in state %s (z = %s)" % (self.current_state.name, self.current_state.rank)
 
 
-
+         

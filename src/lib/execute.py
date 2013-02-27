@@ -137,7 +137,7 @@ def main(argv):
     aut_file = None
     spec_file = None
     show_gui = True
-    
+
     try:
         opts, args = getopt.getopt(argv[1:], "hna:s:", ["help", "no-gui", "aut-file=", "spec-file="])
     except getopt.GetoptError, err:
@@ -168,7 +168,7 @@ def main(argv):
 
     print "\n[ LTLMOP HYBRID CONTROLLER EXECUTION MODULE ]\n"
     print "Hello. Let's do this!\n"
-    
+
     ############################
     # Load configuration files #
     ############################
