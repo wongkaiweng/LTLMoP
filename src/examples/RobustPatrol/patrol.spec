@@ -11,7 +11,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Untitled configuration
+basicSim
 
 Customs: # List of custom propositions
 BlockedAmem
