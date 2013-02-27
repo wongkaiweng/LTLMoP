@@ -311,7 +311,8 @@ def main(argv):
     compiler.proj = proj #conservative
     #compiler.proj = copy.deepcopy(proj) #conservative
     traceback, LTL2LineNo = compiler._writeLTLFile()
-    #FSA.LTL2LineNo = LTL2LineNo
+    path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+    LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
     ################################# 
 
     while not show_gui or guiListenThread.isAlive():
@@ -322,11 +323,10 @@ def main(argv):
         else:    
             tic = timer_func()
     
-            r = FSA.runIteration()
-            if r == "no state check":
-                path =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function                
-                check = LTLcheck.LTL_Check(path,FSA.current_state,FSA.sensor_state, LTL2LineNo)
-                FSA.violation_check = True
+            FSA.runIteration()
+              
+            # Check for environment violation
+            LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
                 
             toc = timer_func()
     

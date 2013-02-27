@@ -21,25 +21,14 @@ class LTL_Check:
     """
     Check which ltl statement was violated.
     """
-    def __init__(self,path,cur_state,sen_state, LTL2LineNo):
+    def __init__(self,path, LTL2LineNo):
         """
         Obtain .ltl of the current specification and trim the string to include only LTL.
         """
         self.path_ltl      = path
-        self.current_state = cur_state
-        self.sensor_state  = sen_state
-        self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number
-
-        if debug_proposition_values == True:
-            print "self.current_state.outputs"
-            for key,value in self.current_state.outputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.current_state.inputs"
-            for key,value in self.current_state.inputs.iteritems():
-                print str(key) + ": " + str(value)
-            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
-            for key,value in self.sensor_state.iteritems():
-                print str(key) + ": " + str(value)        
+        self.current_state = None
+        self.sensor_state  = None
+        self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number       
         
         # obtain ltl from the .ltl file
         with open(self.path_ltl, 'r') as f:
@@ -52,21 +41,58 @@ class LTL_Check:
             self.read_spec = self.read_spec_file(f)
         f.closed
         
+        self.ltlTree_to_lineNo = {}
+        # correspond line numbers in spec to the structure English and the tree converted 
+        for key,value in self.LTL2LineNo.iteritems():
+            removed_tab = key.replace("\t", "")
+            removed_nextline = removed_tab.replace("\n", "")
+            removed_space = removed_nextline.replace(" ", "")
+            tree = parseFormulaTest.parseLTL(removed_space[:-1])
+            # value given is line number. when retrieving structured English, do self.read_spec[value-1]
+            self.ltlTree_to_lineNo[str(tree)] = value   
+            
+        
         # trim read_data so that it only includes ltl but not tabs and nextlines
         read_ltl  = read_ltl.replace("\t", "")
         read_ltl  = read_ltl.replace("\n", "")
         read_ltl  = read_ltl.replace(" ", "")
         read_ltl  = read_ltl.replace("&[]<>(TRUE)", "")    
      
-        tree = parseFormulaTest.parseLTL(read_ltl)
+        self.ltl_tree = parseFormulaTest.parseLTL(read_ltl)
         if debug_tree_terminal == True: 
             print  >>sys.__stdout__, "Here's the ltl of the environment assumptions from spec:"
-            print >>sys.__stdout__,tree
-            self.print_tree(tree,parseFormulaTest.p.terminals) 
+            print >>sys.__stdout__,self.ltl_tree
+            self.print_tree(self.ltl_tree,parseFormulaTest.p.terminals) 
 
-        value, negate, next = self.evaluate_subtree(tree, parseFormulaTest.p.terminals)
+        self.violated_spec_line_no = []
+            
+    def checkViolation(self,cur_state,sensor_state):
+        """
+        this function call the subtree function to check for violation
+        """
+        self.current_state = cur_state
+        self.sensor_state  = sensor_state
+        
+        if debug_proposition_values == True:
+            print "self.current_state.outputs"
+            for key,value in self.current_state.outputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.current_state.inputs"
+            for key,value in self.current_state.inputs.iteritems():
+                print str(key) + ": " + str(value)
+            print "self.sensor_state"              ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
+            for key,value in self.sensor_state.iteritems():
+                print str(key) + ": " + str(value) 
+           
+        # check for env violations     
+        value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals)
 
-
+        # Environment Violations are removed
+        if value == True:
+            self.violated_spec_line_no = []
+            print "ViolationSolved:"
+        
+        
     def read_LTL_file(self,f):
         """
         Read ltl file from LTLMoP and store the ltl in a string.
@@ -265,23 +291,15 @@ class LTL_Check:
                 if level == 0:
                     
                     if value == False:
-                        #self.appendLog("Hehehehehehe\n", "BLUE")
-                        print "Violation:#######################################"
-                        print "Violation:This environement safety assumption is violated."                       
-                        #print parseFormulaTest.parseLTLTree(x)[0]
-                        
-                        # find the line in spec 
-                        for key,value in self.LTL2LineNo.iteritems():
-                            removed_tab = key.replace("\t", "")
-                            removed_nextline = removed_tab.replace("\n", "")
-                            removed_space = removed_nextline.replace(" ", "")
-                            tree = parseFormulaTest.parseLTL(removed_space[:-1])
-                            if tree == x:
-                                print"Violation:line " + str(value) + ": " + self.read_spec[value-1] 
-                                print "Violation:#######################################"
-                        
-                        #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
-                        #self.print_tree(tree,parseFormulaTest.p.terminals)
+                        treeNo = self.ltlTree_to_lineNo[str(x)]
+                        if treeNo not in self.violated_spec_line_no:
+                            print "Violation:#######################################"
+                            print "Violation:This environement safety assumption is violated."                       
+                            
+                            print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
+                            self.violated_spec_line_no.append(treeNo)
+                            #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
+                            #self.print_tree(tree,parseFormulaTest.p.terminals)
 
                     else:
                         if debug_true_ltl == True:                        

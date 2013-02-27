@@ -456,7 +456,8 @@ class Automaton:
             ###### ENV VIOLATION CHECK ######
             if self.violation_check == False:
                 print "(FSA) ERROR: Could not find a suitable state to transition to!"
-                return "no state check"
+            self.violation_check = True
+            
             return
 
         else:

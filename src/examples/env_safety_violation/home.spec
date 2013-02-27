@@ -11,7 +11,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Untitled configuration
+only BasicSim
 
 Customs: # List of custom propositions
 
@@ -34,7 +34,7 @@ Spec: # Specification in structured English
 go to kitchen
 go to bedroom
 
-do cooking  if and only if you are in kitchen
-do sleeping if and only if you are in bedroom
+do cooking  if and only if you were in kitchen
+do sleeping if and only if you were in bedroom
 #if you are in bedroom then do sleeping
 

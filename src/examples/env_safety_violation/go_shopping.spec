@@ -11,7 +11,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Untitled configuration
+only BasicSim
 
 Customs: # List of custom propositions
 
