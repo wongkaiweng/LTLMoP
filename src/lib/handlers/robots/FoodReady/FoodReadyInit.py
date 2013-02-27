@@ -12,6 +12,7 @@ from socket import *
 from struct import pack, unpack
 from threading import Thread, Lock, Event
 from numpy import *
+import sys
 
 class initHandler:
 
@@ -137,15 +138,22 @@ class _RobotListener(Thread):
         Save the data to the appropriate category for possible extraction.
         """
         if data:
+
+            data= data[0:6]
+            #print >>sys.__stdout__, data
             if (data.find("rice"))!= -1:
                 if data.split("rice:")[1] == "T":
                     self.rice = True
+                    #print >>sys.__stdout__, "true"
                 else:
                     self.rice = False
+                    #print >>sys.__stdout__, "False"
             elif (data.find("sake"))!= -1:
                 if data.split("sake:")[1] == "T":
                     self.sake = True
+                    #print >>sys.__stdout__, "true"
                 else:
                     self.sake = False
+                    #print >>sys.__stdout__, "False"
         else:
             print "No data received."

@@ -13,7 +13,7 @@ convexify: True
 fastslow: False
 
 CurrentConfigName:
-Nao
+BasicSim with sensor
 
 Customs: # List of custom propositions
 OrderReceived
@@ -35,10 +35,10 @@ kitchen_rice = p2
 others = p5, p6, p7, p8, p9, p10, p11
 
 Spec: # Specification in structured English
-Robot starts in kitchen_rice
+#Robot starts in kitchen_rice
 
 #Assumptions of the environment
-Infinitely often foodReady
+#Infinitely often foodReady
 
 ## Food Ordering ##
 OrderReceived is set on order_rice and reset on deliver
