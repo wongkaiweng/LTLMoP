@@ -43,15 +43,15 @@ go to r2
 go to r5
 go to r7
 
-Robot starts with false
+# Robot starts with false
 #Do BlockedAmem if you are sensing BlockedA
 #Do BlockedAmem if you were activating BlockedAmem
 
-BlockedAmem is set on BlockedA and reset on false
+# BlockedAmem is set on BlockedA and reset on false
 
 always not BlockedA or not BlockedB
-# do BlockedA unless you were sensing not BlockedA
-do BlockedA unless you sensed not BlockedAmem
+do BlockedA unless you were sensing not BlockedA
+# do BlockedA unless you sensed not BlockedAmem
 always not r3 or not BlockedA
 always not r6 or not BlockedB
 
