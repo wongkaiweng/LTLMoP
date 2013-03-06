@@ -6,6 +6,7 @@ import project
 from regions import *
 import itertools
 import decomposition
+import numpy
 
 Polygon.setTolerance(0.1)
 
@@ -128,7 +129,8 @@ class parseLP:
         # set up a iterator of lists of boolean value (0/1) for finding overlapping regions
         # each item is corrsponding to one possible overlapping
         # each boolean value is corresponding to one region
-        boolList = itertools.product([0,1],repeat=len(oldRegionNames))
+        #boolList = itertools.product([0,1],repeat=len(oldRegionNames))
+        boolList = numpy.eye(len(oldRegionNames))
         
         self.count = 1 # for naming the portion
         # break the overlapping regions
