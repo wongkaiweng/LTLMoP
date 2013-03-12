@@ -1,0 +1,124 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+table
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "table", 
+        "color": [
+            97, 
+            49, 
+            13
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                218.0, 
+                1.0
+            ], 
+            [
+                218.0, 
+                86.0
+            ], 
+            [
+                0.0, 
+                92.0
+            ]
+        ], 
+        "position": [
+            327.0, 
+            379.0
+        ], 
+        "type": "poly", 
+        "size": [
+            218.0, 
+            92.0
+        ]
+    }, 
+    {
+        "name": "c2", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "position": [
+            545.0, 
+            380.0
+        ], 
+        "type": "rect", 
+        "size": [
+            91.0, 
+            85.0
+        ]
+    }, 
+    {
+        "name": "c1", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "position": [
+            234.0, 
+            379.0
+        ], 
+        "type": "rect", 
+        "size": [
+            93.0, 
+            92.0
+        ]
+    }, 
+    {
+        "name": "kitchen", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "position": [
+            564.0, 
+            173.0
+        ], 
+        "type": "rect", 
+        "size": [
+            79.0, 
+            79.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "position": [
+            166.0, 
+            120.0
+        ], 
+        "type": "rect", 
+        "size": [
+            532.0, 
+            429.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+table	c2	545.0	465.0	545.0	380.0
+table	c1	327.0	379.0	327.0	471.0
+

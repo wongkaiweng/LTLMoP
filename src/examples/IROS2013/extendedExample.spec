@@ -26,37 +26,29 @@ Door2Closed, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-classroom = p16
-h8 = p6
-h9 = p5
-r1 = p4
-r2 = p3
-h2 = p12
-h3 = p11
-h1 = p14
-h6 = p8
-h7 = p7
-h4 = p10
-h5 = p9
-h10 = p13
-Door1 = p19
-Door2 = p18
-others = p1, p2
-Goal = p17
+Classroom = p9
+Lbottom = p14, p15
+Rbottom = p12, p13
+Ltop = p18, p19
+others = 
+Rtop = p10, p11
+Door1 = p8
+Playground = p16, p17
+Door2 = p7
 
 Spec: # Specification in structured English
-Robot starts in classroom
-go to Goal
+Robot starts in Classroom
+go to Playground
 
 always not Door1Closed or not Door2Closed
-if you were in (h3 or h4 or r2) and Door1Closed then do Door1Closed
-if you were in (h3 or h4 or r2) and Door2Closed then do Door2Closed
-if you were in (h2 or h5 or r1) and Door1Closed then do Door1Closed
-if you were in (h2 or h5 or r1) and Door2Closed then do Door2Closed
-if you were in (h3 or h4 or r2) and not Door1Closed then do not Door1Closed
-if you were in (h3 or h4 or r2) and not Door2Closed then do not Door2Closed
-if you were in (h2 or h5 or r1) and not Door1Closed then do not Door1Closed
-if you were in (h2 or h5 or r1) and not Door2Closed then do not Door2Closed
+if you were in Ltop and Door1Closed then do Door1Closed
+if you were in Ltop and Door2Closed then do Door2Closed
+if you were in Rtop and Door1Closed then do Door1Closed
+if you were in Rtop and Door2Closed then do Door2Closed
+if you were in Ltop and not Door1Closed then do not Door1Closed
+if you were in Ltop and not Door2Closed then do not Door2Closed
+if you were in Rtop and not Door1Closed then do not Door1Closed
+if you were in Rtop and not Door2Closed then do not Door2Closed
 
 
 if Door1Closed then do not Door1

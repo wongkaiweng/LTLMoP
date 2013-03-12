@@ -90,7 +90,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "kitchen_rice", 
+        "name": "kitchen", 
         "color": [
             255, 
             0, 
@@ -192,5 +192,5 @@ Regions: # Stored as JSON string
 Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
 kitchen_sake	boundary	540.0	585.0	689.0	585.0	689.0	456.0	689.0	585.0
 c1	Table	130.0	183.0	286.0	183.0
-kitchen_rice	boundary	535.0	68.0	689.0	68.0	689.0	217.0	689.0	68.0
+kitchen	boundary	535.0	68.0	689.0	68.0	689.0	217.0	689.0	68.0
 
