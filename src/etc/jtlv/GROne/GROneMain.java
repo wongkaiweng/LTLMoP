@@ -75,7 +75,7 @@ public class GROneMain {
 		long time = System.currentTimeMillis();		
 	
 		GROneGame g;
-		BDD all_init, counter_exmple;
+		BDD all_init, counter_exmple, all_possible_init;
 		
 		//If the option is enabled, first try fastslow	
 		if (fs) {
@@ -85,6 +85,7 @@ public class GROneMain {
 			
 			//Check that every initial system state is winning for every initial environment state
 			 all_init = g.getSysPlayer().initial().and(g.getEnvPlayer().initial());
+       all_possible_init = g.getSysPlayer().initial().and(g.sysWinningStates());
 			 counter_exmple = g.envWinningStates().and(all_init);
 			 if (counter_exmple.isZero()) {
 				 
@@ -185,7 +186,8 @@ public class GROneMain {
 		System.out.println("-----------------------------------------");
 		PrintStream orig_out = System.out;
 		System.setOut(new PrintStream(new File(out_filename))); // writing the output to a file
-		g.printWinningStrategy(all_init);
+    all_possible_init = g.getSysPlayer().initial().and(g.sysWinningStates());
+		g.printWinningStrategy(all_possible_init);
 		System.setOut(orig_out); // restore STDOUT
 		System.out.print("-----------------------------------------\n");
 		long t2 = (System.currentTimeMillis() - time);
