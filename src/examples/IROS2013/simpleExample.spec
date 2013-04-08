@@ -36,8 +36,8 @@ Spec: # Specification in structured English
 Robot starts in room1
 
 go to room5
-always not closedDoor
-
+#always not closedDoor
+if you were sensing closedDoor then do not closedDoor
 #WILL STOP WITH THIS STATEMENTS
 if you are sensing closedDoor then do not door
 #(door closed.. don't forcify env), will go through
