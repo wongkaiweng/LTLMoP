@@ -1,0 +1,125 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                140.0, 
+                0.0
+            ], 
+            [
+                140.0, 
+                133.0
+            ], 
+            [
+                140.0, 
+                262.0
+            ], 
+            [
+                140.0, 
+                383.0
+            ], 
+            [
+                0.0, 
+                383.0
+            ], 
+            [
+                0.0, 
+                262.0
+            ], 
+            [
+                0.0, 
+                133.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            217.0, 
+            93.0
+        ], 
+        "type": "poly", 
+        "size": [
+            140.0, 
+            383.0
+        ]
+    }, 
+    {
+        "name": "r3", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "position": [
+            217.0, 
+            355.0
+        ], 
+        "type": "rect", 
+        "size": [
+            140.0, 
+            121.0
+        ]
+    }, 
+    {
+        "name": "r2", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            217.0, 
+            226.0
+        ], 
+        "type": "rect", 
+        "size": [
+            140.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "r1", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "position": [
+            217.0, 
+            93.0
+        ], 
+        "type": "rect", 
+        "size": [
+            140.0, 
+            133.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	r3	217.0	355.0	217.0	476.0	357.0	476.0	217.0	476.0	357.0	476.0	357.0	355.0
+boundary	r2	357.0	226.0	357.0	355.0	217.0	226.0	217.0	355.0
+boundary	r1	217.0	93.0	357.0	93.0	217.0	226.0	217.0	93.0	357.0	226.0	357.0	93.0
+r3	r2	217.0	355.0	357.0	355.0
+r2	r1	217.0	226.0	357.0	226.0
+
