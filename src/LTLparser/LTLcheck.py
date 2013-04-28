@@ -50,7 +50,7 @@ class LTL_Check:
             tree = parseFormulaTest.parseLTL(removed_space[:-1])
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
-            
+       
         
         # trim read_data so that it only includes ltl but not tabs and nextlines
         read_ltl  = read_ltl.replace("\t", "")
@@ -163,6 +163,8 @@ class LTL_Check:
         implication  = None
         negate       = False
         to_negate    = False
+        #print >>sys.__stdout__,terminals
+        #print >>sys.__stdout__,tree[0]
         if not tree[0] in terminals:  
             
             # check for implication (->)    
@@ -190,6 +192,12 @@ class LTL_Check:
             elif tree[0] == 'NextOperator':
                 next = True
                 
+            elif tree[0] == 'TRUE':
+                return True, negate, False
+            
+            elif tree[0] == 'FALSE':
+                return False, negate, False
+                
             # for system propositions
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
@@ -210,6 +218,7 @@ class LTL_Check:
                 else:
                     return int(self.current_state.inputs[key]), negate,  next
             
+ 
             next_in_loop   = next
             node_count = 1
             for x in tree[1:]:
@@ -224,7 +233,10 @@ class LTL_Check:
                         if  debug_tree_terminal == True:
                             print "Skipped this line because this is a liveness assumption."
                         continue 
+                        
+
                 value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
+
                 
                 # for negating value returned in the ltl
                 if negate_in_loop == True:
@@ -289,21 +301,30 @@ class LTL_Check:
                     #print "there's actually some other cases"
                     #print x
                 
-                
+                #print >>sys.__stdout__,'level:'+ str(level) + ' value:' + str(value)
                 if level == 0:
                     
-                    if value == False:
-                        treeNo = self.ltlTree_to_lineNo[str(x)]
-                        if treeNo not in self.violated_spec_line_no:
-                       
-                        
-                            print "Violation:#######################################"
-                            print "Violation:This environement safety assumption is violated."                       
+                    if value == False: 
+                        try:
+                            treeNo = self.ltlTree_to_lineNo[str(x)]
                             
-                            print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
-                            self.violated_spec_line_no.append(treeNo)
-                            #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
-                            #self.print_tree(tree,parseFormulaTest.p.terminals)
+                            if (treeNo not in self.violated_spec_line_no) and treeNo > 0:
+                                print "Violation:#######################################"
+                                print "Violation:This environement safety assumption is violated."                       
+                                
+                                print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
+                                self.violated_spec_line_no.append(treeNo)
+                                #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
+                                #self.print_tree(tree,parseFormulaTest.p.terminals)
+                        except:     
+                            if 0 not in self.violated_spec_line_no:                  
+                                print "Violation:RV#######################################"
+                                print "Violation: " + str(parseFormulaTest.parseLTLTree(x)[0]) 
+                                treeNo = 0
+                                self.violated_spec_line_no.append(treeNo)
+
+
+                        
 
                     else:
                         if debug_true_ltl == True:                        

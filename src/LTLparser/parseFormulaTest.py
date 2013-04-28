@@ -37,7 +37,8 @@ def tokenize(str):
         if str[0].isspace() or (str[0]=='\n'):
             str = str[1:]
             continue
-
+        
+        """
         if str.startswith("FALSE"):
             str = str[5:]
             res.append(("FALSE",))
@@ -47,7 +48,8 @@ def tokenize(str):
             str = str[4:]
             res.append(("TRUE",))
             continue
-
+        """
+        
         m = match('[a-zA-Z0-9_.]+', str)
         if m:
             # Special case: ["X","F","U","W","0","1"]
@@ -266,6 +268,15 @@ def parseLTLTree(tree):
         # for environement propositions
         elif "e." in tree[0]:
             final_txt += tree[0]
+         
+        # ADDED by Catherine for interactive RV ###  
+        elif "TRUE" in tree[0]:
+            final_txt += tree[0]
+            
+        elif "FALSE" in tree[0]:
+            final_txt += tree[0]
+        
+        ##############################################
 
         node_count = 1
         for x in tree[1:]:

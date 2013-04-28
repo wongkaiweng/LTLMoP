@@ -19,7 +19,7 @@ Disjunction: Conjunction | Disjunction DisjunctionOperator Conjunction;
 Conjunction: BinaryTemporalFormula | Conjunction ConjunctionOperator BinaryTemporalFormula;
 BinaryTemporalFormula: UnaryFormula | BinaryTemporalFormula BinaryTemporalOperator UnaryFormula;
 UnaryFormula: AtomicFormula | UnaryTemporalOperator UnaryFormula;
-AtomicFormula: "FALSE" | "TRUE" | Brackets | Assignment;
+AtomicFormula:  Brackets | Assignment;
 Brackets: '(' Biimplication ')' ;
 
 BinaryTemporalOperator: UntilOperator | WeakUntilOperator;
