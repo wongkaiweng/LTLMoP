@@ -86,6 +86,8 @@ def writeSpec(text, sensorList, regionList, robotPropList):
     currBitEnc = bitEncode['current']
     nextBitEnc = bitEncode['next']
 
+  
+
     # Regular expressions to help us out
     EnvInitRE = re.compile('^(environment|env) starts with',re.IGNORECASE)
     SysInitRE = re.compile('^(robot |you |)starts?',re.IGNORECASE)

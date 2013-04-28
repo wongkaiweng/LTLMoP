@@ -105,6 +105,11 @@ class Automaton:
         self.current_outputs = {}
         self.arrived = False
 
+        ###### ENV VIOLATION CHECK ######
+        self.LTL2LineNo      = {}
+        self.violation_check = False
+        #################################
+
     def stateWithName(self, name):
         """
         Find the state with the given name
@@ -134,8 +139,7 @@ class Automaton:
             print "Transitions: "
             for trans in state.transitions:
                 print trans.name
-                
-                
+
     def updateOutputs(self, state=None):
         """
         Update the values of current outputs in our execution environment to reflect the output
@@ -494,9 +498,9 @@ class Automaton:
 
         # Take a snapshot of our current sensor readings
         # This is so we don't risk the readings changing in the middle of our state search
-        sensor_state = {}
+        self.sensor_state = {}
         for sensor in self.sensors:
-            sensor_state[sensor] = eval(self.sensor_handler[sensor], {'self':self,'initial':False})
+            self.sensor_state[sensor] = eval(self.sensor_handler[sensor], {'self':self,'initial':False})
 
         for state in state_list:
             okay = True
@@ -521,7 +525,7 @@ class Automaton:
 
             # Now check whether our current sensor values match those of the state
             for key, value in state.inputs.iteritems():
-                if int(sensor_state[key]) != int(value):
+                if int(self.sensor_state[key]) != int(value):
                     okay = False
                     break
 
@@ -582,9 +586,17 @@ class Automaton:
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            print "(FSA) ERROR: Could not find a suitable state to transition to!"
+
+            ###### ENV VIOLATION CHECK ######
+            if self.violation_check == False:
+                print "(FSA) ERROR: Could not find a suitable state to transition to!"
+            self.violation_check = True
+            
             return
 
+        else:
+            self.violation_check = False
+            #################################
 
         # See if we're beginning a new transition
         if next_states != self.last_next_states:

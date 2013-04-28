@@ -31,6 +31,16 @@ import traceback
 from resynthesis import ExecutorResynthesisExtensions
 import globalConfig, logging
 
+###### ENV VIOLATION CHECK ######
+import copy
+import specCompiler
+
+lib_path = os.path.abspath('../src/LTLparser')
+if lib_path not in sys.path:
+    sys.path.append(lib_path)
+import LTLcheck
+
+#################################
 
 ####################
 # HELPER FUNCTIONS #
@@ -289,7 +299,11 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
 
             tic = self.timer_func()
             self.aut.runIteration()
-            toc = self.timer_func()
+
+			# Check for environment violation
+            LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
+            
+			toc = self.timer_func()
 
             #self.checkForInternalFlags()
 
@@ -330,6 +344,11 @@ class RedirectText:
     def flush(self):
         pass
 
+    # Figure out our initially true outputs
+    init_outputs = []
+    for prop in proj.currentConfig.initial_truths:
+        if prop not in proj.enabled_sensors:
+            init_outputs.append(prop)
 
 ####################################################
 # Main function, run when called from command-line #
@@ -358,11 +377,21 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
     # Register functions with the XML-RPC server
     xmlrpc_server.register_instance(e)
 
-    # Kick off the XML-RPC server thread    
+	# Kick off the XML-RPC server thread    
     XMLRPCServerThread = threading.Thread(target=xmlrpc_server.serve_forever)
     XMLRPCServerThread.daemon = True
     XMLRPCServerThread.start()
     logging.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
+        
+    ###### ENV VIOLATION CHECK ######
+    compiler = specCompiler.SpecCompiler(spec_file)
+    compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+    compiler.proj = proj #conservative
+    #compiler.proj = copy.deepcopy(proj) #conservative
+    traceback, LTL2LineNo = compiler._writeLTLFile()
+    path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+    LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
+    ################################# 
 
     # Start the GUI if necessary
     if show_gui:
