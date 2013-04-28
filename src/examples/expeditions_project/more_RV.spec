@@ -43,7 +43,7 @@ c1 = p5
 kitchen_rice = p3
 
 Spec: # Specification in structured English
-Robot starts in kitchen_sake
+#Robot starts in kitchen_sake
 
 ###### ENVIRONMENT ASSUMPTIONS ######
 # Environment Liveness Assumptions
