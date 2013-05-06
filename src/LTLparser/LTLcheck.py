@@ -65,6 +65,8 @@ class LTL_Check:
             self.print_tree(self.ltl_tree,parseFormulaTest.p.terminals) 
 
         self.violated_spec_line_no = []
+        
+        self.modify_stage = 1    # to be used in modify_LTL_file
             
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -93,6 +95,93 @@ class LTL_Check:
         if value == True:
             self.violated_spec_line_no = []
             print "ViolationSolved:"
+        
+        # return whether the environment assumptions are being violated
+        return value
+        
+    def modify_LTL_file(self):
+        """
+        Modify ltl file from LTLMoP for runtime verification "learning".
+        """
+        
+        
+        with open(self.path_ltl, 'r+') as f:
+            ltl_file = f.readlines()
+            f.seek(0)
+            f.truncate()            
+            read_ltl = ""    # for remaking the parse tree of ltl spec
+            add_assumption = True
+            
+            #print >>sys.__stdout__, ltl_file 
+            for line in ltl_file:
+                
+                
+                ########### MODIFICATION STAGE ###############
+                # 1 : to add only current inputs
+                # 2 : to add current inputs and next inputs
+                # 3 : to add current inputs, next inputs, and current outputs
+                # This is reset when liveness assumptions are added
+                ##############################################
+                if (line.find("[](FALSE") != -1): 
+                    line = line.replace(") & \n","")
+                    add_ltl = " | ("
+                    sensor_state_len_count = 1 
+                    if self.modify_stage == 1:
+                        sensor_state_len = len(self.sensor_state)
+                        
+                        for key,value in self.sensor_state.iteritems():
+                            if not sensor_state_len_count == 1 and sensor_state_len_count < sensor_state_len:
+                                add_ltl += " & "
+                            if value == False:
+                                add_ltl += "!"
+                            add_ltl += "e." + key 
+                            
+                            #print key, value
+                        #print add_ltl
+                        #return int(self.current_state.inputs[key]
+                    elif self.modify_stage == 2:
+                        pass
+                    elif self.modify_stage == 3:
+                        pass
+                    else:
+                        print "This is impossible. There must be error in the verification learning"
+                    line += add_ltl
+                    line += ")) & \n"   
+                
+                # find "always TRUE and replace with always FALSE to create most restrictive safety assumptions"
+                if (line.find("[](TRUE) &") != -1):
+                    line = line.replace("[](TRUE) &", "[](FALSE) &")    
+                #print >>sys.__stdout__, line   
+                
+                f.write(line)
+                
+                # remaking the parse tree here
+                if add_assumption:
+                    if (not line[0] in ['-','L']) and len(line) > 4 :                    
+                        # len(line) > 4 for removing ( and );
+                        read_ltl += line            
+                    elif (line.find("LTLSPEC -- Guarantees") != -1):
+                        add_assumption = False
+                
+                
+        f.closed
+        
+        read_ltl  = read_ltl.replace("\t", "")
+        read_ltl  = read_ltl.replace("\n", "")
+        read_ltl  = read_ltl.replace(" ", "")
+        read_ltl  = read_ltl.replace("&[]<>(TRUE)", "")    
+     
+        self.ltl_tree = parseFormulaTest.parseLTL(read_ltl)
+        
+        # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
+        try:
+            remove_index = self.violated_spec_line_no.index(0)
+            del self.violated_spec_line_no[remove_index]
+        except:
+            print "no line 0 is found now\n"
+            
+        #time.sleep(5)
+        
         
         
     def read_LTL_file(self,f):

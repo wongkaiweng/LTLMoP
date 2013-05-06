@@ -163,6 +163,7 @@ class motionControlHandler:
     def gotoRegion(self, current_reg, next_reg, last=False):
         """
         If ``last`` is True, we will move to the center of the destination region.
+
         Returns ``True`` if we've reached the destination region.
         """
 

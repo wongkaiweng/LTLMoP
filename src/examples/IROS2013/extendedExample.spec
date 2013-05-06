@@ -7,7 +7,7 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 
 CompileOptions:
-convexify: True
+convexify: False
 fastslow: False
 
 CurrentConfigName:
@@ -26,37 +26,29 @@ Door2Closed, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-h8 = p5
-h9 = p4
-Goal = p16
-r3 = p2
-h2 = p11
-h3 = p10
-h1 = p13
-h6 = p7
-h7 = p6
-h4 = p9
-h5 = p8
-h10 = p12
-Door1 = p18
-Door2 = p17
-Start = p15
-others = p1
-r1 = p3
+Classroom = p9
+Lbottom = p6
+Rbottom = p3
+Ltop = p5
+others = 
+Rtop = p2
+Door1 = p8
+Playground = p4
+Door2 = p7
 
 Spec: # Specification in structured English
-Robot starts in Start
-go to Goal
+Robot starts in Classroom
+go to Playground
 
-always not Door1Closed or not Door2Closed
-if you were in h3 or h4 and Door1Closed then do Door1Closed
-if you were in h3 or h4 and Door2Closed then do Door2Closed
-if you were in h2 or h5 and Door1Closed then do Door1Closed
-if you were in h2 or h5 and Door2Closed then do Door2Closed
-if you were in h3 or h4 and not Door1Closed then do not Door1Closed
-if you were in h3 or h4 and not Door2Closed then do not Door2Closed
-if you were in h2 or h5 and not Door1Closed then do not Door1Closed
-if you were in h2 or h5 and not Door2Closed then do not Door2Closed
+#always not Door1Closed or not Door2Closed
+#if you were in Ltop and Door1Closed then do Door1Closed
+#if you were in Ltop and Door2Closed then do Door2Closed
+#if you were in Rtop and Door1Closed then do Door1Closed
+#if you were in Rtop and Door2Closed then do Door2Closed
+#if you were in Ltop and not Door1Closed then do not Door1Closed
+#if you were in Ltop and not Door2Closed then do not Door2Closed
+#if you were in Rtop and not Door1Closed then do not Door1Closed
+#if you were in Rtop and not Door2Closed then do not Door2Closed
 
 
 if Door1Closed then do not Door1
