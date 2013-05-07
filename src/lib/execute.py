@@ -300,8 +300,59 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             tic = self.timer_func()
             self.aut.runIteration()
 
-			# Check for environment violation
-            LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
+			###### ENV VIOLATION CHECK ######           
+            
+            # Check for environment violation
+            env_assumption_hold = LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
+            
+            
+            # temporarily added to account for [](FALSE)
+            #LTLViolationCheck.modify_LTL_file()
+            
+            # Modify the ltl file based on the enviornment change
+            if env_assumption_hold == False:
+                LTLViolationCheck.modify_LTL_file()
+                realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                
+                #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
+                sys.stdout = redir
+                
+                print "realizable: " + str(realizable)
+                #print realizable , LTLViolationCheck.modify_stage
+                if not realizable:
+                    if LTLViolationCheck.modify_stage < 3:
+                        LTLViolationCheck.modify_stage += 1 
+                    else:
+                        # still missing removing liveness guarantees
+                        print "please put in some environment liveness assumptions"
+                else:
+                    #######################
+                    # Load automaton file #
+                    #######################
+                    print "Loading automaton..."
+                    #FSA = fsa.Automaton(proj)
+                    runFSA = False
+                    success = FSA.loadFile(aut_file, proj.enabled_sensors, proj.enabled_actuators, proj.all_customs)
+                    region_no = 0
+                    for key, value in LTLViolationCheck.current_state.outputs.iteritems():
+                        if key.find("bit") != -1:
+                            # find out the bit number and make it power of 2
+                            region_no += pow(2,int(key.split("bit")[1])) * value
+                        print key, value
+                        
+                    print region_no
+                    init_region = region_no
+                    
+                    init_outputs = [] #TODO: NEED to figure out the format later
+                    init_state = FSA.chooseInitialState(init_region, init_outputs)
+                    print "init_region: " + str(init_region)   # by Catherine
+                    print "init_outputs: " + str(init_outputs)  # by Catherine
+                    if not success: return
+                    runFSA = True
+                    
+                #time.sleep(10)
+            
+            #################################
             
 			toc = self.timer_func()
 

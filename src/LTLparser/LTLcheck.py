@@ -67,6 +67,8 @@ class LTL_Check:
         self.violated_spec_line_no = []
         
         self.modify_stage = 1    # to be used in modify_LTL_file
+        self.last_added_ltl      = ""
+        self.liveness_guarantees = ""
             
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -98,13 +100,46 @@ class LTL_Check:
         
         # return whether the environment assumptions are being violated
         return value
+    
+    def remove_liveness_guarantees(self):
+        """
+        Modify ltl file from LTLMoP to remove system liveness guarantees.
+        """
+             
+        with open(self.path_ltl, 'r+') as f:
+            ltl_file = f.readlines()
+            f.seek(0)
+            f.truncate()            
+            read_ltl = ""    # for remaking the parse tree of ltl spec
+            env_ltl = True
+            
+            for line in ltl_file:                            
+                if (line.find("LTLSPEC -- Guarantees") != -1):
+                    env_ltl = False
+                
+                if not (env_ltl == False and (line.find("[]<>") != -1)):
+                    f.write(line)
+                else:
+                    self.liveness_guarantees += line
+        print "liveness_guarantees: " + str(self.liveness_guarantees)
+        f.closed
+        
+    def append_liveness_guarantees(self):
+        """
+        Modify ltl file from LTLMoP to append system liveness guarantees removed .
+        """
+             
+        with open(self.path_ltl, 'r+') as f:
+            f.write(self.liveness_guarantees)
+        self.liveness_guarantees = ""
+        f.closed
+    
         
     def modify_LTL_file(self):
         """
         Modify ltl file from LTLMoP for runtime verification "learning".
         """
-        
-        
+             
         with open(self.path_ltl, 'r+') as f:
             ltl_file = f.readlines()
             f.seek(0)
@@ -113,8 +148,7 @@ class LTL_Check:
             add_assumption = True
             
             #print >>sys.__stdout__, ltl_file 
-            for line in ltl_file:
-                
+            for line in ltl_file:              
                 
                 ########### MODIFICATION STAGE ###############
                 # 1 : to add only current inputs
@@ -124,29 +158,60 @@ class LTL_Check:
                 ##############################################
                 if (line.find("[](FALSE") != -1): 
                     line = line.replace(") & \n","")
-                    add_ltl = " | ("
-                    sensor_state_len_count = 1 
-                    if self.modify_stage == 1:
-                        sensor_state_len = len(self.sensor_state)
+                    print >>sys.__stdout__, "last_added_ltl:" + str(self.last_added_ltl)
+                    print >>sys.__stdout__,"before replace:" + str(line)
+                    if len(self.last_added_ltl) > 0: 
+                        line = line.replace(self.last_added_ltl+")", "")
+                    print >>sys.__stdout__,"after replace: " + str(line) 
+                    print >>sys.__stdout__,"modify_stage:" + str(self.modify_stage)
+                    
+                    add_ltl = "\t | ("
+                    sensor_state_len_count = 0
+                    
+                    if self.modify_stage >= 1:
+                        sensor_state_len = len(self.current_state.inputs)
                         
-                        for key,value in self.sensor_state.iteritems():
-                            if not sensor_state_len_count == 1 and sensor_state_len_count < sensor_state_len:
+                        for key,value in self.current_state.inputs.iteritems():
+                            if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
                                 add_ltl += " & "
-                            if value == False:
+                            if int(value) == False:
                                 add_ltl += "!"
                             add_ltl += "e." + key 
+                            sensor_state_len_count += 1
                             
                             #print key, value
                         #print add_ltl
                         #return int(self.current_state.inputs[key]
-                    elif self.modify_stage == 2:
-                        pass
-                    elif self.modify_stage == 3:
-                        pass
-                    else:
-                        print "This is impossible. There must be error in the verification learning"
+                        next_sensor_state_len_count = 0 
+                        if self.modify_stage >= 2:
+                            next_sensor_state_len = len(self.sensor_state)
+                        
+                            for key,value in self.sensor_state.iteritems():
+                                if next_sensor_state_len_count == 0 or next_sensor_state_len_count < next_sensor_state_len:
+                                    add_ltl += " & "
+                                if int(value) == False:
+                                    add_ltl += "!"
+                                add_ltl += "next(e." + key + ")"
+                                next_sensor_state_len_count += 1
+                            
+                            output_state_len_count = 0    
+                            if self.modify_stage <= 3:
+                                output_state_len = len(self.current_state.outputs)
+                                print "output_state_len:" + str(output_state_len)
+                                for key,value in self.current_state.outputs.iteritems():
+                                    if output_state_len_count == 0 or output_state_len_count < output_state_len:
+                                        add_ltl += " & "
+                                    if int(value) == False:
+                                        add_ltl += "!"
+                                    add_ltl += "s." + key
+                                    output_state_len_count += 1
+                                    print output_state_len_count    
+                                
+                                if self.modify_stage > 3:
+                                    print "This is impossible. There must be error in the verification learning"
+                    self.last_added_ltl = add_ltl 
                     line += add_ltl
-                    line += ")) & \n"   
+                    line += ")) & \n" 
                 
                 # find "always TRUE and replace with always FALSE to create most restrictive safety assumptions"
                 if (line.find("[](TRUE) &") != -1):
