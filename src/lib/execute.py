@@ -290,9 +290,15 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 while (not self.runFSA.wait(0.1)) and self.alive.isSet():
                     pass
 
-            # Exit immediately if we're quitting
+			# Exit immediately if we're quitting
             if not self.alive.isSet():
-                break
+                break    
+
+			################### is moved to initialize ######
+			init_state = FSA.chooseInitialState(init_region, init_outputs)
+			print "init_region: " + str(init_region)   # by Catherine
+			print "init_outputs: " + str(init_outputs)  # by Catherine
+            ############### see if necessary later #####
 
 			###### ENV VIOLATION CHECK ######
 			compiler = specCompiler.SpecCompiler(spec_file)
@@ -302,7 +308,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
 			traceback, LTL2LineNo = compiler._writeLTLFile()
 			path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
 			LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
-			#################################             
+			################################# 
 
             self.prev_outputs = deepcopy(self.aut.current_outputs)
             self.prev_z = self.aut.current_state.rank
@@ -327,7 +333,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
                 sys.stdout = redir
                 
-                print "modify_stage: " + str(LTLViolationCheck.modify_stage) + "realizable: " + str(realizable)
+                #print "INITIAL:modify_stage: " + str(LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
                 #print realizable , LTLViolationCheck.modify_stage
                 if not realizable:
                     while LTLViolationCheck.modify_stage < 3 and not realizable:
@@ -339,35 +345,46 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                         #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
                         sys.stdout = redir
                 
-                print "2:modify_stage: " + str(LTLViolationCheck.modify_stage) + "realizable: " + str(realizable)
+                print "STAGE: " + str(LTLViolationCheck.modify_stage) + " APPENDED: " + str(LTLViolationCheck.last_added_ltl) + ")" 
+                #print "FINAL:modify_stage: " + str(LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
+                print "FINAL:-realizable: " + str(realizable)
                 # reload aut file if the new ltl is realizable        
                 if realizable:
+                    print "ViolationSolved:"
                     LTLViolationCheck.last_added_ltl = ""
                     #######################
                     # Load automaton file #
                     #######################
-                    print "Loading automaton..."
+                    print "Reloading automaton..."
                     #FSA = fsa.Automaton(proj)
                     runFSA = False
                     
                     success = FSA.loadFile(aut_file, proj.enabled_sensors, proj.enabled_actuators, proj.all_customs)
                     if not success: return
-                    """
+                    
                     #cur_region_no = 0
                     cur_outputs = [] #format: ['act1','act2']
                     for key, value in LTLViolationCheck.current_state.outputs.iteritems():
                         if key.find("bit") == -1 and value == True:
                             cur_outputs.append(key)
-                        print key, value
+                        #print key, value
                     cur_region_no = FSA.regionFromState(LTLViolationCheck.current_state)
-                    """
-                    init_state = FSA.chooseInitialState(init_region, init_outputs)
-                    #init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
+                    
+                    print "cur_region_no:" + str(cur_region_no)
+                    #init_state = FSA.chooseInitialState(init_region, init_outputs)
+                    init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
                     #print "cur_region_no: " + str(cur_region_no)   # by Catherine
                     #print "cur_outputs: " + str(cur_outputs)  # by Catherine
                     
+                    if init_state is None:
+                        print "No suitable initial state found; unable to execute. Quitting..."
+                        sys.exit(-1)
+                    else:
+                        print "Starting from state %s." % init_state.name
+                    
                     runFSA = True
                 else:
+                    print "-----------------------------------------------"
                     # still missing removing liveness guarantees
                     print "Trying to remove system liveness guarantees..."
                     LTLViolationCheck.remove_liveness_guarantees()
@@ -377,13 +394,14 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     sys.stdout = redir
                     
                     if realizable:
-                        print "please put in some environment liveness assumptions"
-                        time.sleep(20)
+                        print "Synthesizable without system liveness guarantees. Please put in some environment liveness assumptions."
+                        time.sleep(5)
                           
                     else:
-                        print "unknown error ??? lol"  
+                        print "Unknown error: please check your system safety guarantees"  
                     LTLViolationCheck.append_liveness_guarantees()
                     print "Now we will exit the execution"
+                    print "----------------------------------------------"
                     sys.exit()
                 #time.sleep(10)
             

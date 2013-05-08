@@ -70,6 +70,7 @@ class LTL_Check:
         self.last_added_ltl      = ""
         self.liveness_guarantees = ""
         self.last_sys_guarantee  = ""
+        self.first_initial_state_added_to_ltl = False
        
             
     def checkViolation(self,cur_state,sensor_state):
@@ -150,8 +151,8 @@ class LTL_Check:
                     if env_ltl == False and sys_liveness == False:
                         f.write(ltl_file[i-1])
                     #print "i don't know why it is here"
-            print "self.last_sys_guarantee: " +str(self.last_sys_guarantee)
-            print "liveness_guarantees: " + str(self.liveness_guarantees)
+            #print "self.last_sys_guarantee: " +str(self.last_sys_guarantee)
+            #print "liveness_guarantees: " + str(self.liveness_guarantees)
         f.closed
         
         #f.seek(start_of_last_line) 
@@ -191,7 +192,7 @@ class LTL_Check:
             add_assumption = True
             
             #print >>sys.__stdout__, ltl_file 
-            for line in ltl_file:              
+            for i,line in enumerate(ltl_file):              
                 
                 ########### MODIFICATION STAGE ###############
                 # 1 : to add only current inputs
@@ -238,7 +239,7 @@ class LTL_Check:
                                 next_sensor_state_len_count += 1
                             
                             output_state_len_count = 0    
-                            if self.modify_stage <= 3:
+                            if self.modify_stage >= 3:
                                 output_state_len = len(self.current_state.outputs)
                                 #print "output_state_len:" + str(output_state_len)
                                 for key,value in self.current_state.outputs.iteritems():
@@ -248,14 +249,52 @@ class LTL_Check:
                                         add_ltl += "!"
                                     add_ltl += "s." + key
                                     output_state_len_count += 1
-                                    print "key: " + str(key) + "value: " + str(value)
+                                    #print "key: " + str(key) + "value: " + str(value)
                                     #print output_state_len_count    
                                 
                                 if self.modify_stage > 3:
                                     print "This is impossible. There must be error in the verification learning"
                     self.last_added_ltl = add_ltl 
+                    #print "STAGE: " + str(self.modify_stage) + " APPENDED: " + str(self.last_added_ltl) + ")" 
                     line += add_ltl
                     line += ")) & \n" 
+                
+                # removing the old initial assumption and put in a new one
+                if (ltl_file[i-1].find("[](FALSE") != -1):
+                    sensor_state_len_count = 0
+                    add_init = "("
+                    sensor_state_len = len(self.current_state.inputs)
+                        
+                    for key,value in self.current_state.inputs.iteritems():
+                        if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
+                            add_init += " & "
+                        if int(value) == False:
+                            add_init += "!"
+                        add_init += "e." + key 
+                        sensor_state_len_count += 1
+                        
+                    output_state_len_count = 0    
+                    output_state_len = len(self.current_state.outputs)
+                    for key,value in self.current_state.outputs.iteritems():
+                        if output_state_len_count == 0 or output_state_len_count < output_state_len:
+                            add_init += " & "
+                        if int(value) == False:
+                            add_init += "!"
+                        add_init += "s." + key
+                        output_state_len_count += 1
+                        #print "key: " + str(key) + "value: " + str(value)
+
+                    add_init +=  ") &\n"
+                    add_init = "\t\t\t" + add_init
+                    #print add_init
+                    
+                    # To make sure []<>(TRUE) is still in ltl file
+                    if self.first_initial_state_added_to_ltl == False:
+                        f.write(add_init)
+                        self.first_initial_state_added_to_ltl = True
+                    else:
+                        line = add_init
+                
                 
                 # find "always TRUE and replace with always FALSE to create most restrictive safety assumptions"
                 if (line.find("[](TRUE) &") != -1):
@@ -286,8 +325,10 @@ class LTL_Check:
         try:
             remove_index = self.violated_spec_line_no.index(0)
             del self.violated_spec_line_no[remove_index]
+            
         except:
-            print "no line 0 is found now\n"
+            pass
+            #print "no line 0 is found now\n"
             
         #time.sleep(5)
         
@@ -518,6 +559,7 @@ class LTL_Check:
                             if 0 not in self.violated_spec_line_no:                  
                                 print "Violation:RV#######################################"
                                 print "Violation: " + str(parseFormulaTest.parseLTLTree(x)[0]) 
+                                print "Violation:RV#######################################"
                                 treeNo = 0
                                 self.violated_spec_line_no.append(treeNo)
 
