@@ -130,7 +130,7 @@ class LTL_Check:
                 elif (env_ltl == False and (line.find("[]<>") != -1)):
                     #print "This is the previous line: " + ltl_file[i-1]
                     #print "This is the previous line with no &: " + ltl_file[i-1][:-2]
-                    f.write(ltl_file[i-1][:-2])
+                    f.write(ltl_file[i-1][:-3])
                     #f.write("\n")
                     sys_liveness = True
                     self.last_sys_guarantee = ltl_file[i-1]
@@ -142,7 +142,7 @@ class LTL_Check:
                     if not (line.find(");") != -1):
                         self.liveness_guarantees += line
                     else:
-                        self.liveness_guarantees += line
+                        self.liveness_guarantees += line # currently this stored ); as well. should just store the entire ltl file. = =''
                         f.write(line)
                 
                 # when reading system guarantees but not system livenesses yet                  
@@ -167,12 +167,13 @@ class LTL_Check:
         with open(self.path_ltl, 'r+') as f:
             lines = f.readlines()
             lines = lines[:-1]
-            print lines
-            #f.seek(0)
-            #f.truncate()
-            f.write(lines)
+            f.seek(0)
+            f.truncate()
+            for l in lines:   
+                f.write(l)
             f.write(self.last_sys_guarantee)
-            f.write(self.liveness_guarantees)
+            for l in self.liveness_guarantees:
+                f.write(l)
         self.liveness_guarantees = ""
         f.closed
     
@@ -239,7 +240,7 @@ class LTL_Check:
                             output_state_len_count = 0    
                             if self.modify_stage <= 3:
                                 output_state_len = len(self.current_state.outputs)
-                                print "output_state_len:" + str(output_state_len)
+                                #print "output_state_len:" + str(output_state_len)
                                 for key,value in self.current_state.outputs.iteritems():
                                     if output_state_len_count == 0 or output_state_len_count < output_state_len:
                                         add_ltl += " & "
@@ -247,7 +248,8 @@ class LTL_Check:
                                         add_ltl += "!"
                                     add_ltl += "s." + key
                                     output_state_len_count += 1
-                                    print output_state_len_count    
+                                    print "key: " + str(key) + "value: " + str(value)
+                                    #print output_state_len_count    
                                 
                                 if self.modify_stage > 3:
                                     print "This is impossible. There must be error in the verification learning"

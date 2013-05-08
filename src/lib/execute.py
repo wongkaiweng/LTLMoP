@@ -293,7 +293,17 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             # Exit immediately if we're quitting
             if not self.alive.isSet():
                 break
-            
+
+			###### ENV VIOLATION CHECK ######
+			compiler = specCompiler.SpecCompiler(spec_file)
+			compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+			compiler.proj = proj #conservative
+			#compiler.proj = copy.deepcopy(proj) #conservative
+			traceback, LTL2LineNo = compiler._writeLTLFile()
+			path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+			LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
+			#################################             
+
             self.prev_outputs = deepcopy(self.aut.current_outputs)
             self.prev_z = self.aut.current_state.rank
 
@@ -317,39 +327,64 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
                 sys.stdout = redir
                 
-                print "realizable: " + str(realizable)
+                print "modify_stage: " + str(LTLViolationCheck.modify_stage) + "realizable: " + str(realizable)
                 #print realizable , LTLViolationCheck.modify_stage
                 if not realizable:
-                    if LTLViolationCheck.modify_stage < 3:
+                    while LTLViolationCheck.modify_stage < 3 and not realizable:
                         LTLViolationCheck.modify_stage += 1 
-                    else:
-                        # still missing removing liveness guarantees
-                        print "please put in some environment liveness assumptions"
-                else:
+                        
+                        LTLViolationCheck.modify_LTL_file()
+                        realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                        
+                        #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
+                        sys.stdout = redir
+                
+                print "2:modify_stage: " + str(LTLViolationCheck.modify_stage) + "realizable: " + str(realizable)
+                # reload aut file if the new ltl is realizable        
+                if realizable:
+                    LTLViolationCheck.last_added_ltl = ""
                     #######################
                     # Load automaton file #
                     #######################
                     print "Loading automaton..."
                     #FSA = fsa.Automaton(proj)
                     runFSA = False
+                    
                     success = FSA.loadFile(aut_file, proj.enabled_sensors, proj.enabled_actuators, proj.all_customs)
-                    region_no = 0
-                    for key, value in LTLViolationCheck.current_state.outputs.iteritems():
-                        if key.find("bit") != -1:
-                            # find out the bit number and make it power of 2
-                            region_no += pow(2,int(key.split("bit")[1])) * value
-                        print key, value
-                        
-                    print region_no
-                    init_region = region_no
-                    
-                    init_outputs = [] #TODO: NEED to figure out the format later
-                    init_state = FSA.chooseInitialState(init_region, init_outputs)
-                    print "init_region: " + str(init_region)   # by Catherine
-                    print "init_outputs: " + str(init_outputs)  # by Catherine
                     if not success: return
-                    runFSA = True
+                    """
+                    #cur_region_no = 0
+                    cur_outputs = [] #format: ['act1','act2']
+                    for key, value in LTLViolationCheck.current_state.outputs.iteritems():
+                        if key.find("bit") == -1 and value == True:
+                            cur_outputs.append(key)
+                        print key, value
+                    cur_region_no = FSA.regionFromState(LTLViolationCheck.current_state)
+                    """
+                    init_state = FSA.chooseInitialState(init_region, init_outputs)
+                    #init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
+                    #print "cur_region_no: " + str(cur_region_no)   # by Catherine
+                    #print "cur_outputs: " + str(cur_outputs)  # by Catherine
                     
+                    runFSA = True
+                else:
+                    # still missing removing liveness guarantees
+                    print "Trying to remove system liveness guarantees..."
+                    LTLViolationCheck.remove_liveness_guarantees()
+                    realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                        
+                    #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
+                    sys.stdout = redir
+                    
+                    if realizable:
+                        print "please put in some environment liveness assumptions"
+                        time.sleep(20)
+                          
+                    else:
+                        print "unknown error ??? lol"  
+                    LTLViolationCheck.append_liveness_guarantees()
+                    print "Now we will exit the execution"
+                    sys.exit()
                 #time.sleep(10)
             
             #################################
