@@ -69,6 +69,8 @@ class LTL_Check:
         self.modify_stage = 1    # to be used in modify_LTL_file
         self.last_added_ltl      = ""
         self.liveness_guarantees = ""
+        self.last_sys_guarantee  = ""
+       
             
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -112,17 +114,50 @@ class LTL_Check:
             f.truncate()            
             read_ltl = ""    # for remaking the parse tree of ltl spec
             env_ltl = True
+            sys_liveness = False
             
-            for line in ltl_file:                            
+            for i, line in enumerate(ltl_file):   
+                #print ltl_file[i-1] + " ,find []<>: " + str(ltl_file[i-1].find("[]<>") != -1)                       
                 if (line.find("LTLSPEC -- Guarantees") != -1):
                     env_ltl = False
                 
-                if not (env_ltl == False and (line.find("[]<>") != -1)):
-                    f.write(line)
-                else:
+                # when it doesn't find []<> in both this line and previous line
+                if (env_ltl == True and not i == 0) :
+                    f.write(ltl_file[i-1])
+                    #print "writing file normally"
+                
+                # when it finds []<> in current line
+                elif (env_ltl == False and (line.find("[]<>") != -1)):
+                    #print "This is the previous line: " + ltl_file[i-1]
+                    #print "This is the previous line with no &: " + ltl_file[i-1][:-2]
+                    f.write(ltl_file[i-1][:-2])
+                    #f.write("\n")
+                    sys_liveness = True
+                    self.last_sys_guarantee = ltl_file[i-1]
                     self.liveness_guarantees += line
-        print "liveness_guarantees: " + str(self.liveness_guarantees)
+                
+                # when storing systme liveness_guarantees
+                elif env_ltl == False and sys_liveness == True:
+                    #print line + " ,find );: " + str(line.find(");") != -1) 
+                    if not (line.find(");") != -1):
+                        self.liveness_guarantees += line
+                    else:
+                        self.liveness_guarantees += line
+                        f.write(line)
+                
+                # when reading system guarantees but not system livenesses yet                  
+                else:
+                    if env_ltl == False and sys_liveness == False:
+                        f.write(ltl_file[i-1])
+                    #print "i don't know why it is here"
+            print "self.last_sys_guarantee: " +str(self.last_sys_guarantee)
+            print "liveness_guarantees: " + str(self.liveness_guarantees)
         f.closed
+        
+        #f.seek(start_of_last_line) 
+        #f.write(new_line) # Assuming that new_line ends with "\n" 
+        #f.truncate() # In case the new line is shorter than what it's replacing     
+        #open(self.path_ltl, 'r+')
         
     def append_liveness_guarantees(self):
         """
@@ -130,6 +165,13 @@ class LTL_Check:
         """
              
         with open(self.path_ltl, 'r+') as f:
+            lines = f.readlines()
+            lines = lines[:-1]
+            print lines
+            #f.seek(0)
+            #f.truncate()
+            f.write(lines)
+            f.write(self.last_sys_guarantee)
             f.write(self.liveness_guarantees)
         self.liveness_guarantees = ""
         f.closed
@@ -158,12 +200,12 @@ class LTL_Check:
                 ##############################################
                 if (line.find("[](FALSE") != -1): 
                     line = line.replace(") & \n","")
-                    print >>sys.__stdout__, "last_added_ltl:" + str(self.last_added_ltl)
-                    print >>sys.__stdout__,"before replace:" + str(line)
+                    #print >>sys.__stdout__, "last_added_ltl:" + str(self.last_added_ltl)
+                    #print >>sys.__stdout__,"before replace:" + str(line)
                     if len(self.last_added_ltl) > 0: 
                         line = line.replace(self.last_added_ltl+")", "")
-                    print >>sys.__stdout__,"after replace: " + str(line) 
-                    print >>sys.__stdout__,"modify_stage:" + str(self.modify_stage)
+                    #print >>sys.__stdout__,"after replace: " + str(line) 
+                    #print >>sys.__stdout__,"modify_stage:" + str(self.modify_stage)
                     
                     add_ltl = "\t | ("
                     sensor_state_len_count = 0
