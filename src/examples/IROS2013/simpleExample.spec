@@ -20,6 +20,7 @@ simpleExample.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 closedDoor, 1
+light, 1
 
 
 ======== SPECIFICATION ========
@@ -33,7 +34,7 @@ room3 = p2
 others = 
 
 Spec: # Specification in structured English
-Robot starts in room1
+#Robot starts in room1
 
 # Env assumptions
 #always not closedDoor
@@ -41,5 +42,6 @@ Robot starts in room1
 
 # System guarantees
 go to room5
+if you are sensing light then do not room3
 always not door or not closedDoor
 

@@ -51,8 +51,8 @@ go to Playground
 #if you were in Rtop and not Door2Closed then do not Door2Closed
 
 
-if Door1Closed then do not Door1
-if Door2Closed then do not Door2
+if you are sensing Door1Closed then do not Door1
+if you are sensing Door2Closed then do not Door2
 #always not Door1 or not Door1Closed
 #always not Door2 or not Door2Closed
 

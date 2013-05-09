@@ -316,7 +316,8 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             tic = self.timer_func()
             self.aut.runIteration()
 
-			###### ENV VIOLATION CHECK ######           
+            ###### ENV VIOLATION CHECK ######
+            
             
             # Check for environment violation
             env_assumption_hold = LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
