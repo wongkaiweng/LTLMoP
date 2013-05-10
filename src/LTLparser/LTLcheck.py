@@ -1,5 +1,6 @@
 import sys, os, shutil, time
 import parseFormulaTest
+from numpy import *
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -109,6 +110,15 @@ class LTL_Check:
         
         # return whether the environment assumptions are being violated
         return value
+    
+    def generate_env_livenss_assumptions(self):
+        """
+        Modify ltl file from LTLMoP to add environment liveness assumptions so that the ltl is synthesizable.
+        """
+        sensor_state_len = len(self.current_state.inputs)
+        x = zeros((2, 1))  # row * columns
+        x.dtype.names
+        pass
     
     def remove_liveness_guarantees(self):
         """
@@ -265,6 +275,7 @@ class LTL_Check:
                     line += add_ltl
                     line += ")) & \n" 
                 
+                """
                 # removing the old initial assumption and put in a new one
                 if (ltl_file[i-1].find("[](FALSE") != -1):
                     sensor_state_len_count = 0
@@ -300,7 +311,7 @@ class LTL_Check:
                         self.first_initial_state_added_to_ltl = True
                     else:
                         line = add_init
-                
+                """
                 
                 # find "always TRUE and replace with always FALSE to create most restrictive safety assumptions"
                 if (line.find("[](TRUE) &") != -1):
