@@ -322,12 +322,15 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             # Check for environment violation
             env_assumption_hold = LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
             
+            # change the env_assumption_hold to int again (messed up by Python? )
+            env_assumption_hold = int(env_assumption_hold)
             
             # temporarily added to account for [](FALSE)
             #LTLViolationCheck.modify_LTL_file()
             
             # Modify the ltl file based on the enviornment change
             if env_assumption_hold == False:
+                #print>>sys.__stdout__, "assumption is evaluated as False"
                 LTLViolationCheck.modify_LTL_file()
                 realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                 
@@ -352,7 +355,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 # reload aut file if the new ltl is realizable        
                 if realizable:
                     print "ViolationSolved:"
-                    LTLViolationCheck.last_added_ltl = ""
+                    LTLViolationCheck.sameState = False
                     #######################
                     # Load automaton file #
                     #######################
@@ -371,7 +374,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                         #print key, value
                     cur_region_no = FSA.regionFromState(LTLViolationCheck.current_state)
                     
-                    print "cur_region_no:" + str(cur_region_no)
+                    #print "cur_region_no:" + str(cur_region_no)
                     #init_state = FSA.chooseInitialState(init_region, init_outputs)
                     init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
                     #print "cur_region_no: " + str(cur_region_no)   # by Catherine
@@ -406,6 +409,20 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     sys.exit()
                 #time.sleep(10)
             
+            else:    
+                #if prev_cur_state != FSA.current_state or prev_sensor_state != FSA.sensor_state:
+                    #print "The SENSOR state has been changed."
+                    #print "Before:" + LTLViolationCheck.env_safety_assumptions_stage["3"]
+                LTLViolationCheck.append_state_to_LTL(FSA.getCurrentState(),FSA.getSensorState())
+                #LTLViolationCheck.modify_LTL_file()
+                if env_assumption_hold == False:
+                    print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
+            #    print >>sys.__stdout__,"env_assumption_hold equals False: " + str(env_assumption_hold == False) +" should say False."     
+                #if prev_cur_state != FSA.current_state or prev_sensor_state != FSA.sensor_state:
+                #    print "After: " + LTLViolationCheck.env_safety_assumptions_stage["3"]
+                    
+            prev_cur_state = FSA.getCurrentState()
+            prev_sensor_state = FSA.getSensorState() 
             #################################
             
 			toc = self.timer_func()

@@ -108,6 +108,7 @@ class Automaton:
         ###### ENV VIOLATION CHECK ######
         self.LTL2LineNo      = {}
         self.violation_check = False
+        self.current_state_for_RV_learning = None
         #################################
 
     def stateWithName(self, name):
@@ -575,6 +576,20 @@ class Automaton:
 
         return self.current_state
 
+###### ENV VIOLATION CHECK ######
+    def getCurrentState(self):
+        """
+        Return current state of the robot
+        """
+        return self.current_state_for_RV_learning
+        
+    def getSensorState(self):
+        """
+        Return the next state of the environment
+        """
+        return self.sensor_state
+
+#################################
     def runIteration(self):
         """
         Run, run, run the automaton!  (For one evaluation step)
@@ -582,12 +597,15 @@ class Automaton:
 
         # Let's try to transition
         next_states = self.findTransitionableStates()
-
+        
+        ###### ENV VIOLATION CHECK ######
+        self.current_state_for_RV_learning = self.current_state
+        
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
 
-            ###### ENV VIOLATION CHECK ######
+            
             if self.violation_check == False:
                 print "(FSA) ERROR: Could not find a suitable state to transition to!"
             self.violation_check = True

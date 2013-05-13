@@ -67,11 +67,15 @@ class LTL_Check:
 
         self.violated_spec_line_no = []
         
-        self.modify_stage = 1    # to be used in modify_LTL_file
-        self.last_added_ltl      = ""
+        self.modify_stage        = 1       # to be used in modify_LTL_file
+        self.sameState           = False   # for tracking whether ltl has to be recreated 
+        #self.last_added_ltl      = ""
         self.liveness_guarantees = ""
         self.last_sys_guarantee  = ""
         self.first_initial_state_added_to_ltl = False
+        
+        # for storage of LTL assumptions at the three stages
+        self.env_safety_assumptions_stage = {"1": "\t\t\t[](FALSE", "2": "\t\t\t[](FALSE", "3": "\t\t\t[](FALSE"}
        
             
     def checkViolation(self,cur_state,sensor_state):
@@ -194,7 +198,82 @@ class LTL_Check:
         self.liveness_guarantees = ""
         f.closed
     
+    
+    def append_state_to_LTL(self, cur_state = None, sensor_state = None):
+        """
+        append the current state to the dictionary -- env_safety_assumptions_stage
+        """    
+        if not cur_state == None:    # None: use the stored current_state in the object
+            self.current_state = cur_state
         
+        if not sensor_state == None: # None: use the stored sensor_state in the object
+            self.sensor_state  = sensor_state
+        
+        
+        ########### MODIFICATION STAGE ###############
+        # 1 : to add only current inputs
+        # 2 : to add current inputs and next inputs
+        # 3 : to add current inputs, next inputs, and current outputs
+        # This is reset when liveness assumptions are added
+        ##############################################
+        
+        add_ltl = "\t | ("                
+                        
+        # for the first stage 
+        sensor_state_len_count = 0                 
+        sensor_state_len = len(self.current_state.inputs)
+        
+        for key,value in self.current_state.inputs.iteritems():
+            if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
+                add_ltl += " & "
+            if int(value) == False:
+                add_ltl += "!"
+            add_ltl += "e." + key 
+            sensor_state_len_count += 1                      
+            #print key, value
+            
+        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
+        if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
+            self.env_safety_assumptions_stage["1"] += add_ltl
+            self.env_safety_assumptions_stage["1"] += ")"                        
+        
+        # for the second stage
+        next_sensor_state_len_count = 0 
+        next_sensor_state_len = len(self.sensor_state)
+    
+        for key,value in self.sensor_state.iteritems():
+            if next_sensor_state_len_count == 0 or next_sensor_state_len_count < next_sensor_state_len:
+                add_ltl += " & "
+            if int(value) == False:
+                add_ltl += "!"
+            add_ltl += "next(e." + key + ")"
+            next_sensor_state_len_count += 1
+        
+        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
+        if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 : 
+            self.env_safety_assumptions_stage["2"] += add_ltl
+            self.env_safety_assumptions_stage["2"] += ")"  
+        
+        # for the third stage                    
+        output_state_len_count = 0                             
+        output_state_len = len(self.current_state.outputs)
+        #print "output_state_len:" + str(output_state_len)
+        for key,value in self.current_state.outputs.iteritems():
+            if output_state_len_count == 0 or output_state_len_count < output_state_len:
+                add_ltl += " & "
+            if int(value) == False:
+                add_ltl += "!"
+            add_ltl += "s." + key
+            output_state_len_count += 1
+            #print "key: " + str(key) + "value: " + str(value)
+            #print output_state_len_count    
+
+        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["3"]
+        if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 :                   
+            self.env_safety_assumptions_stage["3"] += add_ltl
+            self.env_safety_assumptions_stage["3"] += ")"  
+        
+    
     def modify_LTL_file(self):
         """
         Modify ltl file from LTLMoP for runtime verification "learning".
@@ -207,73 +286,26 @@ class LTL_Check:
             read_ltl = ""    # for remaking the parse tree of ltl spec
             add_assumption = True
             
-            #print >>sys.__stdout__, ltl_file 
-            for i,line in enumerate(ltl_file):              
+            for i,line in enumerate(ltl_file):                          
                 
-                ########### MODIFICATION STAGE ###############
-                # 1 : to add only current inputs
-                # 2 : to add current inputs and next inputs
-                # 3 : to add current inputs, next inputs, and current outputs
-                # This is reset when liveness assumptions are added
-                ##############################################
-                if (line.find("[](FALSE") != -1): 
-                    line = line.replace(") & \n","")
-                    #print >>sys.__stdout__, "last_added_ltl:" + str(self.last_added_ltl)
-                    #print >>sys.__stdout__,"before replace:" + str(line)
-                    if len(self.last_added_ltl) > 0: 
-                        line = line.replace(self.last_added_ltl+")", "")
-                    #print >>sys.__stdout__,"after replace: " + str(line) 
-                    #print >>sys.__stdout__,"modify_stage:" + str(self.modify_stage)
+                if (line.find("[](FALSE") != -1):
                     
-                    add_ltl = "\t | ("
-                    sensor_state_len_count = 0
+                    if self.sameState == False:
+                        
+                        # append the current, next inputs and current outputs to different stages of env saftey assumptions.
+                        self.append_state_to_LTL()
+                        
+                        self.sameState = True
                     
-                    if self.modify_stage >= 1:
-                        sensor_state_len = len(self.current_state.inputs)
-                        
-                        for key,value in self.current_state.inputs.iteritems():
-                            if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
-                                add_ltl += " & "
-                            if int(value) == False:
-                                add_ltl += "!"
-                            add_ltl += "e." + key 
-                            sensor_state_len_count += 1
-                            
-                            #print key, value
-                        #print add_ltl
-                        #return int(self.current_state.inputs[key]
-                        next_sensor_state_len_count = 0 
-                        if self.modify_stage >= 2:
-                            next_sensor_state_len = len(self.sensor_state)
-                        
-                            for key,value in self.sensor_state.iteritems():
-                                if next_sensor_state_len_count == 0 or next_sensor_state_len_count < next_sensor_state_len:
-                                    add_ltl += " & "
-                                if int(value) == False:
-                                    add_ltl += "!"
-                                add_ltl += "next(e." + key + ")"
-                                next_sensor_state_len_count += 1
-                            
-                            output_state_len_count = 0    
-                            if self.modify_stage >= 3:
-                                output_state_len = len(self.current_state.outputs)
-                                #print "output_state_len:" + str(output_state_len)
-                                for key,value in self.current_state.outputs.iteritems():
-                                    if output_state_len_count == 0 or output_state_len_count < output_state_len:
-                                        add_ltl += " & "
-                                    if int(value) == False:
-                                        add_ltl += "!"
-                                    add_ltl += "s." + key
-                                    output_state_len_count += 1
-                                    #print "key: " + str(key) + "value: " + str(value)
-                                    #print output_state_len_count    
-                                
-                                if self.modify_stage > 3:
-                                    print "This is impossible. There must be error in the verification learning"
-                    self.last_added_ltl = add_ltl 
+                    # choosing modify stage to be added
+                    line = self.env_safety_assumptions_stage[str(self.modify_stage)]
+
+                    if self.modify_stage > 3 or self.modify_stage < 1:
+                        print "This modify_stage is impossible. stage: " + str (self.modify_stage)
                     #print "STAGE: " + str(self.modify_stage) + " APPENDED: " + str(self.last_added_ltl) + ")" 
-                    line += add_ltl
-                    line += ")) & \n" 
+                    #line += add_ltl
+                    #line += ")) & \n" 
+                    line += ") & \n"
                 
                 """
                 # removing the old initial assumption and put in a new one
@@ -345,10 +377,7 @@ class LTL_Check:
             
         except:
             pass
-            #print "no line 0 is found now\n"
-            
-        #time.sleep(5)
-        
+            #print "no line 0 is found now\n"     
         
         
     def read_LTL_file(self,f):
