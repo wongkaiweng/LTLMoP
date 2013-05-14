@@ -409,7 +409,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                     sys.stdout = redir
                     
-                    while not realizable and LTLViolationCheck.liveness_generation_count < 2*LTLViolationCheck.sensor_state_len:
+                    while not realizable and LTLViolationCheck.liveness_generation_count < (2*LTLViolationCheck.sensor_state_len + + 2**LTLViolationCheck.sensor_state_len):
                         LTLViolationCheck.generate_env_livenss_assumptions()
                         realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                         sys.stdout = redir

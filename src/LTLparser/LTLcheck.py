@@ -125,9 +125,8 @@ class LTL_Check:
         """
                
         ########### MODIFICATION STAGE ###############
-        # 1 : consider only current inputs
-        # 2 : consider one current input and all next inputs
-        # 3 : consider all current inputs and all next inputs
+        # 1 : consider only one current input
+        # 2 : consider combination of current inputs
         ##############################################
         
         # reset the count if this is the first time running the function after addition of safety assumptions
@@ -153,7 +152,30 @@ class LTL_Check:
                         liveness_to_add = "\t\t\t[]<>(" + liveness_to_add 
                         self.liveness_generation_count += 1
                    
-                    else:
+                    # for stage 2
+                    elif self.liveness_generation_count < (2*self.sensor_state_len + 2**self.sensor_state_len): 
+                        number = self.liveness_generation_count - 2*self.sensor_state_len
+                        sensor_bit = []
+                        for i,item in enumerate(self.sensor_state):
+                            if i == self.sensor_state_len - 1:
+                                #sensor_bit.append(number)
+                                if (number == 1):
+                                    liveness_to_add += "e." + self.sensors[i] 
+                                else:
+                                    liveness_to_add += "!e." + self.sensors[i]
+                            else:
+                                if (number%2 == 1):
+                                    liveness_to_add += "e." + self.sensors[i] + " & "
+                                else:
+                                    liveness_to_add += "!e." + self.sensors[i]+ " & "
+                                #sensor_bit.append(number%2)
+                                number = number/2
+                                                               
+                        liveness_to_add = "\t\t\t[]<>(" + liveness_to_add 
+                        self.liveness_generation_count += 1
+                        
+                    else: 
+                        print "we don't know why we are here"       
                         pass    
                     
                     print "count: " + str(self.liveness_generation_count) + " adding liveness: "  + str(liveness_to_add)
