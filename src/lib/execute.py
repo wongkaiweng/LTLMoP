@@ -320,7 +320,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             
             
             # Check for environment violation
-            env_assumption_hold = LTLViolationCheck.checkViolation(FSA.current_state,FSA.sensor_state)
+            env_assumption_hold = LTLViolationCheck.checkViolation(FSA.getCurrentState(),FSA.getSensorState())
             
             # change the env_assumption_hold to int again (messed up by Python? )
             env_assumption_hold = int(env_assumption_hold)
@@ -338,7 +338,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 sys.stdout = redir
                 
                 #print "INITIAL:modify_stage: " + str(LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
-                #print realizable , LTLViolationCheck.modify_stage
+
                 if not realizable:
                     while LTLViolationCheck.modify_stage < 3 and not realizable:
                         LTLViolationCheck.modify_stage += 1 
@@ -349,8 +349,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                         #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
                         sys.stdout = redir
                 
-                print "STAGE: " + str(LTLViolationCheck.modify_stage) + " APPENDED: " + str(LTLViolationCheck.last_added_ltl) + ")" 
-                #print "FINAL:modify_stage: " + str(LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
+                print "STAGE: " + str(LTLViolationCheck.modify_stage) 
                 print "FINAL:-realizable: " + str(realizable)
                 # reload aut file if the new ltl is realizable        
                 if realizable:
@@ -377,7 +376,6 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     #print "cur_region_no:" + str(cur_region_no)
                     #init_state = FSA.chooseInitialState(init_region, init_outputs)
                     init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
-                    #print "cur_region_no: " + str(cur_region_no)   # by Catherine
                     #print "cur_outputs: " + str(cur_outputs)  # by Catherine
                     
                     if init_state is None:
@@ -398,16 +396,31 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     sys.stdout = redir
                     
                     if realizable:
-                        print "Synthesizable without system liveness guarantees. Please put in some environment liveness assumptions."
-                        time.sleep(5)
+                        print "Synthesizable without system liveness guarantees. Please put in some environment liveness assumptions."        
+                        #time.sleep(5)
                           
                     else:
-                        print "Unknown error: please check your system safety guarantees"  
+                        print "Unknown error: please check your system safety guarantees" 
+                        
+                         
                     LTLViolationCheck.append_liveness_guarantees()
-                    print "Now we will exit the execution"
-                    print "----------------------------------------------"
-                    sys.exit()
-                #time.sleep(10)
+                    print "Trying to append liveness assumptions"
+                    LTLViolationCheck.generate_env_livenss_assumptions(True)
+                    realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                    sys.stdout = redir
+                    
+                    while not realizable and LTLViolationCheck.liveness_generation_count < 2*LTLViolationCheck.sensor_state_len:
+                        LTLViolationCheck.generate_env_livenss_assumptions()
+                        realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                        sys.stdout = redir
+                        
+                    if not realizable:
+                        print "Still not realizable. Now we will exit the execution"
+                        print "----------------------------------------------"
+                        sys.exit()
+                    else:
+                        LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                
             
             else:    
                 #if prev_cur_state != FSA.current_state or prev_sensor_state != FSA.sensor_state:

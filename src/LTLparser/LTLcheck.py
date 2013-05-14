@@ -69,14 +69,17 @@ class LTL_Check:
         
         self.modify_stage        = 1       # to be used in modify_LTL_file
         self.sameState           = False   # for tracking whether ltl has to be recreated 
-        #self.last_added_ltl      = ""
         self.liveness_guarantees = ""
         self.last_sys_guarantee  = ""
         self.first_initial_state_added_to_ltl = False
         
         # for storage of LTL assumptions at the three stages
         self.env_safety_assumptions_stage = {"1": "\t\t\t[](FALSE", "2": "\t\t\t[](FALSE", "3": "\t\t\t[](FALSE"}
-       
+        
+        # for tracking the liveness assumptions generated
+        self.liveness_generation_count = 0
+        self.sensors = []
+        self.sensor_state_len = None       
             
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -84,7 +87,7 @@ class LTL_Check:
         """
         self.current_state = cur_state
         self.sensor_state  = sensor_state
-           
+         
         # check for env violations     
         value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals)
 
@@ -115,13 +118,60 @@ class LTL_Check:
         # return whether the environment assumptions are being violated
         return value
     
-    def generate_env_livenss_assumptions(self):
+    def generate_env_livenss_assumptions(self,initial = False):
         """
         Modify ltl file from LTLMoP to add environment liveness assumptions so that the ltl is synthesizable.
+        initial: track if we are this is the first time we run the function or we are trying to find the right liveness.
         """
-        sensor_state_len = len(self.current_state.inputs)
-        x = zeros((2, 1))  # row * columns
-        x.dtype.names
+               
+        ########### MODIFICATION STAGE ###############
+        # 1 : consider only current inputs
+        # 2 : consider one current input and all next inputs
+        # 3 : consider all current inputs and all next inputs
+        ##############################################
+        
+        # reset the count if this is the first time running the function after addition of safety assumptions
+        if initial == True:
+            self.liveness_generation_count = 0
+            
+        with open(self.path_ltl, 'r+') as f:
+            ltl_file = f.readlines()
+            f.seek(0)
+            f.truncate()
+            liveness_to_add = ""
+            for i, line in enumerate(ltl_file):   
+                if (ltl_file[i-1].find("[](FALSE") != -1):
+                    # for stage 1
+                    if self.liveness_generation_count < 2*self.sensor_state_len:
+                        # find the sensor to be used in the liveness assumption
+                        liveness_to_add += "e." + self.sensors[self.liveness_generation_count/2]
+                        
+                        # negate the clasue if the count is dividable by 2
+                        if self.liveness_generation_count%2 == 0:
+                            liveness_to_add = "!" + liveness_to_add
+                            
+                        liveness_to_add = "\t\t\t[]<>(" + liveness_to_add 
+                        self.liveness_generation_count += 1
+                   
+                    else:
+                        pass    
+                    
+                    print "count: " + str(self.liveness_generation_count) + " adding liveness: "  + str(liveness_to_add)
+                    if initial == True:
+                        if (line.find("[]<>(TRUE)") != -1):
+                            f.write(liveness_to_add+ ") \n")
+                        else:
+                            f.write(liveness_to_add+ ") &\n" + line)
+                    else: # replace the old liveness
+                        if (line.find(") &\n") != -1):
+                            f.write(liveness_to_add + ") &\n")
+                        else:
+                            f.write(liveness_to_add + ") \n")
+                           
+                else: # just rewrite the file
+                    f.write(line)        
+                                           
+        f.closed
         pass
     
     def remove_liveness_guarantees(self):
@@ -148,7 +198,7 @@ class LTL_Check:
                     #print "writing file normally"
                 
                 # when it finds []<> in current line
-                elif (env_ltl == False and (line.find("[]<>") != -1)):
+                elif (env_ltl == False and (line.find("[]<>") != -1) and sys_liveness == False):
                     #print "This is the previous line: " + ltl_file[i-1]
                     #print "This is the previous line with no &: " + ltl_file[i-1][:-2]
                     f.write(ltl_file[i-1][:-3])
@@ -160,7 +210,7 @@ class LTL_Check:
                 # when storing systme liveness_guarantees
                 elif env_ltl == False and sys_liveness == True:
                     #print line + " ,find );: " + str(line.find(");") != -1) 
-                    if not (line.find(");") != -1):
+                    if (line.find(");") == -1):
                         self.liveness_guarantees += line
                     else:
                         self.liveness_guarantees += line # currently this stored ); as well. should just store the entire ltl file. = =''
@@ -221,10 +271,10 @@ class LTL_Check:
                         
         # for the first stage 
         sensor_state_len_count = 0                 
-        sensor_state_len = len(self.current_state.inputs)
+        #sensor_state_len = len(self.current_state.inputs)
         
         for key,value in self.current_state.inputs.iteritems():
-            if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
+            if not sensor_state_len_count == 0 and sensor_state_len_count < self.sensor_state_len:
                 add_ltl += " & "
             if int(value) == False:
                 add_ltl += "!"
@@ -239,10 +289,10 @@ class LTL_Check:
         
         # for the second stage
         next_sensor_state_len_count = 0 
-        next_sensor_state_len = len(self.sensor_state)
+        #next_sensor_state_len = len(self.sensor_state)
     
         for key,value in self.sensor_state.iteritems():
-            if next_sensor_state_len_count == 0 or next_sensor_state_len_count < next_sensor_state_len:
+            if next_sensor_state_len_count == 0 or next_sensor_state_len_count < self.sensor_state_len:
                 add_ltl += " & "
             if int(value) == False:
                 add_ltl += "!"
