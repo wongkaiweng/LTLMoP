@@ -829,6 +829,14 @@ class SpecCompiler(object):
         if self.proj.compile_options["fastslow"]:
             cmd.append("--fastslow")
 
+    
+        # Added options from slugs to just check for realizability without generating automaton
+        if just_realizability == True:
+            cmd.append("--onlyRealizability")
+        
+        # consider all possible starting states
+        cmd.append("--sysInitRoboticsSemantics")
+        
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False

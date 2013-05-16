@@ -1,0 +1,34 @@
+[INPUT]
+dog
+cat
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+| | | 0 & ! dog ! cat & dog cat & dog ! cat
+
+[ENV_LIVENESS]
+! dog
+
+[ENV_INIT]
+1
+
+[SYS_TRANS]
+| ! & & ! bit0 ! bit1 ! bit2 | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0 ! bit1 bit2 | | | & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0 bit1 ! bit2 | | & & ! bit0' bit1' ! bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2'
+| ! & & ! bit0 bit1 bit2 | | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & bit0 ! bit1 ! bit2 | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! dog' ! & & ! bit0' ! bit1' ! bit2'
+| ! cat' ! & & ! bit0' ! bit1' bit2'
+
+[SYS_LIVENESS]
+& & ! bit0' bit1' ! bit2'
+& & bit0' ! bit1' ! bit2'
+
+[SYS_INIT]
+| | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
+

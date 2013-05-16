@@ -371,6 +371,7 @@ class LTL_Check:
                     
                     # choosing modify stage to be added
                     line = self.env_safety_assumptions_stage[str(self.modify_stage)]
+                    print "The modification stage is: " + str(self.modify_stage)
 
                     if self.modify_stage > 3 or self.modify_stage < 1:
                         print "This modify_stage is impossible. stage: " + str (self.modify_stage)

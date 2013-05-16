@@ -1,0 +1,36 @@
+[INPUT]
+irrigation_left
+irrigation_right
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+! & irrigation_left' irrigation_right'
+
+[ENV_LIVENESS]
+! irrigation_left
+irrigation_left
+
+[ENV_INIT]
+1
+
+[SYS_TRANS]
+| ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' bit2'
+| ! & & ! bit0 ! bit1 bit2 | | & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0 bit1 ! bit2 | | & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & ! bit0 bit1 bit2 | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2'
+| ! & & bit0 ! bit1 ! bit2 | | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' bit2'
+| ! & & bit0 ! bit1 bit2 | | & & bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & bit0' ! bit1' ! bit2'
+| ! irrigation_left' & ! & & ! bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' bit2'
+| ! irrigation_right' & ! & & ! bit0' bit1' ! bit2' ! & & bit0' ! bit1' bit2'
+
+[SYS_LIVENESS]
+& & ! bit0' ! bit1' bit2'
+& & bit0' ! bit1' ! bit2'
+
+[SYS_INIT]
+| | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2
+
