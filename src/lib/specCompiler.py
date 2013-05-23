@@ -837,6 +837,10 @@ class SpecCompiler(object):
         # consider all possible starting states
         cmd.append("--sysInitRoboticsSemantics")
         
+        # compute Extract minimal conjunctive normal form (CNF)
+        if DNFtoCNF == True:
+            cmd.append("--computeWeakenedSafetyAssumptions")
+        
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False

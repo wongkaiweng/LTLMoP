@@ -317,7 +317,12 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             self.aut.runIteration()
 
             ###### ENV VIOLATION CHECK ######
-            
+            initial_pause = True
+            if initial_sensor_state == False:
+                LTLViolationCheck.sensor_state_len = len(FSA.getCurrentState().inputs)
+                # store the name of the sensors
+                for key,value in FSA.getSensorState().iteritems():
+                    LTLViolationCheck.sensors.append(key)
             
             # Check for environment violation
             env_assumption_hold = LTLViolationCheck.checkViolation(FSA.getCurrentState(),FSA.getSensorState())
