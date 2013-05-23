@@ -76,7 +76,7 @@ Regions: # Stored as JSON string
         "color": [
             0, 
             255, 
-            0
+            184
         ], 
         "position": [
             56.0, 
@@ -92,8 +92,8 @@ Regions: # Stored as JSON string
         "name": "porch", 
         "color": [
             255, 
-            128, 
-            0
+            0, 
+            198
         ], 
         "holeList": [], 
         "points": [
@@ -131,9 +131,9 @@ Regions: # Stored as JSON string
     {
         "name": "dining_room", 
         "color": [
-            0, 
-            0, 
-            255
+            81, 
+            255, 
+            0
         ], 
         "holeList": [], 
         "points": [
@@ -171,9 +171,9 @@ Regions: # Stored as JSON string
     {
         "name": "hall_cat", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            57, 
+            0
         ], 
         "position": [
             266.0, 
