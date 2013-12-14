@@ -8,7 +8,7 @@ bit1
 bit2
 
 [ENV_TRANS]
-| | | 0 & ! dog ! cat & dog cat & dog ! cat
+| | | | | | | | | | 0 & & & & & & ! dog ! cat ! dog' ! cat' ! bit2 ! bit1 ! bit0 & & & & & & ! dog ! cat ! dog' ! cat' ! bit2 bit1 ! bit0 & & & & & & ! dog ! cat ! dog' cat' ! bit2 ! bit1 ! bit0 & & & & & & ! dog cat ! dog' cat' ! bit2 ! bit1 ! bit0 & & & & & & ! dog cat ! dog' ! cat' ! bit2 ! bit1 ! bit0 & & & & & & ! dog ! cat ! dog' ! cat' bit2 bit1 ! bit0 & & & & & & ! dog ! cat ! dog' cat' bit2 bit1 ! bit0 & & & & & & ! dog ! cat dog' cat' bit2 bit1 ! bit0 & & & & & & dog cat dog' cat' ! bit2 ! bit1 bit0 & & & & & & dog cat dog' cat' bit2 bit1 ! bit0
 
 [ENV_LIVENESS]
 ! dog

@@ -373,7 +373,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     #cur_region_no = 0
                     cur_outputs = [] #format: ['act1','act2']
                     for key, value in LTLViolationCheck.current_state.outputs.iteritems():
-                        if key.find("bit") == -1 and value == True:
+                        if key.find("bit") == -1 and (int(value) == 1):
                             cur_outputs.append(key)
                         #print key, value
                     cur_region_no = FSA.regionFromState(LTLViolationCheck.current_state)
@@ -406,6 +406,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                           
                     else:
                         print "Unknown error: please check your system safety guarantees" 
+                        sys.exit()
                         
                          
                     LTLViolationCheck.append_liveness_guarantees()

@@ -38,9 +38,9 @@ road = p3
 Spec: # Specification in structured English
 
 # env assumptions (mode 1)
-always not (irrigation_left and irrigation_right)
-infinitely often not irrigation_left
-infinitely often irrigation_left
+#always not (irrigation_left and irrigation_right)
+#infinitely often not irrigation_left
+#infinitely often irrigation_left
 
 go to road
 go to house

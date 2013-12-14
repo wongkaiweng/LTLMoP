@@ -8,11 +8,11 @@ bit1
 bit2
 
 [ENV_TRANS]
-! & irrigation_left' irrigation_right'
+| | | | | | | | | | 0 & & & ! irrigation_right ! irrigation_left ! irrigation_right' ! irrigation_left' & & & ! irrigation_right ! irrigation_left irrigation_right' ! irrigation_left' & & & irrigation_right ! irrigation_left irrigation_right' ! irrigation_left' & & & irrigation_right ! irrigation_left ! irrigation_right' ! irrigation_left' & & & irrigation_right ! irrigation_left ! irrigation_right' irrigation_left' & & & ! irrigation_right irrigation_left ! irrigation_right' irrigation_left' & & & ! irrigation_right irrigation_left ! irrigation_right' ! irrigation_left' & & & irrigation_right ! irrigation_left irrigation_right' irrigation_left' & & & irrigation_right irrigation_left irrigation_right' irrigation_left' & & & irrigation_right irrigation_left irrigation_right' ! irrigation_left'
 
 [ENV_LIVENESS]
-! irrigation_left
-irrigation_left
+! irrigation_right
+irrigation_right
 
 [ENV_INIT]
 1

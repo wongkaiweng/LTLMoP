@@ -1,0 +1,421 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                134.0, 
+                1.0
+            ], 
+            [
+                133.0, 
+                60.0
+            ], 
+            [
+                133.0, 
+                144.0
+            ], 
+            [
+                133.0, 
+                203.0
+            ], 
+            [
+                2.0, 
+                203.0
+            ], 
+            [
+                2.0, 
+                332.0
+            ], 
+            [
+                0.0, 
+                450.0
+            ], 
+            [
+                0.0, 
+                576.0
+            ], 
+            [
+                133.0, 
+                576.0
+            ], 
+            [
+                257.0, 
+                575.0
+            ], 
+            [
+                382.0, 
+                575.0
+            ], 
+            [
+                382.0, 
+                450.0
+            ], 
+            [
+                383.0, 
+                332.0
+            ], 
+            [
+                383.0, 
+                203.0
+            ], 
+            [
+                257.0, 
+                203.0
+            ], 
+            [
+                257.0, 
+                144.0
+            ], 
+            [
+                257.0, 
+                60.0
+            ], 
+            [
+                256.0, 
+                60.0
+            ], 
+            [
+                254.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            172.0, 
+            11.0
+        ], 
+        "type": "poly", 
+        "size": [
+            383.0, 
+            576.0
+        ]
+    }, 
+    {
+        "name": "home", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                1, 
+                1
+            ], 
+            [
+                121, 
+                0
+            ], 
+            [
+                123.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            305.0, 
+            11.0
+        ], 
+        "type": "poly", 
+        "size": [
+            123.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "park", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                123.0, 
+                0.0
+            ], 
+            [
+                124.0, 
+                0.0
+            ], 
+            [
+                124.0, 
+                84.0
+            ], 
+            [
+                0.0, 
+                84.0
+            ]
+        ], 
+        "position": [
+            305.0, 
+            71.0
+        ], 
+        "type": "poly", 
+        "size": [
+            124.0, 
+            84.0
+        ]
+    }, 
+    {
+        "name": "entrance", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "position": [
+            305.0, 
+            155.0
+        ], 
+        "type": "rect", 
+        "size": [
+            124.0, 
+            59.0
+        ]
+    }, 
+    {
+        "name": "corridor", 
+        "color": [
+            0, 
+            177, 
+            255
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                124.0, 
+                0.0
+            ], 
+            [
+                124.0, 
+                129.0
+            ], 
+            [
+                124.0, 
+                247.0
+            ], 
+            [
+                124.0, 
+                372.0
+            ], 
+            [
+                0.0, 
+                373.0
+            ], 
+            [
+                0.0, 
+                247.0
+            ], 
+            [
+                0.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            305.0, 
+            214.0
+        ], 
+        "type": "poly", 
+        "size": [
+            124.0, 
+            373.0
+        ]
+    }, 
+    {
+        "name": "Room3", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                126.0, 
+                0.0
+            ], 
+            [
+                125.0, 
+                118.0
+            ], 
+            [
+                0.0, 
+                118.0
+            ]
+        ], 
+        "position": [
+            429.0, 
+            343.0
+        ], 
+        "type": "poly", 
+        "size": [
+            126.0, 
+            118.0
+        ]
+    }, 
+    {
+        "name": "Room1", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                133.0, 
+                0.0
+            ], 
+            [
+                133.0, 
+                118.0
+            ], 
+            [
+                0.0, 
+                118.0
+            ], 
+            [
+                2.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            172.0, 
+            343.0
+        ], 
+        "type": "poly", 
+        "size": [
+            133.0, 
+            118.0
+        ]
+    }, 
+    {
+        "name": "shelter1", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "position": [
+            429.0, 
+            214.0
+        ], 
+        "type": "rect", 
+        "size": [
+            126.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "serverRoom", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "position": [
+            429.0, 
+            461.0
+        ], 
+        "type": "rect", 
+        "size": [
+            125.0, 
+            125.0
+        ]
+    }, 
+    {
+        "name": "Room2", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "position": [
+            172.0, 
+            461.0
+        ], 
+        "type": "rect", 
+        "size": [
+            133.0, 
+            126.0
+        ]
+    }, 
+    {
+        "name": "office", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            174.0, 
+            214.0
+        ], 
+        "type": "rect", 
+        "size": [
+            131.0, 
+            129.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	home	426.0	11.0	306.0	12.0	428.0	71.0	426.0	11.0	306.0	12.0	305.0	71.0
+boundary	park	305.0	155.0	305.0	71.0	429.0	71.0	429.0	155.0	428.0	71.0	429.0	71.0
+boundary	entrance	429.0	214.0	429.0	155.0	305.0	155.0	305.0	214.0
+boundary	corridor	305.0	587.0	429.0	586.0
+boundary	Room3	555.0	343.0	554.0	461.0
+boundary	Room1	172.0	461.0	174.0	343.0
+boundary	shelter1	555.0	343.0	555.0	214.0	429.0	214.0	555.0	214.0
+boundary	serverRoom	554.0	461.0	554.0	586.0	429.0	586.0	554.0	586.0
+boundary	Room2	305.0	587.0	172.0	587.0	172.0	461.0	172.0	587.0
+boundary	office	305.0	214.0	174.0	214.0	174.0	343.0	174.0	214.0
+home	park	428.0	71.0	305.0	71.0
+park	entrance	305.0	155.0	429.0	155.0
+entrance	corridor	429.0	214.0	305.0	214.0
+corridor	Room3	429.0	343.0	429.0	461.0
+corridor	Room1	305.0	461.0	305.0	343.0
+corridor	shelter1	429.0	214.0	429.0	343.0
+corridor	serverRoom	429.0	586.0	429.0	461.0
+corridor	Room2	305.0	461.0	305.0	587.0
+corridor	office	305.0	214.0	305.0	343.0
+Room3	shelter1	555.0	343.0	429.0	343.0
+Room3	serverRoom	554.0	461.0	429.0	461.0
+Room1	Room2	172.0	461.0	305.0	461.0
+Room1	office	174.0	343.0	305.0	343.0
+
