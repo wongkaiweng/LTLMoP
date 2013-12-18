@@ -33,17 +33,21 @@ room3 = p2
 others = 
 
 Spec: # Specification in structured English
+### ICRA 2014
+#initial condition
 Robot starts in room1
 
-go to room5
-#always not closedDoor
-if you were sensing closedDoor then do not closedDoor
-#WILL STOP WITH THIS STATEMENTS
+# Env Assumptions
 if you are sensing closedDoor then do not door
-#(door closed.. don't forcify env), will go through
-#if you are in room1 then do not closedDoor
 
+#Sys Guarantees
+if you were in room2 or room3 then do not closedDoor
+
+#sys goals
+go to room5
+
+
+### IROS 2013
+#if you were sensing closedDoor then do not closedDoor
 #always not (door and closedDoor)
-#Infinitely often not closedDoor
-#if you were in room2 or room3 then do not closedDoor
 
