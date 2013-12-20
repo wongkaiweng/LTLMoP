@@ -260,7 +260,11 @@ class SpecCompiler(object):
                 # substitute decomposed region 
                 for r in self.proj.rfi.regions:
                     if not (r.isObstacle or r.name.lower() == "boundary"):
-                        text = re.sub('\\b' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", text)
+                        print r.name
+                        print type(r.name)
+                        b=re.sub('\(', '', r.name)
+                        print b
+                        text = re.sub('\\b' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[re.sub('^p[0-9]+\s\(|\)', '', r.name)]])+")", text)
 
                 regionList = ["s."+x.name for x in self.parser.proj.rfi.regions]
             else:
@@ -363,7 +367,9 @@ class SpecCompiler(object):
         #for k,v in self.reversemapping.iteritems():
         #    print "{!r}:{!r}".format(k,v)        
 
-        return self.spec, traceback, response
+        ######## ENV Assumption Learning #######
+        return self.spec, traceback, response, self.LTL2SpecLineNumber
+        #######################################
 
     def substituteMacros(self, text):
         """
@@ -818,7 +824,7 @@ class SpecCompiler(object):
         return conjuncts
     
 
-    def _synthesize(self, with_safety_aut=False):
+    def _synthesize(self, with_safety_aut=False, just_realizability=False, DNFtoCNF = False):
         cmd = self._getGROneCommand("GROneMain")
         if cmd is None:
             return (False, False, "")

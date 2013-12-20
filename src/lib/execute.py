@@ -89,6 +89,13 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
         self.runFSA = threading.Event()  # Start out paused
         self.alive = threading.Event()
         self.alive.set()
+        
+        ########## ENV Assumption Learning ######
+        self.compiler = None
+        self.LTLViolationCheck = None
+        self.path_ltl = None
+        self.LTL2SpecLineNumber = None
+        #########################################
 
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
@@ -270,6 +277,16 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             logging.info("Starting from state %s." % init_state.name)
 
         self.aut = new_aut
+        
+        ######## ENV Assumption Learning ###########
+        self.compiler = specCompiler.SpecCompiler(spec_file)
+        self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+        self.compiler.proj = self.proj #conservative
+        #compiler.proj = copy.deepcopy(proj) #conservative
+        spec, traceback, response, self.LTL2SpecLineNumber = self.compiler._writeLTLFile()
+        self.path_ltl =  os.path.join(self.proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+        self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_ltl,LTL2LineNo)
+        #############################################
 
     def run(self):
         ### Get everything moving
@@ -290,25 +307,15 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 while (not self.runFSA.wait(0.1)) and self.alive.isSet():
                     pass
 
-			# Exit immediately if we're quitting
+            # Exit immediately if we're quitting
             if not self.alive.isSet():
                 break    
 
-			################### is moved to initialize ######
-			init_state = FSA.chooseInitialState(init_region, init_outputs)
-			print "init_region: " + str(init_region)   # by Catherine
-			print "init_outputs: " + str(init_outputs)  # by Catherine
-            ############### see if necessary later #####
-
-			###### ENV VIOLATION CHECK ######
-			compiler = specCompiler.SpecCompiler(spec_file)
-			compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
-			compiler.proj = proj #conservative
-			#compiler.proj = copy.deepcopy(proj) #conservative
-			traceback, LTL2LineNo = compiler._writeLTLFile()
-			path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-			LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
-			################################# 
+            ################### is moved to initialize ######
+            #init_state = FSA.chooseInitialState(init_region, init_outputs)
+            #print "init_region: " + str(init_region)   # by Catherine
+            #print "init_outputs: " + str(init_outputs)  # by Catherine
+            ############### see if necessary later ##### 
 
             self.prev_outputs = deepcopy(self.aut.current_outputs)
             self.prev_z = self.aut.current_state.rank
@@ -444,7 +451,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             prev_sensor_state = FSA.getSensorState() 
             #################################
             
-			toc = self.timer_func()
+            toc = self.timer_func()
 
             #self.checkForInternalFlags()
 
@@ -485,11 +492,6 @@ class RedirectText:
     def flush(self):
         pass
 
-    # Figure out our initially true outputs
-    init_outputs = []
-    for prop in proj.currentConfig.initial_truths:
-        if prop not in proj.enabled_sensors:
-            init_outputs.append(prop)
 
 ####################################################
 # Main function, run when called from command-line #
@@ -518,21 +520,11 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
     # Register functions with the XML-RPC server
     xmlrpc_server.register_instance(e)
 
-	# Kick off the XML-RPC server thread    
+    # Kick off the XML-RPC server thread    
     XMLRPCServerThread = threading.Thread(target=xmlrpc_server.serve_forever)
     XMLRPCServerThread.daemon = True
     XMLRPCServerThread.start()
     logging.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
-        
-    ###### ENV VIOLATION CHECK ######
-    compiler = specCompiler.SpecCompiler(spec_file)
-    compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
-    compiler.proj = proj #conservative
-    #compiler.proj = copy.deepcopy(proj) #conservative
-    traceback, LTL2LineNo = compiler._writeLTLFile()
-    path_ltl =  os.path.join(proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-    LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,LTL2LineNo)
-    ################################# 
 
     # Start the GUI if necessary
     if show_gui:

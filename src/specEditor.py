@@ -27,6 +27,12 @@ from parseEnglishToLTL import writeSpec
 from copy import deepcopy
 import threading, time
 
+###### ENV VIOLATION CHECK ######
+lib_path = os.path.abspath('../src/LTLparser')
+if lib_path not in sys.path:
+    sys.path.append(lib_path)
+import LTLcheck
+#################################
 
 ######################### WARNING! ############################
 #         DO NOT EDIT GUI CODE BY HAND.  USE WXGLADE.         #
@@ -520,7 +526,11 @@ class SpecEditorFrame(wx.Frame):
         self.response = None
         self.proj = project.Project()
         self.decomposedRFI = None
-
+        
+        ######## ENV Assumption Learning #######
+        self.LTL2SpecLineNumber = None
+        ########################################
+ 
         # Reset GUI
         self.button_map.Enable(False)
         self.button_sensor_remove.Enable(False)
@@ -1072,7 +1082,9 @@ class SpecEditorFrame(wx.Frame):
 
         self.appendLog("Creating LTL...\n", "BLUE")
 
-        spec, self.tracebackTree, self.response = compiler._writeLTLFile()
+        ######## ENV Assumption Learning #######
+        spec, self.tracebackTree, self.response, self.LTL2SpecLineNumber = compiler._writeLTLFile()
+        ########################################
         
         # Add any auto-generated propositions to the list
         # TODO: what about removing old ones?
@@ -1130,7 +1142,21 @@ class SpecEditorFrame(wx.Frame):
                 self.appendLog("Automaton successfully synthesized for instantaneous actions.\n", "GREEN")
             else:
                 self.appendLog("ERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
-
+        
+            ############# ENV Assumption Learning ###################
+            if not realizable:
+                self.appendLog("\tNow we are changing the environment safety assumptions from [](TRUE) to [](FALSE).\n","BLUE")
+                path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+                LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,self.LTL2SpecLineNumber)
+                LTLViolationCheck.modify_LTL_file()
+                realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
+            
+            if realizable:
+                self.appendLog("\tAutomaton successfully synthesized for instantaneous actions.\n", "GREEN")
+            else:
+                self.appendLog("\tERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
+            #########################################################
+        
         # Check for trivial aut
         if realizable or realizableFS:
             if not compiler._autIsNonTrivial():
