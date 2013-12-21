@@ -111,7 +111,7 @@ class LTL_Check:
         """
         
         # Environment Violations are removed
-        if value == True:
+        if value == True and len(self.violated_spec_line_no) != 0:
             self.violated_spec_line_no = []
             print "ViolationSolved:"
         
@@ -280,7 +280,7 @@ class LTL_Check:
         
         if not sensor_state == None: # None: use the stored sensor_state in the object
             self.sensor_state  = sensor_state
-        
+        self.sensor_state_len  = len(self.sensor_state)
         
         ########### MODIFICATION STAGE ###############
         # 1 : to add only current inputs

@@ -91,10 +91,11 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
         self.alive.set()
         
         ########## ENV Assumption Learning ######
-        self.compiler = None
+        self.compiler = None                   
         self.LTLViolationCheck = None
-        self.path_ltl = None
-        self.LTL2SpecLineNumber = None
+        self.path_ltl = None                    # path of the .ltl file
+        self.LTL2SpecLineNumber = None          # mapping from LTL to structed english
+        self.redir = None                       # for redirecting all logs to SimGUI
         #########################################
 
     def postEvent(self, eventType, eventData=None):
@@ -281,11 +282,12 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
         ######## ENV Assumption Learning ###########
         self.compiler = specCompiler.SpecCompiler(spec_file)
         self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
-        self.compiler.proj = self.proj #conservative
+        #self.compiler.proj = self.proj #conservative
         #compiler.proj = copy.deepcopy(proj) #conservative
-        spec, traceback, response, self.LTL2SpecLineNumber = self.compiler._writeLTLFile()
-        self.path_ltl =  os.path.join(self.proj.project_root,proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-        self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_ltl,LTL2LineNo)
+        spec, traceback, response, self.LTL2SpecLineNumber = self.compiler._writeLTLFile(False)
+        self.path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+        self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_ltl,self.LTL2SpecLineNumber)
+        self.redir = RedirectText(self.externalEventTarget.handleEvent)
         #############################################
 
     def run(self):
@@ -302,7 +304,14 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     self.proj.h_instance['motionControl'].stop()
                 except AttributeError:
                     self.proj.h_instance['drive'].setVelocity(0,0)
+                
+                ###### ENV VIOLATION CHECK ######
+                # for generation of specification from DNF to CNF
 
+                sys.stdout = self.redir
+                print self.compiler._synthesize(False, True, True)[2]  # TRUE for realizable, FALSE for unrealizable
+                ################################
+                    
                 # wait for either the FSA to unpause or for termination
                 while (not self.runFSA.wait(0.1)) and self.alive.isSet():
                     pass
@@ -312,7 +321,7 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                 break    
 
             ################### is moved to initialize ######
-            #init_state = FSA.chooseInitialState(init_region, init_outputs)
+            #init_state = self.aut.chooseInitialState(init_region, init_outputs)
             #print "init_region: " + str(init_region)   # by Catherine
             #print "init_outputs: " + str(init_outputs)  # by Catherine
             ############### see if necessary later ##### 
@@ -324,70 +333,73 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
             self.aut.runIteration()
 
             ###### ENV VIOLATION CHECK ######
-            initial_pause = True
-            if initial_sensor_state == False:
-                LTLViolationCheck.sensor_state_len = len(FSA.getCurrentState().inputs)
-                # store the name of the sensors
-                for key,value in FSA.getSensorState().iteritems():
-                    LTLViolationCheck.sensors.append(key)
+            #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$##
+            #$$$$$ DISABLE NOW SINCE THIS IS FOR LIVENESS GENERATION $$$$$$$$$$##
+#            if initial_sensor_state == False:
+#                self.LTLViolationCheck.sensor_state_len = len(self.aut.getCurrentState().inputs)
+#                # store the name of the sensors
+#                for key,value in self.aut.getSensorState().iteritems():
+#                    self.LTLViolationCheck.sensors.append(key)
+            #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$##
+            
             
             # Check for environment violation
-            env_assumption_hold = LTLViolationCheck.checkViolation(FSA.getCurrentState(),FSA.getSensorState())
-            
+            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState())
+
             # change the env_assumption_hold to int again (messed up by Python? )
             env_assumption_hold = int(env_assumption_hold)
-            
+
             # temporarily added to account for [](FALSE)
-            #LTLViolationCheck.modify_LTL_file()
+            #self.LTLViolationCheck.modify_LTL_file()
             
             # Modify the ltl file based on the enviornment change
             if env_assumption_hold == False:
                 #print>>sys.__stdout__, "assumption is evaluated as False"
-                LTLViolationCheck.modify_LTL_file()
-                realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                self.LTLViolationCheck.modify_LTL_file()
+                realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                 
                 #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
-                sys.stdout = redir
+                sys.stdout = self.redir
                 
-                #print "INITIAL:modify_stage: " + str(LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
+                #print "INITIAL:modify_stage: " + str(self.LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable)
 
                 if not realizable:
-                    while LTLViolationCheck.modify_stage < 3 and not realizable:
-                        LTLViolationCheck.modify_stage += 1 
+                    while self.LTLViolationCheck.modify_stage < 3 and not realizable:
+                        self.LTLViolationCheck.modify_stage += 1 
                         
-                        LTLViolationCheck.modify_LTL_file()
-                        realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                        self.LTLViolationCheck.modify_LTL_file()
+                        realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                         
                         #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
-                        sys.stdout = redir
-                
-                print "STAGE: " + str(LTLViolationCheck.modify_stage) 
+                        sys.stdout = self.redir
+
+                print "STAGE: " + str(self.LTLViolationCheck.modify_stage) 
                 print "FINAL:-realizable: " + str(realizable)
                 # reload aut file if the new ltl is realizable        
                 if realizable:
                     print "ViolationSolved:"
-                    LTLViolationCheck.sameState = False
+                    self.LTLViolationCheck.sameState = False
                     #######################
                     # Load automaton file #
                     #######################
                     print "Reloading automaton..."
                     #FSA = fsa.Automaton(proj)
-                    runFSA = False
+                    self.runFSA.clear() #runFSA = False
                     
-                    success = FSA.loadFile(aut_file, proj.enabled_sensors, proj.enabled_actuators, proj.all_customs)
+                    success = self.aut.loadFile(aut_file, self.proj.enabled_sensors, self.proj.enabled_actuators, self.proj.all_customs)
                     if not success: return
                     
                     #cur_region_no = 0
                     cur_outputs = [] #format: ['act1','act2']
-                    for key, value in LTLViolationCheck.current_state.outputs.iteritems():
+                    for key, value in self.LTLViolationCheck.current_state.outputs.iteritems():
                         if key.find("bit") == -1 and (int(value) == 1):
                             cur_outputs.append(key)
                         #print key, value
-                    cur_region_no = FSA.regionFromState(LTLViolationCheck.current_state)
+                    cur_region_no = self.aut.regionFromState(self.LTLViolationCheck.current_state)
                     
                     #print "cur_region_no:" + str(cur_region_no)
-                    #init_state = FSA.chooseInitialState(init_region, init_outputs)
-                    init_state = FSA.chooseInitialState(cur_region_no, cur_outputs)
+                    #init_state = self.aut.chooseInitialState(init_region, init_outputs)
+                    init_state = self.aut.chooseInitialState(cur_region_no, cur_outputs)
                     #print "cur_outputs: " + str(cur_outputs)  # by Catherine
                     
                     if init_state is None:
@@ -396,16 +408,17 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                     else:
                         print "Starting from state %s." % init_state.name
                     
-                    runFSA = True
+                    self.runFSA.set() #runFSA = True
+                    
                 else:
                     print "-----------------------------------------------"
                     # still missing removing liveness guarantees
                     print "Trying to remove system liveness guarantees..."
-                    LTLViolationCheck.remove_liveness_guarantees()
-                    realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                    self.LTLViolationCheck.remove_liveness_guarantees()
+                    realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                         
                     #TODO: figure out what's the problem with printing to terminal after resynthesize * the line here fix the problem by redirecting the printings again
-                    sys.stdout = redir
+                    sys.stdout = self.redir
                     
                     if realizable:
                         print "Synthesizable without system liveness guarantees. Please put in some environment liveness assumptions."        
@@ -416,39 +429,39 @@ class LTLMoPExecutor(object, ExecutorResynthesisExtensions):
                         sys.exit()
                         
                          
-                    LTLViolationCheck.append_liveness_guarantees()
+                    self.LTLViolationCheck.append_liveness_guarantees()
                     print "Trying to append liveness assumptions"
-                    LTLViolationCheck.generate_env_livenss_assumptions(True)
-                    realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
-                    sys.stdout = redir
+                    self.LTLViolationCheck.generate_env_livenss_assumptions(True)
+                    realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                    sys.stdout = self.redir
                     
-                    while not realizable and LTLViolationCheck.liveness_generation_count < (2*LTLViolationCheck.sensor_state_len + + 2**LTLViolationCheck.sensor_state_len):
-                        LTLViolationCheck.generate_env_livenss_assumptions()
-                        realizable = compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
-                        sys.stdout = redir
+                    while not realizable and self.LTLViolationCheck.liveness_generation_count < (2*self.LTLViolationCheck.sensor_state_len + + 2**self.LTLViolationCheck.sensor_state_len):
+                        self.LTLViolationCheck.generate_env_livenss_assumptions()
+                        realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                        sys.stdout = self.redir
                         
                     if not realizable:
                         print "Still not realizable. Now we will exit the execution"
                         print "----------------------------------------------"
                         sys.exit()
                     else:
-                        LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                        self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
                 
             
             else:    
-                #if prev_cur_state != FSA.current_state or prev_sensor_state != FSA.sensor_state:
+                #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
                     #print "The SENSOR state has been changed."
-                    #print "Before:" + LTLViolationCheck.env_safety_assumptions_stage["3"]
-                LTLViolationCheck.append_state_to_LTL(FSA.getCurrentState(),FSA.getSensorState())
-                #LTLViolationCheck.modify_LTL_file()
+                    #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
+                self.LTLViolationCheck.append_state_to_LTL(self.aut.getCurrentState(),self.aut.getSensorState())
+                #self.LTLViolationCheck.modify_LTL_file()
                 if env_assumption_hold == False:
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
             #    print >>sys.__stdout__,"env_assumption_hold equals False: " + str(env_assumption_hold == False) +" should say False."     
-                #if prev_cur_state != FSA.current_state or prev_sensor_state != FSA.sensor_state:
-                #    print "After: " + LTLViolationCheck.env_safety_assumptions_stage["3"]
+                #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
+                #    print "After: " + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
                     
-            prev_cur_state = FSA.getCurrentState()
-            prev_sensor_state = FSA.getSensorState() 
+            #prev_cur_state = self.aut.getCurrentState()
+            #prev_sensor_state = self.aut.getSensorState() 
             #################################
             
             toc = self.timer_func()

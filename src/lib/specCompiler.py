@@ -139,7 +139,11 @@ class SpecCompiler(object):
         
         createSMVfile(self.proj.getFilenamePrefix(), sensorList, robotPropList)
 
-    def _writeLTLFile(self):
+    def _writeLTLFile(self, createLTL = True):
+        
+        ###### ENV Assumptions Learning #############
+        # createLTL: True for normal cases, False when running execute.py
+        #############################################
 
         self.LTL2SpecLineNumber = None
 
@@ -260,11 +264,7 @@ class SpecCompiler(object):
                 # substitute decomposed region 
                 for r in self.proj.rfi.regions:
                     if not (r.isObstacle or r.name.lower() == "boundary"):
-                        print r.name
-                        print type(r.name)
-                        b=re.sub('\(', '', r.name)
-                        print b
-                        text = re.sub('\\b' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[re.sub('^p[0-9]+\s\(|\)', '', r.name)]])+")", text)
+                        text = re.sub('\\b' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", text)
 
                 regionList = ["s."+x.name for x in self.parser.proj.rfi.regions]
             else:
@@ -358,7 +358,10 @@ class SpecCompiler(object):
 
         LTLspec_sys += "\n&\n" + self.spec['Topo']
 
-        createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
+        ###### ENV Assumptions Learning #############
+        if createLTL == True:
+            createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
+        #############################################
         
         if self.proj.compile_options["parser"] == "slurp":
             self.reversemapping = {self.postprocessLTL(line,sensorList,robotPropList).strip():line.strip() for line in oldspec_env + oldspec_sys}
@@ -826,6 +829,7 @@ class SpecCompiler(object):
 
     def _synthesize(self, with_safety_aut=False, just_realizability=False, DNFtoCNF = False):
         cmd = self._getGROneCommand("GROneMain")
+        print "original:" + str(cmd)
         if cmd is None:
             return (False, False, "")
 
@@ -835,18 +839,24 @@ class SpecCompiler(object):
         if self.proj.compile_options["fastslow"]:
             cmd.append("--fastslow")
 
-    
+
+        # compute Extract minimal conjunctive normal form (CNF)
+        if DNFtoCNF == True:
+            cmd.append("--computeWeakenedSafetyAssumptions")
+
         # Added options from slugs to just check for realizability without generating automaton
         if just_realizability == True:
             cmd.append("--onlyRealizability")
         
         # consider all possible starting states
         cmd.append("--sysInitRoboticsSemantics")
-        
-        # compute Extract minimal conjunctive normal form (CNF)
-        if DNFtoCNF == True:
-            cmd.append("--computeWeakenedSafetyAssumptions")
-        
+         
+        # need to remove .aut file for slugs to run for --computeWeakenedSafetyAssumptions, --onlyRealizability
+        if DNFtoCNF == True or just_realizability == True:
+            for x in cmd:
+                if ".aut" in x:
+                    cmd.remove(x)
+
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False
