@@ -527,9 +527,6 @@ class SpecEditorFrame(wx.Frame):
         self.proj = project.Project()
         self.decomposedRFI = None
         
-        ######## ENV Assumption Learning #######
-        self.LTL2SpecLineNumber = None
-        ########################################
  
         # Reset GUI
         self.button_map.Enable(False)
@@ -1082,9 +1079,7 @@ class SpecEditorFrame(wx.Frame):
 
         self.appendLog("Creating LTL...\n", "BLUE")
 
-        ######## ENV Assumption Learning #######
-        spec, self.tracebackTree, self.response, self.LTL2SpecLineNumber = compiler._writeLTLFile()
-        ########################################
+        spec, self.tracebackTree, self.response = compiler._writeLTLFile()
         
         # Add any auto-generated propositions to the list
         # TODO: what about removing old ones?
@@ -1147,7 +1142,7 @@ class SpecEditorFrame(wx.Frame):
             if not realizable:
                 self.appendLog("\tNow we are changing the environment safety assumptions from [](TRUE) to [](FALSE).\n","BLUE")
                 path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-                LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,self.LTL2SpecLineNumber)
+                LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
                 LTLViolationCheck.modify_LTL_file()
                 realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
             

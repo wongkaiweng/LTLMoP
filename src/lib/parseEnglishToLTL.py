@@ -216,7 +216,11 @@ def writeSpec(text, sensorList, regionList, robotPropList):
                 failed = True
                 continue
 
-            spec['EnvInit']= spec['EnvInit'] + LTLsubformula
+            #### Rewritten by Catherine for ENV Assumption mining ###############
+            ### put parentheses around the env init condition for DNF later #####
+            LTLsubformula = LTLsubformula[0:LTLsubformula.rfind('&')]
+            spec['EnvInit']= spec['EnvInit'] + "(" + LTLsubformula + ") &\n"
+            #####################################################################
             linemap['EnvInit'].append(lineInd)
             
             LTL2LineNo[replaceRegionName(LTLsubformula,bitEncode,regionList)] = lineInd
@@ -262,7 +266,11 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             elif QuantifierFlag == "ALL":
                 LTLRegSubformula = LTLRegSubformula.replace("QUANTIFIER_PLACEHOLDER", quant_and_string['current'])
 
-            spec['SysInit']= spec['SysInit'] + LTLRegSubformula + LTLActSubformula
+            #### Rewritten by Catherine for ENV Assumption mining ###############
+            ### put parentheses around the sys init condition for DNF later #####
+            LTLActSubformula = LTLActSubformula[0:LTLActSubformula.rfind('&')]
+            spec['SysInit']= spec['SysInit'] + "("+ LTLRegSubformula + LTLActSubformula + ") &\n"
+            ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
 

@@ -22,10 +22,11 @@ class LTL_Check:
     """
     Check which ltl statement was violated.
     """
-    def __init__(self,path, LTL2LineNo):
+    def __init__(self,path, LTL2LineNo, spec):
         """
         Obtain .ltl of the current specification and trim the string to include only LTL.
         """
+        self.spec          = spec         # split that got split into different parts
         self.path_ltl      = path
         self.current_state = None
         self.sensor_state  = None

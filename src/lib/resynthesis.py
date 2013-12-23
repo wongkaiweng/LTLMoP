@@ -274,13 +274,15 @@ class ExecutorResynthesisExtensions(object):
 
         # Get a conjunct expressing the current state
         ltl_current_state = self.getCurrentStateAsLTL() # TODO: Constrain to props in new spec
+
         logging.debug("Constraining new initial conditions to: " + ltl_current_state)
 
         # TODO: Do we need to remove pre-exisiting constraints too? What about env?
         # Add in current system state to make strategy smaller
         gc = guarantees.getConjuncts()
+        
         if ltl_current_state != "":
-            gc.append(LTLFormula.fromString(ltl_current_state))
+            gc.append(LTLFormula.fromString(ltl_current_state))  
 
         # Write the file back
         createLTLfile(ltl_filename, assumptions, gc)
@@ -406,3 +408,40 @@ class ExecutorResynthesisExtensions(object):
 
         # Let anyone waiting for the response know that it is ready
         self.received_user_query_response.set()
+   
+   
+    ########### ENV Assumption Mining ####################
+    def _setSpecificationInitialConditionsToCurrentInDNF(self, proj):
+        """ Add Env and Sys Init in disjunctive Normal form to LTL"""
+        
+        
+        # Parse the LTL file in so we can manipulate it
+        ltl_filename = proj.getFilenamePrefix() + ".ltl"
+        assumptions, guarantees = LTLFormula.fromLTLFile(ltl_filename)
+        print "\n\nRESYN:assumptions: ", assumptions
+        # Get a conjunct expressing the current state
+        ltl_current_state = self.getCurrentStateAsLTL() # TODO: Constrain to props in new spec
+        print "\n\nRESYN:ltl_current_state: " + str(ltl_current_state)
+        logging.debug("Constraining new initial conditions to: " + ltl_current_state)
+
+        # TODO: Do we need to remove pre-exisiting constraints too? What about env?
+        # Add in current system state to make strategy smaller
+        gc = guarantees.getConjuncts()
+        print "\n\n\n type:"
+        print type(gc[0])
+        print "\n\ngc: " +str(gc)
+        if ltl_current_state != "":
+            gc.append(LTLFormula.fromString("(" + ltl_current_state + ")"))
+            print "\n\nRESYN: createString: " + str(LTLFormula.fromString(ltl_current_state))
+        
+        # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
+        LTLspec_env = self.spec["EnvInit"] + self.spec["EnvTrans"] + self.spec["EnvGoals"]
+        LTLspec_sys = self.spec["SysInit"] + self.spec["SysTrans"] + self.spec["SysGoals"]
+        
+        LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
+
+        LTLspec_sys += "\n&\n" + self.spec['Topo']
+        
+        # Write the file back
+        createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
+    #########################################################################

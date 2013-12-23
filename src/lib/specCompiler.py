@@ -357,8 +357,17 @@ class SpecCompiler(object):
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
         LTLspec_sys += "\n&\n" + self.spec['Topo']
-
+        
         ###### ENV Assumptions Learning #############
+        ## Saving LTL Spec in separated parts to be used for assumption mining #####
+        self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
+        self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList) 
+        self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)   
+        self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList) 
+        self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList) 
+        self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)  
+        
+        #only write to LTLfile with specEditor
         if createLTL == True:
             createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
         #############################################
@@ -371,7 +380,7 @@ class SpecCompiler(object):
         #    print "{!r}:{!r}".format(k,v)        
 
         ######## ENV Assumption Learning #######
-        return self.spec, traceback, response, self.LTL2SpecLineNumber
+        return self.spec, traceback, response
         #######################################
 
     def substituteMacros(self, text):
@@ -829,7 +838,7 @@ class SpecCompiler(object):
 
     def _synthesize(self, with_safety_aut=False, just_realizability=False, DNFtoCNF = False):
         cmd = self._getGROneCommand("GROneMain")
-        print "original:" + str(cmd)
+
         if cmd is None:
             return (False, False, "")
 
