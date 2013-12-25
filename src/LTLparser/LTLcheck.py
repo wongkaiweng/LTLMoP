@@ -1,6 +1,7 @@
 import sys, os, shutil, time
 import parseFormulaTest
 from numpy import *
+import fsa
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -46,19 +47,14 @@ class LTL_Check:
         self.ltlTree_to_lineNo = {}
         # correspond line numbers in spec to the structure English and the tree converted 
         for key,value in self.LTL2LineNo.iteritems():
-            removed_tab = key.replace("\t", "")
-            removed_nextline = removed_tab.replace("\n", "")
-            removed_space = removed_nextline.replace(" ", "")
-            tree = parseFormulaTest.parseLTL(removed_space[:-1])
+            removed_all = key.replace("\t", "").replace("\n", "").replace(" ", "")
+            tree = parseFormulaTest.parseLTL(removed_all[:-1])
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
        
         
         # trim read_data so that it only includes ltl but not tabs and nextlines
-        read_ltl  = read_ltl.replace("\t", "")
-        read_ltl  = read_ltl.replace("\n", "")
-        read_ltl  = read_ltl.replace(" ", "")
-        read_ltl  = read_ltl.replace("&[]<>(TRUE)", "")    
+        read_ltl  = read_ltl.replace("\t", "").replace("\n", "").replace(" ", "").replace("&[]<>(TRUE)", "")    
      
         self.ltl_tree = parseFormulaTest.parseLTL(read_ltl)
         if debug_tree_terminal == True: 
@@ -78,8 +74,8 @@ class LTL_Check:
         self.env_safety_assumptions_stage = {"1": "\t\t\t[](FALSE", "2": "\t\t\t[](FALSE", "3": "\t\t\t[](FALSE"}
         
         # for tracking the liveness assumptions generated
-        self.liveness_generation_count = 0
-        self.sensors = []
+        #self.liveness_generation_count = 0
+        #self.sensors = []
         self.sensor_state_len = None       
             
     def checkViolation(self,cur_state,sensor_state):
@@ -94,22 +90,10 @@ class LTL_Check:
 
 
         if debug_proposition_values == True:
-            pass
-            #print "self.current_state.outputs"
-            #for key,value in self.current_state.outputs.iteritems():
-            #    print str(key) + ": " + str(value)
+            print "self.current_state.outputs"
+            for key,value in self.current_state.outputs.iteritems():
+                print str(key) + ": " + str(value)
         
-        """
-        #print >>sys.__stdout__,"self.current_state.inputs"
-        #for key,value in self.current_state.inputs.iteritems():
-        #    print >>sys.__stdout__,"current Inputs: " + str(key) + ": " + str(value)
-        #print >>sys.__stdout__,"self.sensor_state" ####SEARCH FOR SELF.SENSOR_STATE TO REMOVE SELF ############
-        #for key,value in self.sensor_state.iteritems():
-        #    print >>sys.__stdout__,"next Inputs: " + str(key) + ": " + str(value) 
-        #print >>sys.__stdout__,"RuntimeV value: " + str(value)
-        
-        time.sleep(1)
-        """
         
         # Environment Violations are removed
         if value == True and len(self.violated_spec_line_no) != 0:
@@ -118,158 +102,6 @@ class LTL_Check:
         
         # return whether the environment assumptions are being violated
         return value
-    
-    def generate_env_livenss_assumptions(self,initial = False):
-        """
-        Modify ltl file from LTLMoP to add environment liveness assumptions so that the ltl is synthesizable.
-        initial: track if we are this is the first time we run the function or we are trying to find the right liveness.
-        """
-               
-        ########### MODIFICATION STAGE ###############
-        # 1 : consider only one current input
-        # 2 : consider combination of current inputs
-        ##############################################
-        
-        # reset the count if this is the first time running the function after addition of safety assumptions
-        if initial == True:
-            self.liveness_generation_count = 0
-            
-        with open(self.path_ltl, 'r+') as f:
-            ltl_file = f.readlines()
-            f.seek(0)
-            f.truncate()
-            liveness_to_add = ""
-            for i, line in enumerate(ltl_file):   
-                if (ltl_file[i-1].find("[](FALSE") != -1):
-                    # for stage 1
-                    if self.liveness_generation_count < 2*self.sensor_state_len:
-                        # find the sensor to be used in the liveness assumption
-                        liveness_to_add += "e." + self.sensors[self.liveness_generation_count/2]
-                        
-                        # negate the clasue if the count is dividable by 2
-                        if self.liveness_generation_count%2 == 0:
-                            liveness_to_add = "!" + liveness_to_add
-                            
-                        liveness_to_add = "\t\t\t[]<>(" + liveness_to_add 
-                        self.liveness_generation_count += 1
-                   
-                    # for stage 2
-                    elif self.liveness_generation_count < (2*self.sensor_state_len + 2**self.sensor_state_len): 
-                        number = self.liveness_generation_count - 2*self.sensor_state_len
-                        sensor_bit = []
-                        for i,item in enumerate(self.sensor_state):
-                            if i == self.sensor_state_len - 1:
-                                #sensor_bit.append(number)
-                                if (number == 1):
-                                    liveness_to_add += "e." + self.sensors[i] 
-                                else:
-                                    liveness_to_add += "!e." + self.sensors[i]
-                            else:
-                                if (number%2 == 1):
-                                    liveness_to_add += "e." + self.sensors[i] + " & "
-                                else:
-                                    liveness_to_add += "!e." + self.sensors[i]+ " & "
-                                #sensor_bit.append(number%2)
-                                number = number/2
-                                                               
-                        liveness_to_add = "\t\t\t[]<>(" + liveness_to_add 
-                        self.liveness_generation_count += 1
-                        
-                    else: 
-                        print "we don't know why we are here"       
-                        pass    
-                    
-                    print "count: " + str(self.liveness_generation_count) + " adding liveness: "  + str(liveness_to_add)
-                    if initial == True:
-                        if (line.find("[]<>(TRUE)") != -1):
-                            f.write(liveness_to_add+ ") \n")
-                        else:
-                            f.write(liveness_to_add+ ") &\n" + line)
-                    else: # replace the old liveness
-                        if (line.find(") &\n") != -1):
-                            f.write(liveness_to_add + ") &\n")
-                        else:
-                            f.write(liveness_to_add + ") \n")
-                           
-                else: # just rewrite the file
-                    f.write(line)        
-                                           
-        f.closed
-        pass
-    
-    def remove_liveness_guarantees(self):
-        """
-        Modify ltl file from LTLMoP to remove system liveness guarantees.
-        """
-             
-        with open(self.path_ltl, 'r+') as f:
-            ltl_file = f.readlines()
-            f.seek(0)
-            f.truncate()            
-            read_ltl = ""    # for remaking the parse tree of ltl spec
-            env_ltl = True
-            sys_liveness = False
-            
-            for i, line in enumerate(ltl_file):   
-                #print ltl_file[i-1] + " ,find []<>: " + str(ltl_file[i-1].find("[]<>") != -1)                       
-                if (line.find("LTLSPEC -- Guarantees") != -1):
-                    env_ltl = False
-                
-                # when it doesn't find []<> in both this line and previous line
-                if (env_ltl == True and not i == 0) :
-                    f.write(ltl_file[i-1])
-                    #print "writing file normally"
-                
-                # when it finds []<> in current line
-                elif (env_ltl == False and (line.find("[]<>") != -1) and sys_liveness == False):
-                    #print "This is the previous line: " + ltl_file[i-1]
-                    #print "This is the previous line with no &: " + ltl_file[i-1][:-2]
-                    f.write(ltl_file[i-1][:-3])
-                    #f.write("\n")
-                    sys_liveness = True
-                    self.last_sys_guarantee = ltl_file[i-1]
-                    self.liveness_guarantees += line
-                
-                # when storing systme liveness_guarantees
-                elif env_ltl == False and sys_liveness == True:
-                    #print line + " ,find );: " + str(line.find(");") != -1) 
-                    if (line.find(");") == -1):
-                        self.liveness_guarantees += line
-                    else:
-                        self.liveness_guarantees += line # currently this stored ); as well. should just store the entire ltl file. = =''
-                        f.write(line)
-                
-                # when reading system guarantees but not system livenesses yet                  
-                else:
-                    if env_ltl == False and sys_liveness == False:
-                        f.write(ltl_file[i-1])
-                    #print "i don't know why it is here"
-            #print "self.last_sys_guarantee: " +str(self.last_sys_guarantee)
-            #print "liveness_guarantees: " + str(self.liveness_guarantees)
-        f.closed
-        
-        #f.seek(start_of_last_line) 
-        #f.write(new_line) # Assuming that new_line ends with "\n" 
-        #f.truncate() # In case the new line is shorter than what it's replacing     
-        #open(self.path_ltl, 'r+')
-        
-    def append_liveness_guarantees(self):
-        """
-        Modify ltl file from LTLMoP to append system liveness guarantees removed .
-        """
-             
-        with open(self.path_ltl, 'r+') as f:
-            lines = f.readlines()
-            lines = lines[:-1]
-            f.seek(0)
-            f.truncate()
-            for l in lines:   
-                f.write(l)
-            f.write(self.last_sys_guarantee)
-            for l in self.liveness_guarantees:
-                f.write(l)
-        self.liveness_guarantees = ""
-        f.closed
     
     
     def append_state_to_LTL(self, cur_state = None, sensor_state = None):
@@ -293,157 +125,46 @@ class LTL_Check:
         add_ltl = "\t | ("                
                         
         # for the first stage 
-        sensor_state_len_count = 0                 
-        #sensor_state_len = len(self.current_state.inputs)
-        
-        for key,value in self.current_state.inputs.iteritems():
-            if not sensor_state_len_count == 0 and sensor_state_len_count < self.sensor_state_len:
-                add_ltl += " & "
-            if int(value) == False:
-                add_ltl += "!"
-            add_ltl += "e." + key 
-            sensor_state_len_count += 1                      
-            #print key, value
-            
+        add_ltl += fsa.stateToLTL(self.current_state,env_output=True)             
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["1"] += add_ltl
-            self.env_safety_assumptions_stage["1"] += ")"                        
+            self.env_safety_assumptions_stage["1"] += add_ltl + ")"                       
         
         # for the second stage
-        next_sensor_state_len_count = 0 
-        #next_sensor_state_len = len(self.sensor_state)
-    
-        for key,value in self.sensor_state.iteritems():
-            if next_sensor_state_len_count == 0 or next_sensor_state_len_count < self.sensor_state_len:
-                add_ltl += " & "
-            if int(value) == False:
-                add_ltl += "!"
-            add_ltl += "next(e." + key + ")"
-            next_sensor_state_len_count += 1
-        
+        state = fsa.FSA_State("sensors_only",self.sensor_state,None,None)
+        add_ltl += " & " + fsa.stateToLTL(state,use_next=True,env_output=True)        
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["2"] += add_ltl
-            self.env_safety_assumptions_stage["2"] += ")"  
+            self.env_safety_assumptions_stage["2"] += add_ltl + ")"  
         
         # for the third stage                    
-        output_state_len_count = 0                             
-        output_state_len = len(self.current_state.outputs)
-        #print "output_state_len:" + str(output_state_len)
-        for key,value in self.current_state.outputs.iteritems():
-            if output_state_len_count == 0 or output_state_len_count < output_state_len:
-                add_ltl += " & "
-            if int(value) == False:
-                add_ltl += "!"
-            add_ltl += "s." + key
-            output_state_len_count += 1
-            #print "key: " + str(key) + "value: " + str(value)
-            #print output_state_len_count    
-
+        add_ltl += " & " + fsa.stateToLTL(self.current_state)         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["3"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 :                   
-            self.env_safety_assumptions_stage["3"] += add_ltl
-            self.env_safety_assumptions_stage["3"] += ")"  
+            self.env_safety_assumptions_stage["3"] += add_ltl +  ")"  
         
     
     def modify_LTL_file(self):
         """
-        Modify ltl file from LTLMoP for runtime verification "learning".
+        Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
         """
-             
-        with open(self.path_ltl, 'r+') as f:
-            ltl_file = f.readlines()
-            f.seek(0)
-            f.truncate()            
-            read_ltl = ""    # for remaking the parse tree of ltl spec
-            add_assumption = True
+        
+        if self.sameState == False:
+                        
+            # append the current, next inputs and current outputs to different stages of env saftey assumptions.
+            self.append_state_to_LTL()
             
-            for i,line in enumerate(ltl_file):                          
-                
-                if (line.find("[](FALSE") != -1):
-                    
-                    if self.sameState == False:
-                        
-                        # append the current, next inputs and current outputs to different stages of env saftey assumptions.
-                        self.append_state_to_LTL()
-                        
-                        self.sameState = True
-                    
-                    # choosing modify stage to be added
-                    line = self.env_safety_assumptions_stage[str(self.modify_stage)]
-                    print "The modification stage is: " + str(self.modify_stage)
+            self.sameState = True
 
-                    if self.modify_stage > 3 or self.modify_stage < 1:
-                        print "This modify_stage is impossible. stage: " + str (self.modify_stage)
-                    #print "STAGE: " + str(self.modify_stage) + " APPENDED: " + str(self.last_added_ltl) + ")" 
-                    #line += add_ltl
-                    #line += ")) & \n" 
-                    line += ") & \n"
-                
-                """
-                # removing the old initial assumption and put in a new one
-                if (ltl_file[i-1].find("[](FALSE") != -1):
-                    sensor_state_len_count = 0
-                    add_init = "("
-                    sensor_state_len = len(self.current_state.inputs)
-                        
-                    for key,value in self.current_state.inputs.iteritems():
-                        if not sensor_state_len_count == 0 and sensor_state_len_count < sensor_state_len:
-                            add_init += " & "
-                        if int(value) == False:
-                            add_init += "!"
-                        add_init += "e." + key 
-                        sensor_state_len_count += 1
-                        
-                    output_state_len_count = 0    
-                    output_state_len = len(self.current_state.outputs)
-                    for key,value in self.current_state.outputs.iteritems():
-                        if output_state_len_count == 0 or output_state_len_count < output_state_len:
-                            add_init += " & "
-                        if int(value) == False:
-                            add_init += "!"
-                        add_init += "s." + key
-                        output_state_len_count += 1
-                        #print "key: " + str(key) + "value: " + str(value)
+        # choosing modify stage to be added
+        #print >>sys.__stdout__,"env_safety_assumptions: " + str(self.env_safety_assumptions_stage[str(self.modify_stage)])
+        new_env_safety = self.env_safety_assumptions_stage[str(self.modify_stage)]
+        new_env_safety  = new_env_safety.replace("\t", "").replace("\n", "").replace(" ", "").replace("&[]<>(TRUE)", "") 
+        new_env_safety  = new_env_safety + ")"   
 
-                    add_init +=  ") &\n"
-                    add_init = "\t\t\t" + add_init
-                    #print add_init
-                    
-                    # To make sure []<>(TRUE) is still in ltl file
-                    if self.first_initial_state_added_to_ltl == False:
-                        f.write(add_init)
-                        self.first_initial_state_added_to_ltl = True
-                    else:
-                        line = add_init
-                """
-                
-                # find "always TRUE and replace with always FALSE to create most restrictive safety assumptions"
-                if (line.find("[](TRUE) &") != -1):
-                    line = line.replace("[](TRUE) &", "[](FALSE) &")    
-                #print >>sys.__stdout__, line   
-                
-                f.write(line)
-                
-                # remaking the parse tree here
-                if add_assumption:
-                    if (not line[0] in ['-','L']) and len(line) > 4 :                    
-                        # len(line) > 4 for removing ( and );
-                        read_ltl += line            
-                    elif (line.find("LTLSPEC -- Guarantees") != -1):
-                        add_assumption = False
-                
-                
-        f.closed
-        
-        read_ltl  = read_ltl.replace("\t", "")
-        read_ltl  = read_ltl.replace("\n", "")
-        read_ltl  = read_ltl.replace(" ", "")
-        read_ltl  = read_ltl.replace("&[]<>(TRUE)", "")    
-     
-        self.ltl_tree = parseFormulaTest.parseLTL(read_ltl)
-        
+        self.ltl_tree = parseFormulaTest.parseLTL(new_env_safety)
+        #print >>sys.__stdout__,"self.ltl_tree: "+ str(self.ltl_tree)
+        #print___tree(self.ltl_tree,parseFormulaTest.p.terminals)
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
         try:
             remove_index = self.violated_spec_line_no.index(0)
@@ -452,7 +173,8 @@ class LTL_Check:
         except:
             pass
             #print "no line 0 is found now\n"     
-        
+
+        return self.env_safety_assumptions_stage[str(self.modify_stage)] + ") &\n"
         
     def read_LTL_file(self,f):
         """
@@ -523,7 +245,7 @@ class LTL_Check:
         negate       = False
         to_negate    = False
         #print >>sys.__stdout__,terminals
-        #print >>sys.__stdout__,tree[0]
+        #print >>sys.__stdout__,"tree:" + str(tree)
         if not tree[0] in terminals:  
             
             # check for implication (->)    
@@ -538,7 +260,7 @@ class LTL_Check:
             elif tree[0] == "Disjunction":
                 disjunction = True
                 final_value = False
-                
+
             # check for conjunction (and)
             elif tree[0] == "Conjunction":
                 disjunction = False
@@ -580,20 +302,23 @@ class LTL_Check:
  
             next_in_loop   = next
             node_count = 1
+
             for x in tree[1:]:
                 # skip ltl that does not contain a global operator
-                if level == 0 :                 
-                    if not self.find_element(x,'GloballyOperator'):
-                        if debug_tree_terminal == True:
-                            print "Skipped this line because there's no global opreator."
-                        continue                    
-                    
-                    if self.find_element(x,'FinallyOperator'):
-                        if  debug_tree_terminal == True:
-                            print "Skipped this line because this is a liveness assumption."
-                        continue 
+                if level == 0 :  
+                    pass               
+#                    if not self.find_element(x,'GloballyOperator'):
+#                        if debug_tree_terminal == True:
+#                            print >>sys.__stdout__,"Skipped this line because there's no global opreator."
+#                            print >>sys.__stdout__,x
+#                            print >>sys.__stdout__,"level: " + str(level)
+#                        continue                    
+#                    
+#                    if self.find_element(x,'FinallyOperator'):
+#                        if  debug_tree_terminal == True:
+#                            print >>sys.__stdout__,"Skipped this line because this is a liveness assumption."
+#                        continue 
                         
-
                 value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
 
                 
@@ -709,7 +434,7 @@ def print___tree(tree, terminals, indent=0):
     if tree[0] in terminals:
         
         print >>sys.__stdout__, prefix + repr(tree)
-        print >>sys.__stdout__, "lala"
+        #print >>sys.__stdout__, "lala"
     else:
         print >>sys.__stdout__, prefix + unicode(tree[0])
         for x in tree[1:]:

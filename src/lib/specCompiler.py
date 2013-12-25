@@ -279,10 +279,10 @@ class SpecCompiler(object):
             # Abort compilation if there were any errors
             if failed:
                 return None, None, None
-
-            LTLspec_env = spec["EnvInit"] + spec["EnvTrans"] + spec["EnvGoals"]
-            LTLspec_sys = spec["SysInit"] + spec["SysTrans"] + spec["SysGoals"]
-
+            ################ Env Assumption Mining #############
+            LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]
+            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"]
+            ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
             return None, None, None

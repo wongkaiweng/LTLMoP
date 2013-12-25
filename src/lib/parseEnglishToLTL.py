@@ -219,7 +219,7 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the env init condition for DNF later #####
             LTLsubformula = LTLsubformula[0:LTLsubformula.rfind('&')]
-            spec['EnvInit']= spec['EnvInit'] + "(" + LTLsubformula + ") &\n"
+            spec['EnvInit']= spec['EnvInit'] + "(" + LTLsubformula + ")"
             #####################################################################
             linemap['EnvInit'].append(lineInd)
             
@@ -269,7 +269,7 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the sys init condition for DNF later #####
             LTLActSubformula = LTLActSubformula[0:LTLActSubformula.rfind('&')]
-            spec['SysInit']= spec['SysInit'] + "("+ LTLRegSubformula + LTLActSubformula + ") &\n"
+            spec['SysInit']= spec['SysInit'] + "("+ LTLRegSubformula + LTLActSubformula + ")"
             ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    

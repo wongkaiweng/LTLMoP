@@ -359,21 +359,23 @@ class ExecutorResynthesisExtensions(object):
         
         return resynthesizeFromProject(new_proj)
 
-    def getCurrentStateAsLTL(self, include_env=False):
+    ########### ENV Assumption mining ###############
+    ### added an option for env inputs ##############
+    def getCurrentStateAsLTL(self, env_output=False):
         """ Return a boolean formula (as a string) capturing the current discrete state of 
             the system (and, optionally, the environment as well) """
 
         if self.aut:
             # If we have current state in the automaton, use it (since it can capture
             # state of internal propositions).
-            return fsa.stateToLTL(self.aut.current_state, include_env=include_env)
+            return fsa.stateToLTL(self.aut.current_state, env_output=env_output)
         else:
             # If we have no automaton yet, determine our state manually
             # NOTE: This is only relevant for dialogue-based specifications
             # TODO: Support env
             # TODO: Look at self.proj.currentConfig.initial_truths and pose
             return ""
-
+    ###################################################
     def queryUser(self, question, default_response="", accept_empty_response=False):
         """ Ask the user for an input, prompting with `question`.  `default_response` will
             be provided as a recommended response.  If `accept_empty_response` is False,
@@ -414,29 +416,37 @@ class ExecutorResynthesisExtensions(object):
     def _setSpecificationInitialConditionsToCurrentInDNF(self, proj):
         """ Add Env and Sys Init in disjunctive Normal form to LTL"""
         
+        state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)
         
-        # Parse the LTL file in so we can manipulate it
+        # find the current inputs and outputs from fsa
+        current_env_init_state  = fsa.stateToLTL(state, env_output=True)
+        current_sys_init_state  = self.getCurrentStateAsLTL()
+        
+        # try to compare current spec with the new clause so that no duplicates are added
+        old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
+        old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")
+        
+        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        
+        # check if the clause already exists in self.spec["EnvInit"]
+        if old_env_init.find(cur_env_init) == -1:
+            self.spec["EnvInit"]  += "\n| (" + current_env_init_state +  ") " # swap ouputs to inputs
+        
+        # check if the clause already exists in self.spec["SysInit"]  
+        if old_sys_init.find(cur_sys_init) == -1  :  
+            self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"             
+        
+     
+    def recreateLTLfile(self, proj):
+        """
+        rewrite the LTL file with the modified self.spec
+        """
         ltl_filename = proj.getFilenamePrefix() + ".ltl"
-        assumptions, guarantees = LTLFormula.fromLTLFile(ltl_filename)
-        print "\n\nRESYN:assumptions: ", assumptions
-        # Get a conjunct expressing the current state
-        ltl_current_state = self.getCurrentStateAsLTL() # TODO: Constrain to props in new spec
-        print "\n\nRESYN:ltl_current_state: " + str(ltl_current_state)
-        logging.debug("Constraining new initial conditions to: " + ltl_current_state)
-
-        # TODO: Do we need to remove pre-exisiting constraints too? What about env?
-        # Add in current system state to make strategy smaller
-        gc = guarantees.getConjuncts()
-        print "\n\n\n type:"
-        print type(gc[0])
-        print "\n\ngc: " +str(gc)
-        if ltl_current_state != "":
-            gc.append(LTLFormula.fromString("(" + ltl_current_state + ")"))
-            print "\n\nRESYN: createString: " + str(LTLFormula.fromString(ltl_current_state))
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        LTLspec_env = self.spec["EnvInit"] + self.spec["EnvTrans"] + self.spec["EnvGoals"]
-        LTLspec_sys = self.spec["SysInit"] + self.spec["SysTrans"] + self.spec["SysGoals"]
+        LTLspec_env = "( " + self.spec["EnvInit"] + ")&\n" + self.spec["EnvTrans"] + self.spec["EnvGoals"]
+        LTLspec_sys = "( " + self.spec["SysInit"] + ")&\n" + self.spec["SysTrans"] + self.spec["SysGoals"]
         
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 

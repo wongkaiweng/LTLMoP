@@ -1141,9 +1141,23 @@ class SpecEditorFrame(wx.Frame):
             ############# ENV Assumption Learning ###################
             if not realizable:
                 self.appendLog("\tNow we are changing the environment safety assumptions from [](TRUE) to [](FALSE).\n","BLUE")
-                path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-                LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
-                LTLViolationCheck.modify_LTL_file()
+                #path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+                #LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
+                #LTLViolationCheck.modify_LTL_file()
+                ltl_filename = self.proj.getFilenamePrefix() + ".ltl"
+                spec['EnvTrans'] = '\t[](FALSE) & \n'
+                 
+                # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
+                LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
+                LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
+                
+                LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
+
+                LTLspec_sys += "\n&\n" + spec['Topo']
+                
+                # Write the file back
+                import createJTLVinput
+                createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
                 realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
             
             if realizable:

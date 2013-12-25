@@ -225,7 +225,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             logging.error("Can not simulate without a simulation configuration.")
             logging.error("Please create one by going to [Run] > [Configure Simulation...] in SpecEditor and then try again.")
             sys.exit(2)
-        
+
         # HACK: give the proj a reference to executor
         self.proj.executor = self        
         
@@ -271,8 +271,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             init_state = new_aut.chooseInitialState(init_region, init_outputs)
         else:
             # Figure out our initially true outputs
-            init_outputs = [k for k,v in self.aut.current_outputs.iteritems() if int(v) == 1]
-
+            init_outputs = [k for k,v in self.aut.getCurrentState().outputs.iteritems() if int(v) == 1]
+            self.postEvent("INFO",str(init_outputs)) 
+            self.postEvent("INFO",str(self.aut.getCurrentState().outputs))    
             init_state = new_aut.chooseInitialState(init_region, init_outputs)#, goal=prev_z)
 
         if init_state is None:
@@ -288,12 +289,14 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.compiler = specCompiler.SpecCompiler(spec_file)
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
             self.spec, traceback, response = self.compiler._writeLTLFile(False)
+            self.spec['EnvTrans'] = "\t[](FALSE) &\n"
+            self.recreateLTLfile(self.proj)
             self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
             self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
         #############################################
 
     def run(self):
-        ### Get everything moving
+        ### Get everything        print self.current_outputs moving
         # Rate limiting is approximately 20Hz
         avg_freq = 20
         last_gui_update_time = 0
@@ -344,7 +347,6 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 #                    self.LTLViolationCheck.sensors.append(key)
             #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$##
             
-            
             # Check for environment violation
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState())
 
@@ -359,10 +361,12 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             
                 # Add the current state in init state of the LTL spec
                 self.postEvent("INFO","Adding current state to init condition of LTL formulas")
-                self._setSpecificationInitialConditionsToCurrent(self.proj)
+                self._setSpecificationInitialConditionsToCurrentInDNF(self.proj)
                 
                 self.postEvent("INFO","Going to modify .ltl file to account for new env detected")
-                self.LTLViolationCheck.modify_LTL_file()
+                self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+                self.recreateLTLfile(self.proj)
+                self.postEvent("INFO",str(self.spec['EnvTrans']) )
                 
                 realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                 self.postEvent("INFO", str(realizable)+ ", " + str(realizableFS) + ": " + str(output))
@@ -372,9 +376,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 if not realizable:
                     while self.LTLViolationCheck.modify_stage < 3 and not realizable:
                         self.LTLViolationCheck.modify_stage += 1 
-                        self.postEvent("INFO", "before second check")
-                        self.LTLViolationCheck.modify_LTL_file()
-                        self.postEvent("INFO", "after second check")
+
+                        self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+                        self.recreateLTLfile(self.proj)
+
                         realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                         self.postEvent("INFO", str(realizable)+ ", " + str(realizableFS) + ": " + str(output))
 
@@ -416,6 +421,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 ##                    self.runFSA.set() #runFSA = True
                     spec_file = self.proj.getFilenamePrefix() + ".spec"
                     aut_file = self.proj.getFilenamePrefix() + ".aut"
+                    self.postEvent("INFO","initilazing...")
                     self.initialize(spec_file, aut_file, firstRun=False)
                         
                 else:

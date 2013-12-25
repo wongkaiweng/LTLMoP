@@ -15,14 +15,14 @@ import numpy
 import fileMethods
 
 
-def stateToLTL(state, use_next=False, include_env=True, swap_io=False):
+def stateToLTL(state, use_next=False, env_output=False, swap_io=False):
     """ swap_io is for the counterstrategy aut in mopsy """
 
     def decorate_prop(prop, polarity):
-        if int(polarity) == 0:
-            prop = "!"+prop
         if use_next:
             prop = "next({})".format(prop)
+        if int(polarity) == 0:
+            prop = "!"+prop        
         return prop
         
     inputs = state.inputs
@@ -31,14 +31,19 @@ def stateToLTL(state, use_next=False, include_env=True, swap_io=False):
     if swap_io:
         inputs, outputs = outputs, inputs
 
-    sys_state = " & ".join([decorate_prop("s."+p, v) for p,v in outputs.iteritems()])
-
-    if include_env:
+    
+    ############### ENV assumption learning #####################
+    if env_output:
         env_state = " & ".join([decorate_prop("e."+p, v) for p,v in inputs.iteritems()])
-        return " & ".join([env_state, sys_state])
-    else:
-        return sys_state
 
+        return env_state
+    
+    else:
+        sys_state = " & ".join([decorate_prop("s."+p, v) for p,v in outputs.iteritems()])
+        
+        return sys_state
+    #############################################################
+    
 ###########################################################
 
 class FSA_State:
@@ -503,13 +508,15 @@ class Automaton:
         for sensor in self.sensors:
             self.sensor_state[sensor] = eval(self.sensor_handler[sensor], {'self':self,'initial':False})
 
+
         for state in state_list:
+
             okay = True
 
             if initial:
                 # First see if we can be in the state given our current region
                 if self.regionFromState(state) != self.current_region: continue
-                
+
                 # Start only with Rank 0 states
                 #if int(state.rank) != 0: continue
 
@@ -521,7 +528,7 @@ class Automaton:
                     if int(self.current_outputs[key]) != int(value):
                         okay = False
                         break
-
+                
                 if not okay: continue
 
             # Now check whether our current sensor values match those of the state
@@ -531,6 +538,7 @@ class Automaton:
                     break
 
             if okay:
+
                 candidates.append(state)
 
         return candidates
@@ -550,7 +558,8 @@ class Automaton:
             # Skip any "bitX" region encodings
             if re.match('^bit\d+$', output): continue
             self.current_outputs[output] = (output in init_outputs)
-
+        
+        print self.current_outputs
         candidates = self.findTransitionableStates(initial=True)
 
         if len(candidates) == 0: # Uh oh; that's no good
