@@ -1157,7 +1157,7 @@ class SpecEditorFrame(wx.Frame):
                 
                 # Write the file back
                 import createJTLVinput
-                createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
+                #createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
                 realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
             
             if realizable:

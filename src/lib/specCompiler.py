@@ -499,26 +499,46 @@ class SpecCompiler(object):
                     err = 1
 
     def _getGROneCommand(self, module):
-        slugs_path = os.path.join(self.proj.ltlmop_root,"etc","slugs","src","slugs")
+        ############## ENV ASSUMPTION MINING ############################
+        if module == "GROneDebug": # Use Vasu's stuff for spec analysis
+             # Check that GROneMain, etc. is compiled
+            if not os.path.exists(os.path.join(self.proj.ltlmop_root,"etc","jtlv","GROne","GROneMain.class")):
+                print "Please compile the synthesis Java code first.  For instructions, see etc/jtlv/JTLV_INSTRUCTIONS."
+                # TODO: automatically compile for the user
+                return None
 
-        # Check that slugs is compiled
-        if not os.path.exists(slugs_path):
-            logging.error("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
-            # TODO: automatically compile for the user
-            return None
+            # Windows uses a different delimiter for the java classpath
+            if os.name == "nt":
+                delim = ";"
+            else:
+                delim = ":"
 
-        # Convert to slugs input format
-        slugs_converter_path = os.path.join(self.proj.ltlmop_root,"etc","slugs","tools")
-        sys.path.insert(0, slugs_converter_path)
-        from translateFromLTLMopLTLFormatToSlugsFormat import performConversion
-        with open(self.proj.getFilenamePrefix() + ".slugsin", "w") as f:
-            # TODO: update performConversion so we don't have to do stdout redirection
-            sys.stdout = f
-            performConversion(self.proj.getFilenamePrefix() + ".smv", self.proj.getFilenamePrefix() + ".ltl")
-            sys.stdout = sys.__stdout__
+            classpath = delim.join([os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "jtlv-prompt1.4.0.jar"), os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "GROne")])
 
-        cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            cmd = ["java", "-ea", "-Xmx512m", "-cp", classpath, module, self.proj.getFilenamePrefix() + ".smv", self.proj.getFilenamePrefix() + ".ltl"]
+            
+        else: # Use slugs for aut synthesis
+            slugs_path = os.path.join(self.proj.ltlmop_root,"etc","slugs","src","slugs")
 
+            # Check that slugs is compiled
+            if not os.path.exists(slugs_path):
+                logging.error("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
+                # TODO: automatically compile for the user
+                return None
+
+            # Convert to slugs input format
+            slugs_converter_path = os.path.join(self.proj.ltlmop_root,"etc","slugs","tools")
+            sys.path.insert(0, slugs_converter_path)
+            from translateFromLTLMopLTLFormatToSlugsFormat import performConversion
+            with open(self.proj.getFilenamePrefix() + ".slugsin", "w") as f:
+                # TODO: update performConversion so we don't have to do stdout redirection
+                sys.stdout = f
+                performConversion(self.proj.getFilenamePrefix() + ".smv", self.proj.getFilenamePrefix() + ".ltl")
+                sys.stdout = sys.__stdout__
+            
+            cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+        ##########################################################
+        
         return cmd
 
     def _autIsNonTrivial(self):
