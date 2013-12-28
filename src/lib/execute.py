@@ -95,6 +95,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         ########## ENV Assumption Learning ######
         self.compiler = None                   
         self.LTLViolationCheck = None
+        self.analysisDialog = None
+        self.to_highlight = None
+        self.tracebackTree = None               # tells you init, trans and sys line no 
         self.path_LTLfile = None                    # path of the .ltl file
         self.LTL2SpecLineNumber = None          # mapping from LTL to structed english
         #########################################
@@ -288,7 +291,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         if firstRun:
             self.compiler = specCompiler.SpecCompiler(spec_file)
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
-            self.spec, traceback, response = self.compiler._writeLTLFile(False)
+            self.spec, self.tracebackTree, response = self.compiler._writeLTLFile(False)
             self.spec['EnvTrans'] = "\t[](FALSE) &\n"
             self.recreateLTLfile(self.proj)
             self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
@@ -314,7 +317,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 # for generation of specification from DNF to CNF
 
                 #print self.compiler._synthesize(False, True, True)[2]  # TRUE for realizable, FALSE for unrealizable
-                self.postEvent("INFO", self.compiler._synthesize(False, True, True)[2])
+                envSafetyCNF = self.compiler._synthesize(False, True, True)[2]
+                self.postEvent("INFO", envSafetyCNF)
+                self.postEvent("INFO", str(LTLcheck.parseSlugsLTLToNormalLTL(envSafetyCNF,'ENV_TRANS')))
+                
                 ################################
                     
                 # wait for either the FSA to unpause or for termination
@@ -386,6 +392,13 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 
                 self.postEvent("INFO", "STAGE: " + str(self.LTLViolationCheck.modify_stage))
                 self.postEvent("INFO","FINAL:-realizable: " + str(realizable))
+                
+                ###########
+                ########## TESTING
+                #realizable = False
+                ###########
+                #############
+                
                 # reload aut file if the new ltl is realizable        
                 if realizable:
                     self.postEvent("INFO", "ViolationSolved:")
@@ -394,37 +407,16 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                     # Load automaton file #
                     #######################
                     self.postEvent("INFO","Reloading automaton...")
-                    #FSA = fsa.Automaton(proj)
-##                    self.runFSA.clear() #runFSA = False
-
-##                    success = self.aut.loadFile(aut_file, self.proj.enabled_sensors, self.proj.enabled_actuators, self.proj.all_customs)
-##                    if not success: return
-##                    #cur_region_no = 0
-##                    cur_outputs = [] #format: ['act1','act2']
-##                    for key, value in self.LTLViolationCheck.current_state.outputs.iteritems():
-##                        if key.find("bit") == -1 and (int(value) == 1):
-##                            cur_outputs.append(key)
-##                        self.postEvent("INFO", str(key) + ": " +str(value))
-##                    cur_region_no = self.aut.regionFromState(self.LTLViolationCheck.current_state)
-##                    
-##                    self.postEvent("INFO", "cur_region_no:" + str(cur_region_no))
-##                    #init_state = self.aut.chooseInitialState(init_region, init_outputs)
-##                    init_state = self.aut.chooseInitialState(cur_region_no, cur_outputs)
-##                    #print "cur_outputs: " + str(cur_outputs)  # by Catherine
-##                    
-##                    if init_state is None:
-##                        self.postEvent("INFO",  "No suitable initial state found; unable to execute. Quitting...")
-##                        sys.exit(-1)
-##                    else:
-##                        self.postEvent("INFO",  "Starting from state %s." % init_state.name)
-##                    
-##                    self.runFSA.set() #runFSA = True
                     spec_file = self.proj.getFilenamePrefix() + ".spec"
                     aut_file = self.proj.getFilenamePrefix() + ".aut"
-                    self.postEvent("INFO","initilazing...")
+                    self.postEvent("INFO","initializing...")
                     self.initialize(spec_file, aut_file, firstRun=False)
                         
                 else:
+                    # Use Vasu's analysis tool 
+                    self.onMenuAnalyze()
+                    
+                    """
                     self.postEvent("INFO",  "-----------------------------------------------")
                     # still missing removing liveness guarantees
                     self.postEvent("INFO",  "Trying to remove system liveness guarantees...")
@@ -451,9 +443,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                         self.LTLViolationCheck.generate_env_livenss_assumptions()
                         realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
                         self.postEvent("INFO", str(realizable))
-                        
+                    """ 
                     if not realizable:
-                        print "Still not realizable. Now we will exit the execution"
+                        self.postEvent("INFO", "Still not realizable. Now we will exit the execution")
                         print "----------------------------------------------"
                         sys.exit()
                     else:
@@ -503,7 +495,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         except: 
             traceback.print_exc()
             raise
-
+            
 class RedirectText:
     def __init__(self, event_handler):
         self.event_handler = event_handler

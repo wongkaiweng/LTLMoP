@@ -2,6 +2,7 @@ import sys, os, shutil, time
 import parseFormulaTest
 from numpy import *
 import fsa
+from collections import OrderedDict
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -220,8 +221,9 @@ class LTL_Check:
                 if indent == 0:
                     pass
                     #print >>sys.__stdout__, "haha:"+ str(x)
-                self.print_tree(x, terminals, indent+1)
-              
+                self.print_tree(x, terminals, indent+1)   
+         
+          
     def find_element(self,tree,element):
         """
         Return a boolean True value if the element is found in tree or otherwise False
@@ -443,6 +445,124 @@ def print___tree(tree, terminals, indent=0):
                 print >>sys.__stdout__, "haha:"+ str(x)
             print___tree(x, terminals, indent+1)       
 
+def parseSlugsLTLToNormalLTL(slugsLTLText,specType):
+    """
+    parse the ltl in slugs format to the normal ltl file format.
+    slugsLTLText: ltl in slugs format
+    specType: e.g: "ENV_LIVENESS","ENV_TRANS", "ENV_INIT", see .slugin file types
+    """
+    
+    toReturn = []
+    
+    
+    for item in slugsLTLText.split('\n'):
+        ltlConjDisj = OrderedDict()
+        ltlNot  = []
+        ltlNext = []
+        ltlObj  = OrderedDict()
+        ltlNotAdded = []
+        
+        if (item.find('#') != -1) or (item.find("SLUGS") != -1) or len(item.replace(" ","")) < 2 :
+            #find comment line
+            continue
+            
+        splitItem = parseFormulaTest.tokenize(item)
+        print splitItem
+        for index, element in enumerate(splitItem):
+            #print element[0]
+            if element[0] == '&' or element[0] == '|':
+                # keep track of how manay conjs and disjs needed
+                #second element is the count for objects
+                #third element for LTL creation later to keep track of objs added
+                if ltlConjDisj == {}:
+                    ltlConjDisj[index] = [" "+element[0]+" ", 2 , 2]         
+                    currentltlConjDisjKey = 0
+                elif (ltlConjDisj[ltlConjDisj.keys()[-1]][1]-1 + ltlConjDisj.keys()[-1]) == index and (element[0] in ltlConjDisj[ltlConjDisj.keys()[-1]][0] ):
+                    ltlConjDisj[ltlConjDisj.keys()[-1]][1] += 1
+                    ltlConjDisj[ltlConjDisj.keys()[-1]][2] += 1
+                else:
+                    ltlConjDisj[index] = [" "+element[0]+" ", 2 , 2] 
+                    currentltlConjDisjKey += 1                 
+                
+                
+            elif element[0] == '!':
+                ltlNot.append(index)
+
+            elif element[0] == 'id':
+                try:
+                    # figure out if it's next
+                    if splitItem[index+1][0] == '\'':
+                        ltlObj[index] = "next(" + element[1] + ")"
+                    else:
+                        ltlObj[index] = element[1]
+                except:
+                    ltlObj[index] = element[1] 
+            else:
+                pass
+                #print "must be next: " + element[0]
+            
+            # add not 
+            if index in ltlObj.keys():
+                # find next
+                if (index-1) in ltlNot:
+                    ltlObj[index] = "!(" + ltlObj[index] + ")"  
+                    ltlNotAdded.append(index-1)           
+        
+        
+        for x in  ltlNotAdded:
+            ltlNot.remove(x)     
+
+        
+        tempObj = OrderedDict()
+        ltlObjLen = len(ltlObj)
+        tempObjCount = 0
+        for i in reversed(range(len(ltlConjDisj))):
+            k = ltlConjDisj.keys()[i]
+            v = ltlConjDisj.values()[i]
+
+            if k < ltlObj.keys()[ltlObjLen-v[1]] and ltlObjLen-v[1] >= 0:
+                tempObj[k] = "(" +  v[0].join(ltlObj.values()[ltlObjLen-v[1]:ltlObjLen]) + ")"
+                ltlObjLen  = ltlObjLen-v[1] 
+
+            else:
+                # a mixture of tempLTL and objs
+                temp = []
+                print "len(tempObj): " + str(len(tempObj))
+                print "tempObjCount: " + str( tempObjCount )
+
+                if (len(tempObj) - tempObjCount)-v[1] < 0:
+                    #(not (len(tempObj) - tempObjCount) >= len(tempObj)) or 
+                    temp = ltlObj.values()[ltlObjLen-(v[1]-(len(tempObj) - tempObjCount)):ltlObjLen]
+
+                for x in tempObj.values()[tempObjCount:len(tempObj)]:
+                    temp.append(x)   
+         
+                print "temp: " + str(temp)
+                tempObjCount = len(tempObj) 
+                tempObj[k] = "(" +  v[0].join(temp) +  ")"
+             
+            if (k-1) in ltlNot:
+                tempObj[k] = "!" + tempObj[k]
+        
+        # when LTL contains only one element
+        if len(ltlConjDisj) == 0:
+            tempObj[0] = ltlObj.values()[0]
+
+        if specType.find("LIVENESS") != -1:
+            toReturn.append("[]<>" + tempObj[0]) 
+            
+        elif specType.find("TRANS") != -1:
+            toReturn.append("[]" + tempObj[0]) 
+            
+        elif specType.find("INIT") != -1:
+            toReturn.append(tempObj[0]) 
+        else:
+            print "unknown type found. Please retry"
+            toReturn.append(tempObj[0]) 
+        
+    print toReturn
+    return toReturn
+
 """
 sample = ' []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.hazardous_item)) ) & []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.person)) ) '
 tree = parseFormulaTest.parseLTL(sample)
@@ -456,4 +576,16 @@ print sample
 #evaluate_tree('a')
 """
 
+slugsLTLText = "| ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'"
+#slugsLTLText = "| ! person' ! & & bit0' ! bit1' ! bit2'"
+#slugsLTLText = "| ! & & bit0 ! bit1 ! bit2 | | | & & bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2'"
+specType = "ENV_TRANS"
+ltl =  parseSlugsLTLToNormalLTL(slugsLTLText,specType)
+#ltl = "((!(next(bit0))) & (!(next(bit1))) & (!(next(bit2)))) "
+for x in ltl:
+    tree = parseFormulaTest.parseLTL(x)
+print x    
+print tree
+
+print___tree(tree,parseFormulaTest.p.terminals)
 

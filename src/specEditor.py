@@ -127,6 +127,83 @@ class AnalysisResultsDialog(wx.Dialog):
 
         self.Layout()
 
+    ############# ENV Assumption Mining #############
+    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight):
+        """
+        structuredSpec: each line of spec in structured English in type LIST
+        LTL2SpecLineNumber: dict for mapping bt structured English and LTL
+        tracebackTree        : dict to access ['SysTrans'] and ['EnvTrans'] line number in EngSpec
+        ltlSpec              : modified version of the ltl spec. going to print ['EnvTrans']
+        to_highlight         : return from analysis that the specs with problems
+        """
+
+        # Create the root
+        #self.statements["env"] = []
+        #self.statements["sys"] = []  
+        
+        self.tree_ctrl_traceback.DeleteAllItems()
+        root_node = self.tree_ctrl_traceback.AddRoot("Root")
+        LTL  = {}
+        for key,value in LTL2SpecLineNumber.iteritems():
+            LTL[ value ] = key.replace('\t','').replace('\n','')
+            print key, value
+        
+        # highlight guilty specs
+        highlightColor = "#FF9900"
+        guilty_key = {}
+        for h_item in to_highlight:
+            if h_item[1] == 'goals':
+                guilty_key[h_item[0].title() + h_item[1].title()] = h_item[2]
+            else:
+                guilty_key[h_item[0].title() + h_item[1].title()] = None
+        
+        hightlightEnvTrans = False
+        guiltyLinesToHighlight = []
+        for specType in guilty_key.keys():
+            if specType == 'EnvTrans':
+                hightlightEnvTrans = True
+            elif specType == ('EnvGoals' or 'SysGoals'):
+                guiltyLinesToHighlight.append(guilty_key[specType])
+            else:
+                for x in tracebackTree[specType]:
+                    guiltyLinesToHighlight.append(x)
+        
+        for lineNo, EngSpec in enumerate(structuredSpec, start=1):
+            # Build the traceback tree           
+            if lineNo in tracebackTree['EnvTrans']: 
+                # Add a node for each input line    
+                input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec + "<--(REPLACED)") 
+                 # white out original env transition spec 
+                self.tree_ctrl_traceback.SetItemTextColour(input_node,"#a9a8a8")  
+                #self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,"#FA58D0") # pale pink
+            else:
+                # Add a node for each input line    
+                input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec) 
+                
+            # add LTL as formula under the structured English if it exists   
+            try:             
+                command_node = self.tree_ctrl_traceback.AppendItem(input_node, LTL[ lineNo ])
+                if lineNo in tracebackTree['EnvTrans']: 
+                    self.tree_ctrl_traceback.SetItemTextColour(command_node,"#a9a8a8") 
+            except:
+                pass
+                
+            # hightlight guilty specs
+            if lineNo in guiltyLinesToHighlight:
+                self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor) # pale pink
+                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) # pale pink
+            
+        # add the latest assumption generation here
+        input_node = self.tree_ctrl_traceback.AppendItem(root_node, "NEWLY GENERATED ENV SAFETY ASSUMPTIONS") 
+        command_node = self.tree_ctrl_traceback.AppendItem(input_node, ltlSpec['EnvTrans'].replace('\t','').replace('\n','')) 
+        
+        # highlight guilty specs
+        if hightlightEnvTrans == True:
+            self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor) # pale pink
+            self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) # pale pink
+                        
+        self.Layout()
+    #################################################
 
     def markFragments(self, agent, section, jx=None):
         jx_this = -1 # debug output is 0-indexed
@@ -526,6 +603,9 @@ class SpecEditorFrame(wx.Frame):
         self.response = None
         self.proj = project.Project()
         self.decomposedRFI = None
+        ############ ENV ASSUMPTION MINING ######
+        self.spec = None
+        ########################################
         
  
         # Reset GUI
@@ -1078,9 +1158,9 @@ class SpecEditorFrame(wx.Frame):
             self.list_box_locphrases.Select(0)
 
         self.appendLog("Creating LTL...\n", "BLUE")
-
-        spec, self.tracebackTree, self.response = compiler._writeLTLFile()
-        
+        ############# ENV ASSUMPTION MINING ###################
+        self.spec, self.tracebackTree, self.response = compiler._writeLTLFile()
+        #########################################################
         # Add any auto-generated propositions to the list
         # TODO: what about removing old ones?
         for p in compiler.proj.internal_props:
@@ -1145,19 +1225,19 @@ class SpecEditorFrame(wx.Frame):
                 #LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
                 #LTLViolationCheck.modify_LTL_file()
                 ltl_filename = self.proj.getFilenamePrefix() + ".ltl"
-                spec['EnvTrans'] = '\t[](FALSE) & \n'
+                self.spec['EnvTrans'] = '\t[](FALSE) & \n'
                  
                 # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-                LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
-                LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
+                LTLspec_env = "( " + self.spec["EnvInit"] + ")&\n" + self.spec["EnvTrans"] + self.spec["EnvGoals"]
+                LTLspec_sys = "( " + self.spec["SysInit"] + ")&\n" + self.spec["SysTrans"] + self.spec["SysGoals"]
                 
-                LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
+                LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
-                LTLspec_sys += "\n&\n" + spec['Topo']
+                LTLspec_sys += "\n&\n" + self.spec['Topo']
                 
                 # Write the file back
                 import createJTLVinput
-                #createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
+                createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
                 realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
             
             if realizable:
@@ -1410,6 +1490,7 @@ class SpecEditorFrame(wx.Frame):
                 self.analysisDialog.populateTree(self.tracebackTree) 
 
             self.analysisDialog.tree_ctrl_traceback.ExpandAll()
+        
         else:
             self.analysisDialog.label_traceback.Hide()
             self.analysisDialog.tree_ctrl_traceback.Hide()
@@ -1423,6 +1504,15 @@ class SpecEditorFrame(wx.Frame):
         (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze()
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
+
+        ############### ENV Assumption MINING ############# 
+        if self.proj.compile_options["parser"] == "structured":
+            self.analysisDialog.label_traceback.Show()
+            self.analysisDialog.tree_ctrl_traceback.Show()
+            if self.text_ctrl_spec is not None:
+                self.analysisDialog.populateTreeStructured(self.text_ctrl_spec.GetText().split('\n'),self.compiler.LTL2SpecLineNumber,self.tracebackTree, self.spec, self.to_highlight) 
+            #self.analysisDialog.tree_ctrl_traceback.ExpandAll()
+        ###################################################
 
         # Remove lines about garbage collection from the output and remove extraenous lines
         output_lines = [line for line in output.split('\n') if line.strip() and
@@ -1447,6 +1537,15 @@ class SpecEditorFrame(wx.Frame):
                 tb_key = h_item[0].title() + h_item[1].title()
                 if h_item[1] == "goals":
                     self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_LIVE)
+                #############  ENV Assumption Mining CAT ############
+                elif h_item[1] == "trans":
+                    for lineNo in self.tracebackTree[tb_key]:
+                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_SAFE)
+                elif h_item[1] == "init":
+                    for lineNo in self.tracebackTree[tb_key]:
+                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_INIT)
+                ##################################
+                
         elif self.proj.compile_options["parser"] == "slurp":
             for frag in self.to_highlight:
                 self.analysisDialog.markFragments(*frag)

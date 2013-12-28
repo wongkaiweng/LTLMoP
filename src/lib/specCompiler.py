@@ -366,7 +366,7 @@ class SpecCompiler(object):
         self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList) 
         self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList) 
         self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)  
-        
+
         #only write to LTLfile with specEditor
         if createLTL == True:
             createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)

@@ -7,6 +7,11 @@ from LTLParser.LTLFormula import LTLFormula, LTLFormulaType
 from createJTLVinput import createLTLfile
 import specCompiler
 import threading
+######### ENV Assumption Mining######
+import specEditor
+import wx
+import time
+######################################
 
 class ExecutorResynthesisExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
@@ -454,4 +459,82 @@ class ExecutorResynthesisExtensions(object):
         
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
+    
+    def onMenuAnalyze(self):
+        "simplified version of that in specEditor.py"
+        
+        ##TODO: check to see if we need to recompile
+        #self.compiler, self.badInit = self.onMenuCompile(event, with_safety_aut=False)
+
+        # instantiate if necessary
+        if self.analysisDialog is None:
+            Editor = wx.PySimpleApp(0)
+            self.analysisDialog = specEditor.AnalysisResultsDialog(None, None)
+
+        # Clear dialog to make way for new info
+        self.analysisDialog.text_ctrl_summary.Clear()
+
+        # Populate tree based on .spec file
+        self.analysisDialog.label_traceback.Show()
+        self.analysisDialog.tree_ctrl_traceback.Show()
+        
+        #self.analysisDialog.tree_ctrl_traceback.ExpandAll()   
+        
+        #self.appendLog("Running analysis...\n","BLUE")
+
+        # Redirect all output to the log
+        #redir = specEditor.RedirectText(self, self.text_ctrl_log)
+        #sys.stdout = redir
+        #sys.stderr = redir
+        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze()
+        #sys.stdout = sys.__stdout__
+        #sys.stderr = sys.__stderr__
+
+        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight) 
+        
+        # Remove lines about garbage collection from the output and remove extraenous lines
+        output_lines = [line for line in output.split('\n') if line.strip() and
+                        "Garbage collection" not in line and
+                        "Resizing node table" not in line]
+
+        if realizable:
+            # Strip trailing \n from output so it doesn't scroll past it
+            self.analysisDialog.appendLog('\n'.join(output_lines), "BLACK")
+            if nonTrivial:
+                self.analysisDialog.appendLog("\nSynthesized automaton is non-trivial.", "BLACK")
+            else:
+                self.analysisDialog.appendLog("\nSynthesized automaton is trivial.", "RED")
+        else:
+            self.analysisDialog.appendLog(output.rstrip(), "RED")
+        self.analysisDialog.appendLog('\n')
+        """        
+        #highlight guilty sentences
+        #special treatment for goals: we already know which one to highlight                
+        for h_item in self.to_highlight:
+            tb_key = h_item[0].title() + h_item[1].title()
+            if h_item[1] == "goals":
+                self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_LIVE)
+            elif h_item[1] == "trans":
+                for lineNo in self.tracebackTree[tb_key]:
+                    self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_SAFE)
+            elif h_item[1] == "init":
+                for lineNo in self.tracebackTree[tb_key]:
+                    self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_INIT)
+        """
+
+        self.analysisDialog.ShowModal()
+        #time.sleep(30)
+
+        #self.appendLog("Initial analysis complete.\n\n", "BLUE")
+
+        if (not realizable or not nonTrivial) and self.unsat:
+            #self.appendLog("Further analysis is possible.\n", "BLUE")
+            self.analysisDialog.button_refine.Enable(True)
+            self.analysisDialog.button_refine.SetLabel("Refine analysis...")
+            self.analysisDialog.Layout()
+        else:
+            #self.appendLog("No further analysis needed.\n", "BLUE")
+            self.analysisDialog.button_refine.Enable(False)
+            self.analysisDialog.button_refine.SetLabel("No further analysis available.")
+            self.analysisDialog.Layout()
     #########################################################################
