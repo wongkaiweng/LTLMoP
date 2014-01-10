@@ -28,6 +28,8 @@ class AnalysisResultsDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onClickResynthesize, self.button_refine)
         self.Bind(wx.EVT_BUTTON, self.onButtonClose, self.button_1)
         # end wxGlade
+        
+        self.parent = parent
 
     def __set_properties(self):
         # begin wxGlade: AnalysisResultsDialog.__set_properties
@@ -59,7 +61,7 @@ class AnalysisResultsDialog(wx.Dialog):
         # end wxGlade
 
     def onClickResynthesize(self, event):  # wxGlade: AnalysisResultsDialog.<event_handler>
-        print "Event handler `onClickResynthesize' not implemented"
+        self.parent.onMenuResynthesize(self.text_ctrl_1.GetLineText(0)) #lineNo    
         event.Skip()
 
     def onButtonClose(self, event):  # wxGlade: AnalysisResultsDialog.<event_handler>
@@ -73,26 +75,24 @@ class AnalysisResultsDialog(wx.Dialog):
         self.text_ctrl_summary.ShowPosition(self.text_ctrl_summary.GetLastPosition())
         wx.Yield() # Ensure update
         
-    ############# ENV Assumption Mining #############
-    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight):
+
+    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight , normalEnvSafetyCNF):
         """
+        print the tree in tree_ctrl_traceback box
         structuredSpec: each line of spec in structured English in type LIST
         LTL2SpecLineNumber: dict for mapping bt structured English and LTL
         tracebackTree        : dict to access ['SysTrans'] and ['EnvTrans'] line number in EngSpec
         ltlSpec              : modified version of the ltl spec. going to print ['EnvTrans']
         to_highlight         : return from analysis that the specs with problems
+        normalEnvSafetyCNF   : ltl env safety assumptions from ENV spec Generation
         """
-
-        # Create the root
-        #self.statements["env"] = []
-        #self.statements["sys"] = []  
         
         self.tree_ctrl_traceback.DeleteAllItems()
         root_node = self.tree_ctrl_traceback.AddRoot("Root")
         LTL  = {}
         for key,value in LTL2SpecLineNumber.iteritems():
             LTL[ value ] = key.replace('\t','').replace('\n','')
-            print key, value
+            #print key, value
         
         # highlight guilty specs
         highlightColor = "#FF9900"
@@ -113,6 +113,7 @@ class AnalysisResultsDialog(wx.Dialog):
             else:
                 for x in tracebackTree[specType]:
                     guiltyLinesToHighlight.append(x)
+        
         
         for lineNo, EngSpec in enumerate(structuredSpec, start=1):
             # Build the traceback tree           
@@ -141,7 +142,9 @@ class AnalysisResultsDialog(wx.Dialog):
             
         # add the latest assumption generation here
         input_node = self.tree_ctrl_traceback.AppendItem(root_node, "NEWLY GENERATED ENV SAFETY ASSUMPTIONS") 
-        command_node = self.tree_ctrl_traceback.AppendItem(input_node, ltlSpec['EnvTrans'].replace('\t','').replace('\n','')) 
+        #command_node = self.tree_ctrl_traceback.AppendItem(input_node, ltlSpec['EnvTrans'].replace('\t','').replace('\n','')) 
+        for x in normalEnvSafetyCNF:
+            command_node = self.tree_ctrl_traceback.AppendItem(input_node, x) 
         
         # highlight guilty specs
         if hightlightEnvTrans == True:
@@ -149,8 +152,7 @@ class AnalysisResultsDialog(wx.Dialog):
             self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) # pale pink
                         
         self.Layout()
-    #################################################
-    
+ 
     
     
 

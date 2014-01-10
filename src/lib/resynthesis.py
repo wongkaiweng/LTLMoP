@@ -9,8 +9,10 @@ import specCompiler
 import threading
 ######### ENV Assumption Mining######
 import specEditor
+import livenessEditor
 import wx
 import time
+import LTLcheck
 ######################################
 
 class ExecutorResynthesisExtensions(object):
@@ -443,33 +445,37 @@ class ExecutorResynthesisExtensions(object):
             self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"             
         
      
-    def recreateLTLfile(self, proj):
+    def recreateLTLfile(self, proj, spec = None):
         """
-        rewrite the LTL file with the modified self.spec
+        rewrite the LTL file with the modified spec
+        spec: passed in LTL specificaion by the user. Defaulted to be self.spec 
         """
+        
+        if spec == None:
+            spec = self.spec
+           
         ltl_filename = proj.getFilenamePrefix() + ".ltl"
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        LTLspec_env = "( " + self.spec["EnvInit"] + ")&\n" + self.spec["EnvTrans"] + self.spec["EnvGoals"]
-        LTLspec_sys = "( " + self.spec["SysInit"] + ")&\n" + self.spec["SysTrans"] + self.spec["SysGoals"]
+        LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
+        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
         
-        LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
+        LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
 
-        LTLspec_sys += "\n&\n" + self.spec['Topo']
+        LTLspec_sys += "\n&\n" + spec['Topo']
         
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
     
-    def onMenuAnalyze(self):
+    def onMenuAnalyze(self, enableResynthesis = True):
         "simplified version of that in specEditor.py"
         
         ##TODO: check to see if we need to recompile
         #self.compiler, self.badInit = self.onMenuCompile(event, with_safety_aut=False)
 
-        # instantiate if necessary
-        if self.analysisDialog is None:
-            Editor = wx.PySimpleApp(0)
-            self.analysisDialog = specEditor.AnalysisResultsDialog(None, None)
+        # instantiate if necessary (instantiate everytime since we are using showModal here
+        Editor = wx.PySimpleApp(0)
+        self.analysisDialog = livenessEditor.AnalysisResultsDialog(self,None)  #parent as resynthesis now
 
         # Clear dialog to make way for new info
         self.analysisDialog.text_ctrl_summary.Clear()
@@ -478,55 +484,25 @@ class ExecutorResynthesisExtensions(object):
         self.analysisDialog.label_traceback.Show()
         self.analysisDialog.tree_ctrl_traceback.Show()
         
-        #self.analysisDialog.tree_ctrl_traceback.ExpandAll()   
+        if not enableResynthesis:
+            self.analysisDialog.button_refine.Disable()
         
         #self.appendLog("Running analysis...\n","BLUE")
-
-        # Redirect all output to the log
-        #redir = specEditor.RedirectText(self, self.text_ctrl_log)
-        #sys.stdout = redir
-        #sys.stderr = redir
-        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze()
-        #sys.stdout = sys.__stdout__
-        #sys.stderr = sys.__stderr__
-
-        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight) 
+        # analyze the specification
+        self.analyzeCores()
+               
+        # DNF to CNF from slugsLTL to normalLTL
+        slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
+        normalEnvSafetyCNF = LTLcheck.parseSlugsLTLToNormalLTL(slugsEnvSafetyCNF,'ENV_TRANS')
         
-        # Remove lines about garbage collection from the output and remove extraenous lines
-        output_lines = [line for line in output.split('\n') if line.strip() and
-                        "Garbage collection" not in line and
-                        "Resizing node table" not in line]
-
-        if realizable:
-            # Strip trailing \n from output so it doesn't scroll past it
-            self.analysisDialog.appendLog('\n'.join(output_lines), "BLACK")
-            if nonTrivial:
-                self.analysisDialog.appendLog("\nSynthesized automaton is non-trivial.", "BLACK")
-            else:
-                self.analysisDialog.appendLog("\nSynthesized automaton is trivial.", "RED")
-        else:
-            self.analysisDialog.appendLog(output.rstrip(), "RED")
-        self.analysisDialog.appendLog('\n')
-        """        
-        #highlight guilty sentences
-        #special treatment for goals: we already know which one to highlight                
-        for h_item in self.to_highlight:
-            tb_key = h_item[0].title() + h_item[1].title()
-            if h_item[1] == "goals":
-                self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_LIVE)
-            elif h_item[1] == "trans":
-                for lineNo in self.tracebackTree[tb_key]:
-                    self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_SAFE)
-            elif h_item[1] == "init":
-                for lineNo in self.tracebackTree[tb_key]:
-                    self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_INIT)
-        """
-
+        
+        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
+        
         self.analysisDialog.ShowModal()
         #time.sleep(30)
 
         #self.appendLog("Initial analysis complete.\n\n", "BLUE")
-
+        """
         if (not realizable or not nonTrivial) and self.unsat:
             #self.appendLog("Further analysis is possible.\n", "BLUE")
             self.analysisDialog.button_refine.Enable(True)
@@ -537,4 +513,54 @@ class ExecutorResynthesisExtensions(object):
             self.analysisDialog.button_refine.Enable(False)
             self.analysisDialog.button_refine.SetLabel("No further analysis available.")
             self.analysisDialog.Layout()
+        """
+    def onMenuResynthesize(self, envLiveness):
+        """
+        Resynthesize the specification with a new livenessEditor
+        envLiveness: new env liveness from the user
+        """
+        # first check if the entered envliveness by the user contains []<>
+        if not "[]<>" in envLiveness.replace(" ","").replace("\t","").replace("\n",""):
+            self.analysisDialog.appendLog("\nPlease enter environment liveness with []<>\n", "RED")
+            return
+            
+        # create a copy of the current spec just for resynthesis
+        currentSpec = self.spec.copy()
+        # remove []<>(TRUE) if we find it
+        if "TRUE" in self.spec["EnvGoals"]: 
+            currentSpec["EnvGoals"] = envLiveness
+        else:
+            currentSpec["EnvGoals"] += ' &\n' + envLiveness
+    
+        #resynthesizing ...
+        self.recreateLTLfile(self.proj,currentSpec)
+        
+        if self.analyzeCores():
+            self.spec = currentSpec  # realizable, replace the new spec to be the self.spec
+        else:
+            self.recreateLTLfile(self.proj)  # return the ltl file back to normal as the newly added liveness is still unrealizable
+    
+    def analyzeCores(self):
+        """
+        EXCERPT from Vasu's code in specEditor.py
+        """
+        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze()
+        
+        # Remove lines about garbage collection from the output and remove extraenous lines
+        output_lines = [line for line in output.split('\n') if line.strip() and
+                        "Garbage collection" not in line and
+                        "Resizing node table" not in line]
+                        
+        if realizable:
+            # Strip trailing \n from output so it doesn't scroll past it
+            self.analysisDialog.appendLog('\n'.join(output_lines), "BLACK")
+            if nonTrivial:
+                self.analysisDialog.appendLog("\nSynthesized automaton is non-trivial.", "BLACK")
+            else:
+                self.analysisDialog.appendLog("\nSynthesized automaton is trivial.", "RED")
+        else:
+            self.analysisDialog.appendLog(output.rstrip(), "RED")
+        self.analysisDialog.appendLog('\n')
+        
+        return realizable
     #########################################################################
