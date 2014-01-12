@@ -8,7 +8,10 @@ Actions: # List of action propositions and their state (enabled = 1, disabled = 
 
 CompileOptions:
 convexify: True
+parser: structured
 fastslow: False
+decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
 Untitled configuration
@@ -35,7 +38,7 @@ dining_room = p4
 
 Spec: # Specification in structured English
 #infinitely often not (dog and cat)
-
+#Robot starts in bedroom with false
 # Case 1 (good for mode 1 and mode 3)
 #if you were in porch then do not cat
 #if you were in dining_room then do (not dog or not cat)
