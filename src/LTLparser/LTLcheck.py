@@ -99,7 +99,7 @@ class LTL_Check:
         # Environment Violations are removed
         if value == True and len(self.violated_spec_line_no) != 0:
             self.violated_spec_line_no = []
-            print "ViolationSolved:"
+            #print "ViolationSolved:"
         
         # return whether the environment assumptions are being violated
         return value
@@ -395,18 +395,18 @@ class LTL_Check:
                             treeNo = self.ltlTree_to_lineNo[str(x)]
                             
                             if (treeNo not in self.violated_spec_line_no) and treeNo > 0:
-                                print "Violation:#######################################"
-                                print "Violation:This environement safety assumption is violated."                       
+                                #print "Violation:#######################################"
+                                #print "Violation:This environement safety assumption is violated."                       
                                 
-                                print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
+                                #print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
                                 self.violated_spec_line_no.append(treeNo)
                                 #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
                                 #self.print_tree(tree,parseFormulaTest.p.terminals)
                         except:     
                             if 0 not in self.violated_spec_line_no:                  
-                                print "Violation:RV#######################################"
-                                print "Violation: " + str(parseFormulaTest.parseLTLTree(x)[0]) 
-                                print "Violation:RV#######################################"
+                                #print "Violation:RV#######################################"
+                                #print "Violation: " + str(parseFormulaTest.parseLTLTree(x)[0]) 
+                                #print "Violation:RV#######################################"
                                 treeNo = 0
                                 self.violated_spec_line_no.append(treeNo)
 
@@ -445,123 +445,66 @@ def print___tree(tree, terminals, indent=0):
                 print >>sys.__stdout__, "haha:"+ str(x)
             print___tree(x, terminals, indent+1)       
 
-def parseSlugsLTLToNormalLTL(slugsLTLText,specType):
+def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText):
     """
     parse the ltl in slugs format to the normal ltl file format.
     slugsLTLText: ltl in slugs format
-    specType: e.g: "ENV_LIVENESS","ENV_TRANS", "ENV_INIT", see .slugin file types
     """
     
-    toReturn = []
-    
+    CNFclauses = []
+    toReturn = ""
     
     for item in slugsLTLText.split('\n'):
-        ltlConjDisj = OrderedDict()
-        ltlNot  = []
-        ltlNext = []
-        ltlObj  = OrderedDict()
-        ltlNotAdded = []
+
         
         if (item.find('#') != -1) or (item.find("SLUGS") != -1) or len(item.replace(" ","")) < 2 :
             #find comment line
             continue
             
         splitItem = parseFormulaTest.tokenize(item)
-        print splitItem
+        #print splitItem
+        tempObj = ""
+        tempLine = []
         for index, element in enumerate(splitItem):
-            #print element[0]
-            if element[0] == '&' or element[0] == '|':
-                # keep track of how manay conjs and disjs needed
-                #second element is the count for objects
-                #third element for LTL creation later to keep track of objs added
-                if ltlConjDisj == {}:
-                    ltlConjDisj[index] = [" "+element[0]+" ", 2 , 2]         
-                    currentltlConjDisjKey = 0
-                elif (ltlConjDisj[ltlConjDisj.keys()[-1]][1]-1 + ltlConjDisj.keys()[-1]) == index and (element[0] in ltlConjDisj[ltlConjDisj.keys()[-1]][0] ):
-                    ltlConjDisj[ltlConjDisj.keys()[-1]][1] += 1
-                    ltlConjDisj[ltlConjDisj.keys()[-1]][2] += 1
-                else:
-                    ltlConjDisj[index] = [" "+element[0]+" ", 2 , 2] 
-                    currentltlConjDisjKey += 1                 
-                
-                
-            elif element[0] == '!':
-                ltlNot.append(index)
+            #print element[0]        
+            
+            # if the propositions is negated
+            if element[0] == '!':
+                tempObj += "!"
 
-            elif element[0] == 'id':
+            # for propositions
+            elif element[0] == 'id':  
                 try:
                     # figure out if it's next
                     if splitItem[index+1][0] == '\'':
-                        ltlObj[index] = "next(" + element[1] + ")"
+                        tempObj += "next(" + element[1] + ")"
                     else:
-                        ltlObj[index] = element[1]
+                        tempObj += element[1]
                 except:
-                    ltlObj[index] = element[1] 
+                    tempObj += element[1] 
+                
+                tempLine.append(tempObj)
+                tempObj = ""
             else:
                 pass
                 #print "must be next: " + element[0]
             
-            # add not 
-            if index in ltlObj.keys():
-                # find next
-                if (index-1) in ltlNot:
-                    ltlObj[index] = "!(" + ltlObj[index] + ")"  
-                    ltlNotAdded.append(index-1)           
-        
-        
-        for x in  ltlNotAdded:
-            ltlNot.remove(x)     
-
-        
-        tempObj = OrderedDict()
-        ltlObjLen = len(ltlObj)
-        tempObjCount = 0
-        for i in reversed(range(len(ltlConjDisj))):
-            k = ltlConjDisj.keys()[i]
-            v = ltlConjDisj.values()[i]
-
-            if k < ltlObj.keys()[ltlObjLen-v[1]] and ltlObjLen-v[1] >= 0:
-                tempObj[k] = "(" +  v[0].join(ltlObj.values()[ltlObjLen-v[1]:ltlObjLen]) + ")"
-                ltlObjLen  = ltlObjLen-v[1] 
-
-            else:
-                # a mixture of tempLTL and objs
-                temp = []
-                print "len(tempObj): " + str(len(tempObj))
-                print "tempObjCount: " + str( tempObjCount )
-
-                if (len(tempObj) - tempObjCount)-v[1] < 0:
-                    #(not (len(tempObj) - tempObjCount) >= len(tempObj)) or 
-                    temp = ltlObj.values()[ltlObjLen-(v[1]-(len(tempObj) - tempObjCount)):ltlObjLen]
-
-                for x in tempObj.values()[tempObjCount:len(tempObj)]:
-                    temp.append(x)   
-         
-                print "temp: " + str(temp)
-                tempObjCount = len(tempObj) 
-                tempObj[k] = "(" +  v[0].join(temp) +  ")"
-             
-            if (k-1) in ltlNot:
-                tempObj[k] = "!" + tempObj[k]
-        
-        # when LTL contains only one element
-        if len(ltlConjDisj) == 0:
-            tempObj[0] = ltlObj.values()[0]
-
-        if specType.find("LIVENESS") != -1:
-            toReturn.append("[]<>" + tempObj[0]) 
             
-        elif specType.find("TRANS") != -1:
-            toReturn.append("[]" + tempObj[0]) 
-            
-        elif specType.find("INIT") != -1:
-            toReturn.append(tempObj[0]) 
-        else:
-            print "unknown type found. Please retry"
-            toReturn.append(tempObj[0]) 
         
-    print toReturn
-    return toReturn
+        # join each line with "or"
+        CNFclauses.append("(" + " | ".join(tempLine) + ")\n")  
+        
+    # join all the clauses with "and"
+    toReturn = "(" + " & ".join(CNFclauses) + ")"
+    
+    if len(toReturn) == 2:
+        return ""        
+    else:   
+        return "[]" + toReturn 
+       
+        
+    #print toReturn
+    
 
 """
 sample = ' []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.hazardous_item)) ) & []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.person)) ) '
@@ -575,7 +518,7 @@ print parseFormulaTest.parseLTLTree(tree)[0]
 print sample
 #evaluate_tree('a')
 """
-
+"""
 slugsLTLText = "| ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'"
 #slugsLTLText = "| ! person' ! & & bit0' ! bit1' ! bit2'"
 #slugsLTLText = "| ! & & bit0 ! bit1 ! bit2 | | | & & bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2'"
@@ -588,4 +531,4 @@ print x
 print tree
 
 print___tree(tree,parseFormulaTest.p.terminals)
-
+"""

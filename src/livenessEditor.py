@@ -20,12 +20,14 @@ class AnalysisResultsDialog(wx.Dialog):
         self.label_1 = wx.StaticText(self, -1, "Enter new environment liveness:")
         self.text_ctrl_1 = wx.richtext.RichTextCtrl(self, -1, "")
         self.button_refine = wx.Button(self, -1, "Resynthesize")
+        self.button_2 = wx.Button(self, -1, "Export Specification")
         self.button_1 = wx.Button(self, wx.ID_CLOSE, "")
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.onClickResynthesize, self.button_refine)
+        self.Bind(wx.EVT_BUTTON, self.onButtonExport, self.button_2)
         self.Bind(wx.EVT_BUTTON, self.onButtonClose, self.button_1)
         # end wxGlade
         
@@ -53,7 +55,8 @@ class AnalysisResultsDialog(wx.Dialog):
         sizer_1.Add(self.text_ctrl_1, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         sizer_1.Add(self.button_refine, 0, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         sizer_11.Add(sizer_1, 0, wx.EXPAND, 45)
-        sizer_16.Add((20, 20), 1, wx.EXPAND, 0)
+        sizer_16.Add((270, 30), 0, wx.ALL | wx.EXPAND, 5)
+        sizer_16.Add(self.button_2, 0, wx.ALL, 5)
         sizer_16.Add(self.button_1, 0, wx.ALL | wx.EXPAND, 5)
         sizer_11.Add(sizer_16, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_11)
@@ -61,9 +64,14 @@ class AnalysisResultsDialog(wx.Dialog):
         # end wxGlade
 
     def onClickResynthesize(self, event):  # wxGlade: AnalysisResultsDialog.<event_handler>
-        self.parent.onMenuResynthesize(self.text_ctrl_1.GetLineText(0)) #lineNo    
+        self.parent.onMenuResynthesize(self.text_ctrl_1.GetLineText(0)) #lineNo           
         event.Skip()
 
+    def onButtonExport(self, event):  # wxGlade: AnalysisResultsDialog.<event_handler>
+        self.parent.exportSpecification()
+        event.Skip()
+    
+    
     def onButtonClose(self, event):  # wxGlade: AnalysisResultsDialog.<event_handler>
         self.Hide()
         event.Skip()
@@ -103,13 +111,15 @@ class AnalysisResultsDialog(wx.Dialog):
             else:
                 guilty_key[h_item[0].title() + h_item[1].title()] = None
         
-        hightlightEnvTrans = False
+        highlightEnvTrans = False
+        highlightEnvGoals = False
         guiltyLinesToHighlight = []
         for specType in guilty_key.keys():
             if specType == 'EnvTrans':
-                hightlightEnvTrans = True
+                highlightEnvTrans = True
             elif specType == ('EnvGoals' or 'SysGoals'):
                 guiltyLinesToHighlight.append(guilty_key[specType])
+                highlightEnvGoals = True
             else:
                 for x in tracebackTree[specType]:
                     guiltyLinesToHighlight.append(x)
@@ -137,24 +147,34 @@ class AnalysisResultsDialog(wx.Dialog):
                 
             # hightlight guilty specs
             if lineNo in guiltyLinesToHighlight:
-                self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor) # pale pink
-                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) # pale pink
+                self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor) 
+                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor)
             
         # add the latest assumption generation here
         input_node = self.tree_ctrl_traceback.AppendItem(root_node, "NEWLY GENERATED ENV SAFETY ASSUMPTIONS") 
-        #command_node = self.tree_ctrl_traceback.AppendItem(input_node, ltlSpec['EnvTrans'].replace('\t','').replace('\n','')) 
-        for x in normalEnvSafetyCNF:
-            command_node = self.tree_ctrl_traceback.AppendItem(input_node, x) 
+        if highlightEnvTrans == True:
+                self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor)
+                    
+        if len(normalEnvSafetyCNF) > 0: 
+            for x in normalEnvSafetyCNF.split("\n"): 
+                command_node = self.tree_ctrl_traceback.AppendItem(input_node, x) 
+            
+                # highlight guilty specs
+                if highlightEnvTrans == True:
+                    self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) 
         
-        # highlight guilty specs
-        if hightlightEnvTrans == True:
-            self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor) # pale pink
-            self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) # pale pink
-                        
+        # add the env liveness added by the user here
+        input_node = self.tree_ctrl_traceback.AppendItem(root_node, "NEWLY ADDED ENV LIVENESS BY USER") 
+        if highlightEnvGoals == True: 
+            self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor)
+            
+        for x in self.parent.userAddedEnvLiveness:
+             command_node = self.tree_ctrl_traceback.AppendItem(input_node, x)  
+             if highlightEnvGoals == True:
+                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) 
+                
         self.Layout()
- 
-    
-    
+
 
 # end of class AnalysisResultsDialog
 if __name__ == "__main__":

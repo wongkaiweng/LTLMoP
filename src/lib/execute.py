@@ -100,6 +100,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.tracebackTree = None               # tells you init, trans and sys line no 
         self.path_LTLfile = None                    # path of the .ltl file
         self.LTL2SpecLineNumber = None          # mapping from LTL to structed english
+        self.userAddedEnvLiveness = []          # keep track of liveness added by the user
+        self.originalLTLSpec      = {}          # save the original Spec for exporting
         #########################################
 
     def postEvent(self, eventType, eventData=None):
@@ -275,8 +277,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         else:
             # Figure out our initially true outputs
             init_outputs = [k for k,v in self.aut.getCurrentState().outputs.iteritems() if int(v) == 1]
-            self.postEvent("INFO",str(init_outputs)) 
-            self.postEvent("INFO",str(self.aut.getCurrentState().outputs))    
+            #self.postEvent("INFO",str(init_outputs)) 
+            #self.postEvent("INFO",str(self.aut.getCurrentState().outputs))    
             init_state = new_aut.chooseInitialState(init_region, init_outputs)#, goal=prev_z)
 
         if init_state is None:
@@ -292,10 +294,12 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.compiler = specCompiler.SpecCompiler(spec_file)
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
             self.spec, self.tracebackTree, response = self.compiler._writeLTLFile(False)
+            self.originalLTLSpec  = self.spec.copy()
             self.spec['EnvTrans'] = "\t[](FALSE) &\n"
             self.recreateLTLfile(self.proj)
             self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
             self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
+            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
         #############################################
 
     def run(self):
@@ -318,9 +322,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 
                 #print self.compiler._synthesize(False, True, True)[2]  # TRUE for realizable, FALSE for unrealizable
                 envSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-                self.postEvent("INFO", envSafetyCNF)
-                self.postEvent("INFO", str(LTLcheck.parseSlugsLTLToNormalLTL(envSafetyCNF,'ENV_TRANS')))
+                #self.postEvent("INFO", envSafetyCNF)
+                #self.postEvent("INFO", str(LTLcheck.parseSlugsEnvTransToNormalEnvTrans(envSafetyCNF)))
                 
+                self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)               
                 ################################
                     
                 # wait for either the FSA to unpause or for termination
@@ -331,12 +336,6 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             if not self.alive.isSet():
                 break    
 
-            ################### is moved to initialize ######
-            #init_state = self.aut.chooseInitialState(init_region, init_outputs)
-            #print "init_region: " + str(init_region)   # by Catherine
-            #print "init_outputs: " + str(init_outputs)  # by Catherine
-            ############### see if necessary later ##### 
-
             self.prev_outputs = deepcopy(self.aut.current_outputs)
             self.prev_z = self.aut.current_state.rank
 
@@ -344,40 +343,40 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.aut.runIteration()
 
             ###### ENV VIOLATION CHECK ######
-            #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$##
-            #$$$$$ DISABLE NOW SINCE THIS IS FOR LIVENESS GENERATION $$$$$$$$$$##
-#            if initial_sensor_state == False:
-#                self.LTLViolationCheck.sensor_state_len = len(self.aut.getCurrentState().inputs)
-#                # store the name of the sensors
-#                for key,value in self.aut.getSensorState().iteritems():
-#                    self.LTLViolationCheck.sensors.append(key)
-            #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$##
             
             # Check for environment violation
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState())
 
             # change the env_assumption_hold to int again (messed up by Python? )
             env_assumption_hold = int(env_assumption_hold)
-            print env_assumption_hold
             # temporarily added to account for [](FALSE)
             #self.LTLViolationCheck.modify_LTL_file()
             
             # Modify the ltl file based on the enviornment change
             if env_assumption_hold == False:
-            
+                
+                # print out the violated specs
+                if 0 in self.LTLViolationCheck.violated_spec_line_no:
+                    pass    # not print now 
+                    #self.postEvent("INFO", "Violated:" + str(self.spec['EnvTrans']))
+                else:
+                    self.postEvent("VIOLATION","Detected the following env safety violation:")
+                    for x in self.LTLViolationCheck.violated_spec_line_no:
+                        self.postEvent("VIOLATION", str(self.tracebackTree[x-1]))
+                    
                 # Add the current state in init state of the LTL spec
-                self.postEvent("INFO","Adding current state to init condition of LTL formulas")
+                self.postEvent("VIOLATION","Adding the current state to our initial conditions")
                 self._setSpecificationInitialConditionsToCurrentInDNF(self.proj)
                 
-                self.postEvent("INFO","Going to modify .ltl file to account for new env detected")
+                self.postEvent("VIOLATION","Adding the current state to our environment safety")
                 self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
                 self.recreateLTLfile(self.proj)
-                self.postEvent("INFO",str(self.spec['EnvTrans']) )
+                #self.postEvent("VIOLATION",str(self.spec['EnvTrans']) )
                 
                 realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-                self.postEvent("INFO", str(realizable)+ ", " + str(realizableFS) + ": " + str(output))
-                
-                self.postEvent("INFO", "\n\nINITIAL:modify_stage: " + str(self.LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable))
+
+                self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+                #self.postEvent("VIOLATION", "\n\nINITIAL:modify_stage: " + str(self.LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable))
 
                 if not realizable:
                     while self.LTLViolationCheck.modify_stage < 3 and not realizable:
@@ -387,11 +386,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                         self.recreateLTLfile(self.proj)
 
                         realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-                        self.postEvent("INFO", str(realizable)+ ", " + str(realizableFS) + ": " + str(output))
-
-
-                self.postEvent("INFO", "STAGE: " + str(self.LTLViolationCheck.modify_stage))
-                self.postEvent("INFO","FINAL:-realizable: " + str(realizable))
+                        
+                        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
                 
                 ###########
                 ########## TESTING
@@ -399,9 +395,23 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 ###########
                 #############
                 
-                # reload aut file if the new ltl is realizable        
+     
+                if not realizable:
+                    self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
+                    # Use Vasu's analysis tool 
+                    self.onMenuAnalyze()  # in resynthesis.py
+                    realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable                  
+                    
+                    if not realizable:
+                        self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
+                        print "----------------------------------------------"
+                        sys.exit()
+                    else:                   
+                        self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                        
+                # reload aut file if the new ltl is realizable                  
                 if realizable:
-                    self.postEvent("INFO", "ViolationSolved:")
+                    self.postEvent("RESOLVED", "The specification violation is resolved.")
                     self.LTLViolationCheck.sameState = False
                     #######################
                     # Load automaton file #
@@ -409,47 +419,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                     self.postEvent("INFO","Reloading automaton...")
                     spec_file = self.proj.getFilenamePrefix() + ".spec"
                     aut_file = self.proj.getFilenamePrefix() + ".aut"
-                    self.postEvent("INFO","initializing...")
-                    self.initialize(spec_file, aut_file, firstRun=False)
-                        
-                else:
-                    # Use Vasu's analysis tool 
-                    self.onMenuAnalyze()
-                    
-                    """
-                    self.postEvent("INFO",  "-----------------------------------------------")
-                    # still missing removing liveness guarantees
-                    self.postEvent("INFO",  "Trying to remove system liveness guarantees...")
-                    self.LTLViolationCheck.remove_liveness_guarantees()
-                    realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
-                    self.postEvent("INFO", str(realizable))    
-                    
-                    if realizable:
-                        self.postEvent("INFO",  "Synthesizable without system liveness guarantees. Please put in some environment liveness assumptions."  )      
-                        #time.sleep(5)
-                          
-                    else:
-                        self.postEvent("INFO",  "Unknown error: please check your system safety guarantees" )
-                        sys.exit()
-                        
-                         
-                    self.LTLViolationCheck.append_liveness_guarantees()
-                    self.postEvent("INFO",  "Trying to append liveness assumptions")
-                    self.LTLViolationCheck.generate_env_livenss_assumptions(True)
-                    realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
-                    self.postEvent("INFO", str(realizable))
-                    
-                    while not realizable and self.LTLViolationCheck.liveness_generation_count < (2*self.LTLViolationCheck.sensor_state_len + + 2**self.LTLViolationCheck.sensor_state_len):
-                        self.LTLViolationCheck.generate_env_livenss_assumptions()
-                        realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
-                        self.postEvent("INFO", str(realizable))
-                    """ 
-                    if not realizable:
-                        self.postEvent("INFO", "Still not realizable. Now we will exit the execution")
-                        print "----------------------------------------------"
-                        sys.exit()
-                    else:
-                        self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                    self.postEvent("INFO","Initializing...")
+                    self.initialize(spec_file, aut_file, firstRun=False)     
                 
             
             else:    
@@ -457,15 +428,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                     #print "The SENSOR state has been changed."
                     #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
                 self.LTLViolationCheck.append_state_to_LTL(self.aut.getCurrentState(),self.aut.getSensorState())
-                #self.LTLViolationCheck.modify_LTL_file()
+
                 if env_assumption_hold == False:
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
-            #    print >>sys.__stdout__,"env_assumption_hold equals False: " + str(env_assumption_hold == False) +" should say False."     
-                #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
-                #    print "After: " + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
-                    
-            #prev_cur_state = self.aut.getCurrentState()
-            #prev_sensor_state = self.aut.getSensorState() 
+
             #################################
             
             toc = self.timer_func()

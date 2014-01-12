@@ -175,6 +175,12 @@ class SimGUI_Frame(wx.Frame):
         elif eventData.startswith("Crossed border"):
             if self.checkbox_statusLog_border.GetValue():
                 wx.CallAfter(self.appendLog, eventData + "\n", color="CYAN") 
+        #################### ENV ASSUMPTION LEARNING ##################
+        elif eventType == "VIOLATION":
+            wx.CallAfter(self.appendLog, eventData + "\n", color="RED") 
+        elif eventType == "RESOLVED":
+            wx.CallAfter(self.appendLog, eventData + "\n", color="GREEN")     
+        ###############################################################
         else:
             # Detect our current goal index
             if eventData.startswith("Currently pursuing goal"):

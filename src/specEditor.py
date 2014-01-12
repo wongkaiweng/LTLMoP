@@ -1242,6 +1242,13 @@ class SpecEditorFrame(wx.Frame):
             
             if realizable:
                 self.appendLog("\tAutomaton successfully synthesized for instantaneous actions.\n", "GREEN")
+                
+                # Load in LTL file to the LTL tab
+                if os.path.exists(self.proj.getFilenamePrefix()+".ltl"):
+                    f = open(self.proj.getFilenamePrefix()+".ltl","r")
+                    ltl = "".join(f.readlines())
+                    f.close()
+                    self.text_ctrl_LTL.SetValue(ltl)
             else:
                 self.appendLog("\tERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
             #########################################################
