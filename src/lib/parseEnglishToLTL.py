@@ -268,8 +268,7 @@ def writeSpec(text, sensorList, regionList, robotPropList):
 
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the sys init condition for DNF later #####
-            LTLActSubformula = LTLActSubformula[0:LTLActSubformula.rfind('&')]
-            spec['SysInit']= spec['SysInit'] + "("+ LTLRegSubformula + LTLActSubformula + ")"
+            spec['SysInit']= spec['SysInit'] +  LTLRegSubformula + LTLActSubformula 
             ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
@@ -748,8 +747,10 @@ def writeSpec(text, sensorList, regionList, robotPropList):
         print 'The following propositions seem to be unused:'
         print unusedProp
         print 'They should be removed from the proposition lists\n'
-    
-
+        
+    #### Rewritten by Catherine for ENV Assumption mining ###############
+    spec['SysInit'] = "(" + spec['SysInit'][0:spec['SysInit'].rfind('&')] + ")"
+    #####################################################################
     return spec,linemap,failed,LTL2LineNo,internal_props
 
 

@@ -84,7 +84,7 @@ class AnalysisResultsDialog(wx.Dialog):
         wx.Yield() # Ensure update
         
 
-    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight , normalEnvSafetyCNF):
+    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight , normalEnvSafetyCNF, structuredEnglishEnvSafetyCNF = ""):
         """
         print the tree in tree_ctrl_traceback box
         structuredSpec: each line of spec in structured English in type LIST
@@ -93,6 +93,7 @@ class AnalysisResultsDialog(wx.Dialog):
         ltlSpec              : modified version of the ltl spec. going to print ['EnvTrans']
         to_highlight         : return from analysis that the specs with problems
         normalEnvSafetyCNF   : ltl env safety assumptions from ENV spec Generation
+        structuredEnglishEnvSafetyCNF : structured English env safety assumptions from ENV spec Generation
         """
         
         self.tree_ctrl_traceback.DeleteAllItems()
@@ -117,13 +118,13 @@ class AnalysisResultsDialog(wx.Dialog):
         for specType in guilty_key.keys():
             if specType == 'EnvTrans':
                 highlightEnvTrans = True
-            elif specType == ('EnvGoals' or 'SysGoals'):
-                guiltyLinesToHighlight.append(guilty_key[specType])
-                highlightEnvGoals = True
+            elif specType == 'EnvGoals' or specType == 'SysGoals':            
+                guiltyLinesToHighlight.append(tracebackTree[specType][guilty_key[specType]])              
+                if specType == 'EnvGoals':
+                    highlightEnvGoals = True
             else:
                 for x in tracebackTree[specType]:
                     guiltyLinesToHighlight.append(x)
-        
         
         for lineNo, EngSpec in enumerate(structuredSpec, start=1):
             # Build the traceback tree           
@@ -132,7 +133,7 @@ class AnalysisResultsDialog(wx.Dialog):
                 input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec + "<--(REPLACED)") 
                  # white out original env transition spec 
                 self.tree_ctrl_traceback.SetItemTextColour(input_node,"#a9a8a8")  
-                #self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,"#FA58D0") # pale pink
+
             else:
                 # Add a node for each input line    
                 input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec) 
@@ -163,6 +164,14 @@ class AnalysisResultsDialog(wx.Dialog):
                 if highlightEnvTrans == True:
                     self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) 
         
+            if structuredEnglishEnvSafetyCNF != "":
+                for x in structuredEnglishEnvSafetyCNF.split("\n"): 
+                    stmt_node = self.tree_ctrl_traceback.AppendItem(command_node, x) 
+                    
+                    # highlight guilty specs
+                    if highlightEnvTrans == True:
+                        self.tree_ctrl_traceback.SetItemBackgroundColour(stmt_node,highlightColor) 
+                    
         # add the env liveness added by the user here
         input_node = self.tree_ctrl_traceback.AppendItem(root_node, "NEWLY ADDED ENV LIVENESS BY USER") 
         if highlightEnvGoals == True: 

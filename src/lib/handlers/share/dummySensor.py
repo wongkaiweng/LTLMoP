@@ -37,7 +37,7 @@ class sensorHandler:
         
     def _createSubwindow(self):
             # Create a subprocess
-            print "(SENS) Starting sensorHandler window and listen thread..."
+            self.proj.executor.postEvent("INFO", "(SENS) Starting sensorHandler window and listen thread...")
             self.p_sensorHandler = subprocess.Popen(["python", "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","_SensorHandler.py")], stdin=subprocess.PIPE)
         
             # Create new thread to communicate with subwindow
@@ -76,7 +76,7 @@ class sensorHandler:
                 #print name, bit_num, (reg_idx_bin[bit_num] == '1')
                 return (reg_idx_bin[bit_num] == '1')
             else:
-                print "(SENS) WARNING: Region sensor %s is unknown!" % button_name
+                self.proj.executor.postEvent("INFO", "(SENS) WARNING: Region sensor %s is unknown!" % button_name)
                 return None
 
     def buttonPress(self,button_name,init_value,initial=False):
@@ -103,7 +103,7 @@ class sensorHandler:
             if button_name in self.sensorValue:
                 return self.sensorValue[button_name]
             else:
-                print "(SENS) WARNING: Sensor %s is unknown!" % button_name
+                self.proj.executor.postEvent("INFO", "(SENS) WARNING: Sensor %s is unknown!" % button_name)
                 return None
 
     def _sensorListen(self):
@@ -121,7 +121,7 @@ class sensorHandler:
         try:
             UDPSock.bind(addr)
         except:
-            print "ERROR: Cannot bind to port.  Try killing all Python processes and trying again."
+            self.proj.executor.postEvent("INFO", "ERROR: Cannot bind to port.  Try killing all Python processes and trying again.")
             return
 
         while self._running:
@@ -132,7 +132,7 @@ class sensorHandler:
                 continue
 
             if input == '':  # EOF indicates that the connection has been destroyed
-                print "(SENS) Sensor handler listen thread is shutting down."
+                self.proj.executor.postEvent("INFO", "(SENS) Sensor handler listen thread is shutting down.")
                 break
 
             # Check for the initialization signal, if necessary

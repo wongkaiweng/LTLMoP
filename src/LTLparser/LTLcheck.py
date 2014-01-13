@@ -3,6 +3,7 @@ import parseFormulaTest
 from numpy import *
 import fsa
 from collections import OrderedDict
+import re
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -445,7 +446,7 @@ def print___tree(tree, terminals, indent=0):
                 print >>sys.__stdout__, "haha:"+ str(x)
             print___tree(x, terminals, indent+1)       
 
-def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText):
+def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText, sensor_list):
     """
     parse the ltl in slugs format to the normal ltl file format.
     slugsLTLText: ltl in slugs format
@@ -474,14 +475,19 @@ def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText):
 
             # for propositions
             elif element[0] == 'id':  
+                if element[1] in sensor_list:
+                    obj = "e." + element[1]
+                else:
+                    obj = "s." + element[1]
+                
                 try:
                     # figure out if it's next
                     if splitItem[index+1][0] == '\'':
-                        tempObj += "next(" + element[1] + ")"
+                        tempObj += "next(" + obj + ")"
                     else:
-                        tempObj += element[1]
+                        tempObj += obj
                 except:
-                    tempObj += element[1] 
+                    tempObj += obj
                 
                 tempLine.append(tempObj)
                 tempObj = ""
@@ -502,8 +508,85 @@ def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText):
     else:   
         return "[]" + toReturn 
        
+def parseSlugsEnvTransToStructuredEng(slugsLTLText, aut):
+    """
+    parse the ltl in slugs format to the structured english file format.
+    slugsLTLText: ltl in slugs format
+    aut : automaton file, for calling self.aut.getAnnotatedRegionName
+    """
+    
+    CNFclauses = []
+    toReturn = ""
+    
+    for item in slugsLTLText.split('\n'):
+
         
-    #print toReturn
+        if (item.find('#') != -1) or (item.find("SLUGS") != -1) or len(item.replace(" ","")) < 2 :
+            #find comment line
+            continue      
+
+            
+        splitItem = parseFormulaTest.tokenize(item)
+        #print splitItem
+        tempObj = ""
+        tempLine = []
+        for index, element in enumerate(splitItem):
+            #print element[0]        
+            obj = []
+            # if the propositions is negated
+            if element[0] == '!':
+                tempObj += "not "
+
+            # for propositions
+            elif element[0] == 'id':  
+                if "bit" in element[1] : #regions
+                    bitNo = int(element[1].replace('bit',""))
+                    
+                    # append regions to the list    
+                    for x in range(len(aut.regions)):
+                        #figure out if it's a negation of the bit
+                        if  tempObj == "not ":
+                            checkForRegion = not bool(x & 1 << bitNo)
+                        else: 
+                            checkForRegion = bool(x & 1 << bitNo)            
+                                       
+                        if checkForRegion:
+                            #print aut.getAnnotatedRegionName(x)
+                            #print re.search('\w+\ \((?P<region>\w+)\)', aut.getAnnotatedRegionName(x))
+                            obj.append(re.search('\w+\ \((?P<region>\w+)\)', aut.getAnnotatedRegionName(x)).group("region"))
+                    
+                    tempObj = " or ".join(obj)
+                            
+                else: # other propositions
+                    obj.append(element[1])
+                
+                    try:
+                        # figure out if it's next
+                        if splitItem[index+1][0] == '\'':
+                            tempObj += "next(" + obj[0] + ")"
+                        else:
+                            tempObj += obj[0]
+                    except:
+                        tempObj += obj[0]
+                
+                tempLine.append(tempObj)
+                tempObj = ""
+            else:
+                pass
+                #print "must be next: " + element[0]
+            
+            
+        
+        # join each line with "or"
+        CNFclauses.append("(" + " or ".join(tempLine) + ")\n")  
+        
+    # join all the clauses with "and"
+    toReturn = "(" + " and ".join(CNFclauses) + ")"
+    
+    if len(toReturn) == 2:
+        return ""        
+    else:   
+        return "always" + toReturn 
     
 
 """

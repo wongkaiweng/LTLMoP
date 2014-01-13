@@ -124,7 +124,7 @@ class Automaton:
         try:
             return self.stateNameToState[name]
         except KeyError:
-            print "ERROR: Can't find state with name %s!" % (name)
+            self.proj.executor.postEvent("INFO", "ERROR: Can't find state with name %s!" % (name))
             return None
 
     def dumpStates(self, range=None):
@@ -164,7 +164,7 @@ class Automaton:
             if key not in self.current_outputs or new_val != self.current_outputs[key]:
                 # The state of this output proposition has changed!
 
-                print "Output proposition \"%s\" is now %s!" % (key, str(new_val))
+                self.proj.executor.postEvent("INFO", "Output proposition \"%s\" is now %s!" % (key, str(new_val)))
 
                 # Run any actuator handlers if appropriate
                 if key in self.actuators:
@@ -187,7 +187,7 @@ class Automaton:
                     # bit0 is MSB
                     region += int(2**(self.num_bits-bit-1))
         except KeyError:
-            print "FATAL: Missing expected proposition 'bit%d' in automaton!" % bit
+            self.proj.executor.postEvent("INFO", "FATAL: Missing expected proposition 'bit%d' in automaton!" % bit)
             region = None
 
         return region
@@ -318,12 +318,12 @@ class Automaton:
 
         for sensor in self.sensors:
             if sensor not in self.sensor_handler:
-                print "ERROR: No sensor proposition mapping exists for '%s'! Aborting." % sensor
+                self.proj.executor.postEvent("INFO", "ERROR: No sensor proposition mapping exists for '%s'! Aborting." % sensor)
                 return False
 
         for actuator in self.actuators:
             if actuator not in self.actuator_handler:
-                print "ERROR: No actuator proposition mapping exists for '%s'! Aborting." % actuator
+                self.proj.executor.postEvent("INFO", "ERROR: No actuator proposition mapping exists for '%s'! Aborting." % actuator)
                 return False
 
         return True
@@ -559,11 +559,10 @@ class Automaton:
             if re.match('^bit\d+$', output): continue
             self.current_outputs[output] = (output in init_outputs)
         
-        print self.current_outputs
         candidates = self.findTransitionableStates(initial=True)
 
         if len(candidates) == 0: # Uh oh; that's no good
-            print "(FSA) OH NO, where do I start?! (No suitable initial state found)"
+            self.proj.executor.postEvent("INFO", "(FSA) OH NO, where do I start?! (No suitable initial state found)")
             return None
 
         # If there's more than one candidate, let's go for variety
@@ -616,7 +615,7 @@ class Automaton:
 
             
             if self.violation_check == False:
-                print "(FSA) ERROR: Could not find a suitable state to transition to!"
+                self.proj.executor.postEvent("INFO", "(FSA) ERROR: Could not find a suitable state to transition to!")
             self.violation_check = True
             
             return
@@ -639,7 +638,7 @@ class Automaton:
             self.next_state = random.choice(next_states)
             self.next_region = self.regionFromState(self.next_state)
 
-            print "Currently pursuing goal #{}".format(self.next_state.rank)
+            self.proj.executor.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.rank))
 
             # See what we, as the system, need to do to get to this new state
             self.transition_contains_motion = self.next_region is not None and (self.next_region != self.current_region)
@@ -650,7 +649,7 @@ class Automaton:
 
             if self.transition_contains_motion:
                 # We're going to a new region
-                print "Heading to region %s..." % self.regions[self.next_region].name
+                self.proj.executor.postEvent("INFO", "Heading to region %s..." % self.regions[self.next_region].name)
 
             self.arrived = False
 
@@ -664,7 +663,7 @@ class Automaton:
             # TODO: Check to see whether actually inside next region that we expected
 
             if self.transition_contains_motion:
-                print "Crossed border from %s to %s!" % (self.regions[self.current_region].name, self.regions[self.next_region].name)
+                self.proj.executor.postEvent("INFO", "Crossed border from %s to %s!" % (self.regions[self.current_region].name, self.regions[self.next_region].name))
 
             if not self.proj.compile_options['fastslow']:
                 # Run actuators after motion
@@ -673,7 +672,7 @@ class Automaton:
             self.current_state = self.next_state
             self.current_region = self.next_region
             self.last_next_states = []  # reset
-            print "Now in state %s (z = %s)" % (self.current_state.name, self.current_state.rank)
+            self.proj.executor.postEvent("INFO", "Now in state %s (z = %s)" % (self.current_state.name, self.current_state.rank))
 
 
          

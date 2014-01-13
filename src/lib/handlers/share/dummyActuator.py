@@ -45,11 +45,11 @@ class actuatorHandler:
                 try:
                     UDPSock.bind(addr)
                 except:
-                    print "ERROR: Cannot bind to port.  Try killing all Python processes and trying again."
+                    self.proj.executor.postEvent("INFO", "ERROR: Cannot bind to port.  Try killing all Python processes and trying again.")
                     return
 
                 # Create a subprocess
-                print "(SENS) Starting actuatorHandler window..."
+                self.proj.executor.postEvent("INFO", "(SENS) Starting actuatorHandler window...")
                 self.p_gui = subprocess.Popen(["python", "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","_ActuatorHandler.py")], stderr=subprocess.PIPE, stdin=subprocess.PIPE)
                 
                 data = ''
@@ -58,7 +58,7 @@ class actuatorHandler:
                     try:
                         data,addrFrom = UDPSock.recvfrom(1024)
                     except socket.timeout:
-                        print "Waiting for GUI..."
+                        self.proj.executor.postEvent("INFO", "Waiting for GUI...")
                         continue
 
                 UDPSock.close()
@@ -70,5 +70,5 @@ class actuatorHandler:
 
             self.p_gui.stdin.write("{},{}\n".format(name,int(actuatorVal)))
 
-            print "(ACT) Actuator %s is now %s!" % tuple(map(str, (name, actuatorVal)))
+            self.proj.executor.postEvent("INFO","(ACT) Actuator %s is now %s!" % tuple(map(str, (name, actuatorVal))))
 

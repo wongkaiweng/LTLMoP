@@ -1213,6 +1213,7 @@ class SpecEditorFrame(wx.Frame):
             else:
                 self.appendLog("ERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
         else:
+            
             if realizable:
                 self.appendLog("Automaton successfully synthesized for instantaneous actions.\n", "GREEN")
             else:
@@ -1235,7 +1236,7 @@ class SpecEditorFrame(wx.Frame):
 
                 LTLspec_sys += "\n&\n" + self.spec['Topo']
                 
-                # Write the file back
+                # Rewrite the file
                 import createJTLVinput
                 createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
                 realizable, realizableFS, output = compiler._synthesize(with_safety_aut)

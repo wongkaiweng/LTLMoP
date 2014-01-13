@@ -13,6 +13,7 @@ import livenessEditor
 import wx
 import time, sys
 import LTLcheck
+import subprocess, os
 ######################################
 
 class ExecutorResynthesisExtensions(object):
@@ -428,7 +429,7 @@ class ExecutorResynthesisExtensions(object):
         # find the current inputs and outputs from fsa
         current_env_init_state  = fsa.stateToLTL(state, env_output=True)
         current_sys_init_state  = self.getCurrentStateAsLTL()
-        
+
         # try to compare current spec with the new clause so that no duplicates are added
         old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
         old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")
@@ -493,18 +494,31 @@ class ExecutorResynthesisExtensions(object):
         
         if not exportSpecification:
             self.analysisDialog.button_2.Disable() 
-        
-        #self.appendLog("Running analysis...\n","BLUE")
-        # analyze the specification
-        self.analyzeCores()
                
         # DNF to CNF from slugsLTL to normalLTL
-        slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-        normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF)
+        #slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
+        #normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)
+        slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
         print >>sys.__stdout__, slugsEnvSafetyCNF
         print >>sys.__stdout__,normalEnvSafetyCNF
         
-        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
+        #self.appendLog("Running analysis...\n","BLUE")
+        # analyze the specification
+        if exportSpecification:
+            self.analysisDialog.appendLog("Original Generated Spec","BLUE")
+            self.analyzeCores()
+            self.analysisDialog.appendLog("\nSimplified Generated Spec","BLUE")
+            self.analyzeCores(generatedSpec = True)
+        else:
+            self.analyzeCores()
+        
+       
+        if exportSpecification:
+            structuredEnglishEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToStructuredEng(slugsEnvSafetyCNF, self.aut)
+            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF,structuredEnglishEnvSafetyCNF) 
+        else:
+            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
+            
         
         print >>sys.__stdout__,self.to_highlight
         self.analysisDialog.ShowModal()
@@ -547,6 +561,7 @@ class ExecutorResynthesisExtensions(object):
             self.LTLViolationCheck.modify_stage  = x+1 
             #resynthesizing ...
             self.recreateLTLfile(self.proj,currentSpec)
+            slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
             
             if self.analyzeCores(appendLog = False):
                 break
@@ -559,9 +574,6 @@ class ExecutorResynthesisExtensions(object):
             # save the user added liveness for display in analysis dialog
             self.userAddedEnvLiveness.append(envLiveness)
             
-            slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-            normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF)
-            
             #reprint the tree in the analysis dialog
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
             
@@ -571,11 +583,11 @@ class ExecutorResynthesisExtensions(object):
             
         
     
-    def analyzeCores(self,appendLog = True):
+    def analyzeCores(self,appendLog = True, generatedSpec = False):
         """
         EXCERPT from Vasu's code in specEditor.py
         """
-        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze()
+        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze(generatedSpec)
         
         # Remove lines about garbage collection from the output and remove extraenous lines
         output_lines = [line for line in output.split('\n') if line.strip() and
@@ -595,13 +607,14 @@ class ExecutorResynthesisExtensions(object):
             self.analysisDialog.appendLog('\n')
         
         return realizable
-    
-    def exportSpecification(self):
+
+            
+    def exportSpecification(self, appendLog = True):
         """
         export the generated spec
         """
         slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-        normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF)
+        normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
         
         # take care of the case where normalEnvSafetyCNF is empty --> means [](TRUE)
         if len(normalEnvSafetyCNF) > 0 :
@@ -611,5 +624,11 @@ class ExecutorResynthesisExtensions(object):
             
         self.originalLTLSpec["EnvGoals"] = self.spec["EnvGoals"]
         self.recreateLTLfile(self.proj, self.originalLTLSpec, export = True)
-        self.analysisDialog.appendLog("\nThe generated specification is exported to " + self.proj.getFilenamePrefix()+"Generated.ltl","BLACK")
+        if appendLog:
+            self.analysisDialog.appendLog("\nThe generated specification with simplified environment safety assumptions is exported to " + self.proj.getFilenamePrefix()+"Generated.ltl","BLACK")
+            
+            self.analyzeCores(appendLog = True, generatedSpec = True)
+            
+        return slugsEnvSafetyCNF, normalEnvSafetyCNF
+        
     #########################################################################

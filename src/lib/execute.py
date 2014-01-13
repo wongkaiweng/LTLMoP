@@ -318,13 +318,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                     self.proj.h_instance['drive'].setVelocity(0,0)
                 
                 ###### ENV VIOLATION CHECK ######
-                # for generation of specification from DNF to CNF
-
-                #print self.compiler._synthesize(False, True, True)[2]  # TRUE for realizable, FALSE for unrealizable
-                envSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-                #self.postEvent("INFO", envSafetyCNF)
-                #self.postEvent("INFO", str(LTLcheck.parseSlugsEnvTransToNormalEnvTrans(envSafetyCNF)))
-                
+                # pop up the analysis dialog                
                 self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)               
                 ################################
                     
@@ -349,8 +343,6 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 
             # change the env_assumption_hold to int again (messed up by Python? )
             env_assumption_hold = int(env_assumption_hold)
-            # temporarily added to account for [](FALSE)
-            #self.LTLViolationCheck.modify_LTL_file()
             
             # Modify the ltl file based on the enviornment change
             if env_assumption_hold == False:
@@ -376,7 +368,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
 
                 self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
-                #self.postEvent("VIOLATION", "\n\nINITIAL:modify_stage: " + str(self.LTLViolationCheck.modify_stage) + "-realizable: " + str(realizable))
+               
 
                 if not realizable:
                     while self.LTLViolationCheck.modify_stage < 3 and not realizable:

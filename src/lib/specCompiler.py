@@ -565,13 +565,20 @@ class SpecCompiler(object):
         nonTrivial = any([len(s.transitions) > 0 for s in aut.states])
 
         return nonTrivial
-
-    def _analyze(self):
-        print "WARNING: Debug not yet supported by slugs.  Using JTLV."
+            
+    ################## ENV Assumption Learning ##############
+    def _analyze(self, generatedSpec = False):
+    ##########################################################
+        #print "WARNING: Debug not yet supported by slugs.  Using JTLV."
 
         cmd = self._getGROneCommand("GROneDebug")
         if cmd is None:
             return (False, False, [], "")
+        
+        ############## ENV ASSUMPTION LEARNING #################
+        if generatedSpec:
+            cmd[-1] = cmd[-1].replace(".ltl",'Generated.ltl')
+        ########################################################
 
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
 
@@ -879,7 +886,7 @@ class SpecCompiler(object):
         
         # consider all possible starting states
         cmd.append("--sysInitRoboticsSemantics")
-         
+
         # need to remove .aut file for slugs to run for --computeWeakenedSafetyAssumptions, --onlyRealizability
         if DNFtoCNF == True or just_realizability == True:
             for x in cmd:
