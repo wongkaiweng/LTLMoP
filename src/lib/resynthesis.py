@@ -11,9 +11,10 @@ import threading
 import specEditor
 import livenessEditor
 import wx
-import time, sys
+import time, sys, math
 import LTLcheck
-import subprocess, os
+import parseEnglishToLTL
+import numpy
 ######################################
 
 class ExecutorResynthesisExtensions(object):
@@ -421,30 +422,137 @@ class ExecutorResynthesisExtensions(object):
    
    
     ########### ENV Assumption Mining ####################
-    def _setSpecificationInitialConditionsToCurrentInDNF(self, proj):
-        """ Add Env and Sys Init in disjunctive Normal form to LTL"""
+    def addStatetoEnvSafety(self, firstRun = False , new_aut = None):
+        """
+        append the current detected state to our safety
+        """
+        # Add the current state in init state of the LTL spec
+        self.postEvent("VIOLATION","Adding the current state to our initial conditions")
+        if not new_aut == None: # for initializing case
+            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, new_aut)
+        else:
+            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
         
-        state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)
+        if not firstRun:
+            self.postEvent("VIOLATION","Adding the current state to our environment safety")
+            self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+            
+        self.recreateLTLfile(self.proj)
+        realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+       
+        if not firstRun:
+            if not realizable:
+                while self.LTLViolationCheck.modify_stage < 3 and not realizable:
+                    self.LTLViolationCheck.modify_stage += 1 
+
+                    self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+                    self.recreateLTLfile(self.proj)
+
+                    realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                    
+                    self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+            
+            
+
+            if not realizable:
+                self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
+                # Use Vasu's analysis tool 
+                self.onMenuAnalyze()  # in resynthesis.py
+                realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable                  
+                
+                if not realizable:
+                    self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
+                    sys.exit()
+                else:                   
+                    self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                
+        # reload aut file if the new ltl is realizable                  
+        if realizable:
+            self.postEvent("RESOLVED", "The specification violation is resolved.")
+            self.LTLViolationCheck.sameState = False
+            #######################
+            # Load automaton file #
+            #######################
+            self.postEvent("INFO","Reloading automaton...")
+            spec_file = self.proj.getFilenamePrefix() + ".spec"
+            aut_file = self.proj.getFilenamePrefix() + ".aut"
+            self.postEvent("INFO","Initializing...")
+            init_state, new_aut = self.initialize(spec_file, aut_file, firstRun=False)  
+        else:
+            self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
+            sys.exit()
+            
+        return init_state, new_aut 
+    
+    def _setSpecificationInitialConditionsToCurrentInDNF(self, proj,firstRun, new_aut = None):
+        """ Add Env and Sys Init in disjunctive Normal form to LTL
+        proj:     our current project
+        firstRun: if this is the first time running simGUI
+        """
+        ## for sensors        
+        if not firstRun:
+            state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)      
+        else:
+            state = fsa.FSA_State("sensors_only",new_aut.sensor_state,None,None)      
         
         # find the current inputs and outputs from fsa
         current_env_init_state  = fsa.stateToLTL(state, env_output=True)
-        current_sys_init_state  = self.getCurrentStateAsLTL()
-
+        
         # try to compare current spec with the new clause so that no duplicates are added
         old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
-        old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")
-        
-        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
-        cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
-        
+        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"        
         # check if the clause already exists in self.spec["EnvInit"]
         if old_env_init.find(cur_env_init) == -1:
             self.spec["EnvInit"]  += "\n| (" + current_env_init_state +  ") " # swap ouputs to inputs
+           
+        ## for actuators and regions
+        if firstRun:
+            tempY = []
+            # figure out our current region
+            init_region = self._getCurrentRegionFromPose()
+            numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))          
+            reg_idx_bin = numpy.binary_repr(init_region, width=numBits)
+            
+            for x in range(numBits):
+                if init_region & 2**x:
+                    tempY.append("s.bit" + str(x))
+                else:
+                    tempY.append("!s.bit" + str(x))
+                             
+            # Figure out our initially true outputs
+            init_outputs = []
+            for prop in self.proj.currentConfig.initial_truths:
+                if prop not in self.proj.enabled_sensors:
+                    init_outputs.append(prop)
+            
+            for x in self.proj.enabled_actuators:
+                if x not in init_outputs:
+                    tempY.append("!s." + str(x))
+                else:
+                    tempY.append("s." + str(x))
+                    
+            for x in self.proj.all_customs:
+                if x not in init_outputs:
+                    tempY.append("!s." + str(x))
+                else:
+                    tempY.append("s." + str(x))
+                    
+            current_sys_init_state = " & ".join(tempY)
+
+        else:
+            # find the current inputs and outputs from fsa
+            current_sys_init_state  = self.getCurrentStateAsLTL()
         
+        # try to compare current spec with the new clause so that no duplicates are added
+        old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")        
+        cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+
         # check if the clause already exists in self.spec["SysInit"]  
         if old_sys_init.find(cur_sys_init) == -1  :  
             self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"             
         
+        print >>sys.__stdout__,cur_sys_init
      
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
@@ -468,7 +576,7 @@ class ExecutorResynthesisExtensions(object):
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
 
         LTLspec_sys += "\n&\n" + spec['Topo']
-        
+
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
     

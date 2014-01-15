@@ -146,8 +146,9 @@ class AnalysisResultsDialog(wx.Dialog):
         LTL  = {}
         for key,value in LTL2SpecLineNumber.iteritems():
             LTL[ value ] = key.replace('\t','').replace('\n','')
-            print key, value
+            #print key, value
         
+        print to_highlight
         # highlight guilty specs
         highlightColor = "#FF9900"
         guilty_key = {}
@@ -162,11 +163,13 @@ class AnalysisResultsDialog(wx.Dialog):
         for specType in guilty_key.keys():
             if specType == 'EnvTrans':
                 hightlightEnvTrans = True
-            elif specType == ('EnvGoals' or 'SysGoals'):
-                guiltyLinesToHighlight.append(guilty_key[specType])
+            elif specType == 'EnvGoals' or specType =='SysGoals':
+                guiltyLinesToHighlight.append(tracebackTree[specType][guilty_key[specType]])  
             else:
                 for x in tracebackTree[specType]:
                     guiltyLinesToHighlight.append(x)
+        
+        print guiltyLinesToHighlight
         
         for lineNo, EngSpec in enumerate(structuredSpec, start=1):
             # Build the traceback tree           

@@ -9,61 +9,64 @@ pickup, 1
 deliver, 1
 
 CompileOptions:
-convexify: False
+convexify: True
 parser: structured
 fastslow: False
 decompose: True
 use_region_bit_encoding: True
 
 CurrentConfigName:
-BasicSim
+Nao_maecy
 
 Customs: # List of custom propositions
 obtainedPackage
+betweenClasses
 
 RegionFile: # Relative path of region description file
 packageDelivery.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-ferryCrossing, 1
-roadBlockage, 1
 packageReady, 1
-accident, 1
-doorClosed, 0
+doorClosed, 1
+cooking, 1
+classStarts, 1
+classIsOver, 1
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-bridge = p12
-postOffice = p4
-pavement = p5
-exit = p10
-workplace = p1
+classroom = p20, p21
+hallway = p6
+door = p18, p19
+office = p12, p13
+mailroom = p4
+corridor = p9
 others = 
-home = p8
-crosswalk = p11
-highway = p9
+atrium = p11
+kitchen = p5
 
 Spec: # Specification in structured English
 # inital conditions of the system and the environment
 Env starts with false
 Robot starts with false
-Robot starts in  home
+Robot starts in hallway
 
 # system safety guarantees
-If you are sensing ferryCrossing then do not bridge
-If you are sensing roadBlockage then do not exit
-If you are sensing accident then do not crosswalk
-#f you are sensing doorClosed then do not door
+If you were sensing doorClosed then do not door
+If you were sensing cooking then do not kitchen
+If you are activating betweenClasses then do not atrium
+betweenClasses is set on classStarts and reset on classIsOver
+if you are sensing classStarts then stay there
+if you are sensing classIsOver then stay there
 
 # pick up package in the postOffice
-If you are sensing packageReady then visit postOffice
-do pickup if and only if you are in postOffice and you are sensing packageReady and not obtainedPackage
-obtainedPackage is set on (postOffice and packageReady and pickup) and reset on (workplace and deliver)
-
+If you are sensing packageReady then visit mailroom
+do pickup if and only if you are in mailroom and you are sensing packageReady and not obtainedPackage
+if you were activating obtainedPackage then do not mailroom
+obtainedPackage is set on (mailroom and packageReady and pickup) and reset on (office and deliver)
 
 # deliver package to the workplace
-If you are sensing obtainedPackage then go to workplace
-do deliver if and only If you are in workplace and you are sensing obtainedPackage
+If you are sensing obtainedPackage then go to office
+do deliver if and only If you are in office and you are sensing obtainedPackage
 
