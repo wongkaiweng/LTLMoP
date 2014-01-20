@@ -552,14 +552,16 @@ class ExecutorResynthesisExtensions(object):
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
         
 
-        # check if the clause already exists in self.spec["SysInit"]  
+        # check if the clause already exists in self.spec["SysInit"]
+        """  
         if old_sys_init.find(cur_sys_init) == -1  :  
             self.postEvent("INFO","didn't find the same state!")
             self.postEvent("INFO",str(old_sys_init))
             self.postEvent("INFO",str(cur_sys_init))
             #self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"  
             self.spec["SysInit"]  += "\n| " + cur_sys_init             
-        
+        """
+        self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init   
 
      
     def recreateLTLfile(self, proj, spec = None , export = False):
@@ -659,18 +661,26 @@ class ExecutorResynthesisExtensions(object):
         Resynthesize the specification with a new livenessEditor
         envLiveness: new env liveness from the user
         """
+        
+        spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
+        if failed:
+            self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
+            return
+        
+        """
         # first check if the entered envliveness by the user contains []<>
         if not "[]<>" in envLiveness.replace(" ","").replace("\t","").replace("\n",""):
             self.analysisDialog.appendLog("\nPlease enter environment liveness with []<>\n", "RED")
             return
+        """
             
         # create a copy of the current spec just for resynthesis
         currentSpec = self.spec.copy()
         # remove []<>(TRUE) if we find it
         if "TRUE" in self.spec["EnvGoals"]: 
-            currentSpec["EnvGoals"] = envLiveness
+            currentSpec["EnvGoals"] =  spec["EnvGoals"]  #envLiveness
         else:
-            currentSpec["EnvGoals"] += ' &\n' + envLiveness
+            currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
             
        
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
@@ -690,7 +700,8 @@ class ExecutorResynthesisExtensions(object):
             self.spec = currentSpec  # realizable, replace the new spec to be the self.spec
             
             # save the user added liveness for display in analysis dialog
-            self.userAddedEnvLiveness.append(envLiveness)
+            self.userAddedEnvLivenessEnglish.append(envLiveness)
+            self.userAddedEnvLivenessLTL.append(spec["EnvGoals"].replace("\t",'').replace("\n",'').replace(" ",""))
             
             #reprint the tree in the analysis dialog
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 

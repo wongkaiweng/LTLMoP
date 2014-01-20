@@ -211,6 +211,8 @@ class naoSensorHandler:
                 self.memProxy = self.naoInitHandler.createProxy('ALMemory')
             return True
         else:
+            if bool(self.memProxy.getData('FrontTactilTouched',0)):
+                self.proj.executor.postEvent("INFO","sensor.py: headTapped is True now!")
             return bool(self.memProxy.getData('FrontTactilTouched',0))
     
     def headTappedBack(self, initial=False):
@@ -223,9 +225,11 @@ class naoSensorHandler:
                 self.memProxy = self.naoInitHandler.createProxy('ALMemory')
             return True
         else:
+            if bool(self.memProxy.getData('RearTactilTouched',0)):
+                self.proj.executor.postEvent("INFO","sensor.py: headTappedBack is True now!")    
             return bool(self.memProxy.getData('RearTactilTouched',0))
 
-    def findChief(self, initial=False):
+    def findChief(self,  initial=False):
 
         if initial:
             print "Connecting to Vicon server..."
@@ -239,6 +243,7 @@ class naoSensorHandler:
             # Wait for first data to come in
             while self.viconServer.getData() is None:
                 pass
+                
         else:
             (t, x, y) = self.viconServer.getData()
             (t, x, y) = [t/100, x/1000, y/1000]
@@ -247,7 +252,37 @@ class naoSensorHandler:
             pose = [6660.0/1000, -590.0/1000]   # center of kitchen now
             
             range = 0.5
+            
             if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
                 self.proj.executor.postEvent("INFO","See hat: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))) 
+                
+            return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range
+            
+      
+    def betweenClasses(self,  initial=False):
+
+        if initial:
+            print "Connecting to Vicon server..."
+            self.viconServer2 = _pyvicon.ViconStreamer()
+            self.viconServer2.connect("10.0.0.102", 800)
+            
+            model_name = "GPSReceiverHelmet-goodaxes:GPSReceiverHelmet01" ##############
+            self.viconServer2.selectStreams(["Time"] + ["{} <{}>".format(model_name, s) for s in ("t-X", "t-Y")])
+            self.viconServer2.startStreams()
+            
+            # Wait for first data to come in
+            while self.viconServer2.getData() is None:
+                pass
+                
+        else:
+            (t, x, y) = self.viconServer2.getData()
+            (t, x, y) = [t/100, x/1000, y/1000]
+            
+            # Find our current configuration
+            pose = [6660.0/1000, -590.0/1000]   # #########center of kitchen now
+            
+            range = 0.5
+            if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
+                self.proj.executor.postEvent("INFO","See STH: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))) 
                 
             return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range

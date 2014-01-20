@@ -100,7 +100,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.tracebackTree = None               # tells you init, trans and sys line no 
         self.path_LTLfile = None                    # path of the .ltl file
         self.LTL2SpecLineNumber = None          # mapping from LTL to structed english
-        self.userAddedEnvLiveness = []          # keep track of liveness added by the user
+        self.userAddedEnvLivenessEnglish = []          # keep track of liveness added by the user in English
+        self.userAddedEnvLivenessLTL = []          # keep track of liveness added by the user in LTL
         self.originalLTLSpec      = {}          # save the original Spec for exporting
         #########################################
 
@@ -293,6 +294,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
             self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
             self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
+            self.originalSysInit = self.spec['SysInit']
             
         # resynthesize if cannot find initial state
         if init_state is None:

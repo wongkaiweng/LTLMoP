@@ -275,11 +275,14 @@ class SpecCompiler(object):
                 regionList = ["s."+x.name for x in self.proj.rfi.regions]
 
             spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, robotPropList)
-
+            
             # Abort compilation if there were any errors
             if failed:
                 return None, None, None
             ################ Env Assumption Mining #############
+            self.sensorList = sensorList
+            self.regionList = regionList
+            self.robotPropList = robotPropList
             if "TRUE" in spec["EnvInit"] :
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  

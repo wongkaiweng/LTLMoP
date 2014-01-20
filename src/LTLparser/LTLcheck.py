@@ -131,16 +131,16 @@ class LTL_Check:
         curInputs = fsa.stateToLTL(self.current_state,env_output=True)  
         add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
-        if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["1"] += add_ltl + ")"                                   
+        #if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
+        #    self.env_safety_assumptions_stage["1"] += add_ltl + ")"                                   
         
         # for the second stage
         state = fsa.FSA_State("sensors_only",self.sensor_state,None,None)
         nextInputs = fsa.stateToLTL(state,use_next=True,env_output=True)
         add_ltl += " & " + nextInputs         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
-        if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["2"] += add_ltl  + ")"     
+        #if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 : 
+        #    self.env_safety_assumptions_stage["2"] += add_ltl  + ")"     
         
         # for the third stage   
         if self.env_safety_assumptions_stage["3"] == "\t\t\t[](FALSE | (":
@@ -153,8 +153,8 @@ class LTL_Check:
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["3"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 :                   
             self.env_safety_assumptions_stage["3"] +=  add_ltl3 + add_ltl + ")" 
-            #self.env_safety_assumptions_stage["2"] =  self.env_safety_assumptions_stage["3"]  
-            #self.env_safety_assumptions_stage["1"] =  self.env_safety_assumptions_stage["3"] 
+            self.env_safety_assumptions_stage["2"] =  self.env_safety_assumptions_stage["3"]  
+            self.env_safety_assumptions_stage["1"] =  self.env_safety_assumptions_stage["3"] 
             
             
     def modify_LTL_file(self):

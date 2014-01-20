@@ -177,10 +177,14 @@ class AnalysisResultsDialog(wx.Dialog):
         if highlightEnvGoals == True: 
             self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,highlightColor)
             
-        for x in self.parent.userAddedEnvLiveness:
-             command_node = self.tree_ctrl_traceback.AppendItem(input_node, x)  
-             if highlightEnvGoals == True:
-                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node,highlightColor) 
+        for index,x in enumerate(self.parent.userAddedEnvLivenessEnglish):
+            command_node = self.tree_ctrl_traceback.AppendItem(input_node, x)             
+            stmt_node = self.tree_ctrl_traceback.AppendItem(command_node, self.parent.userAddedEnvLivenessLTL[index]) 
+                    
+            # highlight guilty specs
+            if highlightEnvGoals == True:
+                self.tree_ctrl_traceback.SetItemBackgroundColour(command_node, highlightColor)
+                self.tree_ctrl_traceback.SetItemBackgroundColour(stmt_node,highlightColor)  
                 
         self.Layout()
 
