@@ -280,8 +280,18 @@ class SpecCompiler(object):
             if failed:
                 return None, None, None
             ################ Env Assumption Mining #############
-            LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]
-            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"]
+            if "TRUE" in spec["EnvInit"] :
+                spec["EnvInit"] = "(TRUE)"
+            #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
+            LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
+
+            if spec["SysInit"] == "()":
+                spec["SysInit"] = "(TRUE)"     # not sure
+            ########### for combining sys init with env init ############## 
+            spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
+            spec["EnvInit"] = ""           
+            
+            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"]           
             ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
@@ -883,6 +893,12 @@ class SpecCompiler(object):
         # Added options from slugs to just check for realizability without generating automaton
         if just_realizability == True:
             cmd.append("--onlyRealizability")
+        
+        
+        # adding recovery work here
+        if not (DNFtoCNF or just_realizability):
+            cmd.append("--simpleRecovery")
+        
         
         # consider all possible starting states
         cmd.append("--sysInitRoboticsSemantics")

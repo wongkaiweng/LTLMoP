@@ -73,7 +73,7 @@ class LTL_Check:
         self.first_initial_state_added_to_ltl = False
         
         # for storage of LTL assumptions at the three stages
-        self.env_safety_assumptions_stage = {"1": "\t\t\t[](FALSE", "2": "\t\t\t[](FALSE", "3": "\t\t\t[](FALSE"}
+        self.env_safety_assumptions_stage = {"1": "\t\t\t[]((FALSE", "2": "\t\t\t[]((FALSE", "3": "\t\t\t[](FALSE | ("}
         
         # for tracking the liveness assumptions generated
         #self.liveness_generation_count = 0
@@ -123,46 +123,60 @@ class LTL_Check:
         # 3 : to add current inputs, next inputs, and current outputs
         # This is reset when liveness assumptions are added
         ##############################################
+                  
         
         add_ltl = "\t | ("                
                         
         # for the first stage 
-        add_ltl += fsa.stateToLTL(self.current_state,env_output=True)             
+        curInputs = fsa.stateToLTL(self.current_state,env_output=True)  
+        add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["1"] += add_ltl + ")"                       
+            self.env_safety_assumptions_stage["1"] += add_ltl + ")"                                   
         
         # for the second stage
         state = fsa.FSA_State("sensors_only",self.sensor_state,None,None)
-        add_ltl += " & " + fsa.stateToLTL(state,use_next=True,env_output=True)        
+        nextInputs = fsa.stateToLTL(state,use_next=True,env_output=True)
+        add_ltl += " & " + nextInputs         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["2"] += add_ltl + ")"  
+            self.env_safety_assumptions_stage["2"] += add_ltl  + ")"     
         
-        # for the third stage                    
-        add_ltl += " & " + fsa.stateToLTL(self.current_state)         
+        # for the third stage   
+        if self.env_safety_assumptions_stage["3"] == "\t\t\t[](FALSE | (":
+            add_ltl3 = "\n\t (" 
+        else:
+            add_ltl3 = "\n\t | ("       
+             
+        curOutputs =   fsa.stateToLTL(self.current_state)              
+        add_ltl = " ((" + nextInputs +  ") | !(" + curOutputs +  ")) & (" + curInputs    + ")"
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["3"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 :                   
-            self.env_safety_assumptions_stage["3"] += add_ltl +  ")"  
-        
-    
+            self.env_safety_assumptions_stage["3"] +=  add_ltl3 + add_ltl + ")" 
+            #self.env_safety_assumptions_stage["2"] =  self.env_safety_assumptions_stage["3"]  
+            #self.env_safety_assumptions_stage["1"] =  self.env_safety_assumptions_stage["3"] 
+            
+            
     def modify_LTL_file(self):
         """
         Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
         """
-        
+        """
         if self.sameState == False:
                         
             # append the current, next inputs and current outputs to different stages of env saftey assumptions.
             self.append_state_to_LTL()
             
             self.sameState = True
+        """
+        self.append_state_to_LTL()
 
         # choosing modify stage to be added
         #print >>sys.__stdout__,"env_safety_assumptions: " + str(self.env_safety_assumptions_stage[str(self.modify_stage)])
         new_env_safety = self.env_safety_assumptions_stage[str(self.modify_stage)]
-        new_env_safety  = new_env_safety.replace("\t", "").replace("\n", "").replace(" ", "").replace("&[]<>(TRUE)", "") 
-        new_env_safety  = new_env_safety + ")"   
+        new_env_safety  = new_env_safety.replace("\t", "").replace("\n", "").replace(" ", "") #.replace("&[]<>(TRUE)", "") 
+        
+        new_env_safety  = new_env_safety + "))"   
 
         self.ltl_tree = parseFormulaTest.parseLTL(new_env_safety)
         #print >>sys.__stdout__,"self.ltl_tree: "+ str(self.ltl_tree)
@@ -176,7 +190,7 @@ class LTL_Check:
             pass
             #print "no line 0 is found now\n"     
 
-        return self.env_safety_assumptions_stage[str(self.modify_stage)] + ") &\n"
+        return self.env_safety_assumptions_stage[str(self.modify_stage)] + ")) &\n"
         
     def read_LTL_file(self,f):
         """

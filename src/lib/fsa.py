@@ -13,6 +13,9 @@ import math, re, sys, random, os, subprocess, time
 from regions import *
 import numpy
 import fileMethods
+############ ENV ASSUMPTION LEARNING ##############
+from copy import deepcopy
+###################################################
 
 
 def stateToLTL(state, use_next=False, env_output=False, swap_io=False):
@@ -39,8 +42,18 @@ def stateToLTL(state, use_next=False, env_output=False, swap_io=False):
         return env_state
     
     else:
+        """
+        items = [decorate_prop("s."+p, v) for p,v in outputs.iteritems()]
+        toRemove = []
+        for x in items:
+            if "bit" in x: 
+                toRemove.append(x)  
+        for x in toRemove:
+            items.remove(x)
+              
+        sys_state = " & ".join(items)
+        """
         sys_state = " & ".join([decorate_prop("s."+p, v) for p,v in outputs.iteritems()])
-        
         return sys_state
     #############################################################
     
@@ -542,8 +555,9 @@ class Automaton:
                 candidates.append(state)
 
         return candidates
-
-    def chooseInitialState(self, init_region, init_outputs):
+    ############# ENV ASSUMPTION LEARNING  ###################
+    def chooseInitialState(self, init_region, init_outputs, goal = -1):
+    ##############################################################
         """
         Search through all our states to find one that satisfies our current system and environment states,
         so that we may begin our execution from there.
@@ -564,10 +578,26 @@ class Automaton:
         if len(candidates) == 0: # Uh oh; that's no good
             self.proj.executor.postEvent("INFO", "(FSA) OH NO, where do I start?! (No suitable initial state found)")
             return None
-
-        # If there's more than one candidate, let's go for variety
-        self.current_state = random.choice(candidates)
-
+            
+        ############# ENV ASSUMPTION LEARNING  ###################
+        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(goal) ) 
+        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str([x.name for x in candidates]) ) 
+        
+        if goal == -1 or len(candidates) == 1:
+            # If there's more than one candidate, let's go for variety        
+            self.current_state = random.choice(candidates)
+        
+        else:
+            # find the one with the exact goal
+            for x in candidates:
+                #self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(x) + str(x.rank) ) 
+                if x.rank == goal:
+                    self.current_state = x
+                    break
+        
+        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(self.current_state.name) + str(self.current_state.rank) ) 
+        ############################################################
+        
         # These variables need to be cleared at the beginning of each run
         self.last_next_states = []
         self.next_state = None
@@ -607,7 +637,7 @@ class Automaton:
         next_states = self.findTransitionableStates()
         
         ###### ENV VIOLATION CHECK ######
-        self.current_state_for_RV_learning = self.current_state
+        self.current_state_for_RV_learning = deepcopy(self.current_state)
         
         # Make sure we have somewhere to go
         if len(next_states) == 0:

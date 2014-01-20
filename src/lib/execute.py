@@ -276,12 +276,13 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             init_state = new_aut.chooseInitialState(init_region, init_outputs)
         else:
             # Figure out our initially true outputs
-            init_outputs = [k for k,v in self.aut.getCurrentState().outputs.iteritems() if int(v) == 1]               
-            init_state = new_aut.chooseInitialState(init_region, init_outputs)#, goal=prev_z)
+            init_outputs = [k for k,v in self.aut.getCurrentState().outputs.iteritems() if int(v) == 1]     
+        ######## ENV Assumption Learning ###########          
+            init_state = new_aut.chooseInitialState(init_region, init_outputs , goal= self.prev_z)
 
         self.postEvent("INFO","EXECUTE.py: " + str(init_outputs) + str(init_region)) 
 
-        ######## ENV Assumption Learning ###########
+        
         if firstRun:
             self.compiler = specCompiler.SpecCompiler(spec_file)
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?

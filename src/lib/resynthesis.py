@@ -434,9 +434,9 @@ class ExecutorResynthesisExtensions(object):
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
         
         if not firstRun:
-            self.postEvent("VIOLATION","Adding the current state to our environment safety")
             self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
-            
+
+
         self.recreateLTLfile(self.proj)
         realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
         self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
@@ -491,7 +491,7 @@ class ExecutorResynthesisExtensions(object):
         firstRun: if this is the first time running simGUI
         """
         ## for sensors        
-        if not firstRun:
+        if (not firstRun) and (new_aut == None):
             state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)      
         else:
             state = fsa.FSA_State("sensors_only",new_aut.sensor_state,None,None)      
@@ -499,13 +499,15 @@ class ExecutorResynthesisExtensions(object):
         # find the current inputs and outputs from fsa
         current_env_init_state  = fsa.stateToLTL(state, env_output=True)
         
-        # try to compare current spec with the new clause so that no duplicates are added
-        old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
-        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"        
-        # check if the clause already exists in self.spec["EnvInit"]
-        if old_env_init.find(cur_env_init) == -1:
-            self.spec["EnvInit"]  += "\n| (" + current_env_init_state +  ") " # swap ouputs to inputs
-           
+
+#        # try to compare current spec with the new clause so that no duplicates are added
+#        old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
+#        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"        
+#        # check if the clause already exists in self.spec["EnvInit"]
+#        if old_env_init.find(cur_env_init) == -1:
+#            self.spec["EnvInit"]  += "\n| (" + current_env_init_state +  ") " # swap ouputs to inputs
+
+         
         ## for actuators and regions
         if firstRun:
             tempY = []
@@ -546,13 +548,19 @@ class ExecutorResynthesisExtensions(object):
         
         # try to compare current spec with the new clause so that no duplicates are added
         old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")        
-        cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        #cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        
 
         # check if the clause already exists in self.spec["SysInit"]  
         if old_sys_init.find(cur_sys_init) == -1  :  
-            self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"             
+            self.postEvent("INFO","didn't find the same state!")
+            self.postEvent("INFO",str(old_sys_init))
+            self.postEvent("INFO",str(cur_sys_init))
+            #self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"  
+            self.spec["SysInit"]  += "\n| " + cur_sys_init             
         
-        print >>sys.__stdout__,cur_sys_init
+
      
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
@@ -570,7 +578,8 @@ class ExecutorResynthesisExtensions(object):
         
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
+        #LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
+        LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
         LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
         
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
@@ -665,15 +674,16 @@ class ExecutorResynthesisExtensions(object):
             
        
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
-            currentSpec["EnvTrans"] = self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ") &\n"
+            currentSpec["EnvTrans"] = self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
             self.LTLViolationCheck.modify_stage  = x+1 
+            self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             #resynthesizing ...
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-            
+            self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             if self.analyzeCores(appendLog = False):
                 break
-        
+            self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
         self.postEvent("INFO","Reset stage to " + str(self.LTLViolationCheck.modify_stage))
         
         if self.analyzeCores():

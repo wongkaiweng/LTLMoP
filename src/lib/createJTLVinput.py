@@ -122,8 +122,12 @@ def createNecessaryFillerSpec(spec_part):
     else:
         formula = LTLFormula.fromString(spec_part)
         filler_spec = []
+        ############## ENV ASSUMPTIOn MINING #######################
+        """
         if not formula.getConjunctsByType(LTLFormulaType.INITIAL):
             filler_spec.append("TRUE")
+        """
+        ############################################################
         if not formula.getConjunctsByType(LTLFormulaType.SAFETY):
             filler_spec.append("[](TRUE)")
         if not formula.getConjunctsByType(LTLFormulaType.LIVENESS):

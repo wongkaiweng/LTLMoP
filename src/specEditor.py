@@ -1232,13 +1232,14 @@ class SpecEditorFrame(wx.Frame):
                 self.spec['EnvTrans'] = '\t[](FALSE) & \n'
                  
                 # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-                LTLspec_env = "( " + self.spec["EnvInit"] + ")&\n" + self.spec["EnvTrans"] + self.spec["EnvGoals"]
+                #LTLspec_env = "( " + self.spec["EnvInit"] + ")&\n" + self.spec["EnvTrans"] + self.spec["EnvGoals"]
+                LTLspec_env = self.spec["EnvTrans"] + self.spec["EnvGoals"]
                 LTLspec_sys = "( " + self.spec["SysInit"] + ")&\n" + self.spec["SysTrans"] + self.spec["SysGoals"]
                 
                 LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
                 LTLspec_sys += "\n&\n" + self.spec['Topo']
-                
+
                 # Rewrite the file
                 import createJTLVinput
                 createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
