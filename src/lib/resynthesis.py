@@ -621,6 +621,7 @@ class ExecutorResynthesisExtensions(object):
         print >>sys.__stdout__, slugsEnvSafetyCNF
         print >>sys.__stdout__,normalEnvSafetyCNF
         
+        """
         #self.appendLog("Running analysis...\n","BLUE")
         # analyze the specification
         if exportSpecification:
@@ -637,7 +638,9 @@ class ExecutorResynthesisExtensions(object):
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF,structuredEnglishEnvSafetyCNF) 
         else:
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
-            
+        """    
+        self.analyzeCores()
+        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
         
         print >>sys.__stdout__,self.to_highlight
         self.analysisDialog.ShowModal()
@@ -686,14 +689,14 @@ class ExecutorResynthesisExtensions(object):
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
             currentSpec["EnvTrans"] = self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
             self.LTLViolationCheck.modify_stage  = x+1 
-            self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
+            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             #resynthesizing ...
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-            self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
+            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             if self.analyzeCores(appendLog = False):
                 break
-            self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
+            #self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
         self.postEvent("INFO","Reset stage to " + str(self.LTLViolationCheck.modify_stage))
         
         if self.analyzeCores():

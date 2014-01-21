@@ -281,7 +281,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         ######## ENV Assumption Learning ###########          
             init_state = new_aut.chooseInitialState(init_region, init_outputs , goal= self.prev_z)
 
-        self.postEvent("INFO","EXECUTE.py: " + str(init_outputs) + str(init_region)) 
+        #self.postEvent("INFO","EXECUTE.py: " + str(init_outputs) + str(init_region)) 
 
         
         if firstRun:

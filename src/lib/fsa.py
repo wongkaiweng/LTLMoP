@@ -580,8 +580,8 @@ class Automaton:
             return None
             
         ############# ENV ASSUMPTION LEARNING  ###################
-        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(goal) ) 
-        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str([x.name for x in candidates]) ) 
+        #self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(goal) ) 
+        #self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str([x.name for x in candidates]) ) 
         
         if goal == -1 or len(candidates) == 1:
             # If there's more than one candidate, let's go for variety        
@@ -595,7 +595,7 @@ class Automaton:
                     self.current_state = x
                     break
         
-        self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(self.current_state.name) + str(self.current_state.rank) ) 
+        #self.proj.executor.postEvent("INFO", "FSA..TESTING: " + str(self.current_state.name) + str(self.current_state.rank) ) 
         ############################################################
         
         # These variables need to be cleared at the beginning of each run
