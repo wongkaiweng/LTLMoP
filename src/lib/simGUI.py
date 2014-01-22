@@ -118,6 +118,10 @@ class SimGUI_Frame(wx.Frame):
         self.currentGoal = None
 
         self.Bind(wx.EVT_CLOSE, self.onClose)
+        
+        #################### ENV ASSUMPTION LEARNING ##################
+        self.currentColor = "BLACK"
+        ################################################################
 
     def loadRegionFile(self, filename):
         self.proj.rfi = regions.RegionFileInterface()
@@ -178,8 +182,12 @@ class SimGUI_Frame(wx.Frame):
         #################### ENV ASSUMPTION LEARNING ##################
         elif eventType == "VIOLATION":
             wx.CallAfter(self.appendLog, eventData + "\n", color="RED") 
+            self.currentColor = "RED"
         elif eventType == "RESOLVED":
-            wx.CallAfter(self.appendLog, eventData + "\n", color="GREEN")     
+            wx.CallAfter(self.appendLog, eventData + "\n", color="GREEN") 
+            self.currentColor = "BLACK"
+        elif eventType == "INFO":
+            wx.CallAfter(self.appendLog, eventData + "\n", color= self.currentColor) 
         ###############################################################
         else:
             # Detect our current goal index

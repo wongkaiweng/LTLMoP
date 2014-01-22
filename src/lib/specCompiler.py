@@ -898,7 +898,7 @@ class SpecCompiler(object):
             cmd.append("--onlyRealizability")
         
         
-        # adding recovery work here
+        # adding recovery work here   ########## RECOVERYLEARNING ###############
         if not (DNFtoCNF or just_realizability):
             cmd.append("--simpleRecovery")
         
@@ -911,7 +911,7 @@ class SpecCompiler(object):
             for x in cmd:
                 if ".aut" in x:
                     cmd.remove(x)
-
+        print cmd
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False

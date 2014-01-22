@@ -103,6 +103,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.userAddedEnvLivenessEnglish = []          # keep track of liveness added by the user in English
         self.userAddedEnvLivenessLTL = []          # keep track of liveness added by the user in LTL
         self.originalLTLSpec      = {}          # save the original Spec for exporting
+        self.originalEnvTrans     = ""        # save the existing original env trans
+        self.currentViolationLineNo = []
         #########################################
 
     def postEvent(self, eventType, eventData=None):
@@ -289,7 +291,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
             self.spec, self.tracebackTree, response = self.compiler._writeLTLFile(False)
             self.originalLTLSpec  = self.spec.copy()
-            self.spec['EnvTrans'] = "\t[](FALSE) &\n"
+            if "[](TRUE)" in self.spec['EnvTrans'] :
+                self.spec['EnvTrans'] = "\t[](FALSE) &\n"
+            else:
+                self.originalEnvTrans = self.spec['EnvTrans']
             self.recreateLTLfile(self.proj)
             self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
             self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
@@ -343,35 +348,38 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 
             self.prev_outputs = deepcopy(self.aut.current_outputs)
             self.prev_z = self.aut.current_state.rank
-
+            
             tic = self.timer_func()
             self.aut.runIteration()
 
-            ###### ENV VIOLATION CHECK ######
-            
-            # Check for environment violation
-            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState())
-
-            # change the env_assumption_hold to int again (messed up by Python? )
-            env_assumption_hold = int(env_assumption_hold)
+            ###### ENV VIOLATION CHECK ######   
+            # Check for environment violation - change the env_assumption_hold to int again (messed up by Python? )
+            env_assumption_hold = int(self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState()))
             
             # assumption didn't hold
             if env_assumption_hold == False:
-                self.proj.h_instance['drive'].setVelocity(0,0)
+                
                 # print out the violated specs
                 if 0 in self.LTLViolationCheck.violated_spec_line_no:
                     pass    # not print now 
                     #self.postEvent("INFO", "Violated:" + str(self.spec['EnvTrans']))
-                else:
-                    self.postEvent("VIOLATION","Detected the following env safety violation:")
+                else:                 
                     for x in self.LTLViolationCheck.violated_spec_line_no:
-                        self.postEvent("VIOLATION", str(self.tracebackTree[x-1]))
-                    
-                # Modify the ltl file based on the enviornment change   
-                self.addStatetoEnvSafety()
+                        if x not in self.currentViolationLineNo:
+                            self.postEvent("VIOLATION","Detected the following env safety violation:" )
+                            self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
+                
+                #self.aut.violation_check = True 
+                if self.aut.violation_check == True:   ############################## RECOVERYLEARNING #################################
+                    # stop the robot from moving ## needs testing again
+                    self.proj.h_instance['drive'].setVelocity(0,0)
+                    # Modify the ltl file based on the enviornment change   
+                    self.postEvent("INFO", str(env_assumption_hold)+ str(self.aut.violation_check))
+                    self.addStatetoEnvSafety()
                 
             
-            else:    
+            else: 
+
                 #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
                     #print "The SENSOR state has been changed."
                     #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
@@ -379,7 +387,11 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
 
                 if env_assumption_hold == False:
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
-
+            
+            # For print violated safety in the log (update lines violated in every iteration)   
+            if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:]:
+                self.postEvent("RESOLVED", "The specification violation is resolved.")     
+            self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
             #################################
             
             toc = self.timer_func()

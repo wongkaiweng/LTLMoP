@@ -434,7 +434,7 @@ class ExecutorResynthesisExtensions(object):
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
         
         if not firstRun:
-            self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+            self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file()
 
 
         self.recreateLTLfile(self.proj)
@@ -446,7 +446,8 @@ class ExecutorResynthesisExtensions(object):
                 while self.LTLViolationCheck.modify_stage < 3 and not realizable:
                     self.LTLViolationCheck.modify_stage += 1 
 
-                    self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file()
+                    self.spec['EnvTrans'] = self.originalEnvTrans +  self.LTLViolationCheck.modify_LTL_file()
+                        
                     self.recreateLTLfile(self.proj)
 
                     realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable

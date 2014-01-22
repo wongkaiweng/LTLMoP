@@ -249,7 +249,7 @@ class naoSensorHandler:
             (t, x, y) = [t/100, x/1000, y/1000]
             
             # Find our current configuration
-            pose = [6660.0/1000, -590.0/1000]   # center of kitchen now
+            pose = [6410.0/1000, -768.0/1000]   # center of kitchen now
             
             range = 0.5
             
@@ -266,7 +266,7 @@ class naoSensorHandler:
             self.viconServer2 = _pyvicon.ViconStreamer()
             self.viconServer2.connect("10.0.0.102", 800)
             
-            model_name = "GPSReceiverHelmet-goodaxes:GPSReceiverHelmet01" ##############
+            model_name = "folder:mainBody" ##############
             self.viconServer2.selectStreams(["Time"] + ["{} <{}>".format(model_name, s) for s in ("t-X", "t-Y")])
             self.viconServer2.startStreams()
             
@@ -279,7 +279,7 @@ class naoSensorHandler:
             (t, x, y) = [t/100, x/1000, y/1000]
             
             # Find our current configuration
-            pose = [6660.0/1000, -590.0/1000]   # #########center of kitchen now
+            pose = [6331.0/1000, 584.0/1000]   # #########center of kitchen now
             
             range = 0.5
             if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
