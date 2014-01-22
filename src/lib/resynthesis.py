@@ -432,25 +432,24 @@ class ExecutorResynthesisExtensions(object):
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, new_aut)
         else:
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
-        
+
         if not firstRun:
             self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file()
-
-
+        
         self.recreateLTLfile(self.proj)
-        realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
-       
+        realizable, realizableFS, output = self.compiler._synthesize(self.recovery)  # TRUE for realizable, FALSE for unrealizable
+         
         if not firstRun:
+            self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
             if not realizable:
-                while self.LTLViolationCheck.modify_stage < 3 and not realizable:
+                while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
                     self.LTLViolationCheck.modify_stage += 1 
 
                     self.spec['EnvTrans'] = self.originalEnvTrans +  self.LTLViolationCheck.modify_LTL_file()
                         
                     self.recreateLTLfile(self.proj)
 
-                    realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                    realizable, realizableFS, output  = self.compiler._synthesize(self.recovery)  # TRUE for realizable, FALSE for unrealizable
                     
                     self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
             

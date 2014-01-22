@@ -5,48 +5,47 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
+pickup, 0
+deliver, 0
 
 CompileOptions:
-convexify: True
+convexify: False
+parser: structured
 fastslow: False
+decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
-Untitled configuration
+BasicSim
 
 Customs: # List of custom propositions
+obtainedPackage
 
 RegionFile: # Relative path of region description file
-flag_capture.regions
+packageDelivery.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-damOpen, 1
-eruption, 1
-bFlag, 1
-rFlag, 1
+packageReady, 1
+doorClosed, 1
+cooking, 0
+betweenClasses, 0
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-town = p5
-river = p6
-Tsection = p11
-others = p1, p2
-grassland = p14, p15, p16, p17
-volcano = p3
-campground = p20, p21, p22, p23, p24, p25, p26, p27, p28
-path = p7
+classroom = p10
+hallway = p6
+door = p8
+office = p3
+mailroom = p4
+corridor = p9
+others = 
+atrium = p11
+kitchen = p5
 
 Spec: # Specification in structured English
-#infinitely often not damOpen
-#infinitely often not eruption
-#infinitely often bFlag and rFlag
-
-go to town
-go to volcano
-
-if you were sensing damOpen then do not river
-if you were sensing eruption then do not path
-
-if you are not sensing bFlag and rFlag then do not Tsection
+# inital conditions of the system and the environment
+if you are sensing packageReady then visit mailroom
+if you are sensing doorClosed then visit office
 

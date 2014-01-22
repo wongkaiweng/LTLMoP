@@ -876,7 +876,7 @@ class SpecCompiler(object):
         return conjuncts
     
 
-    def _synthesize(self, with_safety_aut=False, just_realizability=False, DNFtoCNF = False):
+    def _synthesize(self, with_safety_aut=False, just_realizability=False, DNFtoCNF = False, recovery = False):
         cmd = self._getGROneCommand("GROneMain")
 
         if cmd is None:
@@ -897,9 +897,9 @@ class SpecCompiler(object):
         if just_realizability == True:
             cmd.append("--onlyRealizability")
         
-        
+        #recovery = True
         # adding recovery work here   ########## RECOVERYLEARNING ###############
-        if not (DNFtoCNF or just_realizability):
+        if not (DNFtoCNF or just_realizability) and recovery:
             cmd.append("--simpleRecovery")
         
         
@@ -911,7 +911,7 @@ class SpecCompiler(object):
             for x in cmd:
                 if ".aut" in x:
                     cmd.remove(x)
-        print cmd
+
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False

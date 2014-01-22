@@ -13,7 +13,7 @@ bit1
 bit2
 
 [ENV_TRANS]
-| | 0 & & & ! packageReady ! doorClosed ! cooking ! betweenClasses & & & ! packageReady doorClosed ! cooking ! betweenClasses
+| | | | | 0 & & & & & & & ! packageReady ! doorClosed ! cooking ! betweenClasses ! packageReady' ! doorClosed' ! cooking' ! betweenClasses' & & & & & & & ! packageReady ! doorClosed ! cooking ! betweenClasses ! packageReady' doorClosed' ! cooking' ! betweenClasses' & & & & & & & ! packageReady doorClosed ! cooking ! betweenClasses ! packageReady' doorClosed' ! cooking' ! betweenClasses' & & & & & & & ! packageReady doorClosed ! cooking ! betweenClasses packageReady' doorClosed' ! cooking' ! betweenClasses' & & & & & & & packageReady doorClosed ! cooking ! betweenClasses packageReady' doorClosed' ! cooking' ! betweenClasses'
 
 [ENV_LIVENESS]
 1
@@ -45,6 +45,6 @@ bit2
 | ! obtainedPackage' & & ! bit0' ! bit1' ! bit2'
 
 [SYS_INIT]
-| & & & & & & & & & ! packageReady ! doorClosed ! cooking ! betweenClasses ! pickup ! deliver ! obtainedPackage ! bit0 ! bit1 bit2 & & & & & & & & & ! packageReady doorClosed ! cooking ! betweenClasses ! obtainedPackage ! deliver ! pickup bit2 ! bit1 ! bit0
+| & & & & & & & & & ! packageReady ! doorClosed ! cooking ! betweenClasses ! pickup ! deliver ! obtainedPackage ! bit0 ! bit1 bit2 & & & & & & & & & packageReady doorClosed ! cooking ! betweenClasses ! obtainedPackage ! deliver pickup ! bit2 bit1 ! bit0
 | | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
 

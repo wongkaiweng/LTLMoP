@@ -5,50 +5,51 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
+pickup, 0
+deliver, 0
 
 CompileOptions:
-convexify: True
+convexify: False
 parser: structured
 fastslow: False
 decompose: True
 use_region_bit_encoding: True
 
 CurrentConfigName:
-Untitled configuration
+BasicSim
 
 Customs: # List of custom propositions
+obtainedPackage
 
 RegionFile: # Relative path of region description file
-alternate_hallway.regions
+packageDelivery.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-dog, 1
-cat, 1
+packageReady, 1
+doorClosed, 1
+cooking, 0
+betweenClasses, 0
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-porch = p1
-hall_cat = p3
-bedroom = p5
+classroom = p10
+hallway = p6
+door = p8
+office = p3
+mailroom = p4
+corridor = p9
 others = 
-hall_dog = p2
-dining_room = p4
+atrium = p11
+kitchen = p5
 
 Spec: # Specification in structured English
-#infinitely often not (dog and cat)
-#Robot starts in bedroom with false
-# Case 1 (good for mode 1 and mode 3)
-#if you were in porch then do not cat
-#if you were in dining_room then do (not dog or not cat)
+Env starts with false
+robot starts in mailroom
+robot starts with false
 
-# Case 2 (mode 2)
-#if you were sensing dog then do not cat
-
-#safety guarantees
-go to porch
-go to bedroom
-if you are sensing dog then do not hall_dog
-if you are sensing cat then do not hall_cat
+if you are sensing packageReady then do not corridor
+if you are sensing doorClosed then do not door
+visit office
 

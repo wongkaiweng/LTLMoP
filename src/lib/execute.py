@@ -105,6 +105,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.originalLTLSpec      = {}          # save the original Spec for exporting
         self.originalEnvTrans     = ""        # save the existing original env trans
         self.currentViolationLineNo = []
+        self.recovery = False
         #########################################
 
     def postEvent(self, eventType, eventData=None):

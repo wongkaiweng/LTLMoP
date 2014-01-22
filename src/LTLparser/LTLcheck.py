@@ -88,7 +88,7 @@ class LTL_Check:
         self.sensor_state  = sensor_state
          
         # check for env violations     
-        value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals)
+        value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals, self.violated_spec_line_no)
 
 
         if debug_proposition_values == True:
@@ -141,7 +141,9 @@ class LTL_Check:
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 : 
             self.env_safety_assumptions_stage["3"] += add_ltl  + ")"     
-        
+
+        self.env_safety_assumptions_stage["2"] = self.env_safety_assumptions_stage["3"]   
+        """
         # for the third stage   
         if self.env_safety_assumptions_stage["2"] == "\t\t\t[](FALSE | (":
             add_ltl3 = "\n\t (" 
@@ -155,7 +157,8 @@ class LTL_Check:
             self.env_safety_assumptions_stage["2"] +=  add_ltl3 + add_ltl + ")" 
             #self.env_safety_assumptions_stage["2"] =  self.env_safety_assumptions_stage["3"]  
             #self.env_safety_assumptions_stage["1"] =  self.env_safety_assumptions_stage["3"] 
-            
+       """
+        
             
     def modify_LTL_file(self):
         """
@@ -252,9 +255,10 @@ class LTL_Check:
                 v = v or value
             return v
                
-    def evaluate_subtree(self, tree, terminals, level=0, next = False, disjunction = False):
+    def evaluate_subtree(self, tree, terminals,  violated_spec_line_no, level=0, next = False, disjunction = False ):
         """
         Evaluate the parsed tree and yell the environment assumptions violated.
+        violated_spec_line_no
         """
         final_value  = True     # final value to be returned. for conjunction and disjunction operations
         disjunction  = None
@@ -336,7 +340,7 @@ class LTL_Check:
 #                            print >>sys.__stdout__,"Skipped this line because this is a liveness assumption."
 #                        continue 
                         
-                value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, level+1, next_in_loop, disjunction)
+                value, negate_in_loop, next_in_loop = self.evaluate_subtree(x, terminals, violated_spec_line_no, level+1, next_in_loop, disjunction)
 
                 
                 # for negating value returned in the ltl
@@ -409,21 +413,21 @@ class LTL_Check:
                         try:
                             treeNo = self.ltlTree_to_lineNo[str(x)]
                             
-                            if (treeNo not in self.violated_spec_line_no) and treeNo > 0:
+                            if (treeNo not in violated_spec_line_no) and treeNo > 0:
                                 #print "Violation:#######################################"
                                 #print "Violation:This environement safety assumption is violated."                       
                                 
                                 #print"Violation:line " + str(treeNo) + ": " + self.read_spec[treeNo-1] 
-                                self.violated_spec_line_no.append(treeNo)
+                                violated_spec_line_no.append(treeNo)
                                 #tree = parseFormulaTest.parseLTL(parseFormulaTest.parseLTLTree(x)[0])     
                                 #self.print_tree(tree,parseFormulaTest.p.terminals)
                         except:     
-                            if 0 not in self.violated_spec_line_no:                  
+                            if 0 not in violated_spec_line_no:                  
                                 #print "Violation:RV#######################################"
                                 #print "Violation: " + str(parseFormulaTest.parseLTLTree(x)[0]) 
                                 #print "Violation:RV#######################################"
                                 treeNo = 0
-                                self.violated_spec_line_no.append(treeNo)
+                                violated_spec_line_no.append(treeNo)
 
 
                         
@@ -608,7 +612,7 @@ sample = ' []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.hazardous_
 tree = parseFormulaTest.parseLTL(sample)
 print tree
 print___tree(tree,parseFormulaTest.p.terminals)
-#evaluate_subtree(tree,parseFormulaTest.p.terminals)
+#evaluate_subtree(tree,parseFormulaTest.p.terminals, violated_spec_line_no)
 print parseFormulaTest.p.terminals
 
 print parseFormulaTest.parseLTLTree(tree)[0]
