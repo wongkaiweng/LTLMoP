@@ -434,10 +434,10 @@ class ExecutorResynthesisExtensions(object):
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
 
         if not firstRun:
-            self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file()
+            self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans)
         
         self.recreateLTLfile(self.proj)
-        realizable, realizableFS, output = self.compiler._synthesize(self.recovery)  # TRUE for realizable, FALSE for unrealizable
+        realizable, realizableFS, output = self.compiler._synthesize(recovery = self.recovery)  # TRUE for realizable, FALSE for unrealizable
          
         if not firstRun:
             self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
@@ -445,11 +445,11 @@ class ExecutorResynthesisExtensions(object):
                 while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
                     self.LTLViolationCheck.modify_stage += 1 
 
-                    self.spec['EnvTrans'] = self.originalEnvTrans +  self.LTLViolationCheck.modify_LTL_file()
+                    self.spec['EnvTrans'] = self.originalEnvTrans +  self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans)
                         
                     self.recreateLTLfile(self.proj)
 
-                    realizable, realizableFS, output  = self.compiler._synthesize(self.recovery)  # TRUE for realizable, FALSE for unrealizable
+                    realizable, realizableFS, output  = self.compiler._synthesize(recovery = self.recovery)  # TRUE for realizable, FALSE for unrealizable
                     
                     self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
             
@@ -640,7 +640,7 @@ class ExecutorResynthesisExtensions(object):
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
         """    
         self.analyzeCores()
-        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
+        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
         
         print >>sys.__stdout__,self.to_highlight
         self.analysisDialog.ShowModal()
@@ -687,7 +687,7 @@ class ExecutorResynthesisExtensions(object):
             
        
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
-            currentSpec["EnvTrans"] = self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
+            currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
             self.LTLViolationCheck.modify_stage  = x+1 
             #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             #resynthesizing ...
@@ -707,7 +707,7 @@ class ExecutorResynthesisExtensions(object):
             self.userAddedEnvLivenessLTL.append(spec["EnvGoals"].replace("\t",'').replace("\n",'').replace(" ",""))
             
             #reprint the tree in the analysis dialog
-            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
+            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,normalEnvSafetyCNF) 
             
         else:
             self.recreateLTLfile(self.proj)  # return the ltl file back to normal as the newly added liveness is still unrealizable

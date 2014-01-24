@@ -34,12 +34,12 @@ class LTL_Check:
         self.current_state = None
         self.sensor_state  = None
         self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number       
-        
+        """
         # obtain ltl from the .ltl file
         with open(self.path_ltl, 'r') as f:
             read_ltl = self.read_LTL_file(f)
         f.closed
-        
+        """
         # obtain spec from the .spec file
         self.path_spec = path.replace(".ltl",".spec")
         with open(self.path_spec, 'r') as f:
@@ -54,10 +54,13 @@ class LTL_Check:
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
        
-        
+        """
         # trim read_data so that it only includes ltl but not tabs and nextlines
-        read_ltl  = read_ltl.replace("\t", "").replace("\n", "").replace(" ", "").replace("&[]<>(TRUE)", "")    
-     
+        read_ltl  = read_ltl.replace("\t", "").replace("\n", "").replace(" ", "").replace("&[]<>(TRUE)", "")     """
+        
+        # replace the old way that's doing it
+        read_ltl  = self.spec["EnvTrans"].replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
+
         self.ltl_tree = parseFormulaTest.parseLTL(read_ltl)
         if debug_tree_terminal == True: 
             print  >>sys.__stdout__, "Here's the ltl of the environment assumptions from spec:"
@@ -160,9 +163,10 @@ class LTL_Check:
        """
         
             
-    def modify_LTL_file(self):
+    def modify_LTL_file(self, originalEnvTrans):
         """
         Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
+        originalEnvTrans: original env safety from user (from structured English to LTL)
         """
         """
         if self.sameState == False:
@@ -181,7 +185,7 @@ class LTL_Check:
         
         new_env_safety  = new_env_safety + "))"   
 
-        self.ltl_tree = parseFormulaTest.parseLTL(new_env_safety)
+        self.ltl_tree = parseFormulaTest.parseLTL(originalEnvTrans + new_env_safety)
         #print >>sys.__stdout__,"self.ltl_tree: "+ str(self.ltl_tree)
         #print___tree(self.ltl_tree,parseFormulaTest.p.terminals)
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)

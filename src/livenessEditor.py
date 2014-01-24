@@ -84,12 +84,13 @@ class AnalysisResultsDialog(wx.Dialog):
         wx.Yield() # Ensure update
         
 
-    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, ltlSpec , to_highlight , normalEnvSafetyCNF, structuredEnglishEnvSafetyCNF = ""):
+    def populateTreeStructured(self, structuredSpec, LTL2SpecLineNumber, tracebackTree, envTransViolated, ltlSpec , to_highlight , normalEnvSafetyCNF, structuredEnglishEnvSafetyCNF = ""):
         """
         print the tree in tree_ctrl_traceback box
         structuredSpec: each line of spec in structured English in type LIST
         LTL2SpecLineNumber: dict for mapping bt structured English and LTL
         tracebackTree        : dict to access ['SysTrans'] and ['EnvTrans'] line number in EngSpec
+        envTransViolated     : keep track of line Nos of envTrans violated
         ltlSpec              : modified version of the ltl spec. going to print ['EnvTrans']
         to_highlight         : return from analysis that the specs with problems
         normalEnvSafetyCNF   : ltl env safety assumptions from ENV spec Generation
@@ -128,9 +129,9 @@ class AnalysisResultsDialog(wx.Dialog):
         
         for lineNo, EngSpec in enumerate(structuredSpec, start=1):
             # Build the traceback tree           
-            if lineNo in tracebackTree['EnvTrans']: 
+            if lineNo in envTransViolated:#tracebackTree['EnvTrans']: 
                 # Add a node for each input line    
-                input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec + "<--(REPLACED)") 
+                input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec + "<--(REMOVED)") 
                  # white out original env transition spec 
                 self.tree_ctrl_traceback.SetItemTextColour(input_node,"#a9a8a8")  
 
@@ -141,7 +142,7 @@ class AnalysisResultsDialog(wx.Dialog):
             # add LTL as formula under the structured English if it exists   
             try:             
                 command_node = self.tree_ctrl_traceback.AppendItem(input_node, LTL[ lineNo ])
-                if lineNo in tracebackTree['EnvTrans']: 
+                if lineNo in envTransViolated: 
                     self.tree_ctrl_traceback.SetItemTextColour(command_node,"#a9a8a8") 
             except:
                 pass

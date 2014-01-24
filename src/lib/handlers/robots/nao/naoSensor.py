@@ -85,7 +85,7 @@ class naoSensorHandler:
 
                         #if float(markShapeInfo[3])>0.05 and float(markShapeInfo[4])>0.05:
                         if landMark_id in markExtraInfo:
-                            self.proj.executor.postEvent("INFO","See landmark " + str(landMark_id))
+                            print >> sys.__stdout__,"See landmark " + str(landMark_id)
                             return True
 
                 except Exception, e:
@@ -254,7 +254,7 @@ class naoSensorHandler:
             range = 0.5
             
             if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
-                self.proj.executor.postEvent("INFO","See hat: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))) 
+                print >>sys.__stdout__,"See hat: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)) 
                 
             return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range
             
@@ -283,6 +283,6 @@ class naoSensorHandler:
             
             range = 0.5
             if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
-                self.proj.executor.postEvent("INFO","See STH: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))) 
+                print >>sys.__stdout__,"See STH: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
                 
             return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range
