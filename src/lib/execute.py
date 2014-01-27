@@ -108,8 +108,8 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.LTLSpec  = {}
         
         ################# WHAT MODE ARE WE IN
-        self.recovery = True
-        self.ENVcharacterization = False
+        self.recovery = False
+        self.ENVcharacterization = True
         #########################################
 
     def postEvent(self, eventType, eventData=None):
@@ -394,23 +394,27 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 if self.ENVcharacterization:    
                     if self.recovery:
                         #for the recovery and learning case
-                        #if str(self.aut.getCurrentState().name) in [x.name for x in self.aut.last_next_states]:
-                        #self.postEvent("INFO", str(self.aut.getCurrentState().name)+str([x.name for x in self.aut.last_next_states]))
-                        #remove violation spec
-                        for x in self.LTLViolationCheck.violated_spec_line_no:
-                            if x != 0:
-                                if x not in self.EnvTransRemoved:
-                                    self.EnvTransRemoved.append(x)
-                                #self.postEvent("INFO",str(self.spec["EnvTrans"]))
-                                #self.postEvent("INFO",str(self.LTLSpec[x]))
-                                self.originalEnvTrans = self.originalEnvTrans.replace("\t","").replace("\n","").replace(" ","")
-                                self.originalEnvTrans = self.originalEnvTrans.replace(self.LTLSpec[x],"")
-                     
-                        #NORMAL FOR LEANRING AND RECOVERY    
-                        # stop the robot from moving ## needs testing again
-                        self.proj.h_instance['drive'].setVelocity(0,0)
-                        # Modify the ltl file based on the enviornment change   
-                        self.addStatetoEnvSafety()
+                        if str(self.aut.getCurrentState().name) in [x.name for x in self.aut.last_next_states]:
+                            #self.postEvent("INFO", str(self.aut.getCurrentState().name)+str([x.name for x in self.aut.last_next_states]))
+                            #remove violation spec
+                            for x in self.LTLViolationCheck.violated_spec_line_no:
+                                if x != 0:
+                                    if x not in self.EnvTransRemoved:
+                                        self.EnvTransRemoved.append(x)
+                                    #self.postEvent("INFO",str(self.spec["EnvTrans"]))
+                                    #self.postEvent("INFO",str(self.LTLSpec[x]))
+                                    self.originalEnvTrans = self.originalEnvTrans.replace("\t","").replace("\n","").replace(" ","")
+                                    self.originalEnvTrans = self.originalEnvTrans.replace(self.LTLSpec[x],"")
+                                    
+                            for x in self.EnvTransRemoved:
+                                if x in self.LTLViolationCheck.violated_spec_line_no:
+                                    self.LTLViolationCheck.violated_spec_line_no.remove(x)
+                         
+                            #NORMAL FOR LEANRING AND RECOVERY    
+                            # stop the robot from moving ## needs testing again
+                            self.proj.h_instance['drive'].setVelocity(0,0)
+                            # Modify the ltl file based on the enviornment change   
+                            self.addStatetoEnvSafety()
                     else:
                         #NORMAL FOR LEANRING AND RECOVERY    
                         # stop the robot from moving ## needs testing again
@@ -430,9 +434,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
             
                 # For print violated safety in the log (update lines violated in every iteration)  
-                if self.recovery and not self.ENVcharacterization: 
-                    if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:]: 
-                        self.postEvent("RESOLVED", "The specification violation is resolved.")     
+                #if self.recovery and not self.ENVcharacterization: 
+                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and not(0 in self.currentViolationLineNo): 
+                    self.postEvent("RESOLVED", "The specification violation is resolved.")     
             self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
             #################################
             

@@ -897,7 +897,7 @@ class SpecCompiler(object):
         if just_realizability == True:
             cmd.append("--onlyRealizability")
         
-        recovery = True
+        recovery = False
         # adding recovery work here   ########## RECOVERYLEARNING ###############
         if not (DNFtoCNF or just_realizability) and recovery:
             cmd.append("--simpleRecovery")
