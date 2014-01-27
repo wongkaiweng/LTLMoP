@@ -617,9 +617,9 @@ class ExecutorResynthesisExtensions(object):
         # DNF to CNF from slugsLTL to normalLTL
         #slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
         #normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)
-        slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-        print >>sys.__stdout__, slugsEnvSafetyCNF
-        print >>sys.__stdout__,normalEnvSafetyCNF
+        #slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
+        #print >>sys.__stdout__, slugsEnvSafetyCNF
+        #print >>sys.__stdout__,normalEnvSafetyCNF
         
         """
         #self.appendLog("Running analysis...\n","BLUE")
@@ -693,7 +693,8 @@ class ExecutorResynthesisExtensions(object):
             #resynthesizing ...
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
+            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(self.analyzeCores(appendLog = False)))
+            
             if self.analyzeCores(appendLog = False):
                 break
             #self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
@@ -707,7 +708,7 @@ class ExecutorResynthesisExtensions(object):
             self.userAddedEnvLivenessLTL.append(spec["EnvGoals"].replace("\t",'').replace("\n",'').replace(" ",""))
             
             #reprint the tree in the analysis dialog
-            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,normalEnvSafetyCNF) 
+            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
             
         else:
             self.recreateLTLfile(self.proj)  # return the ltl file back to normal as the newly added liveness is still unrealizable
@@ -725,7 +726,7 @@ class ExecutorResynthesisExtensions(object):
         output_lines = [line for line in output.split('\n') if line.strip() and
                         "Garbage collection" not in line and
                         "Resizing node table" not in line]
-        
+
         if appendLog:              
             if realizable:
                 # Strip trailing \n from output so it doesn't scroll past it
@@ -749,10 +750,10 @@ class ExecutorResynthesisExtensions(object):
         normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
         
         # take care of the case where normalEnvSafetyCNF is empty --> means [](TRUE)
-        if len(normalEnvSafetyCNF) > 0 :
-            self.originalLTLSpec["EnvTrans"] = normalEnvSafetyCNF + " &\n"
-        else:
-            self.originalLTLSpec["EnvTrans"] = "[](TRUE) &\n"
+        #if len(normalEnvSafetyCNF) > 0 :
+        #    self.originalLTLSpec["EnvTrans"] = normalEnvSafetyCNF + " &\n"
+        #else:
+        #    self.originalLTLSpec["EnvTrans"] = "[](TRUE) &\n"
             
         self.originalLTLSpec["EnvGoals"] = self.spec["EnvGoals"]
         self.recreateLTLfile(self.proj, self.originalLTLSpec, export = True)

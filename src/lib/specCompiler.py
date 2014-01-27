@@ -513,23 +513,23 @@ class SpecCompiler(object):
 
     def _getGROneCommand(self, module):
         ############## ENV ASSUMPTION MINING ############################
-        if module == "GROneDebug": # Use Vasu's stuff for spec analysis
-             # Check that GROneMain, etc. is compiled
-            if not os.path.exists(os.path.join(self.proj.ltlmop_root,"etc","jtlv","GROne","GROneMain.class")):
-                print "Please compile the synthesis Java code first.  For instructions, see etc/jtlv/JTLV_INSTRUCTIONS."
-                # TODO: automatically compile for the user
-                return None
+        #if module == "GROneDebug": # Use Vasu's stuff for spec analysis
+         # Check that GROneMain, etc. is compiled
+        if not os.path.exists(os.path.join(self.proj.ltlmop_root,"etc","jtlv","GROne","GROneMain.class")):
+            print "Please compile the synthesis Java code first.  For instructions, see etc/jtlv/JTLV_INSTRUCTIONS."
+            # TODO: automatically compile for the user
+            return None
 
-            # Windows uses a different delimiter for the java classpath
-            if os.name == "nt":
-                delim = ";"
-            else:
-                delim = ":"
+        # Windows uses a different delimiter for the java classpath
+        if os.name == "nt":
+            delim = ";"
+        else:
+            delim = ":"
 
-            classpath = delim.join([os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "jtlv-prompt1.4.0.jar"), os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "GROne")])
+        classpath = delim.join([os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "jtlv-prompt1.4.0.jar"), os.path.join(self.proj.ltlmop_root, "etc", "jtlv", "GROne")])
 
-            cmd = ["java", "-ea", "-Xmx512m", "-cp", classpath, module, self.proj.getFilenamePrefix() + ".smv", self.proj.getFilenamePrefix() + ".ltl"]
-            
+        cmd = ["java", "-ea", "-Xmx512m", "-cp", classpath, module, self.proj.getFilenamePrefix() + ".smv", self.proj.getFilenamePrefix() + ".ltl"]
+        """    
         else: # Use slugs for aut synthesis
             slugs_path = os.path.join(self.proj.ltlmop_root,"etc","slugs","src","slugs")
 
@@ -550,6 +550,7 @@ class SpecCompiler(object):
                 sys.stdout = sys.__stdout__
             
             cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+        """
         ##########################################################
         
         return cmd
@@ -599,7 +600,7 @@ class SpecCompiler(object):
         unsat = False
         nonTrivial = False
         
-
+         
         output = ""
         to_highlight = []
         for dline in subp.stdout:
@@ -691,7 +692,7 @@ class SpecCompiler(object):
         
         num_bits = int(numpy.ceil(numpy.log2(len(self.parser.proj.rfi.regions))))  # Number of bits necessary to encode all regions
         region_props = ["bit" + str(n) for n in xrange(num_bits)]
-    
+
         aut = fsa.Automaton(proj_copy)
         aut.loadFile(self.proj.getFilenamePrefix()+".aut", self.proj.enabled_actuators + self.proj.all_customs + region_props, self.proj.enabled_sensors, [])
        
@@ -888,7 +889,7 @@ class SpecCompiler(object):
         if self.proj.compile_options["fastslow"]:
             cmd.append("--fastslow")
 
-
+        """
         # compute Extract minimal conjunctive normal form (CNF)
         if DNFtoCNF == True:
             cmd.append("--computeWeakenedSafetyAssumptions")
@@ -911,7 +912,7 @@ class SpecCompiler(object):
             for x in cmd:
                 if ".aut" in x:
                     cmd.remove(x)
-
+        """
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False

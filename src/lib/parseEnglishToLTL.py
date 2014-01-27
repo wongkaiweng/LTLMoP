@@ -740,13 +740,17 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             continue
         else:
             unusedProp = unusedProp + [prop]
+    
+    #### Rewritten by Catherine for ENV Assumption mining ###############
+    #### don't want to print out warning for NOW
     # if there are unused propositions, print out a warning
-    if unusedProp:
-        print '##############################################'
-        print 'Warning:'
-        print 'The following propositions seem to be unused:'
-        print unusedProp
-        print 'They should be removed from the proposition lists\n'
+    
+    #if unusedProp:
+    #    print '##############################################'
+    #    print 'Warning:'
+    #     print 'The following propositions seem to be unused:'
+    #    print unusedProp
+    #    print 'They should be removed from the proposition lists\n'
         
     #### Rewritten by Catherine for ENV Assumption mining ###############
     spec['SysInit'] = "(" + spec['SysInit'][0:spec['SysInit'].rfind('&')] + ")"
