@@ -687,8 +687,10 @@ class ExecutorResynthesisExtensions(object):
             
        
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
-            currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
             self.LTLViolationCheck.modify_stage  = x+1 
+            currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans) ########################### CHANGED FOR TRIAL
+            #currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
+            
             #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             #resynthesizing ...
             self.recreateLTLfile(self.proj,currentSpec)

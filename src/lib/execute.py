@@ -108,7 +108,7 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.LTLSpec  = {}
         
         ################# WHAT MODE ARE WE IN
-        self.recovery = False
+        self.recovery = True
         self.ENVcharacterization = True
         #########################################
 
