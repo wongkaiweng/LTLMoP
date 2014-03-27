@@ -205,9 +205,25 @@ class Project:
         self.regionMapping = self.loadRegionMapping()
         self.rfi = self.loadRegionFile()
         self.determineEnabledPropositions()
+        
+        ## creates lists of regions and actuators completed if we are using fastslow
+        if self.compile_options['fastslow']:
+            logging.debug(self.rfi.regions)
+            self.rfi.regionsCompleted = self.populateCompletedPropositions([x.name for x in self.rfi.regions])
+            logging.debug(self.rfi.regionsCompleted)
+            # TODO: see if actuator completed should be automatically generated
+            #self.enabled_actuatorsCompleted = self.populateCompletedPropositions(self.enabled_actuators)
 
         return True
-
+        
+    def populateCompletedPropositions(self, propList):
+        """
+        Takes in a list of proposition and populates a list that has the same length with each element added 
+        _c after
+        """
+        completedPropList = [x+"_c" for x in propList]
+        return completedPropList
+        
     def determineEnabledPropositions(self):
         """
         Populate lists ``all_sensors``, ``enabled_sensors``, etc.
