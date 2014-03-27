@@ -129,8 +129,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         filename (string): name of the file with path included
         """
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+        if self.proj.compile_options['fastslow']:
+            regionCompleted_domain = [strategy.Domain("region",  self.proj.rfi.regionsCompleted)]
+            #TODO: maybe we can use the bits later  ,strategy.Domain.B0_IS_MSB)
+        else:
+            regionCompleted_domain = []
         strat = strategy.createStrategyFromFile(filename,
-                                                self.proj.enabled_sensors,
+                                                self.proj.enabled_sensors + regionCompleted_domain ,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         return strat
@@ -269,7 +274,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
 
         logging.info("Starting from initial region: " + init_region.name)
-        init_prop_assignments = {"region": init_region}
+        # include initial regions in picking states
+        if self.proj.compile_options['fastslow']:
+            init_prop_assignments = {"regionCompleted": init_region}
+            # TODO: check init_region format
+        else:
+            init_prop_assignments = {"region": init_region}
 
         # initialize all sensor and actuator methods
         logging.info("Initializing sensor and actuator methods...")

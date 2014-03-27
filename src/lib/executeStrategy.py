@@ -45,7 +45,12 @@ class ExecutorStrategyExtensions(object):
         Run, run, run the automaton!  (For one evaluation step)
         """
         # find current region
-        self.current_region = self.strategy.current_state.getPropValue('region')
+        if self.proj.compile_options['fastslow']:
+            #TODO: need to put to find sensor value
+            self.current_region = self.strategy.current_state.getPropValue('regionCompleted')  
+            #TODO: find transitable stats need to add current true region
+        else:
+            self.current_region = self.strategy.current_state.getPropValue('region')
 
         # Take a snapshot of our current sensor readings
         sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
@@ -72,7 +77,11 @@ class ExecutorStrategyExtensions(object):
                 next_states.remove(self.strategy.current_state)
 
             self.next_state = random.choice(next_states)
-            self.next_region = self.next_state.getPropValue('region')
+            # find next region
+            if self.proj.compile_options['fastslow']:
+                self.next_region = self.strategy.current_state.getPropValue('region')
+            else:
+                self.next_region = self.next_state.getPropValue('region')
 
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
