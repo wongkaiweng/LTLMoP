@@ -135,11 +135,18 @@ class SpecCompiler(object):
         # Add in regions as robot outputs
         if self.proj.compile_options["use_region_bit_encoding"]:
             robotPropList.extend(["bit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
+            # remove _rc props from sensor_list and add in sbit for region completion
+            sensorList = [x for x in sensorList if not x.endswith('_rc')] 
+            sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
         else:
             if self.proj.compile_options["decompose"]:
                 robotPropList.extend([r.name for r in self.parser.proj.rfi.regions])
+                sensorList = [x for x in sensorList if not x.endswith('_rc')] 
+                sensorList.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
             else:
                 robotPropList.extend([r.name for r in self.proj.rfi.regions])
+                sensorList = [x for x in sensorList if not x.endswith('_rc')] 
+                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
         self.propList = sensorList + robotPropList
 
@@ -249,12 +256,18 @@ class SpecCompiler(object):
                     if not (r.isObstacle or r.name.lower() == "boundary"):
                         LTLspec_env = re.sub('\\b(?:s\.)?' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_env)
                         LTLspec_sys = re.sub('\\b(?:s\.)?' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_sys)
+                        LTLspec_env = re.sub('\\b(?:e\.)?' + r.name + "_rc" + '\\b', "("+' | '.join(["e."+x+"_rc" for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_env)
+                        LTLspec_sys = re.sub('\\b(?:e\.)?' + r.name + "_rc" + '\\b', "("+' | '.join(["e."+x+"_rc" for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_sys)
             else:
                 for r in self.proj.rfi.regions:
                     if not (r.isObstacle or r.name.lower() == "boundary"):
                         LTLspec_env = re.sub('\\b(?:s\.)?' + r.name + '\\b', "s."+r.name, LTLspec_env)
                         LTLspec_sys = re.sub('\\b(?:s\.)?' + r.name + '\\b', "s."+r.name, LTLspec_sys)
+                        LTLspec_env = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_env)
+                        LTLspec_sys = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_sys)
 
+            logging.debug(LTLspec_env)
+            logging.debug(LTLspec_sys)
             traceback = [] # HACK: needs to be something other than None
         elif self.proj.compile_options["parser"] == "structured":
             import parseEnglishToLTL
@@ -296,8 +309,10 @@ class SpecCompiler(object):
 
         if self.proj.compile_options["decompose"]:
             regionList = [x.name for x in self.parser.proj.rfi.regions]
+            regionListCompleted = [x.name+"_rc" for x in self.parser.proj.rfi.regions]
         else:
             regionList = [x.name for x in self.proj.rfi.regions]
+            regionListCompleted = [x.name+"_rc" for x in self.proj.rfi.regions]
 
         if self.proj.compile_options["use_region_bit_encoding"]:
             # Define the number of bits needed to encode the regions
@@ -307,10 +322,15 @@ class SpecCompiler(object):
             bitEncode = bitEncoding(len(regionList),numBits)
             currBitEnc = bitEncode['current']
             nextBitEnc = bitEncode['next']
+            envBitEnc  = bitEncode['env']
 
             # switch to bit encodings for regions
             LTLspec_env = replaceRegionName(LTLspec_env, bitEncode, regionList)
             LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionList)
+            LTLspec_env = replaceRegionName(LTLspec_env, bitEncode, regionListCompleted)
+            LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionListCompleted)
+            logging.debug(LTLspec_env)
+            logging.debug(LTLspec_sys)
 
             if self.LTL2SpecLineNumber is not None:
                 for k in self.LTL2SpecLineNumber.keys():
@@ -363,8 +383,10 @@ class SpecCompiler(object):
             self.spec['InitRegionSanityCheck'] = createInitialRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
-        LTLspec_sys += "\n&\n" + self.spec['Topo']
-
+        #LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck'] #TODO: restore this later
+    
+        #LTLspec_sys += "\n&\n" + self.spec['Topo']  #TODO: restore this later
+        
         createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
 
         if self.proj.compile_options["parser"] == "slurp":
@@ -958,6 +980,7 @@ class SpecCompiler(object):
             return
 
         #self._checkForEmptyGaits()
+        logging.info("Synthesizing a strategy...")
 
         return self._synthesize()
 
