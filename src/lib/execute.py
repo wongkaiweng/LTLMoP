@@ -129,13 +129,16 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         filename (string): name of the file with path included
         """
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+        enabled_sensors = self.proj.enabled_sensors 
+
         if self.proj.compile_options['fastslow']:
-            regionCompleted_domain = [strategy.Domain("region",  self.proj.rfi.regionsCompleted)]
-            #TODO: maybe we can use the bits later  ,strategy.Domain.B0_IS_MSB)
+            regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+            enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
         else:
             regionCompleted_domain = []
+
         strat = strategy.createStrategyFromFile(filename,
-                                                self.proj.enabled_sensors + regionCompleted_domain ,
+                                                enabled_sensors + regionCompleted_domain ,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         return strat
@@ -295,7 +298,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         init_prop_assignments.update(self.current_outputs)
 
         ## inputs
-        init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+        if self.proj.compile_options['fastslow']:
+            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc')]))
+        else:
+            init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
         #search for initial state in the strategy
         init_state = new_strategy.searchForOneState(init_prop_assignments)
