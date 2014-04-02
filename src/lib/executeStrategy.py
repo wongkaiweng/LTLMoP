@@ -44,16 +44,32 @@ class ExecutorStrategyExtensions(object):
         """
         Run, run, run the automaton!  (For one evaluation step)
         """
-        # find current region
-        if self.proj.compile_options['fastslow']:
-            #TODO: need to put to find sensor value
-            self.current_region = self.strategy.current_state.getPropValue('regionCompleted')  
-            #TODO: find transitable stats need to add current true region
-        else:
-            self.current_region = self.strategy.current_state.getPropValue('region')
-
         # Take a snapshot of our current sensor readings
         sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+
+        # find current region
+        if self.proj.compile_options['fastslow']:
+            # find current region based on region sensors and remove those sensors from sensor_state
+            # finally add the "regionCompleted" sensor with region object
+            sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc'))
+            for key, value in sensor_region.iteritems():
+                del sensor_state[key]
+            sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
+
+            # check we are in any region. (can be because of timing or driving issues that the robot is not in any region)
+            if sensor_region_names:
+                sensor_region_name = sensor_region_names[0].replace('_rc','')
+                decomposed_region_names = self.proj.regionMapping[sensor_region_name]
+                self.prev_decomposed_region_names = decomposed_region_names
+            else: 
+                logging.info('not inside any region!')
+                decomposed_region_names  = self.prev_decomposed_region_names
+
+            sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now 
+            self.current_region = sensor_state['regionCompleted']
+            #self.current_region = self.strategy.current_state.getPropValue('regionCompleted')
+        else:
+            self.current_region = self.strategy.current_state.getPropValue('region')
 
         # Let's try to transition
         # TODO: set current state so that we don't need to call from_state
@@ -86,15 +102,17 @@ class ExecutorStrategyExtensions(object):
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
             # See what we, as the system, need to do to get to this new state
-            self.transition_contains_motion = self.next_region is not None and (self.next_region != self.current_region)
-
             if self.proj.compile_options['fastslow']:
+                self.transition_contains_motion = self.next_region is not None and (self.next_region != self.strategy.current_state.getPropValue('regionCompleted'))
+                
                 # Run actuators before motion
                 self.updateOutputs(self.next_state)
-
-            if self.transition_contains_motion:
-                # We're going to a new region
-                self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
+                
+            else:
+                self.transition_contains_motion = self.next_region is not None and (self.next_region != self.current_region)
+                if self.transition_contains_motion:
+                    # We're going to a new region
+                    self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
             self.arrived = False
 
@@ -107,6 +125,8 @@ class ExecutorStrategyExtensions(object):
             # TODO: Check to see whether actually inside next region that we expected
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region.name, self.next_region.name))
+                if self.proj.compile_options['fastslow']:
+                    self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
             if not self.proj.compile_options['fastslow']:
                 # Run actuators after motion
