@@ -129,7 +129,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         filename (string): name of the file with path included
         """
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
-        enabled_sensors = self.proj.enabled_sensors 
+        enabled_sensors = self.proj.enabled_sensors
 
         if self.proj.compile_options['fastslow']:
             regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
@@ -314,6 +314,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         self.strategy = new_strategy
         self.strategy.current_state = init_state
+        self.last_sensor_state = self.strategy.current_state.getInputs()
 
     def run(self):
         ### Get everything moving
@@ -339,7 +340,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             self.prev_z = self.strategy.current_state.goal_id
 
             tic = self.timer_func()
-            self.runStrategyIteration()
+            if not self.proj.compile_options['fastslow']:
+                self.runStrategyIteration()
+            else:
+                self.runStrategyIterationInstanteousAction()
             toc = self.timer_func()
 
             #self.checkForInternalFlags()
