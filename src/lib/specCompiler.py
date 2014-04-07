@@ -135,18 +135,23 @@ class SpecCompiler(object):
         # Add in regions as robot outputs
         if self.proj.compile_options["use_region_bit_encoding"]:
             robotPropList.extend(["bit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
-            # remove _rc props from sensor_list and add in sbit for region completion
-            sensorList = [x for x in sensorList if not x.endswith('_rc')] 
-            sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
+            if self.proj.compile_options['fastslow']:
+                # remove _rc props from sensor_list and add in sbit for region completion
+                sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
         else:
             if self.proj.compile_options["decompose"]:
                 robotPropList.extend([r.name for r in self.parser.proj.rfi.regions])
-                sensorList = [x for x in sensorList if not x.endswith('_rc')] 
-                sensorList.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
+                # added in region_rc with the decomposed region names
+                if self.proj.compile_options['fastslow']:
+                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
             else:
                 robotPropList.extend([r.name for r in self.proj.rfi.regions])
-                sensorList = [x for x in sensorList if not x.endswith('_rc')] 
-                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
+                # added in region_rc with the original region names
+                if self.proj.compile_options['fastslow']:
+                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
         self.propList = sensorList + robotPropList
 
@@ -266,8 +271,6 @@ class SpecCompiler(object):
                         LTLspec_env = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_env)
                         LTLspec_sys = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_sys)
 
-            logging.debug(LTLspec_env)
-            logging.debug(LTLspec_sys)
             traceback = [] # HACK: needs to be something other than None
         elif self.proj.compile_options["parser"] == "structured":
             import parseEnglishToLTL
@@ -329,8 +332,6 @@ class SpecCompiler(object):
             LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionList)
             LTLspec_env = replaceRegionName(LTLspec_env, bitEncode, regionListCompleted)
             LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionListCompleted)
-            logging.debug(LTLspec_env)
-            logging.debug(LTLspec_sys)
 
             if self.LTL2SpecLineNumber is not None:
                 for k in self.LTL2SpecLineNumber.keys():
@@ -383,10 +384,9 @@ class SpecCompiler(object):
             self.spec['InitRegionSanityCheck'] = createInitialRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
-        #LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck'] #TODO: restore this later
-    
-        #LTLspec_sys += "\n&\n" + self.spec['Topo']  #TODO: restore this later
-        
+        if not self.proj.compile_options['fastslow']:
+            LTLspec_sys += "\n&\n" + self.spec['Topo']
+
         createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
 
         if self.proj.compile_options["parser"] == "slurp":
@@ -560,9 +560,17 @@ class SpecCompiler(object):
             regions = self.proj.rfi.regions
 
         region_domain = strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB)
+        enabled_sensors = self.proj.enabled_sensors
+
+        if self.proj.compile_options['fastslow']:
+            regionCompleted_domain = [strategy.Domain("regionCompleted", regions, strategy.Domain.B0_IS_MSB)]
+            enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+        else:
+            regionCompleted_domain = []
+
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
-                                                self.proj.enabled_sensors,
-                                                self.proj.enabled_actuators + self.proj.all_customs + [region_domain])
+                                                enabled_sensors + regionCompleted_domain ,
+                                                self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 
@@ -587,8 +595,8 @@ class SpecCompiler(object):
         to_highlight = []
         for dline in subp.stdout:
             output += dline
-            if "Specification is synthesizable!" in dline:   
-                realizable = True            
+            if "Specification is synthesizable!" in dline:
+                realizable = True
                 nonTrivial = self._autIsNonTrivial()
                 if nonTrivial:
                     break
@@ -914,8 +922,8 @@ class SpecCompiler(object):
             cmd = self._getSlugsCommand()
 
             # Make sure flags are compatible
-            if any(self.proj.compile_options[k] for k in ("fastslow", "symbolic")):
-                raise RuntimeError("Slugs does not currently support fast/slow or symbolic compilation options.")
+            if self.proj.compile_options["symbolic"]:
+                raise RuntimeError("Slugs does not currently support symbolic compilation options.")
 
             # Create proper input for Slugs
             logging.info("Preparing Slugs input...")
