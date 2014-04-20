@@ -183,7 +183,13 @@ class LTL_Check:
         new_env_safety = self.env_safety_assumptions_stage[str(self.modify_stage)]
         new_env_safety  = new_env_safety.replace("\t", "").replace("\n", "").replace(" ", "") #.replace("&[]<>(TRUE)", "") 
         
-        new_env_safety  = new_env_safety + "))"   
+        #new_env_safety  = new_env_safety + "))" 
+        
+        if 'FALSE' in new_env_safety:
+            new_env_safety  = new_env_safety + "))" 
+        else: 
+            new_env_safety  = new_env_safety + ")"
+        
 
         self.ltl_tree = parseFormulaTest.parseLTL(originalEnvTrans + new_env_safety)
         #print >>sys.__stdout__,"self.ltl_tree: "+ str(self.ltl_tree)
@@ -195,9 +201,14 @@ class LTL_Check:
             
         except:
             pass
-            #print "no line 0 is found now\n"     
-
-        return self.env_safety_assumptions_stage[str(self.modify_stage)] + ")) &\n"
+            #print "no line 0 is found now\n"   
+        #return self.env_safety_assumptions_stage[str(self.modify_stage)] + ")) &\n"  
+        
+        if 'FALSE' in new_env_safety:
+            return self.env_safety_assumptions_stage[str(self.modify_stage)] + ")) &\n"
+        else:
+            return self.env_safety_assumptions_stage[str(self.modify_stage)] + ") &\n"
+        
         
     def read_LTL_file(self,f):
         """
