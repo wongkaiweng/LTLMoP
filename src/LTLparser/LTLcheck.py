@@ -81,7 +81,9 @@ class LTL_Check:
         # for tracking the liveness assumptions generated
         #self.liveness_generation_count = 0
         #self.sensors = []
-        self.sensor_state_len = None       
+        self.sensor_state_len = None   
+        
+        self.ltl_treeEnvTrans = None    
             
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -92,7 +94,10 @@ class LTL_Check:
          
         # check for env violations     
         value, negate, next = self.evaluate_subtree(self.ltl_tree, parseFormulaTest.p.terminals, self.violated_spec_line_no)
-
+        
+        # for printing original spec violated
+        if not self.ltl_treeEnvTrans is None:
+            valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, parseFormulaTest.p.terminals, self.violated_spec_line_no)
 
         if debug_proposition_values == True:
             print "self.current_state.outputs"

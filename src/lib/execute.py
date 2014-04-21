@@ -108,6 +108,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
         self.currentViolationLineNo = []
         self.LTLSpec  = {}
         
+        ############# NEW THING FOR THRESHOLDING FOR RESYNTHESIS
+        self.envViolationCount = 0    
+        self.envViolationThres = 5
+        
         ################# WHAT MODE ARE WE IN
         self.recovery = True
         self.ENVcharacterization = True
@@ -313,8 +317,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 #self.originalEnvTrans = self.spec['EnvTrans']
                 
                 self.originalEnvTrans = ''
+                # temp fix : TODO: replace oriEnvTrans to originalEnvTrans later
+                self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
                 self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-                logging.debug(self.originalEnvTrans)
                 
                 self.EnvTransRemoved = []
                 
@@ -325,9 +330,13 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.originalSysInit = self.spec['SysInit']
             
             if realizable:
+                import parseFormulaTest
+                self.LTLViolationCheck.ltl_treeEnvTrans = parseFormulaTest.parseLTL(self.oriEnvTrans)
+            
                 self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
                 logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage)
-            
+            else:
+                self.LTLViolationCheck.ltl_treeEnvTrans = None
         # resynthesize if cannot find initial state
         if init_state is None:
             init_state, new_aut  = self.addStatetoEnvSafety(firstRun, new_aut)
@@ -377,7 +386,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             self.prev_z = self.aut.current_state.rank
             
             tic = self.timer_func()
+            ###### ENV VIOLATION CHECK ######  
+            last_next_states = self.aut.last_next_states
             self.aut.runIteration()
+            current_next_states = self.aut.last_next_states
 
             ###### ENV VIOLATION CHECK ######   
             # Check for environment violation - change the env_assumption_hold to int again (messed up by Python? )
@@ -385,12 +397,17 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             #print >>sys.__stdout__, str(env_assumption_hold) #+ str(self.LTLViolationCheck.ltl_tree)
             # assumption didn't hold
             if env_assumption_hold == False:
-                
+                logging.debug( last_next_states )
+                logging.debug( current_next_states )
+                if last_next_states != current_next_states:
+                    self.envViolationCount += 1
+                    logging.debug(self.envViolationCount)
                 # print out the violated specs
                 for x in self.LTLViolationCheck.violated_spec_line_no:
                     if x not in self.currentViolationLineNo:
-                        if x == 0:
-                            self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
+                        if x == 0 :
+                            if len(self.currentViolationLineNo) == 1:
+                                self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                         else:                 
                             self.postEvent("VIOLATION","Detected the following env safety violation:" )
                             self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
@@ -401,7 +418,9 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
                 if self.ENVcharacterization:    
                     if self.recovery:
                         #for the recovery and learning case
-                        if str(self.aut.getCurrentState().name) in [x.name for x in self.aut.last_next_states]:
+                        if str(self.aut.getCurrentState().name) in [x.name for x in self.aut.last_next_states] \
+                        or self.envViolationCount == self.envViolationThres:
+                            self.envViolationCount = 0
                             #self.postEvent("INFO", str(self.aut.getCurrentState().name)+str([x.name for x in self.aut.last_next_states]))
                             #remove violation spec
                             ######################
@@ -461,9 +480,10 @@ class LTLMoPExecutor(ExecutorResynthesisExtensions, object):
             
                 # For print violated safety in the log (update lines violated in every iteration)  
                 #if self.recovery and not self.ENVcharacterization: 
-                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and not(0 in self.currentViolationLineNo): 
+                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] : #and not(0 in self.currentViolationLineNo): 
                     self.postEvent("RESOLVED", "The specification violation is resolved.")     
             self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
+
             #################################
             
             toc = self.timer_func()

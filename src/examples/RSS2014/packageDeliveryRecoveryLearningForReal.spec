@@ -52,8 +52,8 @@ Robot starts in hallway
 
 always not doorClosed
 if you were in corridor then do not betweenClasses
-if you were sensing cooking then do not cooking
-#infinitely often not cooking
+if you were sensing packageReady and you were in (mailroom) then do not cooking
+infinitely often not cooking
 # system safety guarantees
 If you are sensing doorClosed then do not door
 If you are sensing cooking then do not kitchen
