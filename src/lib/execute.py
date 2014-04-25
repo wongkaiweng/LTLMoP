@@ -129,7 +129,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         filename (string): name of the file with path included
         """
         #region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
-        #enabled_sensors = self.proj.enabled_sensors
+        enabled_sensors = self.proj.enabled_sensors
+        region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc')]
 
         #if self.proj.compile_options['fastslow']:
         #    regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
@@ -139,7 +140,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors, # + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs)# +  [region_domain])
+                                                self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         return strat
 
