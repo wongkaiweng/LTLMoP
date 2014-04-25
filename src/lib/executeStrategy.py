@@ -171,7 +171,15 @@ class ExecutorStrategyExtensions(object):
 
         if not self.arrived:
             # Move one step towards the next region (or stay in the same region)
-            self.arrived = self.hsub.gotoRegion(self.current_region, self.next_region)
+            current_regAllRobots = {}
+            next_regAllRobots = {}
+            ############################################################
+            for robot in self.hsub.executing_config.robots:
+                current_regAllRobots[robot.name] = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
+                next_regAllRobots[robot.name] = self.next_region
+            ############################################################
+                
+            self.arrived = self.hsub.gotoRegionMultiRobot(current_regAllRobots, next_regAllRobots)
 
         # Check for completion of motion
         if self.arrived and self.next_state != self.strategy.current_state:

@@ -148,14 +148,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # TODO: move this to regions.py
         if rfi is None:
             rfi = self.proj.rfi
+        
+        region = {}
+        for robot_name, pose in self.hsub.getPoseMultiRobot().iteritems():
 
-        pose = self.hsub.coordmap_lab2map(self.hsub.getPose())
+            pose = self.hsub.coordmap_lab2map(pose)
 
-        region = next((i for i, r in enumerate(rfi.regions) if r.name.lower() != "boundary" and \
-                        r.objectContainsPoint(*pose)), None)
+            region[robot_name] = next((i for i, r in enumerate(rfi.regions) if r.name.lower() != "boundary" and \
+                            r.objectContainsPoint(*pose)), None)
 
-        if region is None:
-            logging.warning("Pose of {} not inside any region!".format(pose))
+            if region[robot_name] is None:
+                logging.warning("Pose of {} not inside any region!".format(pose))
 
         return region
 
@@ -272,7 +275,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         ## Region
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
-        init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
+
+        for robot in self.hsub.executing_config.robots:
+            init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
+            
         if init_region is None:
             logging.error("Initial pose not inside any region!")
             sys.exit(-1)
@@ -359,9 +365,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             # if show_gui and (timer_func() - last_gui_update_time > 0.05)
             avg_freq = 0.9 * avg_freq + 0.1 * 1 / (toc - tic) # IIR filter
             self.postEvent("FREQ", int(math.ceil(avg_freq)))
-            pose = self.hsub.getPose(cached=True)[0:2]
-            self.postEvent("POSE", tuple(map(int, self.hsub.coordmap_lab2map(pose))))
-
+            poseAllRobots = self.hsub.getPoseMultiRobot(cached=True) #[0:2]
+            #self.postEvent("POSE", tuple(map(int, self.hsub.coordmap_lab2map(pose))))
+            for robot_name, pose in poseAllRobots.iteritems():
+                poseAllRobots[robot_name] = self.hsub.coordmap_lab2map(pose[0:2])
+            self.postEvent("POSE", poseAllRobots)
+                        
             last_gui_update_time = self.timer_func()
 
         logging.debug("execute.py quitting...")
