@@ -130,17 +130,26 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         """
         #region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         enabled_sensors = self.proj.enabled_sensors
-        region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc')]
+        
+        regionSensorList = [x for x in self.proj.enabled_sensors if x.endswith('_rc')]
+        self.proj.enabled_sensors =  [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+        
+        for robot in self.hsub.executing_config.robots:
+            for x in regionSensorList:
+                self.proj.enabled_sensors.append(robot.name+'_' + x)
+        
+        self.region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc')]
 
         #if self.proj.compile_options['fastslow']:
         #    regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
         #    enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
         #else:
         #    regionCompleted_domain = []
-
+        logging.debug(self.proj.enabled_sensors)
+        logging.debug(self.proj.enabled_actuators + self.proj.all_customs +  self.region_domain)
         strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors, # + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
+                                                self.proj.enabled_actuators + self.proj.all_customs +  self.region_domain)
 
         return strat
 
@@ -159,7 +168,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
             if region[robot_name] is None:
                 logging.warning("Pose of {} not inside any region!".format(pose))
-
+        logging.debug(region)
         return region
 
     def shutdown(self):
@@ -275,22 +284,34 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         ## Region
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
-
+        init_prop_assignments = {}
         for robot in self.hsub.executing_config.robots:
+            logging.debug(self.proj.rfi)
+            logging.debug(self.proj)
+            logging.debug(self.proj.loadRegionFile(decomposed=True))
             init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
             
-        if init_region is None:
-            logging.error("Initial pose not inside any region!")
-            sys.exit(-1)
+            if init_region is None:
+                logging.error("Initial pose not inside any region!")
+                sys.exit(-1)
+            
+            for x in self.proj.enabled_sensors:
+                if x.startswith(robot.name):
+                    if x.replace(robot.name+"_","").replace("_rc","") == init_region.name:
+                        init_prop_assignments.update({x:True})
+                    else:
+                        init_prop_assignments.update({x:False})
+           
 
-        logging.info("Starting from initial region: " + init_region.name)
+            logging.info("Starting from initial region: " + init_region.name + ' for ' + robot.name)
         # include initial regions in picking states
+        """
         if self.proj.compile_options['fastslow']:
             init_prop_assignments = {"regionCompleted": init_region}
             # TODO: check init_region format
         else:
             init_prop_assignments = {"region": init_region}
-
+        """
         # initialize all sensor and actuator methods
         logging.info("Initializing sensor and actuator methods...")
         self.hsub.initializeAllMethods()
@@ -305,11 +326,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         init_prop_assignments.update(self.current_outputs)
 
         ## inputs
+        """
         if self.proj.compile_options['fastslow']:
             init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc')]))
         else:
-            init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
-
+        """
+        logging.debug(self.proj.enabled_sensors)
+        init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+        logging.debug(init_prop_assignments)
         #search for initial state in the strategy
         init_state = new_strategy.searchForOneState(init_prop_assignments)
 

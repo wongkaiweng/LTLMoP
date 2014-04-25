@@ -1167,10 +1167,10 @@ class SpecEditorFrame(wx.Frame):
     def onMenuSimulate(self, event): # wxGlade: SpecEditorFrame.<event_handler>
         """ Run the simulation with current experiment configuration. """
 
-        if not self.proj.compile_options["use_region_bit_encoding"]:
-            wx.MessageBox("Execution requires bit-vector region encoding.\nPlease enable it and recompile.", "Error",
-                        style = wx.OK | wx.ICON_ERROR)
-            return
+#        if not self.proj.compile_options["use_region_bit_encoding"]:
+#            wx.MessageBox("Execution requires bit-vector region encoding.\nPlease enable it and recompile.", "Error",
+#                        style = wx.OK | wx.ICON_ERROR)
+#            return
 
         # TODO: or check mtime
         if self.dirty:

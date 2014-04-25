@@ -117,7 +117,7 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
 		        # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
                 V[robot_name] = vectorControllerHelper.getController([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name], transFaceIdx)
          
-        logging.debug("V:"+ str(V))
+        #logging.debug("V:"+ str(V))
         # OUTPUT from Nora's motion control 
         # for example: V = {'robot1':[1,2,3],'robot2':[4,5,6]}
         
@@ -125,7 +125,7 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
             if robot_name in V:
                 self.drive_handler[robot_name].setVelocity(V[robot_name][0], V[robot_name][1], pose[robot_name][2])
 
-            logging.debug("pose:" + str(pose))
+            #logging.debug("pose:" + str(pose))
             departed[robot_name] = not is_inside([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name])
             # Figure out whether we've reached the destination region
             arrived[robot_name] = is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
@@ -141,5 +141,5 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
                         break
                 self.last_warning = time.time()
 
-        logging.debug("arrived:" + str(arrived))
-        return arrived[self.executor.hsub.getMainRobot().name]#(True in arrived.values())
+        #logging.debug("arrived:" + str(arrived))
+        return (True in arrived.values()) #arrived[self.executor.hsub.getMainRobot().name]

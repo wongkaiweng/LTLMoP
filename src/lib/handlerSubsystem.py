@@ -595,7 +595,7 @@ class HandlerSubsystem:
         logging.debug(self.executor.proj.all_sensors)
         logging.debug(self.executor.proj.all_actuators)
         for prop_name, func_string in mapping.iteritems():
-            logging.debug(str(prop_name) + ',' + str(func_string))
+            #logging.debug(str(prop_name) + ',' + str(func_string))
             if prop_name in self.executor.proj.all_sensors:
                 mode = "sensor"
             elif prop_name in self.executor.proj.all_actuators:
