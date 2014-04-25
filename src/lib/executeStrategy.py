@@ -16,6 +16,11 @@ class ExecutorStrategyExtensions(object):
         self.next_state      = None
         self.current_region  = None
         self.next_region     = None
+        
+        self.next_region                  = {}
+        self.current_region               = {}
+        self.nextRegionCompleted          = {}   
+        self.prev_decomposed_region_names = {}
 
     def updateOutputs(self, state=None):
         """
@@ -111,25 +116,38 @@ class ExecutorStrategyExtensions(object):
         """
         # Take a snapshot of our current sensor readings
         sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-
-        # find current region based on region sensors and remove those sensors from sensor_state
-        # finally add the "regionCompleted" sensor with region object
-        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc'))
-        for key, value in sensor_region.iteritems():
-            del sensor_state[key]
-        sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
-
-        # check we are inside any region, if not we will use the previous region detected. (timing issue)
-        if sensor_region_names:
-            sensor_region_name = sensor_region_names[0].replace('_rc','')
-            decomposed_region_names = self.proj.regionMapping[sensor_region_name]
-            self.prev_decomposed_region_names = decomposed_region_names
-        else:
-            logging.info('not inside any region!')
-            decomposed_region_names  = self.prev_decomposed_region_names
-
-        sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
-        self.current_region = sensor_state['regionCompleted']
+        logging.debug(sensor_state)
+        ############################################################################
+        ###############   not saving regionCompleted now ###########################
+        ############################################################################
+        decomposed_region_names = {}        
+        for robot in self.hsub.executing_config.robots:
+            #TODO: remove this
+            ###################
+            robotName = robot.name
+            robot.name = 'rob1'
+            ############
+            sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if (k.startswith(robot.name+"_") and k.endswith('_rc')))
+            logging.debug(sensor_region)
+            sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
+            logging.debug(sensor_region_names)
+            if sensor_region_names:
+                sensor_region_name = sensor_region_names[0].replace('_rc','').replace(robot.name+"_",'')
+                logging.debug(robot.name)
+                logging.debug(sensor_region_name)
+                decomposed_region_names[robot.name] = self.proj.regionMapping[sensor_region_name]
+            else:
+                logging.info('not inside any region!')
+                decomposed_region_names[robot.name]  = self.prev_decomposed_region_names[robot.name]
+            
+            # TODO: remove this
+            #####################
+            robot.name = robotName
+            ######################
+            self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[robot.name][0])] 
+        
+        self.prev_decomposed_region_names = decomposed_region_names
+        ##############################################################################
 
         # Let's try to transition
         # TODO: set current state so that we don't need to call from_state
@@ -153,17 +171,47 @@ class ExecutorStrategyExtensions(object):
 
             self.next_state = random.choice(next_states)
             # find next region
-            self.next_region = self.strategy.current_state.getPropValue('region')
-            self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+            #############################################################################
+            ############## not looking self.strategy.getPropValue('region')##############
+            #############################################################################
+            currentOutputs = self.strategy.current_state.getOutputs()
+            for robot in self.hsub.executing_config.robots:
+                heading_region = dict((k,v) for k, v in  currentOutputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'') in self.proj.regionMapping)
 
+                heading_region_names = [k for k, v in  heading_region.iteritems() if v]
+                
+                if heading_region_names:
+                    heading_region_name = heading_region_names[0].replace(robot.name+"_",'')
+                    decomposed_heading_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+               
+                self.next_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_heading_region_names[robot.name][0])] 
+            #################################################################################
+            
+            self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+            
+            ##################################################################################
+            ################ not looking at self.next_state.getPropValue('regionCompleted') ##
+            ##################################################################################
+            nextStateInputs = self.next_state.getInputs()
+            for robot in self.hsub.executing_config.robots:
+                nextInputRegion = [k for k, v in nextStateInputs.iteritems() if (k.startswith(robot.name+"_") and k.endswith('_rc') and v)]
+
+                
+                if nextInputRegion:
+                    nextInputRegion_name = nextInputRegion[0].replace('_rc','').replace(robot.name+"_",'')
+                    next_input_region_names[robot.name] = self.proj.regionMapping[nextInputRegion_name]
+               
+                self.nextRegionCompleted[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(next_input_region_names[robot.name][0])] 
+            ##################################################################################
+            
             # See what we, as the system, need to do to get to this new state
-            self.transition_contains_motion = self.next_region is not None and (self.next_state.getPropValue('regionCompleted') != self.strategy.current_state.getPropValue('regionCompleted'))
+            self.transition_contains_motion = None not in self.next_region.values() and False not in  [self.nextRegionCompleted[robot.name] != self.current_region[robot.name] for robot in self.hsub.executing_config.robots]
 
             # Run actuators before motion
             self.updateOutputs(self.next_state)
 
             # check if we have changes in sensor values
-            if self.last_sensor_state != sensor_state and self.strategy.current_state.getPropValue('regionCompleted') == self.next_state.getPropValue('regionCompleted'):
+            if self.last_sensor_state != sensor_state and False not in [self.nextRegionCompleted[robot.name] == self.current_region[robot.name] for robot in self.hsub.executing_config.robots]:
                 self.arrived = True
             else:
                 self.arrived = False
@@ -171,6 +219,7 @@ class ExecutorStrategyExtensions(object):
 
         if not self.arrived:
             # Move one step towards the next region (or stay in the same region)
+            """
             current_regAllRobots = {}
             next_regAllRobots = {}
             ############################################################
@@ -178,14 +227,17 @@ class ExecutorStrategyExtensions(object):
                 current_regAllRobots[robot.name] = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
                 next_regAllRobots[robot.name] = self.next_region
             ############################################################
-                
-            self.arrived = self.hsub.gotoRegionMultiRobot(current_regAllRobots, next_regAllRobots)
+            """
+            
+            self.arrived = self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
 
         # Check for completion of motion
         if self.arrived and self.next_state != self.strategy.current_state:
             if self.transition_contains_motion:
-                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region.name, self.next_state.getPropValue('regionCompleted').name))
-                self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
+                for robot in self.hsub.executing_config.robots:
+                    if self.current_region[robot.name] != self.nextRegionCompleted[robot.name]:
+                        self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region[robot.name].name, self.nextRegionCompleted[robot.name].name))
+                        self.postEvent("INFO", "Heading to region %s..." % self.nextRegionCompleted[robot.name].name)
 
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset

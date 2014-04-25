@@ -159,17 +159,18 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             else:
                 self.sensorValue[args[0]] = args[1]
 
-    def inRegion(self, regionName , initial = False):
+    def inRegion(self, regionName, robotName, initial = False):
         """
         Check if the robot is in this region
         regionName (string): Name of the region
+        robotName  (string): Name of the robot
         """    
 
         if initial:
             return True
         
         else: 
-            pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPose())
+            pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPoseByRobotName(robotName))
             #########################################
             ### Copied from vectorController.py #####
             #########################################            

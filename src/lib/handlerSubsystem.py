@@ -455,7 +455,24 @@ class HandlerSubsystem:
 
         return pose
         
+    def getPoseByRobotName(self, robot_name, cached=False):
+        """
+        A wrapper function that returns the pose from the pose handler of the main robot in the
+        current executing config
+        """
 
+        # first make sure the coord transformation function is ready
+        if self.coordmap_map2lab is None:
+            self.coordmap_map2lab, self.coordmap_lab2map = robot_config.getCoordMaps()
+            self.executor.proj.coordmap_map2lab, self.executor.proj.coordmap_lab2map = robot_config.getCoordMaps()
+
+        pose_handler_instance = self.getHandlerInstanceByType(ht.PoseHandler, robot_name)
+
+        if pose_handler_instance is None:
+            raise ValueError("Cannot get current pose, because no pose handler instance is found for the main robot")
+        return pose_handler_instance.getPose(cached)
+        
+            
     def getPose(self, cached=False):
         """
         A wrapper function that returns the pose from the pose handler of the main robot in the
@@ -574,13 +591,18 @@ class HandlerSubsystem:
         """
 
         mapping = self.executing_config.prop_mapping
-
+        logging.debug(mapping)
+        logging.debug(self.executor.proj.all_sensors)
+        logging.debug(self.executor.proj.all_actuators)
         for prop_name, func_string in mapping.iteritems():
+            logging.debug(str(prop_name) + ',' + str(func_string))
             if prop_name in self.executor.proj.all_sensors:
                 mode = "sensor"
             elif prop_name in self.executor.proj.all_actuators:
                 mode = "actuator"
-            else:
+            elif '_rc' in prop_name:
+                mode = 'sensor'
+            else:       
                 raise ValueError("Proposition name {} is not recognized.".format(prop_name))
 
             self.prop2func[prop_name] = self.createPropositionMappingExecutionFunctionFromString(func_string, mode)
