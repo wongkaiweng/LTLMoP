@@ -66,7 +66,7 @@ class HandlerSubsystem:
         self.executing_config = None  # current experiment config object that is executing
 
         self.prop2func = {}         # a mapping from a proporsition to a handler function for execution
-        self.handler_instance = []  # a list of handler instances that are instantiated
+        self.handler_instance = {}  # a dict of handler instances that are instantiated
         self.method_configs = set() # a set of func references
 
         self.coordmap_map2lab = None# function that maps from map coord to lab coord
@@ -308,13 +308,15 @@ class HandlerSubsystem:
         logging.error("Could not find robot of type '{0}'".format(t))
         return None
 
-    def getHandlerInstanceByName(self, handler_name):
+    def getHandlerInstanceByName(self, handler_name, robot_name):
         """
         Return the instantiated handler object for a given name or None if it is not instantiated
         """
-        for h in self.handler_instance:
-            if h.__class__.__name__ == handler_name:
-                return h
+        if robot_name in self.handler_instance:
+            for h in self.handler_instance[robot_name]:
+                if h.__class__.__name__ == handler_name:
+                    return h
+
         return None
 
     def getMainRobot(self):
@@ -345,8 +347,11 @@ class HandlerSubsystem:
             robot_config = self.executing_config.getRobotByName(robot_name)
 
         # now look for the handler instance of the given type
-        handler_instance = self.getHandlerInstanceByName(robot_config.getHandlerOfRobot(handler_type_class).name)
+        if robot_name == "":
+            # put in main robot name
+            robot_name = robot_config.name
 
+        handler_instance = self.getHandlerInstanceByName(robot_config.getHandlerOfRobot(handler_type_class).name, robot_name)
         return handler_instance
 
     def setVelocity(self, x, y):
@@ -361,6 +366,20 @@ class HandlerSubsystem:
 
         # set the velocity
         drive_handler_instance.setVelocity(x, y)
+    
+    def setVelocityMultiRobot(self, x, y):
+        """
+        a wrapper function that set the velocity to the drive handler of the main robot
+        """
+        for robot in self.executing_config.robots:
+            # get the drive handler
+            drive_handler_instance = self.getHandlerInstanceByType(ht.DriveHandler, robot.name)
+
+            if drive_handler_instance is None:
+                raise ValueError("Cannot set Velocity, because no drive handler instance is found for the main robot")
+
+            # set the velocity
+            drive_handler_instance.setVelocity(x, y)
 
     def gotoRegion(self, current_region, next_region):
         """
@@ -382,6 +401,60 @@ class HandlerSubsystem:
         arrived = motion_handler_instance.gotoRegion(current_region, next_region)
 
         return arrived
+        
+    def gotoRegionMultiRobot(self, current_regAllRobots, next_regAllRobots):
+        """
+        a wrapper function that set the target region to the motionControl handler of the main robot
+        current_regAllRobots = {'robot1': regionObject}
+        next_regAllRobots = {'robot1': regionObject}
+        """
+        
+        # get the motionControl handler
+        motion_handler_instance = self.getHandlerInstanceByType(ht.MotionControlHandler)
+
+        # if the region is object, we need to find the index of it
+        for robot_name,current_region in current_regAllRobots.iteritems():
+            if not isinstance(current_region, int):
+                current_regAllRobots[robot_name] = self.executor.proj.rfi.regions.index(current_region)
+        
+        for robot_name,next_region in next_regAllRobots.iteritems(): 
+            if not isinstance(next_region, int):
+                next_regAllRobots[robot_name] = self.executor.proj.rfi.regions.index(next_region)
+
+        if motion_handler_instance is None:
+            raise ValueError("Cannot set target region, because no motionControl handler instance is found for the main robot")
+
+        # set the target region
+        arrived = motion_handler_instance.gotoRegion(current_regAllRobots, next_regAllRobots)
+
+        return arrived
+        
+    def getPoseMultiRobot(self, cached=False):
+        """
+        A wrapper function that returns the pose from the pose handler of the main robot in the
+        current executing config
+        """
+        # get the main robot config
+        robot_config = self.getMainRobot()
+
+        # first make sure the coord transformation function is ready
+        if self.coordmap_map2lab is None:
+            self.coordmap_map2lab, self.coordmap_lab2map = robot_config.getCoordMaps()
+            self.executor.proj.coordmap_map2lab, self.executor.proj.coordmap_lab2map = robot_config.getCoordMaps()
+        
+        pose_handler_instance = {}
+        pose  = {}
+        # Get references to handlers we'll need to communicate with
+        for robot in self.executing_config.robots: # robot must be a string
+            pose_handler_instance[robot.name] = self.getHandlerInstanceByType(ht.PoseHandler, robot_name = robot.name)
+
+            if pose_handler_instance[robot.name] is None:
+                raise ValueError("Cannot get current pose for " + robot.name + ", because no pose handler instance is found for the main robot")
+            
+            pose[robot.name] = pose_handler_instance[robot.name].getPose(cached)
+
+        return pose
+        
 
     def getPose(self, cached=False):
         """
@@ -445,7 +518,7 @@ class HandlerSubsystem:
             else:
                 raise TypeError("Handler mappings must contain only Sensor or Actuator handlers")
 
-    def prepareHandler(self, handler_config):
+    def prepareHandler(self, handler_config, robot_name):
         """
         Instantiate the handler object of the given handler config if it is not already instantiated
         Return the handler instance
@@ -453,7 +526,8 @@ class HandlerSubsystem:
 
         # Check if we alreay instantiated the handler
         handler_name = handler_config.name
-        h = self.getHandlerInstanceByName(handler_name)
+
+        h = self.getHandlerInstanceByName(handler_name, robot_name)
 
         if h is None:
             # we need to instantiate the handler
@@ -488,7 +562,10 @@ class HandlerSubsystem:
             except Exception:
                 logging.exception("Failed during handler {} instantiation".format(handler_module_path))
             else:
-                self.handler_instance.append(h)
+                if robot_name not in self.handler_instance:
+                    self.handler_instance[robot_name] = []
+                self.handler_instance[robot_name].append(h)
+                # handler_instance[robot_name] = h
         return h
 
     def prepareMapping(self):
@@ -541,21 +618,25 @@ class HandlerSubsystem:
         instantiate all the handlers of the main robot of the current executing config
         instantiate only the init handler of the non-main robot
         """
+        # rearrange main robot to the end of the list
+        self.executing_config.robots.append(self.executing_config.robots.pop(self.executing_config.robots.index(self.getMainRobot())))
+                
         for robot in self.executing_config.robots:
-            if robot.name == self.executing_config.main_robot:
+            #if robot.name == self.executing_config.main_robot:
                 # this is a main robot
-                for handler_type_class in ht.getAllHandlerTypeClass():
-                    if handler_type_class in robot.handlers:
-                        h = self.prepareHandler(robot.handlers[handler_type_class])
-                    # if this is a init handler, set the shared_data
-                    if handler_type_class == ht.InitHandler:
-                        self.executor.proj.shared_data.update(h.getSharedData())
-            else:
-                # this is a non-main robot
-                h = self.prepareHandler(robot.getHandlerOfRobot(ht.InitHandler))
-                # this is a init handler, set the shared_data
-                self.executor.proj.shared_data.update(h.getSharedData())
+            for handler_type_class in ht.getAllHandlerTypeClass():
+                if handler_type_class in robot.handlers:
+                    h = self.prepareHandler(robot.handlers[handler_type_class],robot.name)
+                # if this is a init handler, set the shared_data
+                if handler_type_class == ht.InitHandler:
+                    self.executor.proj.shared_data = h.getSharedData()
 
+#            else:
+#                # this is a non-main robot
+#                h = self.prepareHandler(robot_config.getHandlerOfRobot(ht.InitHandler))
+#                # this is a init handler, set the shared_data
+#                self.executor.proj.shared_data = h.getSharedData()
+        logging.debug(self.handler_instance)
 
     def createHandlerMethodConfig(self, robot_name, handler_name, method_name, kwargs):
         """
@@ -589,7 +670,7 @@ class HandlerSubsystem:
             return None
 
         # find the handler instance
-        h = self.prepareHandler(method_config.handler)
+        h = self.prepareHandler(method_config.handler,robot_name)
 
         # Get the function object and make its arg dict
         method_config.method_reference = getattr(h, method_config.name)

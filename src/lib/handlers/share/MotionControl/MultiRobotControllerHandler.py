@@ -11,6 +11,7 @@ from numpy import *
 from __is_inside import *
 import time, math
 import logging
+import __vectorControllerHelper as vectorControllerHelper # temporary
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -22,10 +23,14 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
         # get the list of robots
         self.robotList = [robot.name for robot in executor.hsub.executing_config.robots]
         
+        self.drive_handler = {}
+        self.pose_handler  = {}
+        self.executor      = executor
         # Get references to handlers we'll need to communicate with
         for robot_name in self.robotList: # x must be a string
-            self.drive_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler, robot_name = robot_name)
-            self.pose_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.PoseHandler, robot_name = robot_name)
+            self.drive_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler, robot_name)
+            self.drive_handler[robot_name].loco = executor.hsub.getHandlerInstanceByType(handlerTemplates.LocomotionCommandHandler, robot_name)
+            self.pose_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.PoseHandler, robot_name)
 
 
         # Get information about regions
@@ -50,19 +55,18 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
         arrived             = {}
         V                   = {}
         
-        for robot_name, current_reg in current_regIndices.iteritems():
+        logging.debug("current_regIndices" + str(current_regIndices))
+        logging.debug("next_regIndices" + str(next_regIndices))
         
-            if current_reg == next_reg and not last:
-                # No need to move!
-                self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
-                #return True not leaving until all robots are checked
+        for robot_name, current_reg in current_regIndices.iteritems():
+            next_reg = next_regIndices[robot_name]
 
             # Find our current configuration
             pose[robot_name] = self.pose_handler[robot_name].getPose()
 
             # Check if Vicon has cut out
             # TODO: this should probably go in posehandler?
-            if math.isnan(pose[2]):
+            if math.isnan(pose[robot_name][2]):
                 print "WARNING: No Vicon data! Pausing."
                 self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
                 time.sleep(1)
@@ -73,14 +77,20 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
             current_regVertices[robot_name] = vertices
             
             vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[next_reg].getPoints()])).T
-            next_regVertices[robot_name] = vertices
-            
-            
-        ## NORA's motion controller
+            next_regVertices[robot_name] = vertices         
+
+            if current_reg == next_reg and not last:
+                logging.debug('stop moving, regions the same')
+                # No need to move!
+                self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
+                continue
+                #return True not leaving until all robots are checked
+        
+        ################################       
+        ### NORA's motion controller ###
+        ################################
         
         ## assume not we can use vector
-        for robot_name in self.robotList:
-
             if last:
                 transFaceIdx = None
             else:
@@ -104,17 +114,18 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
                 if transFaceIdx is None:
                     print "ERROR: Unable to find transition face between regions %s and %s.  Please check the decomposition (try viewing projectname_decomposed.regions in RegionEditor or a text editor)." % (self.rfi.regions[current_regIndices[robot_name]].name, self.rfi.regions[next_regIndices[robot_name]].name)
 
-
 		        # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
                 V[robot_name] = vectorControllerHelper.getController([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name], transFaceIdx)
          
-        
+        logging.debug("V:"+ str(V))
         # OUTPUT from Nora's motion control 
         # for example: V = {'robot1':[1,2,3],'robot2':[4,5,6]}
         
-        for robot_name in self.robotList:      
-            self.drive_handler[robot_name].setVelocity(V[robot_name][0], V[robot_name][1], pose[robot_name][2])
+        for robot_name in self.robotList:  
+            if robot_name in V:
+                self.drive_handler[robot_name].setVelocity(V[robot_name][0], V[robot_name][1], pose[robot_name][2])
 
+            logging.debug("pose:" + str(pose))
             departed[robot_name] = not is_inside([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name])
             # Figure out whether we've reached the destination region
             arrived[robot_name] = is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
@@ -130,5 +141,5 @@ class MultiRobotControllerHandler(handlerTemplates.MotionControlHandler):
                         break
                 self.last_warning = time.time()
 
-
-        return (True in arrived)
+        logging.debug("arrived:" + str(arrived))
+        return arrived[self.executor.hsub.getMainRobot().name]#(True in arrived.values())

@@ -306,8 +306,9 @@ class SimGUI_Frame(wx.Frame):
 
         # Draw robot
         if self.robotPos is not None:
-            [x,y] = map(lambda x: int(self.mapScale*x), self.robotPos) 
-            dc.DrawCircle(x, y, 5)
+            for robot_name, pose in self.robotPos.iteritems():
+                [x,y] = map(lambda x: int(self.mapScale*x), pose) 
+                dc.DrawCircle(x, y, 5)
         if self.markerPos is not None:
             [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos) 
             dc.SetBrush(wx.Brush(wx.RED))
