@@ -1,0 +1,52 @@
+State 0 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 1
+State 1 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 2, 3, 4, 5
+State 2 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 6, 2
+State 3 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:1, rob2_r2:0, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 7, 8, 9, 10
+State 4 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 2, 4
+State 5 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 9, 5
+State 6 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:1, rob3_r3:0>
+	With successors : 6, 11
+State 7 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:1, rob2_r2:0, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 7, 8
+State 8 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:1, rob2_r2_rc:0, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:1, rob2_r2:0, rob2_r3:0, rob3_r1:0, rob3_r2:1, rob3_r3:0>
+	With successors : 8, 12
+State 9 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 13, 9
+State 10 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:1, rob2_r2_rc:0, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:1, rob2_r2:0, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 8, 10
+State 11 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:1, rob3_r3:0>
+	With successors : 11, 14
+State 12 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:1, rob2_r2_rc:0, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 15, 16, 17, 18
+State 13 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:1, rob3_r3:0>
+	With successors : 13, 14
+State 14 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:1, rob2_r2:0, rob2_r3:0, rob3_r1:0, rob3_r2:1, rob3_r3:0>
+	With successors : 14, 12
+State 15 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 19, 20
+State 16 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 19, 21, 20, 22
+State 17 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:1, rob2_r2_rc:0, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 20, 17
+State 18 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:1, rob2_r2_rc:0, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 20, 22, 17, 18
+State 19 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 19, 20
+State 20 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 20, 23
+State 21 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:0, rob2_r3_rc:1, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 19, 21
+State 22 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:1, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:1, rob3_r3_rc:0, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 20, 22
+State 23 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob2_r1:0, rob2_r2:1, rob2_r3:0, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 23, 24
+State 24 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 2, 25, 4, 1
+State 25 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob2_r1_rc:0, rob2_r2_rc:1, rob2_r3_rc:0, rob3_r1_rc:0, rob3_r2_rc:0, rob3_r3_rc:1, rob1_r1:0, rob1_r2:0, rob1_r3:1, rob2_r1:0, rob2_r2:0, rob2_r3:1, rob3_r1:0, rob3_r2:0, rob3_r3:1>
+	With successors : 6, 7, 2, 9

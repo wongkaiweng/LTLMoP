@@ -21,6 +21,7 @@ class ExecutorStrategyExtensions(object):
         self.current_region               = {}
         self.nextRegionCompleted          = {}   
         self.prev_decomposed_region_names = {}
+        self.prev_sensor_state            = {}
 
     def updateOutputs(self, state=None):
         """
@@ -116,7 +117,7 @@ class ExecutorStrategyExtensions(object):
         """
         # Take a snapshot of our current sensor readings
         sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-        #logging.debug(sensor_state)
+
         ############################################################################
         ###############   not saving regionCompleted now ###########################
         ############################################################################
@@ -126,19 +127,22 @@ class ExecutorStrategyExtensions(object):
             sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if (k.startswith(robot.name+"_") and k.endswith('_rc')))
             logging.debug(robot.name + ": "+str(sensor_region))
             sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
-            #logging.debug(sensor_region_names)
-            if sensor_region_names:
+
+            if len(sensor_region_names) == 1:
                 sensor_region_name = sensor_region_names[0].replace('_rc','').replace(robot.name+"_",'')
-                #logging.debug(robot.name)
-                #logging.debug(sensor_region_name)
                 decomposed_region_names[robot.name] = self.proj.regionMapping[sensor_region_name]
             else:
+                # maybe we should change the inputs as well? or just wait for next iteration
                 logging.info('not inside any region!')
-                decomposed_region_names[robot.name]  = self.prev_decomposed_region_names[robot.name]
-
+                sensor_state             = self.prev_sensor_state
+                decomposed_region_names  = self.prev_decomposed_region_names
+                break
+                
+        for robot in self.hsub.executing_config.robots:
             self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[robot.name][0])] 
         logging.debug("decomposed_region_names" + str(decomposed_region_names))
         self.prev_decomposed_region_names = decomposed_region_names
+        self.prev_sensor_state            =sensor_state
         ##############################################################################
 
         # Let's try to transition
@@ -149,6 +153,8 @@ class ExecutorStrategyExtensions(object):
         if len(next_states) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
+            logging.error('State:' +self.strategy.current_state.state_id +' sensor_state:' + str(sensor_state) )
+            logging.info("decomposed_region_names" + str(decomposed_region_names))
             return
 
         # See if we're beginning a new transition
@@ -170,12 +176,12 @@ class ExecutorStrategyExtensions(object):
             decomposed_heading_region_names = {}
             for robot in self.hsub.executing_config.robots:
                 heading_region = dict((k,v) for k, v in  currentOutputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'') in self.proj.regionMapping)
-
                 heading_region_names = [k for k, v in  heading_region.iteritems() if v]
-                
+
                 if heading_region_names:
                     heading_region_name = heading_region_names[0].replace(robot.name+"_",'')
                     decomposed_heading_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+            
                
                 self.next_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_heading_region_names[robot.name][0])] 
             logging.debug("decomposed_heading_region_names" + str(decomposed_heading_region_names))
