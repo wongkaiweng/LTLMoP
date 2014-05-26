@@ -1,0 +1,226 @@
+State 0 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 1, 2
+State 1 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 3, 4, 1, 2
+State 2 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 5, 6, 7, 8
+State 3 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 9, 10, 3, 4
+State 4 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 11, 12, 13, 14
+State 5 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 13, 14, 2, 15
+State 6 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 16, 17, 18, 19
+State 7 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 7, 8
+State 8 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:1, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 18, 19
+State 9 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 20, 21, 9, 10
+State 10 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 22, 23, 24, 25
+State 11 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 24, 25, 4, 26
+State 12 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 27, 28, 16, 17
+State 13 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 13, 14
+State 14 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 16, 17
+State 15 with rank 1 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 16, 17, 18, 19
+State 16 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 29, 30, 27, 28, 31, 32, 16, 17
+State 17 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 29, 30, 27, 28, 31, 32, 16, 17
+State 18 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 31, 32, 16, 17, 33, 34, 18, 19
+State 19 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 31, 32, 16, 17, 33, 34, 18, 19
+State 20 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 20, 21
+State 21 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 21, 37
+State 22 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 21, 37, 10, 38
+State 23 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 39, 40, 27, 28
+State 24 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 24, 25
+State 25 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 27, 28
+State 26 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 27, 28, 16, 17
+State 27 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 41, 42, 39, 40, 29, 30, 27, 28
+State 28 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 41, 42, 39, 40, 29, 30, 27, 28
+State 29 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 41, 42, 29, 30
+State 30 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 42, 30
+State 31 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 29, 30, 31, 32
+State 32 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:1, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:1, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 30, 32
+State 33 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 31, 32, 33, 34
+State 34 with rank 0 -> <rob1_r1_rc:1, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:1, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 32, 34
+State 35 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 43, 44
+State 36 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 45
+State 37 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 39, 40
+State 38 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:1, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:1, rob1_r6:0, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 39, 40, 27, 28
+State 39 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 41, 42, 39, 40
+State 40 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 41, 42, 39, 40
+State 41 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 41, 42
+State 42 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:1, rob1_r6_rc:0, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47, 42
+State 43 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 43, 44
+State 44 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 50, 51, 52, 53
+State 45 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55
+State 46 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 56, 57
+State 47 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47, 57
+State 48 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 56, 57, 58, 59
+State 49 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 56, 57, 58, 59
+State 50 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 45, 44, 60
+State 51 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55, 61, 62
+State 52 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 52, 53
+State 53 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 61, 62
+State 54 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49
+State 55 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49
+State 56 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:1, rob1_carrying_metal:1>
+	With successors : 56, 57, 63, 64
+State 57 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:1, rob1_carrying_metal:1>
+	With successors : 57, 64
+State 58 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:1, rob1_carrying_metal:1>
+	With successors : 56, 57, 63, 64, 58, 59, 65, 66
+State 59 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:1, rob1_carrying_metal:1>
+	With successors : 56, 57, 63, 64, 58, 59, 65, 66
+State 60 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55, 61, 62
+State 61 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 67, 68, 69, 70
+State 62 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 48, 49, 67, 68, 69, 70
+State 63 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 71, 36, 72, 73, 74, 75, 63, 76
+State 64 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 73, 75, 76
+State 65 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 71, 36, 72, 73, 77, 45, 78, 79, 74, 75, 63, 76, 80, 81, 65, 82
+State 66 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 48, 49, 85, 86, 67, 68, 63, 64, 69, 70, 65, 66
+State 67 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 56, 57
+State 68 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 57
+State 69 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 56, 57, 58, 59
+State 70 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 56, 57, 58, 59
+State 71 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36
+State 72 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73
+State 73 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 73, 45, 79
+State 74 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 71, 36, 74, 75
+State 75 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 50, 51, 88, 89
+State 76 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 50, 90, 51, 91, 88, 92, 89, 93
+State 77 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 94, 45
+State 78 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73, 94, 45, 95, 79
+State 79 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55, 96, 97
+State 80 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 71, 36, 77, 45, 74, 75, 80, 81
+State 81 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 48, 49, 69, 70
+State 82 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 48, 49, 85, 86, 69, 70, 65, 66
+State 83 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 56, 57, 63, 64
+State 84 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47, 84, 57, 64
+State 85 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 48, 49, 85, 86, 56, 57, 63, 64, 58, 59, 65, 66
+State 86 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 48, 49, 85, 86, 56, 57, 63, 64, 58, 59, 65, 66
+State 87 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73, 43, 44, 98, 99
+State 88 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 88, 89
+State 89 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 58, 59
+State 90 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 73, 45, 79, 44, 99, 60, 100
+State 91 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55, 96, 97, 61, 62, 101, 102
+State 92 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 88, 92, 89, 93
+State 93 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 58, 59, 65, 66
+State 94 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 94, 45, 43, 44, 103, 60
+State 95 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73, 94, 45, 95, 79, 43, 44, 98, 99, 103, 60, 101, 100
+State 96 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 48, 49, 85, 86
+State 97 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84, 48, 49, 85, 86
+State 98 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73, 43, 44, 98, 99
+State 99 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 50, 90, 51, 91, 52, 104, 53, 105
+State 100 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 54, 55, 96, 97, 61, 62, 101, 102
+State 101 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 87, 73, 94, 45, 95, 79, 43, 44, 98, 99, 103, 60, 101, 100
+State 102 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 106, 107, 108, 109, 54, 55, 96, 97, 110, 111, 98, 112, 61, 62, 101, 102
+State 103 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 35, 36, 94, 45, 43, 44, 103, 60
+State 104 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 52, 104, 53, 105
+State 105 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:1, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:1, rob1_r7:0, rob1_r8:0, rob1_pickup:1, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 61, 62, 101, 102
+State 106 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47
+State 107 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47
+State 108 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 83, 84
+State 109 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:0, rob1_r7_rc:1, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47, 84
+State 110 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:0, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 46, 47, 67, 68
+State 111 with rank 0 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:0, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:1>
+	With successors : 47, 68
+State 112 with rank 1 -> <rob1_r1_rc:0, rob1_r2_rc:0, rob1_r3_rc:0, rob1_r4_rc:0, rob1_r5_rc:0, rob1_r6_rc:1, rob1_r7_rc:0, rob1_r8_rc:0, rob1_pickup_ac:0, rob1_drop_ac:1, rob1_metal:1, rob1_r1:0, rob1_r2:0, rob1_r3:0, rob1_r4:0, rob1_r5:0, rob1_r6:0, rob1_r7:1, rob1_r8:0, rob1_pickup:0, rob1_drop:0, rob1_carrying_metal:0>
+	With successors : 36, 73, 44, 99

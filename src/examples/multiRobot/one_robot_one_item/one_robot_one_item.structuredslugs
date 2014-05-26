@@ -1,0 +1,150 @@
+[INPUT]
+rob1_r1_rc
+rob1_r2_rc
+rob1_r3_rc
+rob1_r4_rc
+rob1_r5_rc
+rob1_r6_rc
+rob1_r7_rc
+rob1_r8_rc
+
+rob1_pickup_ac
+rob1_drop_ac
+
+rob1_metal
+
+
+[OUTPUT]
+rob1_r1
+rob1_r2
+rob1_r3
+rob1_r4
+rob1_r5
+rob1_r6
+rob1_r7
+rob1_r8
+
+rob1_pickup
+rob1_drop
+rob1_carrying_metal
+
+
+[ENV_TRANS]
+(rob1_r1_rc) & (rob1_r1) -> (rob1_r1_rc')
+(rob1_r2_rc) & (rob1_r2) -> (rob1_r2_rc')
+(rob1_r3_rc) & (rob1_r3) -> (rob1_r3_rc')
+(rob1_r4_rc) & (rob1_r4) -> (rob1_r4_rc')
+(rob1_r5_rc) & (rob1_r5) -> (rob1_r5_rc')
+(rob1_r6_rc) & (rob1_r6) -> (rob1_r6_rc')
+(rob1_r7_rc) & (rob1_r7) -> (rob1_r7_rc')
+(rob1_r8_rc) & (rob1_r8) -> (rob1_r8_rc')
+
+(rob1_r1_rc) & (rob1_r2) -> ((rob1_r1_rc') | (rob1_r2_rc'))
+
+(rob1_r2_rc) & (rob1_r4) -> ((rob1_r2_rc') | (rob1_r4_rc'))
+(rob1_r2_rc) & (rob1_r1) -> ((rob1_r2_rc') | (rob1_r1_rc'))
+(rob1_r2_rc) & (rob1_r3) -> ((rob1_r2_rc') | (rob1_r3_rc'))
+
+(rob1_r3_rc) & (rob1_r2) -> ((rob1_r2_rc') | (rob1_r3_rc'))
+
+(rob1_r4_rc) & (rob1_r2) -> ((rob1_r4_rc') | (rob1_r2_rc'))
+(rob1_r4_rc) & (rob1_r5) -> ((rob1_r4_rc') | (rob1_r5_rc'))
+
+(rob1_r5_rc) & (rob1_r4) -> ((rob1_r5_rc') | (rob1_r4_rc'))
+(rob1_r5_rc) & (rob1_r7) -> ((rob1_r5_rc') | (rob1_r7_rc'))
+
+(rob1_r6_rc) & (rob1_r7) -> ((rob1_r6_rc') | (rob1_r7_rc'))
+
+(rob1_r7_rc) & (rob1_r6) -> ((rob1_r6_rc') | (rob1_r7_rc'))
+(rob1_r7_rc) & (rob1_r4) -> ((rob1_r4_rc') | (rob1_r7_rc'))
+(rob1_r7_rc) & (rob1_r8) -> ((rob1_r8_rc') | (rob1_r7_rc'))
+
+(rob1_r8_rc) & (rob1_r7) -> ((rob1_r7_rc') | (rob1_r8_rc'))
+
+| ! & rob1_pickup_ac rob1_pickup rob1_pickup_ac'
+| ! & rob1_drop_ac rob1_drop rob1_drop_ac'
+| ! & ! rob1_pickup_ac ! rob1_pickup ! rob1_pickup_ac'
+| ! & ! rob1_drop_ac ! rob1_drop ! rob1_drop_ac'
+
+
+| ! & rob1_metal ! rob1_pickup_ac rob1_metal'
+
+
+rob1_r1_rc' -> ! (rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r2_rc' -> ! (rob1_r1_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r3_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r4_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r5_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r6_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r7_rc' | rob1_r8_rc')
+rob1_r7_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r8_rc')
+rob1_r8_rc' -> ! (rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc')
+
+rob1_r1_rc' | rob1_r2_rc' | rob1_r3_rc' | rob1_r4_rc' | rob1_r5_rc' | rob1_r6_rc' | rob1_r7_rc' | rob1_r8_rc'
+
+
+[ENV_LIVENESS]
+(!rob1_r1 | rob1_r1_rc') & (!rob1_r2 | rob1_r2_rc') & (!rob1_r3 | rob1_r3_rc') & (!rob1_r4 | rob1_r4_rc') & (!rob1_r5 | rob1_r5_rc') & (!rob1_r6 | rob1_r6_rc') & (!rob1_r7 | rob1_r7_rc') & (!rob1_r8 | rob1_r8_rc')
+| ! rob1_pickup rob1_pickup_ac'
+| ! rob1_drop rob1_drop_ac'
+
+
+[ENV_INIT]
+(rob1_r1_rc) & (!rob1_r2_rc) & (!rob1_r3_rc) & (!rob1_r4_rc) & (!rob1_r5_rc) & (!rob1_r6_rc) & (!rob1_r7_rc) &(!rob1_r8_rc) & ! rob1_metal  & ! rob1_pickup_ac & ! rob1_drop_ac 
+
+
+[SYS_TRANS]
+
+(rob1_r1_rc') -> (rob1_r1' | rob1_r2')
+(rob1_r2_rc') -> (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4')
+(rob1_r3_rc') -> (rob1_r2' | rob1_r3')
+(rob1_r4_rc') -> (rob1_r2' | rob1_r4' | rob1_r5')
+(rob1_r5_rc') -> (rob1_r4' | rob1_r5' | rob1_r7')
+(rob1_r6_rc') -> (rob1_r6' | rob1_r7')
+(rob1_r7_rc') -> (rob1_r5' | rob1_r6' | rob1_r7' | rob1_r8')
+(rob1_r8_rc') -> (rob1_r7' | rob1_r8')
+
+
+rob1_r1' -> ! (rob1_r2' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r7' | rob1_r8')
+rob1_r2' -> ! (rob1_r1' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r7' | rob1_r8')
+rob1_r3' -> ! (rob1_r1' | rob1_r2' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r7' | rob1_r8')
+rob1_r4' -> ! (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r5' | rob1_r6' | rob1_r7' | rob1_r8')
+rob1_r5' -> ! (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4' | rob1_r6' | rob1_r7' | rob1_r8')
+rob1_r6' -> ! (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r7' | rob1_r8')
+rob1_r7' -> ! (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r8')
+rob1_r8' -> ! (rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r7')
+
+rob1_r1' | rob1_r1' | rob1_r2' | rob1_r3' | rob1_r4' | rob1_r5' | rob1_r6' | rob1_r7'
+
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r1_rc -> rob1_r1')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r2_rc -> rob1_r2')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r3_rc -> rob1_r3')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r4_rc -> rob1_r4')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r5_rc -> rob1_r5')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r6_rc -> rob1_r6')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r7_rc -> rob1_r7')
+(rob1_pickup & ! rob1_pickup_ac) -> (rob1_r8_rc -> rob1_r8')
+
+
+
+(rob1_metal' & ! rob1_carrying_metal) -> rob1_pickup'
+
+((rob1_carrying_metal & ! (rob1_r6_rc' & rob1_drop_ac')) | (rob1_metal' & rob1_pickup_ac')) -> rob1_carrying_metal'
+rob1_carrying_metal' -> ((rob1_carrying_metal & ! (rob1_r6_rc' & rob1_drop_ac')) | (rob1_metal' & rob1_pickup_ac'))
+
+(! rob1_metal') -> ! rob1_pickup'
+
+(! rob1_r6_rc') -> ! rob1_drop'
+
+[SYS_LIVENESS]
+rob1_carrying_metal -> (rob1_r6_rc' & rob1_drop_ac')
+
+
+(!rob1_carrying_metal -> rob1_r6_rc')
+
+
+	 
+[SYS_INIT]
+rob1_r1 & !rob1_r2 & !rob1_r3 & !rob1_r4 & !rob1_r5 & !rob1_r6 & !rob1_r7 & !rob1_r8 & ! rob1_carrying_metal & ! rob1_pickup & ! rob1_drop 
+
+
+
