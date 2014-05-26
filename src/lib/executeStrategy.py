@@ -162,19 +162,15 @@ class ExecutorStrategyExtensions(object):
             # Run actuators before motion
             self.updateOutputs(self.next_state)
 
-            # check if we have changes in sensor values
-            if self.last_sensor_state != sensor_state and self.strategy.current_state.getPropValue('regionCompleted') == self.next_state.getPropValue('regionCompleted'):
-                self.arrived = True
-            else:
-                self.arrived = False
+            # save current sensor state for next iteration
             self.last_sensor_state = sensor_state
 
-        if not self.arrived:
+        if self.strategy.current_state == self.next_state:
             # Move one step towards the next region (or stay in the same region)
-            self.arrived = self.hsub.gotoRegion(self.current_region, self.next_region)
+            self.hsub.gotoRegion(self.current_region, self.next_region)
 
         # Check for completion of motion
-        if self.arrived and self.next_state != self.strategy.current_state:
+        if self.next_state != self.strategy.current_state:
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region.name, self.next_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
