@@ -211,12 +211,14 @@ class ExecutorStrategyExtensions(object):
 
             # Run actuators before motion
             self.updateOutputs(self.next_state)
-
+            """
             # check if we have changes in sensor values
             if self.last_sensor_state != sensor_state and False not in [self.nextRegionCompleted[robot.name] == self.current_region[robot.name] for robot in self.hsub.executing_config.robots]:
                 self.arrived = True
             else:
                 self.arrived = False
+            """
+            self.arrived = True  
             self.last_sensor_state = sensor_state
 
         logging.debug('arrival'+ str(self.arrived))
