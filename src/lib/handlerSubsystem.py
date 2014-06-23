@@ -591,11 +591,14 @@ class HandlerSubsystem:
         """
 
         mapping = self.executing_config.prop_mapping
-        logging.debug(mapping)
-        logging.debug(self.executor.proj.all_sensors)
-        logging.debug(self.executor.proj.all_actuators)
+
+        completion_props = [] # a list of props that represent the completion of some actuator props
+
         for prop_name, func_string in mapping.iteritems():
-            #logging.debug(str(prop_name) + ',' + str(func_string))
+            if prop_name.endswith('_ac'):
+                # completion props end with _ac, we will take care of them later
+                completion_props.append(prop_name)
+                continue
             if prop_name in self.executor.proj.all_sensors:
                 mode = "sensor"
             elif prop_name in self.executor.proj.all_actuators:
@@ -606,6 +609,23 @@ class HandlerSubsystem:
                 raise ValueError("Proposition name {} is not recognized.".format(prop_name))
 
             self.prop2func[prop_name] = self.createPropositionMappingExecutionFunctionFromString(func_string, mode)
+
+        for c_prop in completion_props:
+            prop_name = c_prop.replace('_ac','')
+            if prop_name not in self.prop2func:
+                raise ValueError("Completion proposition {} does not have corresponding actuator proposition.".format(prop_name))
+            else:
+                self.prop2func[c_prop] = self._createFunctionForCompletionProposition(prop_name)
+
+    def _createFunctionForCompletionProposition(self, prop_name):
+        """
+        A helper function to create a function for a completion proposition
+        to represent the state of the given proposition
+        """
+
+        f = self.prop2func[prop_name]
+        #TODO: when there are more than one method in the mapping, f will return a list, otherwise a single boolean
+        return lambda **kwargs: all([f(get_state = True, **kwargs)])
 
     def _makeHandlerMethodConfigAndGetExecutionFunction(self, call_descriptor):
         """ A helper function for createPropositionMappingFunctionFromString

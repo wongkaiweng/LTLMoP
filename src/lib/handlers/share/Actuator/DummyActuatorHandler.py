@@ -9,6 +9,7 @@ Does nothing more than print the actuator name and state; for testing purposes.
 
 import subprocess, os, time, socket
 import sys
+import threading
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -16,6 +17,8 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
     def __init__(self, executor, shared_data):
         self.proj = executor.proj
         self.p_gui = None
+
+        self.thread = {} # a dictionary that holds the thread for each handler method config (hmc)
 
     def _stop(self):
         if self.p_gui is not None:
@@ -27,11 +30,12 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
                 # Probably already closed by user
                 pass
 
-    def setActuator(self, name, actuatorVal,initial):
+    def setActuator(self, name, delay, actuatorVal, initial, hmc_ref):
         """
         Pretends to set actuator of name ``name`` to be in state ``val`` (bool).
 
         name (string): Name of the actuator
+        delay (float): Time in second needed to change the actuator (default=0.0,min=0.0,max=10.0)
         """
 
         if initial:
@@ -66,9 +70,19 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
                 UDPSock.close()
 
             self.p_gui.stdin.write(name + ",init\n")
+
+            # set the thread for this hmc
+            self.thread[hmc_ref] = threading.Thread()
         else:
-            if actuatorVal:
-                time.sleep(0.1)  # Fake some time lag for the actuator to enable
+            if (not self.thread[hmc_ref].is_alive()) and (hmc_ref.actuator_state != actuatorVal):
+                # no thread is running
+                # renew the thread
+                self.thread[hmc_ref] = threading.Timer(delay, hmc_ref.updateActuatorState, [actuatorVal])
+                self.thread[hmc_ref].start()
+            elif self.thread[hmc_ref].is_alive() and (self.actuator_status == actuatorVal):
+                # a thread is running
+                # we need to stop the thread
+                self.thread[hmc_ref].cancel()
 
             self.p_gui.stdin.write("{},{}\n".format(name,int(actuatorVal)))
 

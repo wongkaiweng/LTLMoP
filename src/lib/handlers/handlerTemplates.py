@@ -66,6 +66,10 @@ class ActuatorHandler(Handler):
     """
     Handle connection to actuators and abstraction (discretized actuator value -> continuous action)
     """
+    """Enum to represent the state of an actuator"""
+    ACTIVATED = True # the actuator is activated
+    DEACTIVATED = False # the actuator is deactivated
+
     def __init__(self, *args, **kwds):
         super(ActuatorHandler, self).__init__(*args, **kwds)
 

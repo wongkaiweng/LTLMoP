@@ -328,7 +328,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         ## inputs
         """
         if self.proj.compile_options['fastslow']:
-            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc')]))
+            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors \
+                    if not (x.endswith('_rc') or x.endswith('_ac'))]))
+
+            # update the completion props
+            for prop_name in self.proj.enabled_sensors:
+                if prop_name.endswith('_ac'):
+                    init_prop_assignments.update({prop_name:self.current_outputs[prop_name.replace('_ac','')]})
         else:
         """
         logging.debug(self.proj.enabled_sensors)

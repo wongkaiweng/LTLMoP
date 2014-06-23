@@ -142,6 +142,7 @@ class HandlerMethodConfig(object):
         self.para = para            # list of method parameter config of this method
         self.omit_para = omit_para  # list of parameter names that are omitted
         self.method_reference = None # a reference to this method
+        self.actuator_state = None  # the state of an actuator (see handlerTemplates.py)
 
         if self.para is None:
             self.para = []
@@ -187,6 +188,12 @@ class HandlerMethodConfig(object):
             para_config = self.getParaByName(para_name)
             para_config.setValue(para_value)
 
+    def updateActuatorState(self, new_state):
+        """
+        update the state of an actuator hmc
+        """
+        self.actuator_state = new_state
+
     def getArgDict(self):
         """
         Prepare a dictionary {arg_name:arg_value} based on the method_config.
@@ -196,11 +203,17 @@ class HandlerMethodConfig(object):
 
         return {p.name: p.getValue() for p in self.para}
 
-    def execute(self, **extra_args):
+    def execute(self, get_state = False, **extra_args):
         """
         call the reference of this method with stored parameter values
         value of extra argument can be given by extra_args
+
+        if get_state is True, then return the actuator_state of this hmc
         """
+
+        if get_state:
+            return self.actuator_state
+
         if self.method_reference is None:
             raise ValueError("No reference of method {} is set.".format(self.name))
 
@@ -209,6 +222,11 @@ class HandlerMethodConfig(object):
 
         # Add any extra args
         arg_dict.update(extra_args)
+
+        # Add the reference to this hmc
+        para_names = set(inspect.getargspec(self.method_reference)[0])
+        if 'hmc_ref' in para_names:
+            arg_dict.update({'hmc_ref':self})
 
         return self.method_reference(**arg_dict)
 
@@ -268,7 +286,7 @@ class HandlerConfig(object):
         if self.methods is None:
             self.methods = []
         self.robot_type = robot_type    # type of the robot using this handler for robot specific handlers
-        self.ignore_parameters = set(['self', 'initial', 'executor', 'shared_data', 'actuatorVal'])
+        self.ignore_parameters = set(['self', 'initial', 'executor', 'shared_data', 'actuatorVal', 'hmc_ref'])
                                         # list of name of parameter that should be ignored where parse the handler methods
 
     def __repr__(self):
