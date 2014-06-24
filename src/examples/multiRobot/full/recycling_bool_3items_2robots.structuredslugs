@@ -140,6 +140,23 @@ rob2_rc'=8 -> ! (rob2_rc'=1 | rob2_rc'=2 | rob2_rc'=3 | rob2_rc'=4 | rob2_rc'=5 
 
 rob2_rc'=1 | rob2_rc'=2 | rob2_rc'=3 | rob2_rc'=4 | rob2_rc'=5 | rob2_rc'=6 | rob2_rc'=7 | rob2_rc'=8
 
+(rob1_glass | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_glass'
+(rob1_metal | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_metal'
+(rob1_paper | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_paper'
+
+(rob2_glass | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_glass'
+(rob2_metal | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_metal'
+(rob2_paper | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_paper'
+
+
+rob1_glass' -> ! rob1_metal' & ! rob1_paper'
+rob1_metal' -> ! rob1_glass' & ! rob1_paper'
+rob1_paper' -> ! rob1_glass' & ! rob1_metal'
+
+rob2_glass' -> ! rob2_metal' & ! rob2_paper'
+rob2_metal' -> ! rob2_glass' & ! rob2_paper'
+rob2_paper' -> ! rob2_glass' & ! rob2_metal'
+
 
 [ENV_LIVENESS]
 (rob1=1) -> (rob1_rc'=1)
@@ -288,6 +305,15 @@ rob2_carrying_paper' -> ((rob2_carrying_paper & ! (rob2_rc'=3 & rob2_drop_ac')) 
 ! (rob1_rc'=6 & rob2_rc'=6)
 ! (rob1_rc'=7 & rob2_rc'=7)
 ! (rob1_rc'=8 & rob2_rc'=8)
+
+rob1_carrying_glass -> ! rob1_carrying_metal & ! rob1_carrying_paper
+rob1_carrying_metal -> ! rob1_carrying_glass & ! rob1_carrying_paper
+rob1_carrying_paper -> ! rob1_carrying_glass & ! rob1_carrying_metal
+
+rob2_carrying_glass -> ! rob2_carrying_metal & ! rob2_carrying_paper
+rob2_carrying_metal -> ! rob2_carrying_glass & ! rob2_carrying_paper
+rob2_carrying_paper -> ! rob2_carrying_glass & ! rob2_carrying_metal
+
 
 [SYS_LIVENESS]
 rob1_carrying_metal -> (rob1_rc'=6 & rob1_drop_ac')
