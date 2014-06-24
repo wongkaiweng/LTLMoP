@@ -23,6 +23,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         # we need a data structure to cache sensor states:
         self.sensorValue = {}
         self.proj = executor.proj
+        self.executor = executor
         self.sensorListenInitialized = False
         self._running = True
         self.p_sensorHandler = None
@@ -39,7 +40,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
     def _createSubwindow(self):
             # Create a subprocess
-            self.proj.executor.postEvent("INFO", "(SENS) Starting sensorHandler window and listen thread...")
+            self.executor.postEvent("INFO", "(SENS) Starting sensorHandler window and listen thread...")
             self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Sensor","_SensorHandler.py")], stdin=subprocess.PIPE)
 
             # Create new thread to communicate with subwindow

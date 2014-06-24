@@ -309,21 +309,67 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         logging.info("Initializing sensor and actuator methods...")
         self.hsub.initializeAllMethods()
 
-        if firstRun or self.aut is None:
-            # Figure out our initially true outputs
-            init_outputs = []
-            for prop in self.proj.currentConfig.initial_truths:
-                if prop not in self.proj.enabled_sensors:
-                    init_outputs.append(prop)
-
         ## outputs
         if firstRun or self.strategy is None:
             # save the initial values of the actuators and the custom propositions
             for prop in self.proj.enabled_actuators + self.proj.all_customs:
                 self.current_outputs[prop] = (prop in self.hsub.executing_config.initial_truths)
 
-            init_state = new_aut.chooseInitialState(init_region, init_outputs)#, goal=prev_z)
+        init_prop_assignments.update(self.current_outputs)
 
+        ## inputs
+        init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+
+        #search for initial state in the strategy
+        init_state = new_strategy.searchForOneState(init_prop_assignments)
+        
+        ######## ENV Assumption Learning ###########                  
+        if firstRun:
+            self.compiler = specCompiler.SpecCompiler(spec_file)
+            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+            ########### 
+            #self.tracebackTree : separate spec lines to spec groups
+            #############
+            self.spec, self.tracebackTree, response = self.compiler._writeLTLFile()#False)
+            self.originalLTLSpec  = self.spec.copy()
+            realizable, realizableFS, output  = self.compiler._synthesize()
+            
+            # for mapping from lineNo to LTL
+            for key,value in self.compiler.LTL2SpecLineNumber.iteritems():
+                self.LTLSpec[ value ] = key.replace("\t","").replace("\n","").replace(" ","")
+                
+            if not realizable:
+                self.spec['EnvTrans'] = "\t[](FALSE) &\n"
+                self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
+            else:
+                #self.originalEnvTrans = self.spec['EnvTrans']
+                
+                self.originalEnvTrans = ''
+                # temp fix : TODO: replace oriEnvTrans to originalEnvTrans later
+                self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
+                self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+                
+                self.EnvTransRemoved = []
+                
+            self.recreateLTLfile(self.proj)
+            self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
+            self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
+            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
+            self.originalSysInit = self.spec['SysInit']
+            
+            if realizable:
+                import parseFormulaTest
+                self.LTLViolationCheck.ltl_treeEnvTrans = parseFormulaTest.parseLTL(self.oriEnvTrans)
+            
+                self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+                logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage)
+            else:
+                self.LTLViolationCheck.ltl_treeEnvTrans = None
+        # resynthesize if cannot find initial state
+        if init_state is None:
+            init_state, new_aut  = self.addStatetoEnvSafety(firstRun, new_aut)
+            
+        #############################################
         if init_state is None:
             logging.error("No suitable initial state found; unable to execute. Quitting...")
             sys.exit(-1)
@@ -363,13 +409,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
             tic = self.timer_func()
             ###### ENV VIOLATION CHECK ######  
-            last_next_states = self.aut.last_next_states
+            last_next_states = self.last_next_states
             self.runStrategyIteration()
-            current_next_states = self.aut.last_next_states
+            current_next_states = self.last_next_states
 
-            ###### ENV VIOLATION CHECK ######   
+            ###### ENV VIOLATION CHECK ######  
+            # Take a snapshot of our current sensor readings
+            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
             # Check for environment violation - change the env_assumption_hold to int again (messed up by Python? )
-            env_assumption_hold = int(self.LTLViolationCheck.checkViolation(self.aut.getCurrentState(),self.aut.getSensorState()))
+            env_assumption_hold = int(self.LTLViolationCheck.checkViolation(self.strategy.current_state.getAll(expand_domains=True), sensor_state))
             #print >>sys.__stdout__, str(env_assumption_hold) #+ str(self.LTLViolationCheck.ltl_tree)
             # assumption didn't hold
             if env_assumption_hold == False:
@@ -394,7 +442,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 if self.ENVcharacterization:    
                     if self.recovery:
                         #for the recovery and learning case
-                        if str(self.aut.getCurrentState().name) in [x.name for x in self.aut.last_next_states] \
+                        if str(self.strategy.current_state.state_id) in [x.state_id for x in self.last_next_states] \
                         or self.envViolationCount == self.envViolationThres:
                             self.envViolationCount = 0
                             #self.postEvent("INFO", str(self.aut.getCurrentState().name)+str([x.name for x in self.aut.last_next_states]))
@@ -449,7 +497,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
                     #print "The SENSOR state has been changed."
                     #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
-                self.LTLViolationCheck.append_state_to_LTL(self.aut.getCurrentState(),self.aut.getSensorState()) ############ need to be added!!!!!!!!!!!!!##################
+                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.next_state) ############ need to be added!!!!!!!!!!!!!##################
 
                 if env_assumption_hold == False:
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
@@ -477,7 +525,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             avg_freq = 0.9 * avg_freq + 0.1 * 1 / (toc - tic) # IIR filter
             self.postEvent("FREQ", int(math.ceil(avg_freq)))
             pose = self.hsub.getPose(cached=True)[0:2]
-            self.postEvinstanceent("POSE", tuple(map(int, self.hsub.coordmap_lab2map(pose))))
+            self.postEvent("POSE", tuple(map(int, self.hsub.coordmap_lab2map(pose))))
 
             last_gui_update_time = self.timer_func()
 

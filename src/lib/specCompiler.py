@@ -880,7 +880,7 @@ class SpecCompiler(object):
         """ Call the synthesis tool, and block until it completes.
         Returns success flags `realizable` and `realizableFS`, and the raw
         synthesizer log output. """
-		cmd = self._getGROneCommand("GROneMain")
+        cmd = self._getGROneCommand("GROneMain")
         if cmd is None:
             return (False, False, "")
 

@@ -358,7 +358,7 @@ class State(object):
         for prop_name, prop_value in prop_assignments.iteritems():
             self.setPropValue(prop_name, prop_value)
 
-    def getLTLRepresentation(self, mark_players=True, use_next=False, include_inputs=True):
+    def getLTLRepresentation(self, mark_players=True, use_next=False, include_inputs=True, include_outputs=True):
         """ Returns an LTL formula representing this state.
 
             If `mark_players` is True, input propositions are prepended with
@@ -376,16 +376,22 @@ class State(object):
             if polarity is False:
                 prop = "!"+prop
             return prop
-
-        sys_state = " & ".join((decorate_prop("s."+p, v) for p, v in \
-                                self.getOutputs(expand_domains=True).iteritems()))
+        
+        if include_outputs:
+            sys_state = " & ".join((decorate_prop("s."+p, v) for p, v in \
+                                    self.getOutputs(expand_domains=True).iteritems()))
 
         if include_inputs:
             env_state = " & ".join((decorate_prop("e."+p, v) for p, v in \
                                     self.getInputs(expand_domains=True).iteritems()))
+        if include_outputs and not include_inputs:
+            return sys_state
+        elif not include_outputs and include_inputs:
+            return env_state
+        elif include_outputs and include_inputs:
             return " & ".join([env_state, sys_state])
         else:
-            return sys_state
+            print "please specified either outputs or inputs to print"
 
     def __eq__(self, other):
         return isinstance(other, State) and hash(self) == hash(other)

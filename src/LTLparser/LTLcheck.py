@@ -4,6 +4,7 @@ from numpy import *
 import fsa
 from collections import OrderedDict
 import re
+import strategy
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -123,7 +124,7 @@ class LTL_Check:
         
         if not sensor_state == None: # None: use the stored sensor_state in the object
             self.sensor_state  = sensor_state
-        self.sensor_state_len  = len(self.sensor_state)
+        #self.sensor_state_len  = len(self.sensor_state)
         
         ########### MODIFICATION STAGE ###############
         # 1 : to add only current inputs
@@ -136,15 +137,16 @@ class LTL_Check:
         add_ltl = "\t | ("                
                         
         # for the first stage 
-        curInputs = fsa.stateToLTL(self.current_state,env_output=True)  
+        curInputs = cur_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
         add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
             self.env_safety_assumptions_stage["1"] += add_ltl + ")"                                   
         
         # for the second stage
-        state = fsa.FSA_State("sensors_only",self.sensor_state,None,None)
-        nextInputs = fsa.stateToLTL(state,use_next=True,env_output=True)
+        #sensorStateCollection = cur_state.context
+        #state = strategy.State(sensorStateCollection,self.sensor_state)
+        nextInputs = sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
         add_ltl += " & " + nextInputs         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 : 
@@ -323,10 +325,11 @@ class LTL_Check:
             # for system propositions
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
+                if "bit" in key:  #HACK: will be fixed with fsa
+                    key = key.replace("bit","region_b")
                 if debug_proposition_values == True:
-                    print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state.outputs[key])
-
-                return int(self.current_state.outputs[key]), negate, next
+                    print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state[key])
+                return int(self.current_state[key]), negate, next
                     
             # for environement propositions
             elif "e." in tree[0]:                
@@ -338,7 +341,7 @@ class LTL_Check:
                 if next == True:
                     return int(self.sensor_state[key]), negate, False
                 else:
-                    return int(self.current_state.inputs[key]), negate,  next
+                    return int(self.current_state[key]), negate,  next
             
  
             next_in_loop   = next

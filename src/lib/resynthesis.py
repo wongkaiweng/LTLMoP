@@ -15,6 +15,7 @@ import time, sys, math
 import LTLcheck
 import parseEnglishToLTL
 import numpy
+import executeStrategy
 ######################################
 
 class ExecutorResynthesisExtensions(object):
@@ -46,15 +47,15 @@ class ExecutorResynthesisExtensions(object):
 
         # We need to assign the functions to variables to make the
         # following closure work properly
-        original_fsa_runiteration = fsa.Automaton.runIteration
-        check_flags_func = self._checkForNewInternalFlags
-        def runIterationWithResynthesisChecks(self, *args, **kwds):
-            """ Check for internal flags after every FSA runIteration() call """
-            original_fsa_runiteration(self, *args, **kwds)
-            check_flags_func()
+        #original_fsa_runiteration = executeStrategy.runStrategyIteration#fsa.Automaton.runIteration
+        #check_flags_func = self._checkForNewInternalFlags
+        #def runIterationWithResynthesisChecks(self, *args, **kwds):
+        #    """ Check for internal flags after every FSA runIteration() call """
+        #    original_fsa_runiteration(self, *args, **kwds)
+        #    check_flags_func()
 
         # Update the FSA function to point to our new one
-        fsa.Automaton.runIteration = runIterationWithResynthesisChecks
+        #executeStrategy.runStrategyIteration = runIterationWithResynthesisChecks
 
     def _checkForNewInternalFlags(self):
         """ Detect whether any "internal flags" (i.e. propositions beginning with an underscore)

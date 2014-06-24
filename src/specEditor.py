@@ -32,6 +32,7 @@ import project
 import strategy
 import mapRenderer
 from specCompiler import SpecCompiler
+from asyncProcesses import AsynchronousProcessThread
 from parseEnglishToLTL import writeSpec
 
 from copy import deepcopy
@@ -1235,7 +1236,7 @@ class SpecEditorFrame(wx.Frame):
                 self.appendLog("ERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
         
             ############# ENV Assumption Learning ###################
-            if not realizable:
+            if not compiler.realizable:
                 self.appendLog("\tNow we are changing the environment safety assumptions from [](TRUE) to [](FALSE).\n","BLUE")
                 #path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
                 #LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
