@@ -86,6 +86,8 @@ def writeSpec(text, sensorList, regionList, robotPropList):
     currBitEnc = bitEncode['current']
     nextBitEnc = bitEncode['next']
 
+  
+
     # Regular expressions to help us out
     EnvInitRE = re.compile('^(environment|env) starts with',re.IGNORECASE)
     SysInitRE = re.compile('^(robot |you |)starts?',re.IGNORECASE)
@@ -214,7 +216,11 @@ def writeSpec(text, sensorList, regionList, robotPropList):
                 failed = True
                 continue
 
-            spec['EnvInit']= spec['EnvInit'] + LTLsubformula
+            #### Rewritten by Catherine for ENV Assumption mining ###############
+            ### put parentheses around the env init condition for DNF later #####
+            LTLsubformula = LTLsubformula[0:LTLsubformula.rfind('&')]
+            spec['EnvInit']= spec['EnvInit'] + "(" + LTLsubformula + ")"
+            #####################################################################
             linemap['EnvInit'].append(lineInd)
             
             LTL2LineNo[replaceRegionName(LTLsubformula,bitEncode,regionList)] = lineInd
@@ -260,7 +266,10 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             elif QuantifierFlag == "ALL":
                 LTLRegSubformula = LTLRegSubformula.replace("QUANTIFIER_PLACEHOLDER", quant_and_string['current'])
 
-            spec['SysInit']= spec['SysInit'] + LTLRegSubformula + LTLActSubformula
+            #### Rewritten by Catherine for ENV Assumption mining ###############
+            ### put parentheses around the sys init condition for DNF later #####
+            spec['SysInit']= spec['SysInit'] +  LTLRegSubformula + LTLActSubformula 
+            ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
 
@@ -731,15 +740,21 @@ def writeSpec(text, sensorList, regionList, robotPropList):
             continue
         else:
             unusedProp = unusedProp + [prop]
-    # if there are unused propositions, print out a warning
-    if unusedProp:
-        print '##############################################'
-        print 'Warning:'
-        print 'The following propositions seem to be unused:'
-        print unusedProp
-        print 'They should be removed from the proposition lists\n'
     
-
+    #### Rewritten by Catherine for ENV Assumption mining ###############
+    #### don't want to print out warning for NOW
+    # if there are unused propositions, print out a warning
+    
+    #if unusedProp:
+    #    print '##############################################'
+    #    print 'Warning:'
+    #     print 'The following propositions seem to be unused:'
+    #    print unusedProp
+    #    print 'They should be removed from the proposition lists\n'
+        
+    #### Rewritten by Catherine for ENV Assumption mining ###############
+    spec['SysInit'] = "(" + spec['SysInit'][0:spec['SysInit'].rfind('&')] + ")"
+    #####################################################################
     return spec,linemap,failed,LTL2LineNo,internal_props
 
 

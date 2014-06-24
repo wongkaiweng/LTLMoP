@@ -8,6 +8,10 @@ import sys
 import time
 from collections import defaultdict
 
+############ ENV ASSUMPTION LEARNING ##############
+from copy import deepcopy
+###################################################
+
 class FSAStrategy(strategy.Strategy):
     """
     An automaton object is a collection of state objects along with information about the

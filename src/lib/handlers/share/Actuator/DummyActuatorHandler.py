@@ -15,6 +15,7 @@ import lib.handlers.handlerTemplates as handlerTemplates
 class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
     def __init__(self, executor, shared_data):
         self.proj = executor.proj
+		self.executor = executor
         self.p_gui = None
 
     def _stop(self):
@@ -47,11 +48,11 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
                 try:
                     UDPSock.bind(addr)
                 except:
-                    print "ERROR: Cannot bind to port.  Try killing all Python processes and trying again."
+                    self.executor.postEvent("INFO", "ERROR: Cannot bind to port.  Try killing all Python processes and trying again.")
                     return
 
                 # Create a subprocess
-                print "(ACT) Starting actuatorHandler window..."
+				self.executor.postEvent("INFO", "(ACT) Starting actuatorHandler window...")
                 self.p_gui = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Actuator","_ActuatorHandler.py")], stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
                 data = ''
@@ -60,7 +61,7 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
                     try:
                         data,addrFrom = UDPSock.recvfrom(1024)
                     except socket.timeout:
-                        print "Waiting for GUI..."
+                        self.executor.postEvent("INFO", "Waiting for GUI...")
                         continue
 
                 UDPSock.close()
@@ -72,5 +73,5 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
 
             self.p_gui.stdin.write("{},{}\n".format(name,int(actuatorVal)))
 
-            print "(ACT) Actuator %s is now %s!" % tuple(map(str, (name, actuatorVal)))
+            self.executor.postEvent("INFO","(ACT) Actuator %s is now %s!" % tuple(map(str, (name, actuatorVal))))
 

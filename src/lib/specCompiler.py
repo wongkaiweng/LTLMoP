@@ -145,7 +145,11 @@ class SpecCompiler(object):
 
         createSMVfile(self.proj.getFilenamePrefix(), sensorList, robotPropList)
 
-    def _writeLTLFile(self):
+    def _writeLTLFile(self, createLTL = True):
+        
+        ###### ENV Assumptions Learning #############
+        # createLTL: True for normal cases, False when running execute.py
+        #############################################
 
         self.LTL2SpecLineNumber = None
 
@@ -286,10 +290,23 @@ class SpecCompiler(object):
             # Abort compilation if there were any errors
             if failed:
                 return None, None, None
+            ################ Env Assumption Mining #############
+            self.sensorList = sensorList
+            self.regionList = regionList
+            self.robotPropList = robotPropList
+            if "TRUE" in spec["EnvInit"] :
+                spec["EnvInit"] = "(TRUE)"
+            #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
+            LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
 
-            LTLspec_env = spec["EnvInit"] + spec["EnvTrans"] + spec["EnvGoals"]
-            LTLspec_sys = spec["SysInit"] + spec["SysTrans"] + spec["SysGoals"]
-
+            if spec["SysInit"] == "()":
+                spec["SysInit"] = "(TRUE)"     # not sure
+            ########### for combining sys init with env init ############## 
+            spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
+            spec["EnvInit"] = ""           
+            
+            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"]           
+            ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
             return None, None, None
@@ -364,9 +381,21 @@ class SpecCompiler(object):
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
         LTLspec_sys += "\n&\n" + self.spec['Topo']
+        
+        ###### ENV Assumptions Learning #############
+        ## Saving LTL Spec in separated parts to be used for assumption mining #####
+        self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
+        self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList) 
+        self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)   
+        self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList) 
+        self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList) 
+        self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)  
 
-        createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
-
+        #only write to LTLfile with specEditor
+        if createLTL == True:
+            createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
+        #############################################
+        
         if self.proj.compile_options["parser"] == "slurp":
             self.reversemapping = {self.postprocessLTL(line,sensorList,robotPropList).strip():line.strip() for line in oldspec_env + oldspec_sys}
             self.reversemapping[self.spec['Topo'].replace("\n","").replace("\t","").lstrip().rstrip("\n\t &")] = "TOPOLOGY"
@@ -374,7 +403,9 @@ class SpecCompiler(object):
         #for k,v in self.reversemapping.iteritems():
         #    print "{!r}:{!r}".format(k,v)
 
+        ######## ENV Assumption Learning #######
         return self.spec, traceback, response
+        #######################################
 
     def substituteMacros(self, text):
         """
@@ -545,14 +576,23 @@ class SpecCompiler(object):
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 
         return nonTrivial
+            
+    ################## ENV Assumption Learning ##############
+    def _analyze(self, generatedSpec = False):
+    ##########################################################
+        #print "WARNING: Debug not yet supported by slugs.  Using JTLV."
 
-    def _analyze(self):
         if self.proj.compile_options["synthesizer"].lower() != "jtlv":
             raise RuntimeError("Analysis is currently only supported when using JTLV.")
 
         cmd = self._getGROneCommand("GROneDebug")
         if cmd is None:
             return (False, False, [], "")
+        
+        ############## ENV ASSUMPTION LEARNING #################
+        if generatedSpec:
+            cmd[-1] = cmd[-1].replace(".ltl",'Generated.ltl')
+        ########################################################
 
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
 
@@ -834,11 +874,15 @@ class SpecCompiler(object):
             conjuncts.extend(newCs)
 
         return conjuncts
+    
 
-    def _synthesize(self):
+    def _synthesize(self, with_safety_aut=False):
         """ Call the synthesis tool, and block until it completes.
-            Returns success flags `realizable` and `realizableFS`, and the raw
-            synthesizer log output. """
+        Returns success flags `realizable` and `realizableFS`, and the raw
+        synthesizer log output. """
+		cmd = self._getGROneCommand("GROneMain")
+        if cmd is None:
+            return (False, False, "")
 
         log_string = StringIO.StringIO()
 

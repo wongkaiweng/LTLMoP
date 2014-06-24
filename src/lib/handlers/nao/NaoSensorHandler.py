@@ -19,6 +19,8 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.memProxy = None
         self.sttProxy = None
         self.ldmProxy = None
+        self.soundProxy = None
+        self.proj = proj
 
     ###################################
     ### Available sensor functions: ###
@@ -76,8 +78,37 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
                     print val
                     print "Error msg %s" % (str(e))
             return False
+    """
+    def hearAnything(self, threshold ,initial=False):
 
+        See if Nao hears anything.
+        
+        threshold (float): Minimum acceptable detection confidence (default=0.2,min=0,max=1)
 
+        if initial:
+            ### Initialize speech-to-text
+
+            if self.memProxy is None:
+                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
+
+            if self.soundProxy is None:
+                self.soundProxy = self.naoInitHandler.createProxy('ALSoundDetection')
+
+            return True
+         
+        else:
+            # Check sound state
+            sound = self.memProxy.getData("SoundDetected",0)
+
+            # 'SoundDetected' data structure
+            #[[index_1, type_1, confidence_1, time_1], ...,[index_n, type_n, confidence_n, time_n]]
+            for x in sound:
+                print("INFO","sensor.py:" + str(x))
+                if x[2] >= threshold:
+                    return True
+                
+            return False
+    """                
     def hearWord(self, word, threshold, initial=False):
         """
         Use Nao's speech recognition system to detect a spoken word.
@@ -125,7 +156,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
 
             for wd, prob in zip(wds[0::2], wds[1::2]):
                 if wd == word and prob > threshold:
-                    print "Recognized word '%s' with p = %f" % (wd, prob)
+                    self.proj.executor.postEvent("INFO", "Recognized word '%s' with p = %f" % (wd, prob))
                     return True
 
             return False
@@ -164,5 +195,78 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
                 self.memProxy = self.naoInitHandler.createProxy('ALMemory')
             return True
         else:
+            if bool(self.memProxy.getData('FrontTactilTouched',0)):
+                self.proj.executor.postEvent("INFO","sensor.py: headTapped is True now!")
             return bool(self.memProxy.getData('FrontTactilTouched',0))
+    
+    def headTappedBack(self, initial=False):
+        """
+        Check whether the back button on top of Nao's head is pressed.
+        """
 
+        if initial:
+            if self.memProxy is None:
+                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
+            return True
+        else:
+            if bool(self.memProxy.getData('RearTactilTouched',0)):
+                self.proj.executor.postEvent("INFO","sensor.py: headTappedBack is True now!")    
+            return bool(self.memProxy.getData('RearTactilTouched',0))
+
+    def findChief(self,  initial=False):
+
+        if initial:
+            print "Connecting to Vicon server..."
+            self.viconServer = _pyvicon.ViconStreamer()
+            self.viconServer.connect("10.0.0.102", 800)
+            
+            model_name = "GPSReceiverHelmet-goodaxes:GPSReceiverHelmet01"
+            self.viconServer.selectStreams(["Time"] + ["{} <{}>".format(model_name, s) for s in ("t-X", "t-Y")])
+            self.viconServer.startStreams()
+            
+            # Wait for first data to come in
+            while self.viconServer.getData() is None:
+                pass
+                
+        else:
+            (t, x, y) = self.viconServer.getData()
+            (t, x, y) = [t/100, x/1000, y/1000]
+            
+            # Find our current configuration
+            pose = [6410.0/1000, -768.0/1000]   # center of kitchen now
+            
+            range = 0.5
+            
+            if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
+                print >>sys.__stdout__,"See hat: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)) 
+                
+            return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range
+            
+      
+    def betweenClasses(self,  initial=False):
+
+        if initial:
+            print "Connecting to Vicon server..."
+            self.viconServer2 = _pyvicon.ViconStreamer()
+            self.viconServer2.connect("10.0.0.102", 800)
+            
+            model_name = "folder:mainBody" ##############
+            self.viconServer2.selectStreams(["Time"] + ["{} <{}>".format(model_name, s) for s in ("t-X", "t-Y")])
+            self.viconServer2.startStreams()
+            
+            # Wait for first data to come in
+            while self.viconServer2.getData() is None:
+                pass
+                
+        else:
+            (t, x, y) = self.viconServer2.getData()
+            (t, x, y) = [t/100, x/1000, y/1000]
+            
+            # Find our current configuration
+            pose = [6331.0/1000, 584.0/1000]   # #########center of kitchen now
+            
+            range = 0.5
+            if   math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range:
+                print >>sys.__stdout__,"See STH: currentPose: " + str(pose) + "currentHat: " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
+                
+            return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2)<range

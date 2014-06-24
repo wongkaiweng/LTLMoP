@@ -1,0 +1,177 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "ATM", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "position": [
+            69.0, 
+            92.0
+        ], 
+        "type": "rect", 
+        "size": [
+            126.0, 
+            108.0
+        ]
+    }, 
+    {
+        "name": "bontique", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "position": [
+            653.0, 
+            270.0
+        ], 
+        "type": "rect", 
+        "size": [
+            101.0, 
+            86.0
+        ]
+    }, 
+    {
+        "name": "bookstore", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "position": [
+            653.0, 
+            182.0
+        ], 
+        "type": "rect", 
+        "size": [
+            101.0, 
+            88.0
+        ]
+    }, 
+    {
+        "name": "grocery_store", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "position": [
+            653.0, 
+            92.0
+        ], 
+        "type": "rect", 
+        "size": [
+            101.0, 
+            90.0
+        ]
+    }, 
+    {
+        "name": "home", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "position": [
+            69.0, 
+            463.0
+        ], 
+        "type": "rect", 
+        "size": [
+            109.0, 
+            91.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                371.0
+            ], 
+            [
+                0.0, 
+                108.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                126.0, 
+                0.0
+            ], 
+            [
+                584.0, 
+                0.0
+            ], 
+            [
+                685.0, 
+                0.0
+            ], 
+            [
+                685.0, 
+                90.0
+            ], 
+            [
+                685.0, 
+                178.0
+            ], 
+            [
+                685.0, 
+                264.0
+            ], 
+            [
+                685.0, 
+                462.0
+            ], 
+            [
+                109.0, 
+                462.0
+            ], 
+            [
+                0.0, 
+                462.0
+            ]
+        ], 
+        "position": [
+            69.0, 
+            92.0
+        ], 
+        "type": "poly", 
+        "size": [
+            685.0, 
+            462.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+ATM	boundary	69.0	92.0	195.0	92.0	69.0	92.0	69.0	200.0
+bontique	bookstore	653.0	270.0	754.0	270.0
+bontique	boundary	754.0	270.0	754.0	356.0
+bookstore	grocery_store	653.0	182.0	754.0	182.0
+bookstore	boundary	754.0	182.0	754.0	270.0
+grocery_store	boundary	653.0	92.0	754.0	92.0	754.0	182.0	754.0	92.0
+home	boundary	69.0	554.0	178.0	554.0	69.0	463.0	69.0	554.0
+

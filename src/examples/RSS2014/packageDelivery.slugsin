@@ -1,0 +1,59 @@
+[INPUT]
+packageReady
+doorClosed
+cooking
+betweenClasses
+
+[OUTPUT]
+pickup
+deliver
+obtainedPackage
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+0
+
+[ENV_LIVENESS]
+1
+
+[ENV_INIT]
+
+[SYS_TRANS]
+| ! doorClosed' ! & & bit0' ! bit1' ! bit2'
+| ! cooking' ! & & ! bit0' bit1' bit2'
+| ! betweenClasses' ! & & bit0' bit1' bit2'
+| & ! & & & & ! bit0' bit1' ! bit2' packageReady' ! obtainedPackage' ! pickup' & & & & & ! bit0' bit1' ! bit2' packageReady' ! obtainedPackage' pickup'
+| ! obtainedPackage ! & & ! bit0' bit1' ! bit2'
+| ! & pickup ! deliver obtainedPackage'
+| ! deliver ! obtainedPackage'
+| ! & obtainedPackage ! deliver obtainedPackage'
+| ! & ! obtainedPackage ! pickup ! obtainedPackage'
+| & ! & & & ! bit0' ! bit1' ! bit2' obtainedPackage' ! deliver' & & & & ! bit0' ! bit1' ! bit2' obtainedPackage' deliver'
+| ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' bit1' bit2'
+| ! & & ! bit0 ! bit1 bit2 | | & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' ! bit2'
+| ! & & ! bit0 bit1 ! bit2 | & & ! bit0' bit1' ! bit2' & & ! bit0' ! bit1' bit2'
+| ! & & ! bit0 bit1 bit2 | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & bit0' bit1' ! bit2'
+| ! & & bit0 ! bit1 ! bit2 | | & & bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' bit2'
+| ! & & bit0 ! bit1 bit2 | | | & & bit0' ! bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & bit0 bit1 ! bit2 | | & & bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' bit2'
+| ! & & bit0 bit1 bit2 | | & & bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2'
+
+[SYS_LIVENESS]
+| ! & packageReady' ! obtainedPackage' & & ! bit0' bit1' ! bit2'
+| ! obtainedPackage' & & ! bit0' ! bit1' ! bit2'
+
+[SYS_INIT]
+! packageReady
+! doorClosed
+! cooking
+! betweenClasses
+! pickup
+! deliver
+! obtainedPackage
+! bit0
+! bit1
+bit2
+| | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
+

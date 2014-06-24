@@ -131,6 +131,10 @@ class SimGUI_Frame(wx.Frame):
         self.currentGoal = None
 
         self.Bind(wx.EVT_CLOSE, self.onClose)
+        
+        #################### ENV ASSUMPTION LEARNING ##################
+        self.currentColor = "BLACK"
+        ################################################################
 
     def loadRegionFile(self, filename):
         self.proj.rfi = regions.RegionFileInterface()
@@ -193,7 +197,17 @@ class SimGUI_Frame(wx.Frame):
                         wx.CallAfter(self.appendLog, eventData + "\n", color="BLUE") 
                 elif eventData.startswith("Crossed border"):
                     if self.checkbox_statusLog_border.GetValue():
-                        wx.CallAfter(self.appendLog, eventData + "\n", color="CYAN") 
+                        wx.CallAfter(self.appendLog, eventData + "\n", color="CYAN")
+				#################### ENV ASSUMPTION LEARNING ##################
+				elif eventType == "VIOLATION":
+				    wx.CallAfter(self.appendLog, eventData + "\n", color="RED") 
+				    self.currentColor = "RED"
+				elif eventType == "RESOLVED":
+				    wx.CallAfter(self.appendLog, eventData + "\n", color="GREEN") 
+				    self.currentColor = "BLACK"
+				elif eventType == "INFO":
+				    wx.CallAfter(self.appendLog, eventData + "\n", color= self.currentColor) 
+				############################################################### 
                     # Detect our current goal index
                 elif eventData.startswith("Currently pursuing goal"):
                     m = re.search(r"#(\d+)", eventData)

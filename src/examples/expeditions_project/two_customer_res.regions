@@ -1,0 +1,196 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	0
+boundary	8
+boundary	10
+
+Obstacles: # Names of regions to treat as obstacles
+Table
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "kitchen_sake", 
+        "color": [
+            0, 
+            128, 
+            192
+        ], 
+        "position": [
+            540.0, 
+            456.0
+        ], 
+        "type": "rect", 
+        "size": [
+            149.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "c2", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            129.0, 
+            453.0
+        ], 
+        "type": "rect", 
+        "size": [
+            156.0, 
+            93.0
+        ]
+    }, 
+    {
+        "name": "c1", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                157.0, 
+                0.0
+            ], 
+            [
+                157.0, 
+                87.0
+            ], 
+            [
+                156.0, 
+                87.0
+            ], 
+            [
+                0.0, 
+                87.0
+            ]
+        ], 
+        "position": [
+            130.0, 
+            96.0
+        ], 
+        "type": "poly", 
+        "size": [
+            157.0, 
+            87.0
+        ]
+    }, 
+    {
+        "name": "kitchen_rice", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "position": [
+            535.0, 
+            68.0
+        ], 
+        "type": "rect", 
+        "size": [
+            154.0, 
+            149.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            192, 
+            192, 
+            192
+        ], 
+        "holeList": [], 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                456.0, 
+                0.0
+            ], 
+            [
+                610.0, 
+                0.0
+            ], 
+            [
+                610.0, 
+                149.0
+            ], 
+            [
+                610.0, 
+                208.0
+            ], 
+            [
+                610.0, 
+                307.0
+            ], 
+            [
+                610.0, 
+                327.0
+            ], 
+            [
+                610.0, 
+                388.0
+            ], 
+            [
+                610.0, 
+                517.0
+            ], 
+            [
+                461.0, 
+                517.0
+            ], 
+            [
+                0.0, 
+                517.0
+            ]
+        ], 
+        "position": [
+            79.0, 
+            68.0
+        ], 
+        "type": "poly", 
+        "size": [
+            610.0, 
+            517.0
+        ]
+    }, 
+    {
+        "name": "Table", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "position": [
+            130.0, 
+            183.0
+        ], 
+        "type": "rect", 
+        "size": [
+            156.0, 
+            270.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+kitchen_sake	boundary	540.0	585.0	689.0	585.0	689.0	456.0	689.0	585.0
+c1	Table	130.0	183.0	286.0	183.0
+kitchen_rice	boundary	535.0	68.0	689.0	68.0	689.0	217.0	689.0	68.0
+

@@ -39,7 +39,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
     def _createSubwindow(self):
             # Create a subprocess
-            print "(SENS) Starting sensorHandler window and listen thread..."
+            self.proj.executor.postEvent("INFO", "(SENS) Starting sensorHandler window and listen thread...")
             self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Sensor","_SensorHandler.py")], stdin=subprocess.PIPE)
 
             # Create new thread to communicate with subwindow
@@ -78,7 +78,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 #print name, bit_num, (reg_idx_bin[bit_num] == '1')
                 return (reg_idx_bin[bit_num] == '1')
             else:
-                print "(SENS) WARNING: Region sensor %s is unknown!" % button_name
+                self.executor.postEvent("INFO", "(SENS) WARNING: Region sensor %s is unknown!" % button_name)
                 return None
 
     def buttonPress(self,button_name,init_value,initial=False):
@@ -105,7 +105,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             if button_name in self.sensorValue:
                 return self.sensorValue[button_name]
             else:
-                print "(SENS) WARNING: Sensor %s is unknown!" % button_name
+                self.executor.postEvent("INFO", "(SENS) WARNING: Sensor %s is unknown!" % button_name)
                 return None
 
     def _sensorListen(self):
@@ -134,7 +134,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 continue
 
             if input == '':  # EOF indicates that the connection has been destroyed
-                print "(SENS) Sensor handler listen thread is shutting down."
+                self.executor.postEvent("INFO", "(SENS) Sensor handler listen thread is shutting down.")
                 break
 
             # Check for the initialization signal, if necessary
