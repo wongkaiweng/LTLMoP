@@ -480,12 +480,12 @@ class ExecutorResynthesisExtensions(object):
             spec_file = self.proj.getFilenamePrefix() + ".spec"
             aut_file = self.proj.getFilenamePrefix() + ".aut"
             self.postEvent("INFO","Initializing...")
-            init_state, new_aut = self.initialize(spec_file, aut_file, firstRun=False)  
+            init_state, new_strategy = self.initialize(spec_file, aut_file, firstRun=False)  
         else:
             self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
             sys.exit()
             
-        return init_state, new_aut 
+        return init_state, new_strategy 
     
     def _setSpecificationInitialConditionsToCurrentInDNF(self, proj, firstRun, sensor_state):
         """ Add Env and Sys Init in disjunctive Normal form to LTL

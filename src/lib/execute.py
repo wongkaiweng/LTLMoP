@@ -372,7 +372,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         if init_state is None: 
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
-            init_state, new_aut  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
+            init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
         if init_state is None:
             logging.error("No suitable initial state found; unable to execute. Quitting...")
@@ -382,6 +382,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         self.strategy = new_strategy
         self.strategy.current_state = init_state
+        
+        return  init_state, self.strategy
 
     def run(self):
         ### Get everything moving
