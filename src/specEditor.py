@@ -1256,7 +1256,7 @@ class SpecEditorFrame(wx.Frame):
                 # Rewrite the file
                 import createJTLVinput
                 createJTLVinput.createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
-                realizable, realizableFS, output = compiler._synthesize(with_safety_aut)
+                realizable, realizableFS, output = compiler._synthesize()
             
                 if realizable:
                     self.appendLog("\tAutomaton successfully synthesized for instantaneous actions.\n", "GREEN")

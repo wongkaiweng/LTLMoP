@@ -123,6 +123,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.originalEnvTrans     = ""        # save the existing original env trans
         self.currentViolationLineNo = []
         self.LTLSpec  = {}
+        self.sensor_strategy = None
         
         ############# NEW THING FOR THRESHOLDING FOR RESYNTHESIS
         self.envViolationCount = 0    
@@ -365,10 +366,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage)
             else:
                 self.LTLViolationCheck.ltl_treeEnvTrans = None
+        
+        self.sensor_strategy = new_strategy.states.addNewState()
         # resynthesize if cannot find initial state
-        if init_state is None:
-            init_state, new_aut  = self.addStatetoEnvSafety(firstRun, new_aut)
-            
+        if init_state is None: 
+            for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
+                self.sensor_strategy.setPropValue(prop_name, value)
+            init_state, new_aut  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
         if init_state is None:
             logging.error("No suitable initial state found; unable to execute. Quitting...")
@@ -416,11 +420,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             ###### ENV VIOLATION CHECK ######  
             # Take a snapshot of our current sensor readings
             sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
+            for prop_name, value in sensor_state.iteritems():
+                self.sensor_strategy.setPropValue(prop_name, value)
+            logging.debug('set sensor strategy successfully')
             # Check for environment violation - change the env_assumption_hold to int again (messed up by Python? )
-            env_assumption_hold = int(self.LTLViolationCheck.checkViolation(self.strategy.current_state.getAll(expand_domains=True), sensor_state))
-            #print >>sys.__stdout__, str(env_assumption_hold) #+ str(self.LTLViolationCheck.ltl_tree)
+            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+            print >>sys.__stdout__, str(env_assumption_hold) #+ str(self.LTLViolationCheck.ltl_tree)
             # assumption didn't hold
-            if env_assumption_hold == False:
+            if not env_assumption_hold:
                 logging.debug( last_next_states )
                 logging.debug( current_next_states )
                 if last_next_states != current_next_states:
@@ -472,9 +479,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                                 
                             #NORMAL FOR LEANRING AND RECOVERY    
                             # stop the robot from moving ## needs testing again
-                            self.proj.h_instance['drive'].setVelocity(0,0)
+                            self.hsub.setVelocity(0,0)
                             # Modify the ltl file based on the enviornment change   
-                            self.addStatetoEnvSafety()
+                            self.addStatetoEnvSafety(self.sensor_strategy)
                             
                             for x in self.EnvTransRemoved:
                                 if x in self.LTLViolationCheck.violated_spec_line_no:
@@ -487,9 +494,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     else:
                         #NORMAL FOR LEANRING AND RECOVERY    
                         # stop the robot from moving ## needs testing again
-                        self.proj.h_instance['drive'].setVelocity(0,0)
+                        self.hsub.setVelocity(0,0)
                         # Modify the ltl file based on the enviornment change   
-                        self.addStatetoEnvSafety()
+                        self.addStatetoEnvSafety(self.sensor_strategy)
                 
             
             else: 
@@ -497,7 +504,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
                     #print "The SENSOR state has been changed."
                     #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
-                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.next_state) ############ need to be added!!!!!!!!!!!!!##################
+                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy) ############ need to be added!!!!!!!!!!!!!##################
 
                 if env_assumption_hold == False:
                     print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)

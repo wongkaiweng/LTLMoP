@@ -5,6 +5,7 @@ import fsa
 from collections import OrderedDict
 import re
 import strategy
+import logging
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -102,7 +103,7 @@ class LTL_Check:
 
         if debug_proposition_values == True:
             print "self.current_state.outputs"
-            for key,value in self.current_state.outputs.iteritems():
+            for key,value in self.current_state.iteritems():
                 print str(key) + ": " + str(value)
         
         
@@ -121,11 +122,11 @@ class LTL_Check:
         """    
         if not cur_state == None:    # None: use the stored current_state in the object
             self.current_state = cur_state
-        
+        logging.debug(self.current_state)
         if not sensor_state == None: # None: use the stored sensor_state in the object
             self.sensor_state  = sensor_state
         #self.sensor_state_len  = len(self.sensor_state)
-        
+        logging.debug(self.sensor_state.getInputs())
         ########### MODIFICATION STAGE ###############
         # 1 : to add only current inputs
         # 2 : to add current inputs and next inputs
@@ -137,7 +138,7 @@ class LTL_Check:
         add_ltl = "\t | ("                
                         
         # for the first stage 
-        curInputs = cur_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
+        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
         add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
@@ -146,7 +147,8 @@ class LTL_Check:
         # for the second stage
         #sensorStateCollection = cur_state.context
         #state = strategy.State(sensorStateCollection,self.sensor_state)
-        nextInputs = sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
+        
+        nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
         add_ltl += " & " + nextInputs         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 : 
@@ -329,7 +331,7 @@ class LTL_Check:
                     key = key.replace("bit","region_b")
                 if debug_proposition_values == True:
                     print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state[key])
-                return int(self.current_state[key]), negate, next
+                return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
                     
             # for environement propositions
             elif "e." in tree[0]:                
@@ -339,9 +341,9 @@ class LTL_Check:
                     print "evaluating env propositions: " + str(key) 
 
                 if next == True:
-                    return int(self.sensor_state[key]), negate, False
+                    return int(self.sensor_state.getInputs()[key]), negate, False
                 else:
-                    return int(self.current_state[key]), negate,  next
+                    return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
             
  
             next_in_loop   = next

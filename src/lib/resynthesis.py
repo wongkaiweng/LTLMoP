@@ -424,22 +424,22 @@ class ExecutorResynthesisExtensions(object):
    
    
     ########### ENV Assumption Mining ####################
-    def addStatetoEnvSafety(self, firstRun = False , new_aut = None):
+    def addStatetoEnvSafety(self,  sensor_state, firstRun = False ):
         """
         append the current detected state to our safety
         """
         # Add the current state in init state of the LTL spec
         self.postEvent("VIOLATION","Adding the current state to our initial conditions")
-        if not new_aut == None: # for initializing case
-            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, new_aut)
-        else:
-            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun)
+        #if not new_aut == None: # for initializing case
+        #    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, new_aut)
+        #else:
+        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
 
         if not firstRun:
             self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans)
         
         self.recreateLTLfile(self.proj)
-        realizable, realizableFS, output = self.compiler._synthesize(recovery = self.recovery)  # TRUE for realizable, FALSE for unrealizable
+        realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
          
         if not firstRun:
             self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
@@ -451,7 +451,7 @@ class ExecutorResynthesisExtensions(object):
                         
                     self.recreateLTLfile(self.proj)
 
-                    realizable, realizableFS, output  = self.compiler._synthesize(recovery = self.recovery)  # TRUE for realizable, FALSE for unrealizable
+                    realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                     
                     self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
             
@@ -487,19 +487,19 @@ class ExecutorResynthesisExtensions(object):
             
         return init_state, new_aut 
     
-    def _setSpecificationInitialConditionsToCurrentInDNF(self, proj,firstRun, new_aut = None):
+    def _setSpecificationInitialConditionsToCurrentInDNF(self, proj, firstRun, sensor_state):
         """ Add Env and Sys Init in disjunctive Normal form to LTL
         proj:     our current project
         firstRun: if this is the first time running simGUI
         """
         ## for sensors        
-        if (not firstRun) and (new_aut == None):
-            state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)      
-        else:
-            state = fsa.FSA_State("sensors_only",new_aut.sensor_state,None,None)      
+        #if (not firstRun) and (new_aut == None):
+        #    state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)      
+        #else:
+        #    state = fsa.FSA_State("sensors_only",new_aut.sensor_state,None,None)      
         
         # find the current inputs and outputs from fsa
-        current_env_init_state  = fsa.stateToLTL(state, env_output=True)
+        current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
         
 
 #        # try to compare current spec with the new clause so that no duplicates are added
@@ -546,7 +546,10 @@ class ExecutorResynthesisExtensions(object):
 
         else:
             # find the current inputs and outputs from fsa
-            current_sys_init_state  = self.getCurrentStateAsLTL()
+            #current_sys_init_state  = self.getCurrentStateAsLTL()
+            logging.debug(self.strategy.current_state)
+            current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
+            current_sys_init_state = current_sys_init_state.replace('region_b','bit')
         
         # try to compare current spec with the new clause so that no duplicates are added
         old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")        
