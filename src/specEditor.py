@@ -40,13 +40,6 @@ from copy import deepcopy
 import logging
 import globalConfig
 
-###### ENV VIOLATION CHECK ######
-lib_path = os.path.abspath('../src/LTLparser')
-if lib_path not in sys.path:
-    sys.path.append(lib_path)
-import LTLcheck
-#################################
-
 ######################### WARNING! ############################
 #         DO NOT EDIT GUI CODE BY HAND.  USE WXGLADE.         #
 #   The .wxg file is located in the etc/wxglade/ directory.   #
@@ -166,18 +159,13 @@ class AnalysisResultsDialog(wx.Dialog):
         to_highlight         : return from analysis that the specs with problems
         """
 
-        # Create the root
-        #self.statements["env"] = []
-        #self.statements["sys"] = []  
-        
+        # Create the root        
         self.tree_ctrl_traceback.DeleteAllItems()
         root_node = self.tree_ctrl_traceback.AddRoot("Root")
         LTL  = {}
         for key,value in LTL2SpecLineNumber.iteritems():
             LTL[ value ] = key.replace('\t','').replace('\n','')
-            #print key, value
         
-        print to_highlight
         # highlight guilty specs
         highlightColor = "#FF9900"
         guilty_key = {}
@@ -207,7 +195,6 @@ class AnalysisResultsDialog(wx.Dialog):
                 input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec + "<--(REPLACED)") 
                  # white out original env transition spec 
                 self.tree_ctrl_traceback.SetItemTextColour(input_node,"#a9a8a8")  
-                #self.tree_ctrl_traceback.SetItemBackgroundColour(input_node,"#FA58D0") # pale pink
             else:
                 # Add a node for each input line    
                 input_node = self.tree_ctrl_traceback.AppendItem(root_node, EngSpec) 

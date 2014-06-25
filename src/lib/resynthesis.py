@@ -12,7 +12,7 @@ import specEditor
 import livenessEditor
 import wx
 import time, sys, math
-import LTLcheck
+import LTLParser.LTLcheck
 import parseEnglishToLTL
 import numpy
 import executeStrategy
@@ -430,13 +430,10 @@ class ExecutorResynthesisExtensions(object):
         """
         # Add the current state in init state of the LTL spec
         self.postEvent("VIOLATION","Adding the current state to our initial conditions")
-        #if not new_aut == None: # for initializing case
-        #    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, new_aut)
-        #else:
         self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
 
         if not firstRun:
-            self.spec['EnvTrans'] = self.originalEnvTrans  + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans)
+            self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
         
         self.recreateLTLfile(self.proj)
         realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
@@ -445,17 +442,13 @@ class ExecutorResynthesisExtensions(object):
             self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
             if not realizable:
                 while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
+
                     self.LTLViolationCheck.modify_stage += 1 
-
-                    self.spec['EnvTrans'] = self.originalEnvTrans +  self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans)
-                        
+                    self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")  
                     self.recreateLTLfile(self.proj)
-
                     realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                     
                     self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
-            
-            
 
             if not realizable:
                 self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
@@ -472,7 +465,6 @@ class ExecutorResynthesisExtensions(object):
         # reload aut file if the new ltl is realizable                  
         if realizable:
             self.postEvent("RESOLVED", "The specification violation is resolved.")
-            self.LTLViolationCheck.sameState = False
             #######################
             # Load automaton file #
             #######################
@@ -492,23 +484,8 @@ class ExecutorResynthesisExtensions(object):
         proj:     our current project
         firstRun: if this is the first time running simGUI
         """
-        ## for sensors        
-        #if (not firstRun) and (new_aut == None):
-        #    state = fsa.FSA_State("sensors_only",self.aut.sensor_state,None,None)      
-        #else:
-        #    state = fsa.FSA_State("sensors_only",new_aut.sensor_state,None,None)      
-        
-        # find the current inputs and outputs from fsa
+        ## for sensors
         current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
-        
-
-#        # try to compare current spec with the new clause so that no duplicates are added
-#        old_env_init  = self.spec["EnvInit"].replace("\t", "").replace("\n", "").replace(" ", "")
-#        cur_env_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"        
-#        # check if the clause already exists in self.spec["EnvInit"]
-#        if old_env_init.find(cur_env_init) == -1:
-#            self.spec["EnvInit"]  += "\n| (" + current_env_init_state +  ") " # swap ouputs to inputs
-
          
         ## for actuators and regions
         if firstRun:
@@ -545,29 +522,15 @@ class ExecutorResynthesisExtensions(object):
             current_sys_init_state = " & ".join(tempY)
 
         else:
-            # find the current inputs and outputs from fsa
-            #current_sys_init_state  = self.getCurrentStateAsLTL()
-            logging.debug(self.strategy.current_state)
+            # find the current inputs and outputs from strategy and replace region_b
             current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
             current_sys_init_state = current_sys_init_state.replace('region_b','bit')
         
         # try to compare current spec with the new clause so that no duplicates are added
-        old_sys_init  = self.spec["SysInit"].replace("\t", "").replace("\n", "").replace(" ", "")        
-        #cur_sys_init = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
-        
 
-        # check if the clause already exists in self.spec["SysInit"]
-        """  
-        if old_sys_init.find(cur_sys_init) == -1  :  
-            self.postEvent("INFO","didn't find the same state!")
-            self.postEvent("INFO",str(old_sys_init))
-            self.postEvent("INFO",str(cur_sys_init))
-            #self.spec["SysInit"]  += "\n| (" + current_sys_init_state +  ")"  
-            self.spec["SysInit"]  += "\n| " + cur_sys_init             
-        """
+        # connect the original sysInit with the current system init
         self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init   
-
      
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
@@ -581,26 +544,19 @@ class ExecutorResynthesisExtensions(object):
         if export:
             ltl_filename = proj.getFilenamePrefix() + "Generated.ltl"
         else:
-            ltl_filename = proj.getFilenamePrefix() + ".ltl"
-        
+            ltl_filename = proj.getFilenamePrefix() + ".ltl"       
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        #LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
         LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
-        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
-        
+        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]       
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
-
         LTLspec_sys += "\n&\n" + spec['Topo']
-        logging.debug(LTLspec_env)
+
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
 
     def onMenuAnalyze(self, enableResynthesis = True , exportSpecification = False):
         "simplified version of that in specEditor.py"
-        
-        ##TODO: check to see if we need to recompile
-        #self.compiler, self.badInit = self.onMenuCompile(event, with_safety_aut=False)
 
         # instantiate if necessary (instantiate everytime since we are using showModal here
         Editor = wx.PySimpleApp(0)
@@ -618,58 +574,19 @@ class ExecutorResynthesisExtensions(object):
         
         if not exportSpecification:
             self.analysisDialog.button_2.Disable() 
-               
-        # DNF to CNF from slugsLTL to normalLTL
-        #slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
-        #normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)
-        #slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-        #print >>sys.__stdout__, slugsEnvSafetyCNF
-        #print >>sys.__stdout__,normalEnvSafetyCNF
-        
-        """
-        #self.appendLog("Running analysis...\n","BLUE")
-        # analyze the specification
-        if exportSpecification:
-            self.analysisDialog.appendLog("Original Generated Spec","BLUE")
-            self.analyzeCores()
-            self.analysisDialog.appendLog("\nSimplified Generated Spec","BLUE")
-            self.analyzeCores(generatedSpec = True)
-        else:
-            self.analyzeCores()
-        
-       
-        if exportSpecification:
-            structuredEnglishEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToStructuredEng(slugsEnvSafetyCNF, self.aut)
-            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF,structuredEnglishEnvSafetyCNF) 
-        else:
-            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.spec,self.to_highlight,normalEnvSafetyCNF) 
-        """    
+                   
         self.analyzeCores()
-        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
+        self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, [], self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) # [] was self.EnvTransRemoved
         
-        print >>sys.__stdout__,self.to_highlight
+        logging.debug('toHighlight in analyze cores'+ str(self.to_highlight))
         self.analysisDialog.ShowModal()
-        #time.sleep(30)
-
-        #self.appendLog("Initial analysis complete.\n\n", "BLUE")
-        """
-        if (not realizable or not nonTrivial) and self.unsat:
-            #self.appendLog("Further analysis is possible.\n", "BLUE")
-            self.analysisDialog.button_refine.Enable(True)
-            self.analysisDialog.button_refine.SetLabel("Refine analysis...")
-            self.analysisDialog.Layout()
-        else:
-            #self.appendLog("No further analysis needed.\n", "BLUE")
-            self.analysisDialog.button_refine.Enable(False)
-            self.analysisDialog.button_refine.SetLabel("No further analysis available.")
-            self.analysisDialog.Layout()
-        """
+        
     def onMenuResynthesize(self, envLiveness):
         """
         Resynthesize the specification with a new livenessEditor
         envLiveness: new env liveness from the user
         """
-        logging.debug(envLiveness)
+
         try:
             spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
         except:
@@ -679,38 +596,25 @@ class ExecutorResynthesisExtensions(object):
             if failed:
                 self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
                 return
-             
-        logging.debug(spec['EnvGoals'])
-        """
-        # first check if the entered envliveness by the user contains []<>
-        if not "[]<>" in envLiveness.replace(" ","").replace("\t","").replace("\n",""):
-            self.analysisDialog.appendLog("\nPlease enter environment liveness with []<>\n", "RED")
-            return
-        """
-            
+
         # create a copy of the current spec just for resynthesis
         currentSpec = self.spec.copy()
+        
         # remove []<>(TRUE) if we find it
         if "TRUE" in self.spec["EnvGoals"]: 
             currentSpec["EnvGoals"] =  spec["EnvGoals"]  #envLiveness
         else:
             currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
             
-        logging.debug(currentSpec["EnvGoals"])
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
             self.LTLViolationCheck.modify_stage  = x+1 
-            currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans) ########################### CHANGED FOR TRIAL
-            #currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.env_safety_assumptions_stage[str(x+1)] + ")) &\n" ########################### CHANGED FOR TRIAL
-            
-            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
-            #resynthesizing ...
-            logging.debug(currentSpec)
+            currentSpec["EnvTrans"] = self.LTLViolationCheck.modify_LTL_file("")
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-            #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(self.analyzeCores(appendLog = False)))
+            
             if self.analyzeCores(appendLog = False):
                 break
-            #self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
+
         self.postEvent("INFO","Reset stage to " + str(self.LTLViolationCheck.modify_stage))
         
         if self.analyzeCores():
@@ -721,14 +625,11 @@ class ExecutorResynthesisExtensions(object):
             self.userAddedEnvLivenessLTL.append(spec["EnvGoals"].replace("\t",'').replace("\n",'').replace(" ",""))
             
             #reprint the tree in the analysis dialog
-            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
-            
+            self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, [], self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) # [] was self.EnvTransRemoved
+         
         else:
-            logging.debug(self.spec["EnvTrans"])
-            self.recreateLTLfile(self.proj,self.spec)  # return the ltl file back to normal as the newly added liveness is still unrealizable
-            
-            
-        
+            # return the ltl file back to normal as the newly added liveness is still unrealizable
+            self.recreateLTLfile(self.proj,self.spec)  
     
     def analyzeCores(self,appendLog = True, generatedSpec = False):
         """
@@ -742,6 +643,7 @@ class ExecutorResynthesisExtensions(object):
             output = outputFromSythesize
         else:
             output = outputFromAnalyze
+            
         # Remove lines about garbage collection from the output and remove extraenous lines
         output_lines = [line for line in output.split('\n') if line.strip() and
                         "Garbage collection" not in line and
@@ -751,12 +653,6 @@ class ExecutorResynthesisExtensions(object):
             if realizable:
                 # Strip trailing \n from output so it doesn't scroll past it
                 self.analysisDialog.appendLog("\n"+'\n'.join(output_lines), "BLACK")
-                """
-                if nonTrivial:
-                    self.analysisDialog.appendLog("\nSynthesized automaton is non-trivial.", "BLACK")
-                else:
-                    self.analysisDialog.appendLog("\nSynthesized automaton is trivial.", "RED")
-                """
             else:
                 self.analysisDialog.appendLog(output.rstrip(), "RED")
             self.analysisDialog.appendLog('\n')
@@ -769,13 +665,7 @@ class ExecutorResynthesisExtensions(object):
         export the generated spec
         """
         slugsEnvSafetyCNF = self.compiler._synthesize()[2]
-        normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
-        
-        # take care of the case where normalEnvSafetyCNF is empty --> means [](TRUE)
-        #if len(normalEnvSafetyCNF) > 0 :
-        #    self.originalLTLSpec["EnvTrans"] = normalEnvSafetyCNF + " &\n"
-        #else:
-        #    self.originalLTLSpec["EnvTrans"] = "[](TRUE) &\n"
+        normalEnvSafetyCNF = LTLParser.LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
             
         self.originalLTLSpec["EnvGoals"] = self.spec["EnvGoals"]
         self.recreateLTLfile(self.proj, self.originalLTLSpec, export = True)

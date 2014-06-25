@@ -51,12 +51,9 @@ import globalConfig, logging
 import copy
 import specCompiler
 
-lib_path = os.path.abspath('../src/LTLparser')
-if lib_path not in sys.path:
-    sys.path.append(lib_path)
-import LTLcheck
+import LTLParser.LTLcheck
 import logging
-
+import LTLParser.LTLFormula 
 #################################
 
 ####################
@@ -120,7 +117,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.userAddedEnvLivenessEnglish = []          # keep track of liveness added by the user in English
         self.userAddedEnvLivenessLTL = []          # keep track of liveness added by the user in LTL
         self.originalLTLSpec      = {}          # save the original Spec for exporting
-        self.originalEnvTrans     = ""        # save the existing original env trans
         self.currentViolationLineNo = []
         self.LTLSpec  = {}
         self.sensor_strategy = None
@@ -326,6 +322,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         
         ######## ENV Assumption Learning ###########                  
         if firstRun:
+            
+            # synthesize our controller again just to see if it's realizable and replace spec if FALSE
             self.compiler = specCompiler.SpecCompiler(spec_file)
             self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
             ########### 
@@ -335,39 +333,44 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             self.originalLTLSpec  = self.spec.copy()
             realizable, realizableFS, output  = self.compiler._synthesize()
             
+            # initializing dialog in simGUI when violation occurs
+            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
+            
             # for mapping from lineNo to LTL
             for key,value in self.compiler.LTL2SpecLineNumber.iteritems():
                 self.LTLSpec[ value ] = key.replace("\t","").replace("\n","").replace(" ","")
                 
             if not realizable:
+                # start with always false
                 self.spec['EnvTrans'] = "\t[](FALSE) &\n"
                 self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
             else:
-                #self.originalEnvTrans = self.spec['EnvTrans']
-                
-                self.originalEnvTrans = ''
-                # temp fix : TODO: replace oriEnvTrans to originalEnvTrans later
+                # put all clauses in EnvTrans into conjuncts           
                 self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
                 self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-                
                 self.EnvTransRemoved = []
-                
+             
+            # rewrite ltl file   
             self.recreateLTLfile(self.proj)
-            self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
-            self.LTLViolationCheck = LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
-            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
+            
+            # path of ltl file to be passed to the function 
+            self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  
+            #create LTL checking object
+            self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
+            
+            #safe a copy of the original sys initial condition (for resynthesis later)
             self.originalSysInit = self.spec['SysInit']
             
+            # pass in current env assumptions if we have some
             if realizable:
-                import parseFormulaTest
-                self.LTLViolationCheck.ltl_treeEnvTrans = parseFormulaTest.parseLTL(self.oriEnvTrans)
-            
+                self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(self.oriEnvTrans)       
                 self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-                logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage)
             else:
                 self.LTLViolationCheck.ltl_treeEnvTrans = None
         
-        self.sensor_strategy = new_strategy.states.addNewState()
+        #for using get LTLRepresentation of current sensors
+        self.sensor_strategy = new_strategy.states.addNewState() 
+        
         # resynthesize if cannot find initial state
         if init_state is None: 
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
@@ -419,22 +422,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             self.runStrategyIteration()
             current_next_states = self.last_next_states
 
-            ###### ENV VIOLATION CHECK ######  
             # Take a snapshot of our current sensor readings
             sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
             for prop_name, value in sensor_state.iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
-            logging.debug('set sensor strategy successfully')
-            # Check for environment violation - change the env_assumption_hold to int again (messed up by Python? )
+            
+            # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
-            print >>sys.__stdout__, str(env_assumption_hold) #+ str(self.LTLViolationCheck.ltl_tree)
+
             # assumption didn't hold
             if not env_assumption_hold:
-                logging.debug( last_next_states )
-                logging.debug( current_next_states )
+
+                # count the number of next state changes
                 if last_next_states != current_next_states:
                     self.envViolationCount += 1
-                    logging.debug(self.envViolationCount)
+                    
                 # print out the violated specs
                 for x in self.LTLViolationCheck.violated_spec_line_no:
                     if x not in self.currentViolationLineNo:
@@ -444,76 +446,55 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         else:                 
                             self.postEvent("VIOLATION","Detected the following env safety violation:" )
                             self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
-                
-                               
-                ############################## LEARNING #################################
-                
+
                 if self.ENVcharacterization:    
                     if self.recovery:
-                        #for the recovery and learning case
+                        ########################################
+                        #### FOR BOTH LEANRING AND RECOVERY  ###
+                        ########################################
                         if str(self.strategy.current_state.state_id) in [x.state_id for x in self.last_next_states] \
                         or self.envViolationCount == self.envViolationThres:
+                            
+                            # reset next state difference count
                             self.envViolationCount = 0
-                            #self.postEvent("INFO", str(self.aut.getCurrentState().name)+str([x.name for x in self.aut.last_next_states]))
-                            #remove violation spec
-                            ######################
-                            #if "FALSE" not in self.spec['EnvTrans']:
-                            #    self.LTLViolationCheck.env_safety_assumptions_stage['1'] = ""
-                            #    self.LTLViolationCheck.env_safety_assumptions_stage['2'] = ""
-                            ######################
+                            
+                            # print out assumptions violated
                             for x in self.LTLViolationCheck.violated_spec_line_no:
                                 if x != 0:
                                     if x not in self.EnvTransRemoved:
                                         self.EnvTransRemoved.append(x)
-                                        
-#                                    self.originalEnvTrans = self.originalEnvTrans.replace("\t","").replace("\n","").replace(" ","")                                    
-#                                    self.originalEnvTrans = self.originalEnvTrans.replace(self.LTLSpec[x],"")
-
-#                                    ########################
-#                                    ########################
-#                                    #CHANGED to instead of removing spec, 
-#                                    #modified it to get phi + current state                                 
-#                                    ########################
-#                                    ########################                                    
-#                                    self.LTLViolationCheck.env_safety_assumptions_stage['1'] = self.LTLSpec[x][:-2]
-#                                    self.LTLViolationCheck.env_safety_assumptions_stage['2'] = self.LTLSpec[x][:-2]
-#                                    self.LTLViolationCheck.env_safety_assumptions_stage['3'] = self.LTLSpec[x][:-2]
                                 
-                            #NORMAL FOR LEANRING AND RECOVERY    
+                               
                             # stop the robot from moving ## needs testing again
                             self.hsub.setVelocity(0,0)
+                            
                             # Modify the ltl file based on the enviornment change   
                             self.addStatetoEnvSafety(self.sensor_strategy)
                             
+                            # remove line numbers denoted as violated
                             for x in self.EnvTransRemoved:
                                 if x in self.LTLViolationCheck.violated_spec_line_no:
                                     self.LTLViolationCheck.violated_spec_line_no.remove(x)
-
-#                                    self.LTLSpec[x] = self.LTLViolationCheck.env_safety_assumptions_stage[str(self.LTLViolationCheck.modify_stage)]
-#                                    self.originalEnvTrans = self.spec['EnvTrans']
-
                             
                     else:
-                        #NORMAL FOR LEANRING AND RECOVERY    
-                        # stop the robot from moving ## needs testing again
+                        ###################################
+                        ####### FOR ONLY LEANRING #########
+                        ###################################
+                        # stop the robot from moving 
                         self.hsub.setVelocity(0,0)
                         # Modify the ltl file based on the enviornment change   
                         self.addStatetoEnvSafety(self.sensor_strategy)
                 
             
             else: 
-
-                #if prev_cur_state != self.aut.current_state or prev_sensor_state != self.aut.sensor_state:
-                    #print "The SENSOR state has been changed."
-                    #print "Before:" + self.LTLViolationCheck.env_safety_assumptions_stage["3"]
-                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy) ############ need to be added!!!!!!!!!!!!!##################
+                # assumption not violated but sensor state changes. we add in this new state
+                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
 
                 if env_assumption_hold == False:
-                    print >>sys.__stdout__,"Value should be True: " + str(env_assumption_hold)
+                    logging.debug("Value should be True: " + str(env_assumption_hold))
             
                 # For print violated safety in the log (update lines violated in every iteration)  
-                #if self.recovery and not self.ENVcharacterization: 
-                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] : #and not(0 in self.currentViolationLineNo): 
+                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] : 
                     self.postEvent("RESOLVED", "The specification violation is resolved.")     
             self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
 
