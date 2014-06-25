@@ -586,6 +586,7 @@ class SpecCompiler(object):
             raise RuntimeError("Analysis is currently only supported when using JTLV.")
 
         cmd = self._getGROneCommand("GROneDebug")
+        logging.debug(cmd)
         if cmd is None:
             return (False, False, [], "")
         
@@ -593,7 +594,7 @@ class SpecCompiler(object):
         if generatedSpec:
             cmd[-1] = cmd[-1].replace(".ltl",'Generated.ltl')
         ########################################################
-
+        
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
 
         realizable = False

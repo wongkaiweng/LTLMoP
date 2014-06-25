@@ -592,10 +592,10 @@ class ExecutorResynthesisExtensions(object):
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
 
         LTLspec_sys += "\n&\n" + spec['Topo']
-
+        logging.debug(LTLspec_env)
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
-    
+
     def onMenuAnalyze(self, enableResynthesis = True , exportSpecification = False):
         "simplified version of that in specEditor.py"
         
@@ -669,12 +669,18 @@ class ExecutorResynthesisExtensions(object):
         Resynthesize the specification with a new livenessEditor
         envLiveness: new env liveness from the user
         """
-        
-        spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
-        if failed:
+        logging.debug(envLiveness)
+        try:
+            spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
+        except:
             self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
             return
-        
+        else:
+            if failed:
+                self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
+                return
+             
+        logging.debug(spec['EnvGoals'])
         """
         # first check if the entered envliveness by the user contains []<>
         if not "[]<>" in envLiveness.replace(" ","").replace("\t","").replace("\n",""):
@@ -690,7 +696,7 @@ class ExecutorResynthesisExtensions(object):
         else:
             currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
             
-       
+        logging.debug(currentSpec["EnvGoals"])
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
             self.LTLViolationCheck.modify_stage  = x+1 
             currentSpec["EnvTrans"] = self.originalEnvTrans + self.LTLViolationCheck.modify_LTL_file(self.originalEnvTrans) ########################### CHANGED FOR TRIAL
@@ -698,10 +704,10 @@ class ExecutorResynthesisExtensions(object):
             
             #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(currentSpec["EnvGoals"]))
             #resynthesizing ...
+            logging.debug(currentSpec)
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
             #self.postEvent("INFO","Resynthesis.py: before Resynthesis:" + str(self.analyzeCores(appendLog = False)))
-            
             if self.analyzeCores(appendLog = False):
                 break
             #self.postEvent("INFO","Resynthesis.py: after Resynthesis:" + str(currentSpec["EnvGoals"]))
@@ -718,7 +724,8 @@ class ExecutorResynthesisExtensions(object):
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, self.EnvTransRemoved, self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) 
             
         else:
-            self.recreateLTLfile(self.proj)  # return the ltl file back to normal as the newly added liveness is still unrealizable
+            logging.debug(self.spec["EnvTrans"])
+            self.recreateLTLfile(self.proj,self.spec)  # return the ltl file back to normal as the newly added liveness is still unrealizable
             
             
         
@@ -727,8 +734,14 @@ class ExecutorResynthesisExtensions(object):
         """
         EXCERPT from Vasu's code in specEditor.py
         """
-        (realizable, self.unsat, nonTrivial, self.to_highlight, output) = self.compiler._analyze(generatedSpec)
+        #TODO: not sure why realizable is false from GROneDebug even when it is realizable
+        (realizable, self.unsat, nonTrivial, self.to_highlight, outputFromAnalyze) = self.compiler._analyze(generatedSpec)
+        realizable, realizableFS, outputFromSythesize = self.compiler._synthesize()          
         
+        if realizable:
+            output = outputFromSythesize
+        else:
+            output = outputFromAnalyze
         # Remove lines about garbage collection from the output and remove extraenous lines
         output_lines = [line for line in output.split('\n') if line.strip() and
                         "Garbage collection" not in line and
@@ -738,10 +751,12 @@ class ExecutorResynthesisExtensions(object):
             if realizable:
                 # Strip trailing \n from output so it doesn't scroll past it
                 self.analysisDialog.appendLog("\n"+'\n'.join(output_lines), "BLACK")
+                """
                 if nonTrivial:
                     self.analysisDialog.appendLog("\nSynthesized automaton is non-trivial.", "BLACK")
                 else:
                     self.analysisDialog.appendLog("\nSynthesized automaton is trivial.", "RED")
+                """
             else:
                 self.analysisDialog.appendLog(output.rstrip(), "RED")
             self.analysisDialog.appendLog('\n')
@@ -753,7 +768,7 @@ class ExecutorResynthesisExtensions(object):
         """
         export the generated spec
         """
-        slugsEnvSafetyCNF = self.compiler._synthesize(False, True, True)[2]
+        slugsEnvSafetyCNF = self.compiler._synthesize()[2]
         normalEnvSafetyCNF = LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
         
         # take care of the case where normalEnvSafetyCNF is empty --> means [](TRUE)
