@@ -169,14 +169,13 @@ rob2_r8_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r
 rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc'
 
 
-(rob1_glass | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_glass'
-(rob1_metal | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_metal'
-(rob1_paper | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! rob1_paper'
+(rob1_glass | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! (rob1_metal' | rob1_paper')
+(rob1_metal | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! (rob1_glass' | rob1_paper')
+(rob1_paper | rob1_carrying_glass | rob1_carrying_metal | rob1_carrying_paper) -> ! (rob1_glass' | rob1_metal')
 
-(rob2_glass | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_glass'
-(rob2_metal | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_metal'
-(rob2_paper | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! rob2_paper'
-
+(rob2_glass | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! (rob2_metal' | rob2_paper')
+(rob2_metal | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! (rob2_glass' | rob2_paper')
+(rob2_paper | rob2_carrying_glass | rob2_carrying_metal | rob2_carrying_paper) -> ! (rob2_glass' | rob2_metal')
 
 rob1_glass' -> ! rob1_metal' & ! rob1_paper'
 rob1_metal' -> ! rob1_glass' & ! rob1_paper'
