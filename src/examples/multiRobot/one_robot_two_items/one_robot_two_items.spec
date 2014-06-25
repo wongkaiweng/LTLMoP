@@ -18,12 +18,11 @@ fastslow: True
 decompose: True
 
 CurrentConfigName:
-one_robot_three_items
+one_robot_two_items
 
 Customs: # List of custom propositions
 rob1_carrying_metal
 rob1_carrying_glass
-rob1_carrying_paper
 
 RegionFile: # Relative path of region description file
 eight_regions.regions
@@ -31,7 +30,6 @@ eight_regions.regions
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 rob1_metal, 1
 rob1_glass, 1
-rob1_paper, 1
 rob1_drop_ac, 1
 rob1_pickup_ac, 1
 
