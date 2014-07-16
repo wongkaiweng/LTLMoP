@@ -275,6 +275,18 @@ rob3_glass' -> ! rob3_metal' & ! rob3_paper' & ! rob3_metal' & ! rob2_paper' & !
 rob3_metal' -> ! rob3_glass' & ! rob3_paper' & ! rob2_metal' & ! rob2_paper' & ! rob2_glass' & ! rob1_paper' & ! rob1_metal' & ! rob1_glass'
 rob3_paper' -> ! rob3_glass' & ! rob3_metal' & ! rob2_metal' & ! rob2_paper' & ! rob2_glass' & ! rob1_paper' & ! rob1_metal' & ! rob1_glass'
 
+rob1_r6_rc' -> ! rob1_metal'
+rob2_r6_rc' -> ! rob2_metal'
+rob3_r6_rc' -> ! rob3_metal'
+
+rob1_r8_rc' -> ! rob1_glass'
+rob2_r8_rc' -> ! rob2_glass'
+rob3_r8_rc' -> ! rob3_glass'
+
+rob1_r3_rc' -> ! rob1_paper'
+rob2_r3_rc' -> ! rob2_paper'
+rob3_r3_rc' -> ! rob3_paper'
+
 
 [ENV_LIVENESS]
 (rob1_r1 -> rob1_r1_rc') & (rob1_r2 -> rob1_r2_rc') & (rob1_r3 -> rob1_r3_rc') & (rob1_r4 -> rob1_r4_rc') & (rob1_r5 -> rob1_r5_rc') & (rob1_r6 -> rob1_r6_rc') & (rob1_r7 -> rob1_r7_rc') & (rob1_r8 -> rob1_r8_rc') 
@@ -471,7 +483,7 @@ rob3_carrying_paper' -> ((rob3_carrying_paper & ! (rob3_r3_rc' & rob3_drop_ac'))
 #! (rob1_r3_rc' & rob2_r3_rc')
 ! (rob1_r4_rc' & rob2_r4_rc')
 ! (rob1_r5_rc' & rob2_r5_rc')
-#! (rob1_r6_rc' & rob2_r6_rc')
+! (rob1_r6_rc' & rob2_r6_rc')
 ! (rob1_r7_rc' & rob2_r7_rc')
 #! (rob1_r8_rc' & rob2_r8_rc')
 
@@ -480,7 +492,7 @@ rob3_carrying_paper' -> ((rob3_carrying_paper & ! (rob3_r3_rc' & rob3_drop_ac'))
 #! (rob1_r3_rc' & rob3_r3_rc')
 ! (rob1_r4_rc' & rob3_r4_rc')
 ! (rob1_r5_rc' & rob3_r5_rc')
-#! (rob1_r6_rc' & rob3_r6_rc')
+! (rob1_r6_rc' & rob3_r6_rc')
 ! (rob1_r7_rc' & rob3_r7_rc')
 #! (rob1_r8_rc' & rob3_r8_rc')
 
@@ -489,7 +501,7 @@ rob3_carrying_paper' -> ((rob3_carrying_paper & ! (rob3_r3_rc' & rob3_drop_ac'))
 #! (rob3_r3_rc' & rob2_r3_rc')
 ! (rob3_r4_rc' & rob2_r4_rc')
 ! (rob3_r5_rc' & rob2_r5_rc')
-#! (rob3_r6_rc' & rob2_r6_rc')
+! (rob3_r6_rc' & rob2_r6_rc')
 ! (rob3_r7_rc' & rob2_r7_rc')
 #! (rob3_r8_rc' & rob2_r8_rc')
 
