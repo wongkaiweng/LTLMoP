@@ -47,7 +47,10 @@ class LTL_Check:
         # correspond line numbers in spec to the structure English and the tree converted 
         for key,value in self.LTL2LineNo.iteritems():
             removed_all = key.replace("\t", "").replace("\n", "").replace(" ", "")
-            tree = LTLFormula.parseLTL(removed_all[:-1])
+            #remove trailing & 
+            if "&" == removed_all[-1]:
+                removed_all = removed_all[:-1]
+            tree = LTLFormula.parseLTL(removed_all)
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
 
