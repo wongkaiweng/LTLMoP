@@ -126,7 +126,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.envViolationThres = 5
         
         ################# WHAT MODE ARE WE IN
-        self.recovery = True
+        self.recovery = False
         self.ENVcharacterization = True
         #########################################
 
