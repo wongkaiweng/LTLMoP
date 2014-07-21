@@ -1,0 +1,46 @@
+[INPUT]
+johnny_r1
+johnny_r2
+johnny_r3
+johnny_r4
+johnny_r5
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+| | | | & & & & johnny_r1' ! johnny_r2' ! johnny_r3' ! johnny_r4' ! johnny_r5' & & & & ! johnny_r1' johnny_r2' ! johnny_r3' ! johnny_r4' ! johnny_r5' & & & & ! johnny_r1' ! johnny_r2' johnny_r3' ! johnny_r4' ! johnny_r5' & & & & ! johnny_r1' ! johnny_r2' ! johnny_r3' johnny_r4' ! johnny_r5' & & & & ! johnny_r1' ! johnny_r2' ! johnny_r3' ! johnny_r4' johnny_r5'
+| ! & & bit0 ! bit1 ! bit2 ! johnny_r2'
+| ! & & ! bit0 bit1 bit2 ! johnny_r4'
+| ! & & ! bit0 ! bit1 ! bit2 ! johnny_r5'
+
+[ENV_LIVENESS]
+1
+
+[ENV_INIT]
+
+[SYS_TRANS]
+| ! johnny_r1' ! & & bit0' ! bit1' ! bit2'
+| ! johnny_r2' ! & & ! bit0' bit1' bit2'
+| ! johnny_r3' ! & & ! bit0' ! bit1' bit2'
+| ! johnny_r4' ! & & ! bit0' ! bit1' ! bit2'
+| ! johnny_r5' ! & & ! bit0' bit1' ! bit2'
+| ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0 ! bit1 bit2 | | & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0 bit1 ! bit2 | | & & ! bit0' bit1' ! bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2'
+| ! & & ! bit0 bit1 bit2 | | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & bit0 ! bit1 ! bit2 | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
+
+[SYS_LIVENESS]
+& & ! bit0' bit1' ! bit2'
+
+[SYS_INIT]
+johnny_r3
+bit0
+! bit1
+! bit2
+| | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
+
