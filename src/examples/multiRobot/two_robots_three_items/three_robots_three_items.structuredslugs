@@ -360,7 +360,7 @@ rob1_carrying_glass' -> ((rob1_carrying_glass & ! (rob1_r8_rc' & rob1_drop_ac'))
 ((rob1_carrying_paper & ! (rob1_r3_rc' & rob1_drop_ac')) | (rob1_paper' & rob1_pickup_ac')) -> rob1_carrying_paper'
 rob1_carrying_paper' -> ((rob1_carrying_paper & ! (rob1_r3_rc' & rob1_drop_ac')) | (rob1_paper' & rob1_pickup_ac'))
 
-(! ((rob1_carrying_metal & rob1_r6_rc') | (rob1_carrying_glass & rob1_r8_rc') | (rob1_carrying_paper & rob1_r3_rc')) -> ! rob1_drop')
+(! ((rob1_carrying_metal & rob1_r6_rc' & ! rob1_drop_ac') | (rob1_carrying_glass & rob1_r8_rc' & ! rob1_drop_ac') | (rob1_carrying_paper & rob1_r3_rc' & ! rob1_drop_ac')) -> ! rob1_drop')
 ! (rob1_metal' | rob1_glass' | rob1_paper') -> ! rob1_pickup'
 
 
@@ -417,7 +417,7 @@ rob2_carrying_glass' -> ((rob2_carrying_glass & ! (rob2_r8_rc' & rob2_drop_ac'))
 ((rob2_carrying_paper & ! (rob2_r3_rc' & rob2_drop_ac')) | (rob2_paper' & rob2_pickup_ac')) -> rob2_carrying_paper'
 rob2_carrying_paper' -> ((rob2_carrying_paper & ! (rob2_r3_rc' & rob2_drop_ac')) | (rob2_paper' & rob2_pickup_ac'))
 
-(! ((rob2_carrying_metal & rob2_r6_rc') | (rob2_carrying_glass & rob2_r8_rc') | (rob2_carrying_paper & rob2_r3_rc')) -> ! rob2_drop')
+(! ((rob2_carrying_metal & rob2_r6_rc' & ! rob2_drop_ac') | (rob2_carrying_glass & rob2_r8_rc' & ! rob2_drop_ac') | (rob2_carrying_paper & rob2_r3_rc' & ! rob2_drop_ac')) -> ! rob2_drop')
 ! (rob2_metal' | rob2_glass' | rob2_paper') -> ! rob2_pickup'
 
 
@@ -474,7 +474,7 @@ rob3_carrying_glass' -> ((rob3_carrying_glass & ! (rob3_r8_rc' & rob3_drop_ac'))
 ((rob3_carrying_paper & ! (rob3_r3_rc' & rob3_drop_ac')) | (rob3_paper' & rob3_pickup_ac')) -> rob3_carrying_paper'
 rob3_carrying_paper' -> ((rob3_carrying_paper & ! (rob3_r3_rc' & rob3_drop_ac')) | (rob3_paper' & rob3_pickup_ac'))
 
-(! ((rob3_carrying_metal & rob3_r6_rc') | (rob3_carrying_glass & rob3_r8_rc') | (rob3_carrying_paper & rob3_r3_rc')) -> ! rob3_drop')
+(! ((rob3_carrying_metal & rob3_r6_rc' & ! rob3_drop_ac') | (rob3_carrying_glass & rob3_r8_rc' & ! rob3_drop_ac') | (rob3_carrying_paper & rob3_r3_rc' & ! rob3_drop_ac')) -> ! rob3_drop')
 ! (rob3_metal' | rob3_glass' | rob3_paper') -> ! rob3_pickup'
 
 
