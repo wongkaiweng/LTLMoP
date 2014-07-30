@@ -20,7 +20,7 @@ fastslow: True
 decompose: True
 
 CurrentConfigName:
-two_robots_three_items
+twoNaos
 
 Customs: # List of custom propositions
 rob1_carrying_metal

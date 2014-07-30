@@ -177,7 +177,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
             regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
             pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
-            pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+            #pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
             vertices = numpy.mat(pointArray).T 
-            #print >>sys.__stdout__, self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices))    
+            logging.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
             return is_inside([pose[0], pose[1]], vertices)
