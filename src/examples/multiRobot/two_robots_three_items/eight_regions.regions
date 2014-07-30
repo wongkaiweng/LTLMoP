@@ -6,6 +6,9 @@ Background: # Relative path of background image file
 None
 
 CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	0
+boundary	11
+boundary	14
 
 Obstacles: # Names of regions to treat as obstacles
 
