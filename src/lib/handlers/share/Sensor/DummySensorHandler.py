@@ -10,6 +10,7 @@ Displays a silly little window for faking sensor values by clicking on buttons.
 import threading, subprocess, os, time, socket
 import numpy, math
 import sys
+import logging
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
