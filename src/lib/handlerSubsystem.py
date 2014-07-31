@@ -369,7 +369,7 @@ class HandlerSubsystem:
     
     def setVelocityMultiRobot(self, x, y):
         """
-        a wrapper function that set the velocity to the drive handler of the main robot
+        a wrapper function that set the velocity to the drive handler of all robots
         """
         for robot in self.executing_config.robots:
             # get the drive handler

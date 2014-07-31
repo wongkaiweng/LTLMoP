@@ -126,14 +126,13 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
             print "Killing already running behavior: " + str(b)
             self.behaviorProxy.stopBehavior(b)
 
-    def runBehavior(self, startBehaviorName, endBehaviorName, repeat, repeat_period, actuatorVal, initial=False):
+    def runBehavior(self, startBehaviorName, endBehaviorName, repeat, actuatorVal, initial=False):
         """
         Run a behavior that has been pre-loaded onto Nao with Choregraphe.
 
         startBehaviorName (string): name of behavior to run when prop goes from False to True
         endBehaviorName (string): name of [optional] behavior to run when prop goes from True to False (default="")
-        repeat (bool): choose whether to continuously repeat the startBehavior as long as prop is true [asynchronously] (default=false)
-        repeat_period (float): period with which to repeat the action, if `repeat` is True.  Must be longer than the action length.
+        repeat (bool): choose whether to continuously repeat the startBehavior as long as prop is true (default=False)
         """
 
         if initial:

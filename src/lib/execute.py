@@ -357,7 +357,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         while self.alive.isSet():
             # Idle if we're not running
             if not self.runStrategy.isSet():
-                self.hsub.setVelocity(0,0)
+                self.hsub.setVelocityMultiRobot(0,0)
 
                 # wait for either the FSA to unpause or for termination
                 while (not self.runStrategy.wait(0.1)) and self.alive.isSet():
