@@ -9,6 +9,7 @@ Control predefined Nao motion besides walking
 
 import time
 import threading
+import logging
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -29,7 +30,8 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
         self.asyncBehaviorFlags = {}
         self.asyncBehaviorThreads = {}
 
-        self.thread = {} # a dictionary that holds the thread for each handler method config (hmc)
+        self.behavior_thread = {} # a dictionary that holds the thread for each handler method config (hmc)
+        self.behavior_flag = {}
 
     #####################################
     ### Available actuator functions: ###
@@ -127,7 +129,7 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
             print "Killing already running behavior: " + str(b)
             self.behaviorProxy.stopBehavior(b)
 
-    def runBehavior(self, startBehaviorName, endBehaviorName, repeat, actuatorVal, initial=False):
+    def runBehavior(self, startBehaviorName, endBehaviorName, repeat, actuatorVal, hmc_ref, initial=False):
         """
         Run a behavior that has been pre-loaded onto Nao with Choregraphe.
 
@@ -144,6 +146,16 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
             self.behaviorProxy.preloadBehavior(startBehaviorName)
             if endBehaviorName != "":
                 self.behaviorProxy.preloadBehavior(endBehaviorName)
+                
+            self.behavior_flag[hmc_ref] = False    
+            def completionThread(self):
+                while True:
+                    if self.behavior_flag[hmc_ref]:
+                        actuator_status = not (startBehaviorName in self.behaviorProxy.getRunningBehaviors())
+                        hmc_ref.updateActuatorState(actuator_status)
+
+            self.behavior_thread[hmc_ref] = threading.Thread(target = completionThread, args = (self,))
+            self.behavior_thread[hmc_ref].start()
 
             if repeat:
                 self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = False
@@ -161,41 +173,21 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
                 self.asyncBehaviorThreads[startBehaviorName+","+endBehaviorName].start()
                 
                 # set the thread for this hmc
-                self.thread[hmc_ref] = threading.Thread()
+                self.behavior_thread[hmc_ref] = threading.Thread()
         else:
-            """
             if actuatorVal:
                 if repeat:
                     self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = True
                 else:
                     self._killBehaviors()
-                    self.behaviorProxy.runBehavior(startBehaviorName)
+                    self.behaviorProxy.post.runBehavior(startBehaviorName)
+                    self.behavior_flag[hmc_ref] = True
             else:
                 if repeat:
                     self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = False
 
                 self._killBehaviors()
+                self.behavior_flag[hmc_ref] = False
+                hmc_ref.updateActuatorState(False)
                 if endBehaviorName != "":
                     self.behaviorProxy.runBehavior(endBehaviorName)
-           """
-           if (not self.thread[hmc_ref].is_alive()) and (hmc_ref.actuator_state != actuatorVal):
-                # no thread is running
-                # renew the thread
-                self.thread[hmc_ref] = threading.Timer(delay, hmc_ref.updateActuatorState, [actuatorVal])
-                self.thread[hmc_ref].start()
-                #???????????????????
-                self._killBehaviors()
-                self.behaviorProxy.runBehavior(startBehaviorName)
-                
-                self.currentAction = self.beHaviorProxy.getRunningBehaviors() 
-                (behaviorName in self.currentAction)
-                #??????????????????
-                
-                
-            elif self.thread[hmc_ref].is_alive() and (self.actuator_status == actuatorVal):
-                # a thread is running
-                # we need to stop the thread
-                self.thread[hmc_ref].cancel()
-                self._killBehaviors()
-
-
