@@ -338,7 +338,19 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         else:
         """
         logging.debug(self.proj.enabled_sensors)
-        init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+        #init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+        ###############################
+        #### new from Jim  ############
+        ##############################
+        init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors \
+                    if not (x.endswith('_ac'))]))
+
+        # update the completion props
+        for prop_name in self.proj.enabled_sensors:
+            if prop_name.endswith('_ac'):
+                init_prop_assignments.update({prop_name:self.current_outputs[prop_name.replace('_ac','')]})
+        ###############################
+              
         logging.debug(init_prop_assignments)
         #search for initial state in the strategy
         init_state = new_strategy.searchForOneState(init_prop_assignments)

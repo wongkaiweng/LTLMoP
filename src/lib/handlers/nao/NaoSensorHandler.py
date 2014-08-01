@@ -6,6 +6,7 @@ naoSensors.py - Sensor handler for the Aldebaran Nao
 """
 
 import lib.handlers.handlerTemplates as handlerTemplates
+import logging
 
 class NaoSensorHandler(handlerTemplates.SensorHandler):
     def __init__(self, executor, shared_data):
@@ -19,6 +20,14 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.memProxy = None
         self.sttProxy = None
         self.ldmProxy = None
+        
+        # sensor propositions for fastSlow
+        self.beHaviorProxy = None
+        self.proj = proj
+        self.previousAction = []
+        self.currentAction  = []
+        self.actionStarted  = {}
+        self.actionEnded    = {}
 
     ###################################
     ### Available sensor functions: ###
@@ -165,4 +174,38 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
             return True
         else:
             return bool(self.memProxy.getData('FrontTactilTouched',0))
+
+   def checkBehaviorCompletion(self, behaviorName, initial = False):
+        """
+        Check whether a certain action of Nao is completed.
+        behaviorName (string): The behavior name
+        """
+        if initial:
+            #if self.motionProxy is None:
+            #    self.motionProxy = self.naoInitHandler.createProxy("ALMotion")           
+            if self.memProxy is None:
+                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
+            if self.beHaviorProxy is None:
+                self.beHaviorProxy = self.naoInitHandler.createProxy("ALBehaviorManager")   
+  
+            self.actionStarted[behaviorName] = False
+            self.actionEnded[behaviorName]   = False
+        else:    
+            self.currentAction = self.beHaviorProxy.getRunningBehaviors()  
+            print >>sys.__stdout__,self.currentAction
+            if (behaviorName not in self.previousAction) and (behaviorName in self.currentAction):
+                self.actionStarted[behaviorName] = True
+                logging.info( str(behaviorName) + " action started")
+            
+            if (behaviorName in self.previousAction) and (behaviorName not in self.currentAction):
+                self.actionEnded[behaviorName] = True
+                logging.info( str(behaviorName) + " action ended")
+            
+            self.previousAction = self.currentAction
+            if self.actionStarted[behaviorName] and self.actionEnded[behaviorName]:
+                self.actionStarted[behaviorName] = False
+                self.actionEnded[behaviorName]   = False
+                return True
+            else:
+                return False
 
