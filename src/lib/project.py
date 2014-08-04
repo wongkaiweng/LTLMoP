@@ -214,9 +214,9 @@ class Project:
             self.enabled_sensors.extend(self.rfi.regionsCompleted)
             
             # for actuator completion sensors
-            self.enabled_actuatorsCompleted = self.populateCompletedPropositions(self.enabled_actuators,"_ac")
-            self.all_sensors.extend(self.enabled_actuatorsCompleted)
-            self.enabled_sensors.extend(self.enabled_actuatorsCompleted)
+            #self.enabled_actuatorsCompleted = self.populateCompletedPropositions(self.enabled_actuators,"_ac")
+            #self.all_sensors.extend(self.enabled_actuatorsCompleted)
+            #self.enabled_sensors.extend(self.enabled_actuatorsCompleted)
 
         return True
         
