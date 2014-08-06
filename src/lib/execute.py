@@ -56,6 +56,12 @@ import logging
 import LTLParser.LTLFormula 
 #################################
 
+# -----------------------------------------#
+# -------- two_robot_negotiation ----------#
+# -----------------------------------------#
+import negotiationMonitor.robotClient
+# -----------------------------------------#
+
 ####################
 # HELPER FUNCTIONS #
 ####################
@@ -129,6 +135,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.recovery = False
         self.ENVcharacterization = True
         #########################################
+        
+        # -----------------------------------------#
+        # -------- two_robot_negotiation ----------#
+        # -----------------------------------------#
+        self.robClient = None
+        # -----------------------------------------#
+        
 
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
@@ -159,6 +172,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
+        logging.debug([x.name.encode('ascii') for x in self.proj.rfi.regions])
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors,
@@ -203,7 +217,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         logging.debug("{} does not have _stop() function".format(h.__class__.__name__))
             else:
                 logging.debug("{} handler not found in h_instance".format(htype))
-
+                
+        # ----------------------------- #
+        # -- two_robot_negotiation  --- #
+        # ----------------------------- #
+        self.robClient.closeConnection()
+        # ----------------------------- #
+        
         self.alive.clear()
 
     def pause(self):
@@ -383,6 +403,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         else:
             logging.info("Starting from state %s." % init_state.state_id)
 
+        # -----------------------------------------#
+        # -------- two_robot_negotiation ----------#
+        self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+        self.robClient.updateRobotRegion(init_state.getPropValue('region'))
+        # -----------------------------------------#
+        
         self.strategy = new_strategy
         self.strategy.current_state = init_state
         
@@ -593,7 +619,7 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
 
     # Start the executor's main loop in this thread
     e.run()
-
+    
     # Clean up on exit
     logging.info("Waiting for XML-RPC server to shut down...")
     xmlrpc_server.shutdown()

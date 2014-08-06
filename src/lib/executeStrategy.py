@@ -102,7 +102,13 @@ class ExecutorStrategyExtensions(object):
             if not self.proj.compile_options['fastslow']:
                 # Run actuators after motion
                 self.updateOutputs(self.next_state)
-
+            
+            # ------------------------------- #
+            # --- two_robot_negotiation ----- #
+            # ------------------------------- #
+            self.robClient.updateRobotRegion(self.next_region)
+            # ------------------------------- #
+            
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset
 
