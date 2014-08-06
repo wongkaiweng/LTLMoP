@@ -88,9 +88,7 @@ class RobotClient:
         This function update the region info in the negotiation monitor if the robot is at a next region
         current_region: region object in LTLMoP
         """
-        # send info
-        logging.debug(self.newRegionNameToOld[current_region.name])
-        
+        # send info       
         self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n') # region domain list 
         logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
         

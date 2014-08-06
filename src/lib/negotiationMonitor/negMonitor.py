@@ -41,8 +41,8 @@ def printRegionInfo():
     for region, robots in regionList.iteritems():
         table = ""
         for rob, status in robots.iteritems():
-            table = table + "{0:10}: {1:6} ".format(rob, status)    
-        table = "{0:13}-".format(region) + table
+            table = table + "-{0:10}: {1:6} ".format(rob, status)    
+        table = "{0:13}".format(region) + table
         logging.info(table)
         
 
