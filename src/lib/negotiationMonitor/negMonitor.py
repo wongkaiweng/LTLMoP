@@ -6,7 +6,7 @@ import re    #for parsing msg from client
 import ast   #for parsing msg from client
 import sys   #for program exiting
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
 ##let's set up some constants
@@ -32,6 +32,7 @@ clients = [serv]
 ###############################################        
 
 regionList = {}  #tracking region info for each robot
+spec       = {'SysTrans':{},'SysGoals':{}}
 
 def printRegionInfo():
     """
@@ -44,7 +45,20 @@ def printRegionInfo():
             table = table + "-{0:10}: {1:6} ".format(rob, status)    
         table = "{0:13}".format(region) + table
         logging.info(table)
-        
+
+def printSpec(specType, specStr, robotName):
+    """
+    This function prints the spec type and the spec.
+    specType: specification type
+    specStr : specification string
+    robotName: name of the robot that has this specification
+    """
+    logging.info('===============================================')
+    logging.info('==== ' + specType + 'of' + robotName + '====')
+    logging.info('===============================================')
+    logging.info(specStr)
+    logging.info('===============================================')   
+           
 
 while keepConnection:
     try:
@@ -95,9 +109,28 @@ while keepConnection:
                                 
                         printRegionInfo()
                     
-                    elif item.group('packageType')  == "safety":
-                        # for exchanging safety information later
-                        pass
+                    elif item.group('packageType')  == "SysTrans":
+                        #save SysTrans info from robot
+                        spec['SysTrans'][item.group("robotName")] = item.group("packageValue").replace('\t',"").replace(' ','').replace('\n','') 
+                        printSpec("SysTrans", spec['SysTrans'][item.group("robotName")], item.group("robotName"))
+                                             
+                    elif item.group('packageType')  == "SysGoals":
+                        #save SysGoals info from robot
+                        spec['SysGoals'][item.group("robotName")] = item.group("packageValue").replace('\t',"").replace(' ','').replace('\n','')                 
+                        printSpec("SysGoals", spec['SysGoals'][item.group("robotName")], item.group("robotName")) 
+                    
+                    elif item.group('packageType')  == "EnvTrans":
+                        # send back sys safety of other robots 
+                        # TODO:maybe convert variable names in the spec before sending
+                        
+                        x.send(str(spec['SysTrans']))
+
+                    
+                    elif item.group('packageType')  == "EnvGoals":
+                        # send back sys goals of other robots 
+                        # TODO:maybe convert variable names in the spec before sending
+                        
+                        x.send(str(spec['SysGoals']))
                         
                     elif "closeConnection" in data:
                         x.close() 

@@ -407,6 +407,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------- two_robot_negotiation ----------#
         self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
         self.robClient.updateRobotRegion(init_state.getPropValue('region'))
+        
+        # send current SysTrans and SysGoals
+        self.robClient.sendSysSafetyGuarantees(self.spec['SysTrans'])
+        self.robClient.sendSysGoals(self.spec['SysGoals']) 
+        
+        # TODO: remove later. for testing only
+        self.robClient.requestEnvSafetyAssumptions()
+        self.robClient.requestEnvLivenesses()
         # -----------------------------------------#
         
         self.strategy = new_strategy
