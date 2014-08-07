@@ -54,7 +54,7 @@ def printSpec(specType, specStr, robotName):
     robotName: name of the robot that has this specification
     """
     logging.info('===============================================')
-    logging.info('==== ' + specType + 'of' + robotName + '====')
+    logging.info('==== ' + specType + ' of ' + robotName + ' ====')
     logging.info('===============================================')
     logging.info(specStr)
     logging.info('===============================================')   
@@ -111,12 +111,12 @@ while keepConnection:
                     
                     elif item.group('packageType')  == "SysTrans":
                         #save SysTrans info from robot
-                        spec['SysTrans'][item.group("robotName")] = item.group("packageValue").replace('\t',"").replace(' ','').replace('\n','') 
+                        spec['SysTrans'][item.group("robotName")] = item.group("packageValue")
                         printSpec("SysTrans", spec['SysTrans'][item.group("robotName")], item.group("robotName"))
                                              
                     elif item.group('packageType')  == "SysGoals":
                         #save SysGoals info from robot
-                        spec['SysGoals'][item.group("robotName")] = item.group("packageValue").replace('\t',"").replace(' ','').replace('\n','')                 
+                        spec['SysGoals'][item.group("robotName")] = item.group("packageValue")             
                         printSpec("SysGoals", spec['SysGoals'][item.group("robotName")], item.group("robotName")) 
                     
                     elif item.group('packageType')  == "EnvTrans":

@@ -1,8 +1,12 @@
 #robotClient.py
-import socket
+import socket               # for communication with negotiation monitor
 import logging
-import LTLParser.LTLcheck #for parsing region bits back to region names 
-import ast   #for parsing spec dict from negtiation monitor
+import LTLParser.LTLRegion  # from replace region names in ltl
+import ast                  # for parsing spec dict from negtiation monitor
+import strategy             # for finding regions from region bits
+import numpy                # for generating bit encoding
+import parseEnglishToLTL    # for parsing original region name to region bits
+
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
@@ -17,30 +21,37 @@ class RobotClient:
         
         # initialize our variable
         self.robotName = ''
-        self.regionList = []   #contains original names
         self.regions    = proj.rfi.regions # contains decomposed names
-        
-        #connect to the server
-        self.clientObject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientObject.connect((ADDR))
-        
-        #send out initial info
-        self.initializeRegionExchange(hsub, proj)
+        self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         
         #find out mapping from new_names to old ones
         self.newRegionNameToOld = {}
         for rname, subregs in proj.regionMapping.iteritems():
             for newReg in subregs:
                 self.newRegionNameToOld[newReg] = rname
+                
+        # form regionList with original names
+        self.regionList = []
+        for region in self.regions:
+            self.regionList.append(self.newRegionNameToOld[region.name])
+        
+        # for mapping original region name to bit encoding
+        self.bitEncode = parseEnglishToLTL.bitEncoding(len(self.regionList), int(numpy.ceil(numpy.log2(len(self.regionList)))))       
+        
+        #connect to the server
+        self.clientObject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clientObject.connect((ADDR))
+        
+        #send out initial info
+        self.initializeRegionExchange(hsub)
+          
     
-    def initializeRegionExchange(self, hsub, proj):
+    def initializeRegionExchange(self, hsub):
         """
         This function obtains the name of the robot and also the list of region and send the info to the negotiation Monitor
         hsub:         self.hsub from LTLMoP
-        proj:         self.proj from LTLMoP
         """
         self.robotName  = hsub.executing_config.getRobotByName(hsub.executing_config.main_robot).name
-        self.regionList = [x.encode('ascii') for x, subregs in proj.regionMapping.iteritems()]
         
         # send region info to negotiation monitor
         self.clientObject.send(self.robotName +'-' + 'regionList = ' + str(self.regionList) + '\n')
@@ -66,15 +77,29 @@ class RobotClient:
         """
         This function sends the robot's system safety guarantees to the negotiation monitor.
         """
+        sysSafety = sysSafety.replace('\t',"").replace(' ','').replace('\n','') 
+        
+        # first replace our region bits to original region name with our robot name
+        sysSafety =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(sysSafety, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
+        
+        # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + '-' + 'SysTrans = ' + sysSafety + '\n')
         logging.info('ROBOTCLIENT: send system safety from ' + str(self.robotName))
+        logging.debug('sysSafety:' + sysSafety)
 
     def sendSysGoals(self, sysGoals):
         """
         This function sends the robot's system goals to the negotiation monitor. 
         """
+        sysGoals = sysGoals.replace('\t',"").replace(' ','').replace('\n','')
+        
+        # first replace our region bits to original region name with our robot name
+        sysGoals =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(sysGoals, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
+        
+        # send sysGoals to negotiation monitor
         self.clientObject.send(self.robotName + '-' + 'SysGoals = ' + sysGoals + '\n')
         logging.info('ROBOTCLIENT: send system goals from ' + str(self.robotName))
+        logging.debug('sysGoals:' + sysGoals)
         
     def requestEnvSafetyAssumptions(self):
         """
@@ -85,9 +110,19 @@ class RobotClient:
         
         #receive info
         EnvTrans = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.info(EnvTrans)
+        logging.debug(EnvTrans)
         
-        #LTLParser.LTLcheck.parseBitToRegion(EnvTrans['Bob'], self.regions, self.newRegionNameToOld)
+        # change names to fit our own spec
+        specToAppend = ""
+        for robot, spec in EnvTrans.iteritems():
+            #self.robotName = 'alice' #TODO: remove this later
+            if self.robotName  != robot:
+        
+                # change region props with our name to region bits (parseEnglishToLTL?)              
+                specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
+                
+        logging.debug(specToAppend)
+        
         
     def requestEnvLivenesses(self):
         """
@@ -98,94 +133,16 @@ class RobotClient:
         
         #receive info
         EnvGoals = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.info(EnvGoals)
+        logging.debug(EnvGoals)
         
+        # change names to fit our own spec
+        specToAppend = ""
+        for robot, spec in EnvGoals.iteritems():
+            if self.robotName  != robot:
+                
+                # change region props with our name to region bits (parseEnglishToLTL?)
+                specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
+                
+        logging.debug(specToAppend)
 
-def findRegionBits(ltlFormula):
-    """
-    This function finds regions in bits in ltl formula.
-    INPUT:
-    ltlFormula: ltl formula in normal format
-    OUTPUT:
-    regionBitsList: list of regionbits strings 
-    """
-    pattern = "\(((!?next\(s.bit[0-9]\)&?)|(!?s.bit[0-9]&?))+\)"
-    regionBitsList = [x.group() for x in re.finditer(pattern,ltl)]
-    
-    return regionBitsList
-    
-def matchRegionNumber(regionBitStr, regionList, newRegionNameToOld):
-    """
-    This function takes in a region bit string and regionList and return the actual region string (with next)
-    INPUT:
-    regionBitStr: region string in bits
-    regionList: list of regions (in new names)
-    newRegionNameToOld: dict from new names to old names (made from regionMapping)
-    OUTPUT:
-    targetRegionOrig: the original name of the region 
-    """
-    
-    # figure out if the regionBitStr contains "next"
-    if 'next' in regionBitStr:
-        nextTimeStep = True
-    else:
-        nextTimeStep = False
-    
-    # isolate each bit
-    pattern_bit = "!?(next\()?s.bit[0-9]\)?"
-    individualBitsList = [x.group() for x in re.finditer(pattern_bit, regionBitStr)]
-    
-    regionNo = 0
-    # calculate region number
-    for bit in individualBitsList:
-        bit = bit.replace('next(','').replace(')'.'')
-        
-        if '!' not in bit:
-            regionNo += 2**int(bit)
-            
-    # find region in new name
-    targetRegionNew = regionList[regionNo]
-    
-    # find reigon in old name
-    targetRegionOrig = newRegionNameToOld[targetRegionNew]
-    
-    # return region name string
-    if nextTimeStep is True:
-        return 'next(' + targetRegionOrig + ')'
-    else:
-        return targetRegionOrig
-        
-def replaceAllRegionBitsToOriginalName(ltlFormula, regionList, newRegionNameToOld, robotName = ''):
-    """
-    This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
-    INPUT:
-    ltlFormula: ltlFormula in normal form
-    regionList: list of regions (in new names)
-    newRegionNameToOld: dict from new names to old names (made from regionMapping)
-    robotName: name of the robot (optional)
-    OUTPUT:
-    ltlFormulaReplaced: ltl formula with all regionBits replaced 
-    """
-    
-    # make a copy of the string
-    ltlFormulaReplaced = ltlFormula
-    
-    # find the list of bit regions
-    regionBitsList = findRegionBits(ltlFormula)
-    
-    for regionBitStr in regionBitsList:
-        # find original region name 
-        regionName = matchRegionNumber(regionBitStr, regionList, newRegionNameToOld)
-        
-        # replace region bits to name
-        if robotName is '':
-            ltlFormulaReplaced = ltlFormulaReplaced.replace(regionBitStr,regionName)
-        else:
-            ltlFormulaReplaced = ltlFormulaReplaced.replace(regionBitStr,robotName + '_' + regionName)
-
-    return ltlFormulaReplaced   
-            
-    
-    
-    
     
