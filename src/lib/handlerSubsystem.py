@@ -690,7 +690,11 @@ class HandlerSubsystem:
         given a list of proposition names, return dictionary with {prop_name:sensor_value},
         where sensor_value is a boolean value returned by sensor handler
         """
-
+        
+        # ---- two_robot_negotiation -------- #
+        # update region info
+        self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
+        # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:
             if prop_name not in self.prop2func.keys():

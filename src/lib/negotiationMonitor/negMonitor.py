@@ -73,7 +73,7 @@ while keepConnection:
             else:  
                 # find data pattern
                 data = x.recv(BUFSIZE) 
-                pattern ="(?P<robotName>\w+)-(?P<packageType>\w+)\s=\s(?P<packageValue>\[?.+\]?)\n"        
+                pattern ="(?P<robotName>\w+)-(?P<packageType>\w+)\s=\s(?P<packageValue>\[?.+\]?)\n"      # MSG FORMAT  
                 result = re.finditer(pattern, data)
                 
                 for item in result:
@@ -120,17 +120,16 @@ while keepConnection:
                         printSpec("SysGoals", spec['SysGoals'][item.group("robotName")], item.group("robotName")) 
                     
                     elif item.group('packageType')  == "EnvTrans":
-                        # send back sys safety of other robots 
-                        # TODO:maybe convert variable names in the spec before sending
-                        
+                        # send back sys safety of other robots                         
                         x.send(str(spec['SysTrans']))
-
                     
                     elif item.group('packageType')  == "EnvGoals":
-                        # send back sys goals of other robots 
-                        # TODO:maybe convert variable names in the spec before sending
-                        
+                        # send back sys goals of other robots                         
                         x.send(str(spec['SysGoals']))
+                    
+                    elif item.group('packageType')  == "sensorUpdate":
+                        pass
+
                         
                     elif "closeConnection" in data:
                         x.close() 

@@ -309,6 +309,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.info("Ready.  Press [Start] to begin...")
             self.runStrategy.wait()
 
+        # -----------------------------------------#
+        # -------- two_robot_negotiation ----------#
+        self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+        self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+        # -----------------------------------------#        
+        
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
         ### pass in sensor values, current actuator and custom proposition values, and current region object
 
@@ -405,8 +411,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # -----------------------------------------#
         # -------- two_robot_negotiation ----------#
-        self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+        #self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+        #self.robClient.updateRobotRegion(self._getCurrentRegionFromPose())
         self.robClient.updateRobotRegion(init_state.getPropValue('region'))
+        
         
         # send current SysTrans and SysGoals
         self.robClient.sendSysSafetyGuarantees(self.spec['SysTrans'])

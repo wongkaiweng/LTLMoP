@@ -104,6 +104,8 @@ class RobotClient:
     def requestEnvSafetyAssumptions(self):
         """
         This function requests the system guarantees of the other robots from the negotiation monitor.
+        OUTPUT:
+        specToAppend: ltl formula ready to append to envTrans
         """
         self.clientObject.send(self.robotName + '-' + 'EnvTrans = ' + "''" '\n')
         logging.info('ROBOTCLIENT: request env safety of other robots')
@@ -122,11 +124,14 @@ class RobotClient:
                 specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
                 
         logging.debug(specToAppend)
+        return specToAppend 
         
         
     def requestEnvLivenesses(self):
         """
         This function requests the system goals of the other robots from the negotiation monitor. 
+        OUTPUT:
+        specToAppend: ltl formula ready to append to envGoals
         """
         self.clientObject.send(self.robotName + '-' + 'EnvGoals = ' + "''" '\n')
         logging.info('ROBOTCLIENT: request env goals of other robots')
@@ -142,7 +147,19 @@ class RobotClient:
                 
                 # change region props with our name to region bits (parseEnglishToLTL?)
                 specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
-                
+           
         logging.debug(specToAppend)
+        return specToAppend 
+        
+    def requestRegionInfo(self):
+        """
+        This function request the region dict of all robots.
+        OUTPUT: 
+        robotRegionStatus: dict containing all region info
+        """
+        self.clientObject.send(self.robotName +'-' + 'sensorUpdate = ' + "" + '\n')
+        robotRegionStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        
+        return robotRegionStatus
 
     
