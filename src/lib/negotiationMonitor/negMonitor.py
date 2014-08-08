@@ -57,7 +57,7 @@ def printSpec(specType, specStr, robotName):
     logging.info('==== ' + specType + ' of ' + robotName + ' ====')
     logging.info('===============================================')
     logging.info(specStr)
-    logging.info('===============================================')   
+    logging.info('===============================================')
            
 
 while keepConnection:
@@ -128,8 +128,8 @@ while keepConnection:
                         x.send(str(spec['SysGoals']))
                     
                     elif item.group('packageType')  == "sensorUpdate":
-                        pass
-
+                        # send the list of region info
+                        x.send(str(regionList))
                         
                     elif "closeConnection" in data:
                         x.close() 
@@ -137,15 +137,7 @@ while keepConnection:
                         logging.info('NEGOTIATION_MONITOR: client ' + str(x) + 'is removed.' )
                     else:
                         pass
-
                 
-                """
-                if data: 
-                    for i in clients:
-                        if i is not serv:
-                            i.send(data)
-                else: 
-                """
     except KeyboardInterrupt:
         for x in clients:
             x.close()

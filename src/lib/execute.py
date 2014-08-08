@@ -313,6 +313,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------- two_robot_negotiation ----------#
         self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
         self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+        
+        # TODO: wait until the other robot is ready
         # -----------------------------------------#        
         
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
@@ -341,6 +343,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         init_prop_assignments.update(self.current_outputs)
 
         ## inputs
+        # ---- two_robot_negotiation ----- # 
+        # Make sure the other robot is loaded
+        logging.info('Waiting for other robots to be ready')
+        otherRobotsReady = False
+        while not otherRobotsReady:
+            for key, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
+                if value is None:
+                    break
+            else:
+                otherRobotsReady = True
+        # -------------------------------- #
         init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
         #search for initial state in the strategy

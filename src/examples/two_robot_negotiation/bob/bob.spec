@@ -16,7 +16,7 @@ fastslow: False
 decompose: True
 
 CurrentConfigName:
-bob
+bobWithAliceSensor
 
 Customs: # List of custom propositions
 

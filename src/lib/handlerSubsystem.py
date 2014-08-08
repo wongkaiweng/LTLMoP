@@ -32,6 +32,10 @@ from hsubConfigObjects import MethodParameterConfig,HandlerMethodConfig,\
 import handlers.handlerTemplates as ht
 from hsubParsingUtils import parseCallString
 
+# ---- two_robot_negotiation -------- #
+import logging
+# ----------------------------------- #
+
 # TODO: Get rid of this todo list
 # TODO: Move testing code to doctest
 # TODO: Implement motion handler wrapper
@@ -694,6 +698,7 @@ class HandlerSubsystem:
         # ---- two_robot_negotiation -------- #
         # update region info
         self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
+        logging.info('----------------------------------------------------------------------')
         # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:

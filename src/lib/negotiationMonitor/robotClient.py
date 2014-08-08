@@ -157,7 +157,7 @@ class RobotClient:
         OUTPUT: 
         robotRegionStatus: dict containing all region info
         """
-        self.clientObject.send(self.robotName +'-' + 'sensorUpdate = ' + "" + '\n')
+        self.clientObject.send(self.robotName +'-' + 'sensorUpdate = ' + "''" + '\n')
         robotRegionStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         
         return robotRegionStatus
