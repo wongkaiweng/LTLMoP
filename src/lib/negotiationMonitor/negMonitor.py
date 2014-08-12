@@ -32,7 +32,7 @@ clients = [serv]
 ###############################################        
 
 regionList = {}  #tracking region info for each robot
-spec       = {'SysTrans':{},'SysGoals':{}}
+spec       = {'SysTrans':{},'SysGoals':{},'EnvTrans':{},'EnvGoals':{}}
 
 def printRegionInfo():
     """
@@ -109,23 +109,15 @@ while keepConnection:
                                 
                         printRegionInfo()
                     
-                    elif item.group('packageType')  == "SysTrans":
-                        #save SysTrans info from robot
-                        spec['SysTrans'][item.group("robotName")] = item.group("packageValue")
-                        printSpec("SysTrans", spec['SysTrans'][item.group("robotName")], item.group("robotName"))
-                                             
-                    elif item.group('packageType')  == "SysGoals":
-                        #save SysGoals info from robot
-                        spec['SysGoals'][item.group("robotName")] = item.group("packageValue")             
-                        printSpec("SysGoals", spec['SysGoals'][item.group("robotName")], item.group("robotName")) 
-                    
-                    elif item.group('packageType')  == "EnvTrans":
-                        # send back sys safety of other robots                         
-                        x.send(str(spec['SysTrans']))
-                    
-                    elif item.group('packageType')  == "EnvGoals":
-                        # send back sys goals of other robots                         
-                        x.send(str(spec['SysGoals']))
+                    elif item.group('packageType') in ['SysTrans','SysGoals','EnvTrans','EnvGoals']:
+                        if ast.literal_eval(item.group("packageValue")):
+                            # We got spec from robotClient, save spec
+                            spec[item.group('packageType')][item.group("robotName")] = item.group("packageValue")
+                            printSpec(item.group('packageType'), spec[item.group('packageType')][item.group("robotName")], item.group("robotName"))
+                            
+                        else:
+                            # robotClient is requesting spec, send back spec                  
+                            x.send(str(spec[item.group('packageType')]))
                     
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info

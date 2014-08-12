@@ -72,82 +72,53 @@ class RobotClient:
         """    
         self.clientObject.close()
         logging.info('ROBOTCLIENT: connection to the negotiation monitor is now closed')
-    
-    def sendSysSafetyGuarantees(self, sysSafety):
+   
+    def sendSpec(self, specType, spec):
         """
-        This function sends the robot's system safety guarantees to the negotiation monitor.
+        This function sends the robot's spec to the negotiation monitor according to the specType.
         """
-        sysSafety = sysSafety.replace('\t',"").replace(' ','').replace('\n','') 
+        # check if the specType is valid
+        possibleSpecTypes = ['SysTrans','SysGoals','EnvTrans','EnvGoals']
+        if specType not in possibleSpecTypes:
+            raise TypeError('specType must be ' + str(possibleSpecTypes))
+        
+        spec = spec.replace('\t',"").replace(' ','').replace('\n','') 
         
         # first replace our region bits to original region name with our robot name
-        sysSafety =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(sysSafety, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
+        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
         
         # send sysSafety to negotiation monitor
-        self.clientObject.send(self.robotName + '-' + 'SysTrans = ' + sysSafety + '\n')
+        self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
         logging.info('ROBOTCLIENT: send system safety from ' + str(self.robotName))
-        logging.debug('sysSafety:' + sysSafety)
-
-    def sendSysGoals(self, sysGoals):
-        """
-        This function sends the robot's system goals to the negotiation monitor. 
-        """
-        sysGoals = sysGoals.replace('\t',"").replace(' ','').replace('\n','')
-        
-        # first replace our region bits to original region name with our robot name
-        sysGoals =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(sysGoals, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
-        
-        # send sysGoals to negotiation monitor
-        self.clientObject.send(self.robotName + '-' + 'SysGoals = ' + sysGoals + '\n')
-        logging.info('ROBOTCLIENT: send system goals from ' + str(self.robotName))
-        logging.debug('sysGoals:' + sysGoals)
-        
-    def requestEnvSafetyAssumptions(self):
+        logging.debug( specType + ':' + spec)
+    
+    def requestSpec(self, specType):
         """
         This function requests the system guarantees of the other robots from the negotiation monitor.
         OUTPUT:
         specToAppend: ltl formula ready to append to envTrans
         """
-        self.clientObject.send(self.robotName + '-' + 'EnvTrans = ' + "''" '\n')
-        logging.info('ROBOTCLIENT: request env safety of other robots')
-        
+        # check if the specType is valid
+        possibleSpecTypes = ['SysTrans','SysGoals','EnvTrans','EnvGoals']
+        if specType not in possibleSpecTypes:
+            raise TypeError('specType must be ' + str(possibleSpecTypes))
+            
+        self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
+        logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
+
         #receive info
-        EnvTrans = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.debug(EnvTrans)
+        SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        logging.debug(SpecDict)
         
         # change names to fit our own spec
         specToAppend = ""
-        for robot, spec in EnvTrans.iteritems():
+        for robot, spec in SpecDict.iteritems():
             #self.robotName = 'alice' #TODO: remove this later
             if self.robotName  != robot:
         
                 # change region props with our name to region bits (parseEnglishToLTL?)              
                 specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
                 
-        logging.debug(specToAppend)
-        return specToAppend 
-        
-        
-    def requestEnvLivenesses(self):
-        """
-        This function requests the system goals of the other robots from the negotiation monitor. 
-        OUTPUT:
-        specToAppend: ltl formula ready to append to envGoals
-        """
-        self.clientObject.send(self.robotName + '-' + 'EnvGoals = ' + "''" '\n')
-        logging.info('ROBOTCLIENT: request env goals of other robots')
-        
-        #receive info
-        EnvGoals = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.debug(EnvGoals)
-        
-        # change names to fit our own spec
-        specToAppend = ""
-        for robot, spec in EnvGoals.iteritems():
-            if self.robotName  != robot:
-                
-                # change region props with our name to region bits (parseEnglishToLTL?)
-                specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
-           
         logging.debug(specToAppend)
         return specToAppend 
         

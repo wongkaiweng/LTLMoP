@@ -313,8 +313,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------- two_robot_negotiation ----------#
         self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
         self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-        
-        # TODO: wait until the other robot is ready
         # -----------------------------------------#        
         
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
@@ -344,6 +342,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         ## inputs
         # ---- two_robot_negotiation ----- # 
+        # Wait until the other robot is ready
         # Make sure the other robot is loaded
         logging.info('Waiting for other robots to be ready')
         otherRobotsReady = False
@@ -430,12 +429,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         
         
         # send current SysTrans and SysGoals
-        self.robClient.sendSysSafetyGuarantees(self.spec['SysTrans'])
-        self.robClient.sendSysGoals(self.spec['SysGoals']) 
+        self.robClient.sendSpec('SysTrans',self.spec['SysTrans'])
+        self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         
         # TODO: remove later. for testing only
-        self.robClient.requestEnvSafetyAssumptions()
-        self.robClient.requestEnvLivenesses()
+        self.robClient.requestSpec('SysTrans')
+        self.robClient.requestSpec('SysGoals')
         # -----------------------------------------#
         
         self.strategy = new_strategy
