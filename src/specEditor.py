@@ -1069,7 +1069,10 @@ class SpecEditorFrame(wx.Frame):
 
         #event.Skip()
 
-    def onMenuCompile(self, event): # wxGlade: SpecEditorFrame.<event_handler>
+    def onMenuCompile(self, event, analyze = False): # wxGlade: SpecEditorFrame.<event_handler>
+        """
+        if analyze = True, do not modify spec
+        """
         # Clear the error markers
         self.text_ctrl_spec.MarkerDeleteAll(MARKER_INIT)
         self.text_ctrl_spec.MarkerDeleteAll(MARKER_SAFE)
@@ -1223,7 +1226,7 @@ class SpecEditorFrame(wx.Frame):
                 self.appendLog("ERROR: Specification was unsynthesizable (unrealizable/unsatisfiable) for instantaneous actions.\n", "RED")
         
             ############# ENV Assumption Learning ###################
-            if not compiler.realizable:
+            if not compiler.realizable and not analyze:
                 self.appendLog("\tNow we are changing the environment safety assumptions from [](TRUE) to [](FALSE).\n","BLUE")
                 #path_ltl =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  # path of ltl file to be passed to the function 
                 #LTLViolationCheck = LTLcheck.LTL_Check(path_ltl,compiler.LTL2SpecLineNumber,spec)
@@ -1476,7 +1479,7 @@ class SpecEditorFrame(wx.Frame):
 
     def onMenuAnalyze(self, event): # wxGlade: SpecEditorFrame.<event_handler>
         #TODO: check to see if we need to recompile
-        self.compiler, self.badInit = self.onMenuCompile(event)
+        self.compiler, self.badInit = self.onMenuCompile(event, analyze = True)
 
         # instantiate if necessary
         if self.analysisDialog is None:
