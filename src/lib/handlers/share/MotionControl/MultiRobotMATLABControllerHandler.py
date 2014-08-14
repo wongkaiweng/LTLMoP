@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+"""
+=======================================================
+MultiRobotMATLABController.py - Vector Addition Motion Controller
+=======================================================
+
+Uses the vector field algorithm developed by Stephen R. Lindemann to calculate a global velocity vector to take the robot from the current region to the next region, through a specified exit face.
+"""
+
+from numpy import *
+from __is_inside import *
+import time, math
+import logging
+import __MATLABPythonInterface as MATLABPythonInterface
+
+import lib.handlers.handlerTemplates as handlerTemplates
+
+class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
+    def __init__(self, executor, shared_data):
+        """
+        Vector motion planning controller
+        """
+        # get the list of robots
+        self.robotList = [robot.name for robot in executor.hsub.executing_config.robots]
+
+        self.drive_handler = {}
+        self.pose_handler  = {}
+        self.executor      = executor
+        # Get references to handlers we'll need to communicate with
+        for robot_name in self.robotList: # x must be a string
+            self.drive_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler, robot_name)
+            self.drive_handler[robot_name].loco = executor.hsub.getHandlerInstanceByType(handlerTemplates.LocomotionCommandHandler, robot_name)
+            self.pose_handler[robot_name] = executor.hsub.getHandlerInstanceByType(handlerTemplates.PoseHandler, robot_name)
+
+
+        # Get information about regions
+        self.rfi = executor.proj.rfi
+        self.coordmap_map2lab = executor.hsub.coordmap_map2lab
+        self.last_warning = 0
+
+        # setup matlab communication
+        self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
+
+    def gotoRegion(self, current_regIndices, next_regIndices, last=False):
+        """
+        If ``last`` is True, we will move to the center of the destination region.
+
+        Returns ``True`` if we've reached the destination region.
+
+        current_regAllIndices: dictionary of region indices
+        next_regAllIndices: dictionary of region indices
+        """
+
+        current_regVertices = {}
+        next_regVertices    = {}
+        pose                = {}
+        departed            = {}
+        arrived             = {}
+        V                   = {}
+
+        logging.debug("current_regIndices" + str(current_regIndices))
+        logging.debug("next_regIndices" + str(next_regIndices))
+
+        for robot_name, current_reg in current_regIndices.iteritems():
+
+            # Find our current configuration
+            pose[robot_name] = self.pose_handler[robot_name].getPose()
+
+            # Check if Vicon has cut out
+            # TODO: this should probably go in posehandler?
+            if math.isnan(pose[robot_name][2]):
+                print "WARNING: No Vicon data! Pausing."
+                self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
+                time.sleep(1)
+                #return False not leaving yet until all robots are checked
+            """
+            if current_reg == next_reg and not last:
+                logging.debug('stop moving, regions the same')
+                # No need to move!
+                self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
+                continue
+                #return True not leaving until all robots are checked
+            """
+        ################################
+        ### NORA's motion controller ###
+        ################################
+
+        # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
+        vx, vy = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+
+        #logging.debug("V:"+ str(V))
+        # OUTPUT from Nora's motion control
+        # for example: V = {'robot1':[1,2,3],'robot2':[4,5,6]}
+
+        for idx, robot_name in enumerate(self.robotList):
+            self.drive_handler[robot_name].setVelocity(vx[idx], vy[idx], pose[robot_name][2])
+
+            #logging.debug("pose:" + str(pose))
+            departed[robot_name] = not is_inside([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name])
+            # Figure out whether we've reached the destination region
+            arrived[robot_name] = is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
+
+            if departed[robot_name] and (not arrived[robot_name]) and (time.time()-self.last_warning) > 0.5:
+                #print "WARNING: Left current region but not in expected destination region"
+                # Figure out what region we think we stumbled into
+                for r in self.rfi.regions:
+                    pointArray = [self.coordmap_map2lab(x) for x in r.getPoints()]
+                    vertices = mat(pointArray).T
+                    if is_inside([pose[robot_name][0], pose[robot_name][1]], vertices):
+                        logging.info("I think I'm in " + r.name)
+                        break
+                self.last_warning = time.time()
+
+        #logging.debug("arrived:" + str(arrived))
+        return (True in arrived.values()) #arrived[self.executor.hsub.getMainRobot().name]
