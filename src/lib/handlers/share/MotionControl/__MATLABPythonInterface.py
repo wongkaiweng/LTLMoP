@@ -4,8 +4,8 @@ import logging
 from collections import OrderedDict
 
 threshold = 1.5
-#robots = {'rob1': {'radius':0.5},'rob2':{'radius':0.5}}
-robRadius = OrderedDict({'rob1':0.5,'rob2':0.5,'rob3':1})
+robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5)])
+#robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
 
 def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
@@ -41,11 +41,10 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # -----PYTHON: robotRadius, MATLAB: robots SIZE: nx1----------------
     #-------------------------------------------------------------------
     rRadius = []
-    for roboName, proRadius in robots.iteritems():
-        logging.debug(roboName)
-        rRadius.append([proRadius])
+    for roboName, propRadius in robots.iteritems():
+        rRadius.append([propRadius])
     robotRadius = np.float_(rRadius)
-    #robotRadius = np.float_([[robots['rob1']['radius']], [robots['rob2']['radius']], [robots['rob3']['radius']]])
+
     session.putvalue('robots',robotRadius)
 
     logging.info('Set robotRadius completed')
@@ -65,10 +64,10 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # code for getting vertices in LTLMoP
     for regionIdx, region in enumerate(regions): #TODO: self.rfi.regions in LTLMoP and uncomment below
         logging.debug(regionIdx)
-        #pointArray = [y for y in region.getPoints()]
-        #pointArray = map(coordmap_map2lab, pointArray)
-        #vertices = np.mat(pointArray)
-        vertices = np.mat(region).T #TODO: remove in LTLMoP
+        pointArray = [y for y in region.getPoints()]
+        pointArray = map(coordmap_map2lab, pointArray)
+        vertices = np.mat(pointArray)
+        #vertices = np.mat(region).T #TODO: remove in LTLMoP
 
         # add tempRegion to MATLAB vertices array
         session.putvalue('region'+str(regionIdx),np.float_(vertices))
@@ -105,7 +104,6 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     for roboName, poseLoc in poseDic.iteritems():
         pose.append(poseLoc[0:2])
     robotPose = np.float_(pose)
-    #robotPose = np.float_([pose['rob1'][0:2], pose['rob2'], pose['rob3']])
 
     session.putvalue('pose',robotPose)
 
@@ -120,8 +118,6 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     for roboName, next_idx in next_regIndicesDict.iteritems():
         next_regIndices.append(next_idx)
     robotNextRegion = np.int_([next_regIndices])
-    #robotNextRegion = np.int_([[next_regIndices['rob1']],[next_regIndices['rob2']],[next_regIndices['rob3']]])
-    #robotNextRegion = np.mat(robotNextRegion).T
     session.putvalue('destination',robotNextRegion)
 
     logging.info('Set robotNextRegion completed')

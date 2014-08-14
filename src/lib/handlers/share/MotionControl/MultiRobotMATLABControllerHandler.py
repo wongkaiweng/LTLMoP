@@ -12,6 +12,7 @@ from __is_inside import *
 import time, math
 import logging
 import __MATLABPythonInterface as MATLABPythonInterface
+from collections import OrderedDict
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -58,13 +59,15 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         arrived             = {}
         V                   = {}
 
-        logging.debug("current_regIndices" + str(current_regIndices))
-        logging.debug("next_regIndices" + str(next_regIndices))
+        logging.debug("current_regIndices:" + str(current_regIndices))
+        logging.debug("next_regIndices: " + str(next_regIndices))
 
+        pose = OrderedDict()
         for robot_name, current_reg in current_regIndices.iteritems():
+            next_reg = next_regIndices[robot_name]
 
             # Find our current configuration
-            pose[robot_name] = self.pose_handler[robot_name].getPose()
+            pose.update([(robot_name,self.pose_handler[robot_name].getPose())])
 
             # Check if Vicon has cut out
             # TODO: this should probably go in posehandler?
@@ -73,6 +76,14 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
                 time.sleep(1)
                 #return False not leaving yet until all robots are checked
+
+            # NOTE: Information about region geometry can be found in self.rfi.regions:
+            vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[current_reg].getPoints()])).T
+            current_regVertices[robot_name] = vertices
+
+            vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[next_reg].getPoints()])).T
+            next_regVertices[robot_name] = vertices
+
             """
             if current_reg == next_reg and not last:
                 logging.debug('stop moving, regions the same')
