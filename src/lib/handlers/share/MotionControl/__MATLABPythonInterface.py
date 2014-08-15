@@ -4,7 +4,7 @@ import logging
 from collections import OrderedDict
 
 threshold = 1.5
-robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5)])
+robRadius = OrderedDict([('rob2',0.5), ('rob1',0.5)])
 #robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
 
@@ -116,7 +116,7 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     #-------------------------------------------------------------------
     next_regIndices = []
     for roboName, next_idx in next_regIndicesDict.iteritems():
-        next_regIndices.append(next_idx)
+        next_regIndices.append(next_idx + 1) #correct for matlab idx
     robotNextRegion = np.int_([next_regIndices])
     session.putvalue('destination',robotNextRegion)
 
