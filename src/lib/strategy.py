@@ -340,8 +340,8 @@ class State(object):
         # Make sure that the value makes sense
         domain = self.context.getDomainByName(prop_name)
         if domain is None:
-            if not isinstance(prop_value, bool):
-                raise ValueError("Invalid value of {!r} for proposition {!r}: can only assign boolean values to non-Domain propositions".format(prop_value, prop_name))
+            if not (prop_value is None or isinstance(prop_value, bool)):
+                raise ValueError("Invalid value of {!r} for proposition {!r}: can only assign boolean or None values to non-Domain propositions".format(prop_value, prop_name))
         else:
             if prop_value not in domain.value_mapping:
                 raise ValueError("Invalid value of {!r} for domain {!r}.  Acceptable values: {!r}".format(prop_value, prop_name, domain.value_mapping))
@@ -358,11 +358,12 @@ class State(object):
         for prop_name, prop_value in prop_assignments.iteritems():
             self.setPropValue(prop_name, prop_value)
 
-    def getLTLRepresentation(self, mark_players=True, use_next=False, include_inputs=True, include_outputs=True):
+    def getLTLRepresentation(self, mark_players=True, use_next=False, include_inputs=True, include_outputs=True, swap_players=False):
         """ Returns an LTL formula representing this state.
 
             If `mark_players` is True, input propositions are prepended with
-            "e.", and output propositions are prepended with "s.".
+            "e.", and output propositions are prepended with "s.". (If `swap_players`
+            is True, these labels will be reversed [this feature is used by Mopsy])
 
             If `use_next` is True, all propositions will be modified by a single
             "next()" operator.  `include_env`, which defaults to True,
@@ -371,18 +372,29 @@ class State(object):
 
         # Make a helpful little closure for adding operators to bare props
         def decorate_prop(prop, polarity):
+            #### TEMPORARY HACK: REMOVE ME AFTER OTHER COMPONENTS ARE UPDATED!!!
+            # Rewrite proposition names to make the old bitvector system work
+            # with the new one
+            prop = re.sub(r'^([se]\.)region_b(\d+)$', r'\1bit\2', prop)
+            #################################################################
+
             if use_next:
                 prop = "next({})".format(prop)
             if polarity is False:
                 prop = "!"+prop
             return prop
-        
-        if include_outputs:
-            sys_state = " & ".join((decorate_prop("s."+p, v) for p, v in \
-                                    self.getOutputs(expand_domains=True).iteritems()))
+
+        if swap_players:
+            env_label, sys_label = "s.", "e."
+        else:
+            env_label, sys_label = "e.", "s."
+
+		if include_outputs:
+        	sys_state = " & ".join((decorate_prop(sys_label+p, v) for p, v in \
+                                self.getOutputs(expand_domains=True).iteritems()))
 
         if include_inputs:
-            env_state = " & ".join((decorate_prop("e."+p, v) for p, v in \
+            env_state = " & ".join((decorate_prop(env_label+p, v) for p, v in \
                                     self.getInputs(expand_domains=True).iteritems()))
         if include_outputs and not include_inputs:
             return sys_state
@@ -407,6 +419,15 @@ class State(object):
 
     def __repr__(self):
         return "<State with assignment: inputs = {}, outputs = {} (goal_id = {})>".format(self.getInputs(), self.getOutputs(), self.goal_id)
+
+    def __deepcopy__(self, memo):
+        """ Implement a 'medium' copy so that we make a true copy of the assignment dictionary,
+            but don't accidentally make copies of proposition values (e.g. region objects). """
+
+        new_state = copy.copy(self)
+        new_state.assignment = copy.copy(self.assignment)
+
+        return new_state
 
 class StateCollection(list):
     """
@@ -681,6 +702,57 @@ class Strategy(object):
 
             # Close the digraph
             f_out.write("} \n")
+        
+    def findAllCycles(self):
+
+        """
+        Returns a list of lists of states forming cycles, or an empty list if strategy is acyclic
+        """
+
+
+        visited = set()  # list of visited nodes
+        st = {}      # dictionary maintaining the minimum spanning tree rooted at each node
+        cycles = []
+        
+        
+        
+        def loop_back(st, state, ancestor):
+            """
+            Finds a path from the state to an ancestor.
+            """
+            path = []
+            while (state != ancestor):
+                if state is None:
+                    return []
+                path.append(state)
+                state = st[state]
+            path.append(state)
+            path.reverse()
+            return path
+
+        def dfs(state):
+                visited.add(state)
+                # recursively explore the connected component
+                for s in self.findTransitionableStates({}, state):
+                    if s not in visited:
+                        st[s] = state
+                        dfs(s) #recursion
+                    else:
+                        if (st[state] != s):
+                            cycle = loop_back(st, state, s)
+                            if cycle:
+                                cycles.append(cycle)
+                                
+
+        for s in self.iterateOverStates():
+            if s not in visited:
+                st[s] = None # spanning tree rooted at that state
+                # explore this state's connected component
+                dfs(s)
+        return cycles
+
+        
+
 
 def TestLoadAndDump(spec_filename):
     import project
