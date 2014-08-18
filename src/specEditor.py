@@ -1542,12 +1542,12 @@ class SpecEditorFrame(wx.Frame):
                 if h_item[1] == "goals":
                     self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_LIVE)
                 #############  ENV Assumption Mining CAT ############
-                elif h_item[1] == "trans":
-                    for lineNo in self.tracebackTree[tb_key]:
-                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_SAFE)
-                elif h_item[1] == "init":
-                    for lineNo in self.tracebackTree[tb_key]:
-                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_INIT)
+#                elif h_item[1] == "trans":
+#                    for lineNo in self.tracebackTree[tb_key]:
+#                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_SAFE)
+#                elif h_item[1] == "init":
+#                    for lineNo in self.tracebackTree[tb_key]:
+#                        self.text_ctrl_spec.MarkerAdd(lineNo-1, MARKER_INIT)
                 ##################################
                 
         elif self.proj.compile_options["parser"] == "slurp":
@@ -1578,15 +1578,15 @@ class SpecEditorFrame(wx.Frame):
 
         self.highlightCores(guilty, self.compiler)
         
-        if not self.unsat:
-            to_highlight = self.compiler._iterateCores()
-        
-            #highlight guilty transitions
-            if self.proj.compile_options["parser"] == "structured":
-                for h_item in to_highlight:
-                    tb_key = h_item[0].title() + h_item[1].title()
-                    if h_item[2] < len(self.tracebackTree[tb_key]):
-                        self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_INIT)
+        #if not self.unsat:
+        to_highlight = self.compiler._iterateCores()
+    
+        #highlight guilty transitions
+        if self.proj.compile_options["parser"] == "structured":
+            for h_item in to_highlight:
+                tb_key = h_item[0].title() + h_item[1].title()
+                if h_item[2] < len(self.tracebackTree[tb_key]):
+                    self.text_ctrl_spec.MarkerAdd(self.tracebackTree[tb_key][h_item[2]]-1, MARKER_INIT)
 
         self.appendLog("Final analysis complete.\n", "BLUE")
 

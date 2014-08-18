@@ -389,7 +389,7 @@ class State(object):
         else:
             env_label, sys_label = "e.", "s."
 
-		if include_outputs:
+        if include_outputs:
         	sys_state = " & ".join((decorate_prop(sys_label+p, v) for p, v in \
                                 self.getOutputs(expand_domains=True).iteritems()))
 
