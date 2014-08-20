@@ -47,6 +47,9 @@ from resynthesis import ExecutorResynthesisExtensions
 from executeStrategy import ExecutorStrategyExtensions
 import globalConfig, logging
 
+import LTLParser.LTLcheck
+import logging
+import LTLParser.LTLFormula 
 
 ####################
 # HELPER FUNCTIONS #
@@ -360,7 +363,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
         else:
             logging.info("Starting from state %s." % init_state.state_id)
-
+        
+        ### RUNTIME MONITORING ###
+        self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(spec_file.replace('.spec','_envTrans.ltl'))
+        ##########################
+        
         self.strategy = new_strategy
         self.strategy.current_state = init_state
         self.last_sensor_state = self.strategy.current_state.getInputs()
@@ -395,7 +402,16 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 self.runStrategyIterationInstanteousAction()
             toc = self.timer_func()
 
+            ### RUNTIME MONITORING ###
+            # Take a snapshot of our current sensor readings
+            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
+            logging.info(sensor_state)
+                
+            # Check for environment violation - change the env_assumption_hold to int again 
+            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
             #self.checkForInternalFlags()
+
+            #######################################
 
             # Rate limiting of execution and GUI update
             while (toc - tic) < 0.05:
