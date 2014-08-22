@@ -132,5 +132,30 @@ class RobotClient:
         robotRegionStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         
         return robotRegionStatus
+        
+    def updateStrategyStatus(self,realizable):
+        """
+        This function update the current controller status to the negotiation monitor.
+        INPUT: 
+        realizable: True or False
+        """
+        self.clientObject.send(self.robotName +'-' + 'updateStrategyStatus = ' + str(realizable) + '\n')
+        strategyStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        
+    def requestStrategyStatus(self):
+        """
+        This function requests the controller status of the other robots from the negotiation monitor.
+        OUTPUT:
+        realizable: dict of boolean. realizable['rob1'] = True
+        """
+        self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus' +' = ' + "''" '\n')
+        logging.info('ROBOTCLIENT: request strategy status of other robots')
 
+        #receive info
+        realizable = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        logging.debug(realizable)
+        
+        return realizable
+        
+        
     

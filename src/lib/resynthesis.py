@@ -17,6 +17,9 @@ import parseEnglishToLTL
 import numpy
 import executeStrategy
 ######################################
+# -------- two_robot_negotiation ----#
+import logging
+# -----------------------------------#
 
 class ExecutorResynthesisExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
@@ -450,6 +453,64 @@ class ExecutorResynthesisExtensions(object):
                     
                     self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
+            if not realizable:
+                # --- two_robot_negotiation --- #
+                # exchange info with the other robot and see if it is realizable.
+                
+                # send SysGoals, EnvTrans and EnvGoals
+                self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
+                self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+                self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+                
+                # obtain SysGoals, EnvTrans of the other robot 
+                # TODO: may not have anything the other robot have not sent info.
+                otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
+                otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')
+                          
+            
+                # see if we can take the other robot's actions into account. 
+                # first we safe a copy of our SysTrans and EnvGoals before modification
+                oldSpecSysTrans = self.spec['SysTrans']
+                oldSpecEnvGoals = self.spec['EnvGoals']
+                
+                # conjunct the spec of the other robots
+                self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
+                logging.debug('SysTrans:' + self.spec['SysTrans'])
+                self.spec['EnvGoals'] = otherRobotSysGoals + oldSpecEnvGoals
+                logging.debug('EnvGoals:' + self.spec['EnvGoals'])
+                
+                # resynthesize
+                self.postEvent("INFO","Use exchanged information to synthesize new controller.")
+                self.recreateLTLfile(self.proj)
+                realizable, realizableFS, output  = self.compiler._synthesize()
+                
+                # notify negotiation monitor our controller statues
+                self.robClient.updateStrategyStatus(realizable)
+                
+                if not realizable:
+                    self.postEvent("VIOLATION","Controller with exchanged information is unrealizable. Removing exchanged info from the spec")  
+                    
+                    # remove spec from other robots
+                    self.spec['SysTrans'] = oldSpecSysTrans
+                    self.spec['EnvGoals'] = oldSpecEnvGoals
+                    self.recreateLTLfile(self.proj)
+                    realizable, realizableFS, output  = self.compiler._synthesize()
+                    
+                    # check if the other robot is realizable. 
+                    otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
+                    
+                    if True in otherRobotsStrategyStatus.values():
+                        # Yes.. it's great.. we can use our old spec. Maybe need liveness.
+                        self.postEvent('INFO','We can continue with the old spec as the other robot will yield for us')
+                    else:
+                        # TODO: NO.. what should we do
+                        self.postEvnet('INFO','What should we do.. Both of us are unrealizable... ')
+                    
+                else:
+                    self.postEvent("INFO",'Specification is realizable with the exchanged info.')                    
+                
+                # ------------------------------# 
+                
             if not realizable:
                 self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
                 # Use Vasu's analysis tool 

@@ -33,6 +33,7 @@ clients = [serv]
 
 regionList = {}  #tracking region info for each robot
 spec       = {'SysTrans':{},'SysGoals':{},'EnvTrans':{},'EnvGoals':{}}
+strategyStatus = {} #tracking strategy status of each robot (true for realizable. False otherwise.)
 
 def printRegionInfo():
     """
@@ -122,7 +123,15 @@ while keepConnection:
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info
                         x.send(str(regionList))
-                        
+                    
+                    elif item.group('packageType')  == "updateStrategyStatus":
+                        # received controller info
+                        strategyStatus[item.group("robotName")] = item.group("packageValue")
+                    
+                    elif item.group('packageType')  == "requestStrategyStatus": 
+                        # send controller info    
+                        x.send(str(strategyStatus))               
+                     
                     elif "closeConnection" in data:
                         x.close() 
                         clients.remove(x)
