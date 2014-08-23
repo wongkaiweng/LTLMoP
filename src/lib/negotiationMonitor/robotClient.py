@@ -103,23 +103,23 @@ class RobotClient:
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
             
-        self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
-        logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
-
-        #receive info
-        SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.debug(SpecDict)
-        
-        # change names to fit our own spec
         specToAppend = ""
-        for robot, spec in SpecDict.iteritems():
-            #self.robotName = 'alice' #TODO: remove this later
-            if self.robotName  != robot:
         
-                # change region props with our name to region bits (parseEnglishToLTL?)              
-                specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
-                
-        logging.debug(specToAppend)
+        #TODO: need to get full picture of all robots. The current solution only deals with two robots
+        while not len(specToAppend):    
+            self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
+            logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
+
+            #receive info
+            SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        
+            for robot, spec in SpecDict.iteritems():
+                #self.robotName = 'alice' #TODO: remove this later
+                if self.robotName  != robot:
+            
+                    # change region props with our name to region bits (parseEnglishToLTL?)              
+                    specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
+        
         return specToAppend 
         
     def requestRegionInfo(self):
@@ -140,7 +140,6 @@ class RobotClient:
         realizable: True or False
         """
         self.clientObject.send(self.robotName +'-' + 'updateStrategyStatus = ' + str(realizable) + '\n')
-        strategyStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         
     def requestStrategyStatus(self):
         """
@@ -148,7 +147,7 @@ class RobotClient:
         OUTPUT:
         realizable: dict of boolean. realizable['rob1'] = True
         """
-        self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus' +' = ' + "''" '\n')
+        self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus = ' + "''" '\n')
         logging.info('ROBOTCLIENT: request strategy status of other robots')
 
         #receive info

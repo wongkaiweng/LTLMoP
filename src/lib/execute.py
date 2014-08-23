@@ -354,7 +354,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 otherRobotsReady = True
         # -------------------------------- #
         init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
-
+        
         #search for initial state in the strategy
         init_state = new_strategy.searchForOneState(init_prop_assignments)
         
@@ -420,22 +420,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
         else:
             logging.info("Starting from state %s." % init_state.state_id)
-
-        # -----------------------------------------#
-        # -------- two_robot_negotiation ----------#
-        #self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
-        #self.robClient.updateRobotRegion(self._getCurrentRegionFromPose())
-        self.robClient.updateRobotRegion(init_state.getPropValue('region'))
-        
-        
-        # send current SysTrans and SysGoals
-        self.robClient.sendSpec('SysTrans',self.spec['SysTrans'])
-        self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
-        
-        # TODO: remove later. for testing only
-        self.robClient.requestSpec('SysTrans')
-        self.robClient.requestSpec('SysGoals')
-        # -----------------------------------------#
         
         self.strategy = new_strategy
         self.strategy.current_state = init_state
@@ -548,7 +532,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     logging.debug("Value should be True: " + str(env_assumption_hold))
             
                 # For print violated safety in the log (update lines violated in every iteration)  
-                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] : 
+                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and self.recovery: 
                     self.postEvent("RESOLVED", "The specification violation is resolved.")     
             self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
 

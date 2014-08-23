@@ -50,6 +50,14 @@ Environment starts with alice_r3
 # johnny5 can only be at one region at a time
 always (alice_r1 and not alice_r2 and not alice_r3 and not alice_r4 and not  alice_r5) or (not alice_r1 and alice_r2 and not alice_r3 and not alice_r4 and not alice_r5) or (not alice_r1 and not alice_r2 and alice_r3 and not alice_r4 and not alice_r5) or (not alice_r1 and not alice_r2 and not alice_r3 and alice_r4 and not alice_r5) or (not alice_r1 and not alice_r2 and not alice_r3 and not alice_r4 and alice_r5)
 
+# transition assumptions
+if you were sensing alice_r1 then do (alice_r1 or alice_r2)
+if you were sensing alice_r2 then do (alice_r1 or alice_r2 or alice_r3 or alice_r4)
+if you were sensing alice_r3 then do (alice_r2 or alice_r3 or alice_r5)
+if you were sensing alice_r4 then do (alice_r2 or alice_r4 or alice_r5)
+if you were sensing alice_r5 then do (alice_r3 or alice_r4 or alice_r5)
+
+
 # guarantee the path is clear to r5
 if you were in r1 then do not alice_r2
 if you were in r2 then do not alice_r4

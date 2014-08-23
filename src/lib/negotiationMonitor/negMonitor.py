@@ -76,7 +76,7 @@ while keepConnection:
                 data = x.recv(BUFSIZE) 
                 pattern ="(?P<robotName>\w+)-(?P<packageType>\w+)\s=\s(?P<packageValue>\[?.+\]?)\n"      # MSG FORMAT  
                 result = re.finditer(pattern, data)
-                
+
                 for item in result:
                     if item.group('packageType')  == "regionList":
                         # save region info and parse list into a dict of the form  regionList[robot][r1] = true
@@ -113,11 +113,12 @@ while keepConnection:
                     elif item.group('packageType') in ['SysTrans','SysGoals','EnvTrans','EnvGoals']:
                         if ast.literal_eval(item.group("packageValue")):
                             # We got spec from robotClient, save spec
-                            spec[item.group('packageType')][item.group("robotName")] = item.group("packageValue")
+                            spec[item.group('packageType')][item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
                             printSpec(item.group('packageType'), spec[item.group('packageType')][item.group("robotName")], item.group("robotName"))
                             
                         else:
-                            # robotClient is requesting spec, send back spec                  
+                            # robotClient is requesting spec, send back spec  
+                            logging.info(item.group('packageType') + ' requested by ' + item.group("robotName"))                
                             x.send(str(spec[item.group('packageType')]))
                     
                     elif item.group('packageType')  == "sensorUpdate":
@@ -126,11 +127,13 @@ while keepConnection:
                     
                     elif item.group('packageType')  == "updateStrategyStatus":
                         # received controller info
-                        strategyStatus[item.group("robotName")] = item.group("packageValue")
+                        strategyStatus[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        logging.info('NEGOTIATION_MONITOR: strategy status of ' + item.group("robotName") + ' received.')
                     
                     elif item.group('packageType')  == "requestStrategyStatus": 
-                        # send controller info    
-                        x.send(str(strategyStatus))               
+                        # send controller info
+                        x.send(str(strategyStatus))
+                        logging.info('NEGOTIATION_MONITOR: strategy status sent to ' + item.group("robotName"))          
                      
                     elif "closeConnection" in data:
                         x.close() 

@@ -50,6 +50,13 @@ Environment starts with bob_r1
 # johnny5 can only be at one region at a time
 always (bob_r1 and not bob_r2 and not bob_r3 and not bob_r4 and not bob_r5) or (not bob_r1 and bob_r2 and not bob_r3 and not bob_r4 and not bob_r5) or (not bob_r1 and not bob_r2 and bob_r3 and not bob_r4 and not bob_r5) or (not bob_r1 and not bob_r2 and not bob_r3 and bob_r4 and not bob_r5) or (not bob_r1 and not bob_r2 and not bob_r3 and not bob_r4 and bob_r5)
 
+# transition assumptions
+if you were sensing bob_r1 then do (bob_r1 or bob_r2)
+if you were sensing bob_r2 then do (bob_r1 or bob_r2 or bob_r3 or bob_r4)
+if you were sensing bob_r3 then do (bob_r2 or bob_r3 or bob_r5)
+if you were sensing bob_r4 then do (bob_r2 or bob_r4 or bob_r5)
+if you were sensing bob_r5 then do (bob_r3 or bob_r4 or bob_r5)
+
 # guarantee the path is clear to r1
 if you were in r3 then do not bob_r2
 if you were in r2 then do not bob_r1
