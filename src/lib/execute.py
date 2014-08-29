@@ -380,6 +380,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 
             if not realizable:
                 # start with always false
+                self.oriEnvTrans = '[](FALSE)&' #added but should never be used for the unrealizable case.
                 self.spec['EnvTrans'] = "\t[](FALSE) &\n"
                 self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
             else:
@@ -520,9 +521,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         ###################################
                         # stop the robot from moving 
                         self.hsub.setVelocity(0,0)
+                           
                         # Modify the ltl file based on the enviornment change   
                         self.addStatetoEnvSafety(self.sensor_strategy)
-                
             
             else: 
                 # assumption not violated but sensor state changes. we add in this new state
@@ -532,7 +533,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     logging.debug("Value should be True: " + str(env_assumption_hold))
             
                 # For print violated safety in the log (update lines violated in every iteration)  
-                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and self.recovery: 
+                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and (self.recovery or self.otherRobotStatus): 
                     self.postEvent("RESOLVED", "The specification violation is resolved.")     
             self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
 

@@ -35,7 +35,8 @@ class LTL_Check:
         self.path_ltl      = path
         self.current_state = None
         self.sensor_state  = None
-        self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number       
+        self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number 
+        self.ltl_tree      = None      
 
         # obtain spec from the .spec file
         self.path_spec = path.replace(".ltl",".spec")
@@ -57,7 +58,7 @@ class LTL_Check:
         # trim EnvTrans so that it only includes ltl but not tabs and nextlines
         read_ltl  = self.spec["EnvTrans"].replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
 
-        self.ltl_tree = LTLFormula.parseLTL(read_ltl)
+        self.replaceLTLTree(read_ltl)
         if debug_tree_terminal == True: 
             logging.debug("Here's the ltl of the environment assumptions from spec:")
             logging.debug(LTLFormula.printTree(self.ltl_tree,LTLFormula.p.terminals))
@@ -70,7 +71,14 @@ class LTL_Check:
         self.env_safety_assumptions_stage = {"1": "\t\t\t[]((FALSE", "3": "\t\t\t[]((FALSE", "2": "\t\t\t[](FALSE | ("}
         
         self.ltl_treeEnvTrans = None    # modify in execute.py
-            
+    
+    def replaceLTLTree(self, ltlFormula):
+        """
+        This function takes in an LTLFormula, parse it into a tree, and replace the existing one.
+        """       
+        logging.debug(ltlFormula)
+        self.ltl_tree = LTLFormula.parseLTL(ltlFormula)
+        
     def checkViolation(self,cur_state,sensor_state):
         """
         this function call the subtree function to check for violation

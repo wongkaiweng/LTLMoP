@@ -62,6 +62,7 @@ class ExecutorResynthesisExtensions(object):
         
         # ---two_robot_negotiation ------ #
         self.exchangedSpec = False
+        self.otherRobotStatus = None
         # ------------------------------- #
 
     def _checkForNewInternalFlags(self):
@@ -474,21 +475,27 @@ class ExecutorResynthesisExtensions(object):
             self.recreateLTLfile(self.proj)
             realizable, realizableFS, output  = self.compiler._synthesize()
             
-            # check if the other robot is realizable. 
-            otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
-            
-            if True in otherRobotsStrategyStatus.values():
-                # Yes.. it's great.. we can use our old spec. Maybe need liveness.
-                self.postEvent('INFO','We can continue with the old spec as the other robot will yield for us')
-
-            else:
-                # TODO: NO.. what should we do
-                self.postEvent('INFO','What should we do.. Both of us are unrealizable... ')
-            
         else:
             self.postEvent("INFO",'Specification is realizable with the exchanged info.')    
         
-        return realizable                
+        # check if the other robot is realizable. 
+        otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
+        
+        # remove current robot status from the dict
+        otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
+        logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
+        
+        if True in otherRobotsStrategyStatus.values():
+            # Yes.. it's great.. we can use our old spec. Maybe need liveness.
+            self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us')
+            self.otherRobotStatus = True
+            
+        else:
+            # TODO: NO.. what should we do
+            self.postEvent('INFO','What should we do.. Both of us are unrealizable... ')
+            self.otherRobotStatus = False
+          
+        return realizable             
             
     # ------------------------------# 
     
@@ -498,19 +505,11 @@ class ExecutorResynthesisExtensions(object):
         append the current detected state to our safety
         """
         
-        # Add the current state in init state of the LTL spec
-        self.postEvent("VIOLATION","Adding the current state to our initial conditions")
-        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
-        
-        realizable = False
-        # ------ two_robot_negotiation  -------- #
-        # exchange info with the other robot and see if it is realizable.
-        if not self.exchangedSpec:
-            realizable = self.appendSpecFromEnvRobots()
-            self.exchangedSpec = True
-        # -------------------------------------- # 
-        
-        if not realizable:
+        if (self.otherRobotStatus is None) or (not self.otherRobotStatus):
+            # Add the current state in init state of the LTL spec
+            self.postEvent("VIOLATION","Adding the current state to our initial conditions")
+            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
+            
             if not firstRun:
                 self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
             
@@ -528,7 +527,28 @@ class ExecutorResynthesisExtensions(object):
                         realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                         
                         self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))            
-                
+            
+                    #realizable = False
+                    # ------ two_robot_negotiation  -------- #
+                    # exchange info with the other robot and see if it is realizable.
+                    if not self.exchangedSpec:
+                        # modify envTrans to remove all characterization. Restart Characterization
+                        self.spec['EnvTrans'] = self.oriEnvTrans + '&'
+                        self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
+                        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+                        self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+                        
+                        # exchange spec
+                        realizable = self.appendSpecFromEnvRobots()
+                        self.exchangedSpec = True
+                    # -------------------------------------- # 
+            
+            self.realizable = realizable
+
+        else:
+            logging.debug('Waiting for the other robot to yield our way.')
+            
+        """      
         if not realizable:
             self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
             # Use Vasu's analysis tool 
@@ -540,23 +560,27 @@ class ExecutorResynthesisExtensions(object):
                 sys.exit()
             else:                   
                 self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
-                
+        """
+
+             
         # reload aut file if the new ltl is realizable                  
-        if realizable:
-            self.postEvent("RESOLVED", "The specification violation is resolved.")
-            #######################
-            # Load automaton file #
-            #######################
-            self.postEvent("INFO","Reloading automaton...")
+        if self.realizable or self.otherRobotStatus:
+            if not self.otherRobotStatus:
+                self.postEvent("RESOLVED", "The specification violation is resolved.")
+                #######################
+                # Load automaton file #
+                #######################
+                self.postEvent("INFO","Reloading automaton and Initializing...")
+                
             spec_file = self.proj.getFilenamePrefix() + ".spec"
-            aut_file = self.proj.getFilenamePrefix() + ".aut"
-            self.postEvent("INFO","Initializing...")
+            aut_file = self.proj.getFilenamePrefix() + ".aut"    
             init_state, new_strategy = self.initialize(spec_file, aut_file, firstRun=False)  
+            
         else:
             self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
-            sys.exit()
-            
-        return init_state, new_strategy 
+            sys.exit()            
+                
+        return init_state, new_strategy
     
     def _setSpecificationInitialConditionsToCurrentInDNF(self, proj, firstRun, sensor_state):
         """ Add Env and Sys Init in disjunctive Normal form to LTL
