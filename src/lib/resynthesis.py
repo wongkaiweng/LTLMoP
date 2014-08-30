@@ -487,8 +487,12 @@ class ExecutorResynthesisExtensions(object):
         
         if True in otherRobotsStrategyStatus.values():
             # Yes.. it's great.. we can use our old spec. Maybe need liveness.
-            self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us')
+            self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us.')
             self.otherRobotStatus = True
+        
+        elif realizable:
+            self.postEvent('RESOLVED','We will yield to the other robot.')
+            self.otherRobotStatus = False 
             
         else:
             # TODO: NO.. what should we do
