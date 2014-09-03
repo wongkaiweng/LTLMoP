@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment, createSysMutualExclusion
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -319,7 +319,10 @@ class SpecCompiler(object):
             spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
             spec["EnvInit"] = ""           
             
-            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"]           
+            # ---------- two_robot_negotiation -----------#
+            spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
+            # --------------------------------------------#
+            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
             ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))

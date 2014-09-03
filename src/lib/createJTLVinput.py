@@ -59,6 +59,49 @@ def createSMVfile(fileName, sensorList, robotPropList):
     smvFile.close()
     
 # ------ two_robot_negotiation ------------#  
+def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = ''):
+    if use_bits:
+        numBits = int(math.ceil(math.log(len(adjData),2)))
+        # TODO: only calc bitencoding once
+        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+        
+    # The topological relation (adjacency)
+    adjFormulas = []
+    
+    if not other_robot_name:
+        logging.info('robot_name not provided!')
+        return
+        
+    for Origin in range(len(regions)):
+        
+        # skip boundary and obstacles
+        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+            continue
+            
+        # from region i we can stay in region i
+        adjFormula = '\t\t\t []( ('
+        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name) + ")"
+        adjFormula = adjFormula + ') -> ( !('
+        first = True
+        for subreg in regionMapping[str(regions[Origin].name)]:
+            if first:
+                first  = False
+            else:
+                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
+                
+            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(s."+ subreg +")")
+            adjFormula = adjFormula + ')'
+
+        # closing this region
+        adjFormula = adjFormula + ' ) ) '
+
+        adjFormulas.append(adjFormula)
+
+    return " & \n".join(adjFormulas)
+    
+    
 def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name = ''):
     if use_bits:
         numBits = int(math.ceil(math.log(len(adjData),2)))
