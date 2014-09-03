@@ -88,7 +88,7 @@ def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name 
         
         for dest in range(len(adjData)):
             # skip boundary and obstacles
-            if adjData[Origin][dest] and not regions[dest].name == 'boundary' and not regions[dest].isObstacle:
+            if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
                 # not empty, hence there is a transition
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
                 adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name+")")
@@ -110,6 +110,16 @@ def createInitialEnvRegionFragment(regions, use_bits=True, other_robot_name = ''
     #  region (encoding). This may be redundant if an initial region is
     #  specified, but it is here to ensure the system cannot start from
     #  an invalid, or empty region (encoding).
+    
+    # skip boundary and obstacles
+    regions_old = regions
+    regions = []
+    for reg in regions_old:
+        if reg.name == 'boundary' or reg.isObstacle:
+            continue
+        else:
+            regions.append(reg)
+    
     if use_bits:
         numBits = int(math.ceil(math.log(len(regions),2)))
         # TODO: only calc bitencoding once
@@ -122,7 +132,7 @@ def createInitialEnvRegionFragment(regions, use_bits=True, other_robot_name = ''
             initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
         initreg_formula = initreg_formula + '\t\t\t) \n'
     else:
-        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+other_robot_name + '_' +r2.name if r is r2 else "!e."+other_robot_name + '_' +r2.name for r2 in regions])) for r in regions]))
+        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+other_robot_name + '_' +r2.name + ')' if r is r2 else "!next(e."+other_robot_name + '_' +r2.name+")" for r2 in regions])) for r in regions]))
         
     return initreg_formula
     

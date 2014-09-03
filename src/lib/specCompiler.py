@@ -302,10 +302,14 @@ class SpecCompiler(object):
             spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
             
             for idx in range(len(self.proj.rfi.regions)):
-                if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.enabled_sensors:
-                    self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
-                if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
-                    self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                # exclude boundary and obstacles
+                if self.proj.rfi.regions[idx].name == 'boundary' or self.proj.rfi.regions[idx].isObstacle:
+                    continue
+                else:
+                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.enabled_sensors:
+                        self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
+                        self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
             # ------------------------------------------#
             LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
 
