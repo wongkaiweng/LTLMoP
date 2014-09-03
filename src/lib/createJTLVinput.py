@@ -11,6 +11,7 @@ import math
 import parseEnglishToLTL
 import textwrap
 from LTLParser.LTLFormula import LTLFormula, LTLFormulaType, treeToString
+import logging   # for two_robot_negotiation
 
 def createSMVfile(fileName, sensorList, robotPropList):
     ''' This function writes the skeleton SMV file.
@@ -57,6 +58,75 @@ def createSMVfile(fileName, sensorList, robotPropList):
     # close the file
     smvFile.close()
     
+# ------ two_robot_negotiation ------------#  
+def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name = ''):
+    if use_bits:
+        numBits = int(math.ceil(math.log(len(adjData),2)))
+        # TODO: only calc bitencoding once
+        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+
+    # The topological relation (adjacency)
+    adjFormulas = []
+    
+    if not other_robot_name:
+        logging.info('robot_name not provided!')
+        return
+        
+    for Origin in range(len(adjData)):
+        # skip boundary and obstacles
+        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+            continue
+            
+        # from region i we can stay in region i
+        adjFormula = '\t\t\t []( ('
+        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
+        adjFormula = adjFormula + ') -> ( ('
+        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name+")")
+        adjFormula = adjFormula + ')'
+        
+        for dest in range(len(adjData)):
+            # skip boundary and obstacles
+            if adjData[Origin][dest] and not regions[dest].name == 'boundary' and not regions[dest].isObstacle:
+                # not empty, hence there is a transition
+                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
+                adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name+")")
+
+                adjFormula = adjFormula + ') '
+
+        # closing this region
+        adjFormula = adjFormula + ' ) ) '
+
+        adjFormulas.append(adjFormula)
+
+    # In a BDD strategy, it's best to explicitly exclude these
+    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, other_robot_name))
+
+    return " & \n".join(adjFormulas)
+    
+def createInitialEnvRegionFragment(regions, use_bits=True, other_robot_name = ''):
+    # Setting the system initial formula to allow only valid
+    #  region (encoding). This may be redundant if an initial region is
+    #  specified, but it is here to ensure the system cannot start from
+    #  an invalid, or empty region (encoding).
+    if use_bits:
+        numBits = int(math.ceil(math.log(len(regions),2)))
+        # TODO: only calc bitencoding once
+        bitEncode = parseEnglishToLTL.bitEncoding(len(regions), numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+
+        initreg_formula = '\t\t\t( ' + currBitEnc[0] + ' \n'
+        for regionInd in range(1,len(currBitEnc)):
+            initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
+        initreg_formula = initreg_formula + '\t\t\t) \n'
+    else:
+        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+other_robot_name + '_' +r2.name if r is r2 else "!e."+other_robot_name + '_' +r2.name for r2 in regions])) for r in regions]))
+        
+    return initreg_formula
+    
+# ----------------------------------------------------#
 
 def createTopologyFragment(adjData, regions, use_bits=True):
     if use_bits:

@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -298,6 +298,15 @@ class SpecCompiler(object):
             if "TRUE" in spec["EnvInit"] :
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
+            # ---------- two_robot_negotiation ---------#
+            spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
+            
+            for idx in range(len(self.proj.rfi.regions)):
+                if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.enabled_sensors:
+                    self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
+                    self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+            # ------------------------------------------#
             LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
 
             if spec["SysInit"] == "()":
@@ -386,7 +395,7 @@ class SpecCompiler(object):
         ###### ENV Assumptions Learning #############
         ## Saving LTL Spec in separated parts to be used for assumption mining #####
         self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
-        self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList) 
+        self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList)
         self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)   
         self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList) 
         self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList) 

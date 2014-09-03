@@ -29,6 +29,9 @@ class Project:
         self.regionMapping = None
         self.rfi = None
         self.specText = ""
+        # -------- two_robot_negotiation ------#
+        self.otherRobot = ""
+        # ------------------------------------ #
         self.all_sensors = []
         self.enabled_sensors = []
         self.all_actuators = []
@@ -129,6 +132,10 @@ class Project:
         except KeyError:
             logging.warning("Specification text undefined")
 
+        # ------ two_robot_negotiation ------#
+        self.otherRobot = spec_data['SPECIFICATION']['OtherRobot']
+        # ---------------------------------- #
+        
         if 'CompileOptions' in spec_data['SETTINGS']:
             for l in spec_data['SETTINGS']['CompileOptions']:
                 if ":" not in l:
@@ -153,9 +160,11 @@ class Project:
             self.project_basename, ext = os.path.splitext(os.path.basename(filename))
 
         data = {}
-
-        data['SPECIFICATION'] = {"Spec": self.specText}
-
+        
+        # ----------- two_robot_negotiation ---------- #
+        data['SPECIFICATION'] = {"OtherRobot": self.otherRobot, "Spec": self.specText}
+        # -------------------------------------------- #
+        
         if self.regionMapping is not None:
             data['SPECIFICATION']['RegionMapping'] = [rname + " = " + ', '.join(rlist) for
                                                       rname, rlist in self.regionMapping.iteritems()]
@@ -181,6 +190,7 @@ class Project:
                     "Actions": "List of action propositions and their state (enabled = 1, disabled = 0)",
                     "Customs": "List of custom propositions",
                     "Spec": "Specification in structured English",
+                    "OtherRobot": "The other robot in the same workspace",
                     "RegionMapping": "Mapping between region names and their decomposed counterparts"}
 
         fileMethods.writeToFile(filename, data, comments)
