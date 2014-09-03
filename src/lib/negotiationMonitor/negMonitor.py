@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
-BUFSIZE = 4096    #reasonably sized buffer for data
+BUFSIZE = 10000    #reasonably sized buffer for data
  
 ## now we create a new socket object (serv)
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
@@ -69,7 +69,7 @@ while keepConnection:
             if x == serv:  
                 csock, addr = serv.accept() 
                 clients.append(csock) 
-                logging.info('NEGOTIATION_MONITOR: ...connected! client list = ' + str(clients))
+                #logging.info('NEGOTIATION_MONITOR: ...connected! client list = ' + str(clients))
 
             else:  
                 # find data pattern

@@ -17,7 +17,7 @@ class RobotClient:
     """
     def __init__(self, hsub, proj):
         ADDR = ("localhost",6501)
-        self.BUFSIZE = 4096
+        self.BUFSIZE = 10000
         
         # initialize our variable
         self.robotName = ''

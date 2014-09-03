@@ -63,6 +63,7 @@ class ExecutorResynthesisExtensions(object):
         # ---two_robot_negotiation ------ #
         self.exchangedSpec = False
         self.otherRobotStatus = None
+        self.lastSensorState  = None
         # ------------------------------- #
 
     def _checkForNewInternalFlags(self):
@@ -552,6 +553,14 @@ class ExecutorResynthesisExtensions(object):
         else:
             logging.debug('Waiting for the other robot to yield our way.')
             
+            if self.lastSensorState != sensor_state:
+                # update spec with current state of the other robot
+                self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
+                self.recreateLTLfile(self.proj)
+                self.realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                self.postEvent('INFO','Recreating automaton based on the updated environment info.')
+           
+        self.lastSensorState = sensor_state   
         """      
         if not realizable:
             self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
@@ -575,6 +584,10 @@ class ExecutorResynthesisExtensions(object):
                 # Load automaton file #
                 #######################
                 self.postEvent("INFO","Reloading automaton and Initializing...")
+
+            else:
+                # wait for a while till we reload automaton
+                time.sleep(2)
                 
             spec_file = self.proj.getFilenamePrefix() + ".spec"
             aut_file = self.proj.getFilenamePrefix() + ".aut"    

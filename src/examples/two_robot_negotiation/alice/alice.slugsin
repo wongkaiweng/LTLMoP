@@ -11,14 +11,16 @@ bit1
 bit2
 
 [ENV_TRANS]
-| & & | | | | & & & & bob_r1' ! bob_r2' ! bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' bob_r2' ! bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' ! bob_r3' bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' ! bob_r3' ! bob_r4' bob_r5' | ! & & ! bit0 ! bit1 bit2 ! bob_r2' | ! & & ! bit0 bit1 bit2 ! bob_r1' & & & & & & & & & ! bob_r4 ! bob_r5 bob_r1 ! bob_r2 ! bob_r3 ! bob_r4' ! bob_r5' bob_r1' ! bob_r2' ! bob_r3'
+| | & & & & & & & | | | | & & & & bob_r1' ! bob_r2' ! bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' bob_r2' ! bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' bob_r3' ! bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' ! bob_r3' bob_r4' ! bob_r5' & & & & ! bob_r1' ! bob_r2' ! bob_r3' ! bob_r4' bob_r5' | ! bob_r1 | bob_r1' bob_r2' | ! bob_r2 | | | bob_r1' bob_r2' bob_r3' bob_r4' | ! bob_r3 | | bob_r2' bob_r3' bob_r5' | ! bob_r4 | | bob_r2' bob_r4' bob_r5' | ! bob_r5 | | bob_r3' bob_r4' bob_r5' | ! & & ! bit0 ! bit1 bit2 ! bob_r2' | ! & & ! bit0 bit1 bit2 ! bob_r1' & & & & & & & & & ! bob_r4 ! bob_r5 bob_r1 ! bob_r2 ! bob_r3 ! bob_r4' ! bob_r5' bob_r1' ! bob_r2' ! bob_r3' & & & & & & & & & ! bob_r4 ! bob_r5 ! bob_r1 bob_r2 ! bob_r3 ! bob_r4' ! bob_r5' ! bob_r1' bob_r2' ! bob_r3'
 
 [ENV_LIVENESS]
+bob_r5
 1
 
 [ENV_INIT]
 
 [SYS_TRANS]
+& & & & & & & & | | | | & & & & & & bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' bit2' ! & & ! bit0' ! bit1' bit2' ! & & ! bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' ! bit2' & & & & & & ! & & bit0' ! bit1' ! bit2' ! bit0' bit1' bit2' ! & & ! bit0' ! bit1' bit2' ! & & ! bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' ! bit2' & & & & & & ! & & bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' bit2' ! bit0' ! bit1' bit2' ! & & ! bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' ! bit2' & & & & & & ! & & bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' bit2' ! & & ! bit0' ! bit1' bit2' ! bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' ! bit2' & & & & & & ! & & bit0' ! bit1' ! bit2' ! & & ! bit0' bit1' bit2' ! & & ! bit0' ! bit1' bit2' ! & & ! bit0' ! bit1' ! bit2' ! bit0' bit1' ! bit2' | ! & & bit0 ! bit1 ! bit2 | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2' | ! & & ! bit0 bit1 bit2 | | | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' | ! & & ! bit0 ! bit1 bit2 | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' | ! & & ! bit0 ! bit1 ! bit2 | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' | ! & & ! bit0 bit1 ! bit2 | | & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' | ! bob_r1 ! & & ! bit0' bit1' bit2' | ! bob_r2 ! & & ! bit0' ! bit1' ! bit2' | ! bob_r4 ! & & ! bit0' bit1' ! bit2'
 | ! bob_r1' ! & & bit0' ! bit1' ! bit2'
 | ! bob_r2' ! & & ! bit0' bit1' bit2'
 | ! bob_r3' ! & & ! bit0' ! bit1' bit2'
@@ -35,6 +37,6 @@ bit2
 & & bit0' ! bit1' ! bit2'
 
 [SYS_INIT]
-| & & & bob_r1 ! bit0 ! bit1 bit2 & & & & & & & ! bob_r4 ! bob_r5 bob_r1 ! bob_r2 ! bob_r3 ! bit0 bit1 bit2
+| & & & bob_r1 ! bit0 ! bit1 bit2 & & & & & & & ! bob_r4 ! bob_r5 ! bob_r1 bob_r2 ! bob_r3 ! bit0 ! bit1 bit2
 | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
 
