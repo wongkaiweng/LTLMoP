@@ -11,14 +11,17 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: jtlv
+synthesizer: slugs
 fastslow: False
 decompose: True
+
+CurrentConfigName:
+bob
 
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-../city.regions
+../../city.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 alice_postOffice, 1
@@ -50,24 +53,29 @@ groceryStore = p9
 Spec: # Specification in structured English
 # Init conditions #
 Robot starts in postOffice
-Environment starts with alice_policeStation1
-
-#always alice_policeStation2
+Environment starts with alice_policeStation2
 
 # goals
-infinitely often alice_policeStation1
-infinitely often alice_policeStation2
+#infinitely often alice_policeStation2
+#infinitely often alice_policeStation1
 
 # env assumptions #
-#If you were in postOffice then do not alice_park
-#If you were in park then do not (alice_tunnel or alice_policeStation1 or alice_bridge)
-#if you were in tunnel then do not alice_square
-#if you were in bridge then do not alice_square
-#if you were in square then do not (alice_groceryStore or alice_policeStation2 or alice_tunnel or alice_bridge)
+If you were in postOffice then do not alice_park
+if you were in policeStation1 then do not alice_park
+If you were in park then do not (alice_tunnel or alice_policeStation1 or alice_bridge or alice_postOffice)
+if you were in tunnel then do not (alice_square or alice_park)
+if you were in bridge then do not (alice_square or alice_park)
+if you were in square then do not (alice_groceryStore or alice_policeStation2 or alice_tunnel or alice_bridge)
+if you were in groceryStore then do not alice_square
+if you were in policeStation2 then do not alice_square
 
 # system goals #
-visit policeStation1
+#if you are sensing letter_p1 then visit policeStation1
+#if you are sensing letter_p2 then visit policeStation2
+#if you are sensing letter_g then visit groceryStore
+#if you are not sensing (letter_p1 or letter_p2 or letter_g) then visit postOffice
 visit policeStation2
 visit groceryStore
+visit policeStation1
 visit postOffice
 

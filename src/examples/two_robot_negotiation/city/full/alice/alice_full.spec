@@ -11,14 +11,17 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: jtlv
+synthesizer: slugs
 fastslow: False
 decompose: True
+
+CurrentConfigName:
+alice
 
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-../city.regions
+../../city.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 bob_postOffice, 1
@@ -48,18 +51,22 @@ others =
 groceryStore = p9
 
 Spec: # Specification in structured English
-Robot starts in policeStation1
+Robot starts in policeStation2
 Environment starts with bob_postOffice
 
 # env goals #
+#infinitely often bob_policeStation2
+#infinitely often bob_groceryStore
+#infinitely often bob_policeStation1
 #infinitely often bob_postOffice
 
 # env assumptions #
 if you were in policeStation1 then do not bob_park
-if you were in park then do not (bob_tunnel or bob_bridge)
+if you were in park then do not (bob_tunnel or bob_bridge or bob_policeStation1)
 if you were in tunnel then do not (bob_park or bob_square)
 if you were in bridge then do not (bob_park or bob_square)
-if you were in square then do not bob_groceryStore
+if you were in square then do not (bob_tunnel or bob_bridge or bob_policeStation2)
+if you were in policeStation2 then do not bob_square
 
 # system goals #
 visit policeStation1
