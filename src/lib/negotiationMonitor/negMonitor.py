@@ -34,6 +34,7 @@ clients = [serv]
 regionList = {}  #tracking region info for each robot
 spec       = {'SysTrans':{},'SysGoals':{},'EnvTrans':{},'EnvGoals':{}}
 strategyStatus = {} #tracking strategy status of each robot (true for realizable. False otherwise.)
+requestSpecStatus = {} # track what spec is being requested
 
 def printRegionInfo():
     """
@@ -99,6 +100,17 @@ while keepConnection:
                        
                         printRegionInfo()
                         
+                        # set up spec for the robot
+                        for specType, value in spec.iteritems():
+                            spec[specType][item.group("robotName")] = ""
+                        logging.debug(spec)
+                        
+                        # initialize requestSpecStatus
+                        requestSpecStatus[item.group("robotName")] = []
+                        
+                        # initialize strategy status
+                        strategyStatus[item.group("robotName")] = None
+                        
                     elif item.group('packageType')  ==  "regionName":
                         # update region info of robot
                         for region, robots in regionList.iteritems():
@@ -118,8 +130,17 @@ while keepConnection:
                             
                         else:
                             # robotClient is requesting spec, send back spec  
-                            logging.info(item.group('packageType') + ' requested by ' + item.group("robotName"))                
+                            logging.info(item.group('packageType') + ' requested by ' + item.group("robotName"))              
+                            logging.debug(str(spec[item.group('packageType')]))  
+                            # check if we need to request spec from the other robot
+                            for robot, specStr in spec[item.group('packageType')].iteritems():
+                                if robot != item.group("robotName") and spec[item.group('packageType')][robot] == "":
+                                    requestSpecStatus[robot].append(item.group('packageType'))
+                            
+                            # send spec back to the robot
                             x.send(str(spec[item.group('packageType')]))
+                            
+                            
                     
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info
@@ -134,6 +155,12 @@ while keepConnection:
                         # send controller info
                         x.send(str(strategyStatus))
                         logging.info('NEGOTIATION_MONITOR: strategy status sent to ' + item.group("robotName"))          
+                    
+                    elif item.group('packageType')  == "requestSpecStatus":
+                        # send spec status back to the robot
+                        x.send(str(requestSpecStatus[item.group('robotName')]))
+                        # clear the list
+                        requestSpecStatus[item.group('robotName')] = []
                      
                     elif "closeConnection" in data:
                         x.close() 

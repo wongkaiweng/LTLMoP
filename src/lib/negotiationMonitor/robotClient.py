@@ -44,7 +44,9 @@ class RobotClient:
         
         #send out initial info
         self.initializeRegionExchange(hsub)
-          
+         
+        # track if spec is requested
+        self.specRequestFromOther = [] # list of spec requested
     
     def initializeRegionExchange(self, hsub):
         """
@@ -155,6 +157,17 @@ class RobotClient:
         logging.debug(realizable)
         
         return realizable
+    
+    def checkRequestSpec(self):
+        """
+        This function check if our specification is currently requested by the other robot
+        """
+        self.clientObject.send(self.robotName + '-' + 'requestSpecStatus = ' + "''" '\n')
+        #logging.info('ROBOTCLIENT: check request spec status of other robots')
+        
+        #receive info
+        self.specRequestFromOther = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        #logging.debug(self.specRequestFromOther)
         
         
     

@@ -463,8 +463,15 @@ class ExecutorResynthesisExtensions(object):
         self.recreateLTLfile(self.proj)
         realizable, realizableFS, output  = self.compiler._synthesize()
         
+        # check if the other robot is realizable. 
+        otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
+        
+        # remove current robot status from the dict
+        otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
+        logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
+        
         # notify negotiation monitor our controller statues
-        self.robClient.updateStrategyStatus(realizable)
+        self.robClient.updateStrategyStatus(realizable)  
         
         logging.debug('realizable status sent')
         if not realizable:
@@ -486,7 +493,7 @@ class ExecutorResynthesisExtensions(object):
         otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
         logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
         
-        if True in otherRobotsStrategyStatus.values():
+        if True in otherRobotsStrategyStatus.values() and not realizable:
             # Yes.. it's great.. we can use our old spec. Maybe need liveness.
             self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us.')
             self.otherRobotStatus = True

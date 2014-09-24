@@ -469,6 +469,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
 
+            # if the other robot is requesting spec from us
+            self.robClient.checkRequestSpec()
+            for specType in self.robClient.specRequestFromOther:
+                # send SysGoals, EnvTrans and EnvGoals
+                self.robClient.sendSpec(specType,self.spec[specType]) 
+
+            self.robClient.specRequestFromOther = []
+                
             # assumption didn't hold
             if not env_assumption_hold:
 
