@@ -419,6 +419,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         
         # resynthesize if cannot find initial state
         if init_state is None: 
+            logging.debug('Finding init state failed.')
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
             self.postEvent('INFO','Finding init state failed.')
@@ -484,13 +485,19 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if not self.exchangedSpec and self.negotiationStatus == self.robClient.robotName:
                 self.postEvent('NEGO','-- NEGOTIATION STARTED --')
                 # synthesize a new controller to incorporate the actions of the other robot. 
-                realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec()
+                ###### NOW SEPARATED INTO TWO STEPS
+                realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(True)
+                self.postEvent("NEGO",'Adding only system guarantees.')
+                if not realizable:
+                    realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(False)
+                    self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
+                    
                 if realizable:
                     self.robClient.setNegotiationStatus(True)
                     self.otherRobotStatus = False
                     self.postEvent('NEGO','Using exchanged specification.')
                     self.postEvent('RESOLVED','')
-                    
+                    self.exchangedSpec = True
                     # reinitialize automaton
                     spec_file = self.proj.getFilenamePrefix() + ".spec"
                     aut_file = self.proj.getFilenamePrefix() + ".aut"    
@@ -518,7 +525,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         self.spec['EnvGoals'] = oldSpecEnvGoals
                         self.recreateLTLfile(self.proj)
                         realizable, realizableFS, output  = self.compiler._synthesize()
-                        self.exchangedSpec = True
+
                         self.otherRobotStatus = True # env characterization disabled
                         self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
                         self.postEvent('NEGO','-- NEGOTIATION ENDED --')

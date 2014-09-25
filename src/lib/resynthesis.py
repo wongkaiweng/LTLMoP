@@ -434,7 +434,7 @@ class ExecutorResynthesisExtensions(object):
         self.received_user_query_response.set()
    
     # --- two_robot_negotiation --- #
-    def synthesizeWithExchangedSpec(self):
+    def synthesizeWithExchangedSpec(self, level = False):
         """
         spec negotiation in execute.py
         """
@@ -457,7 +457,12 @@ class ExecutorResynthesisExtensions(object):
         # conjunct the spec of the other robots
         self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
         #logging.debug('SysTrans:' + self.spec['SysTrans'])
-        self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
+        
+        if level:
+            # with only systrans
+            self.spec['EnvGoals'] = oldSpecEnvGoals
+        else:
+            self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
         #logging.debug('EnvGoals:' + self.spec['EnvGoals'])
         
         # resynthesize
@@ -501,7 +506,12 @@ class ExecutorResynthesisExtensions(object):
         elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
             self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')
             # try to synthesize controller with spec from the other robot instead
-            realizable, oldSpecSysTrans, oldSpecEnvGoals  = self.synthesizeWithExchangedSpec()
+            ###### NOW SEPARATED INTO TWO STEPS
+            realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(True)
+            self.postEvent("NEGO",'Adding only system guarantees.')
+            if not realizable:
+                realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(False)
+                self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
             
             if realizable:
                 self.postEvent('NEGO','We can continue with the exchanged information.')
@@ -628,7 +638,7 @@ class ExecutorResynthesisExtensions(object):
                     
                     # exchange info with the other robot and see if it is realizable. 
                     # later time can exchange spec
-                    if not self.exchangedSpec and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                    if (not self.exchangedSpec) and otherRobotViolationTimeStamp < self.violationTimeStamp:
                         
                         # exchange spec
                         realizable = self.appendSpecFromEnvRobots()
@@ -696,7 +706,7 @@ class ExecutorResynthesisExtensions(object):
         """
         ## for sensors
         current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
-         
+        logging.debug("current_env_init_state:" + str(current_env_init_state)) 
         ## for actuators and regions
         if firstRun:
             tempY = []

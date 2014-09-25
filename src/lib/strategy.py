@@ -638,13 +638,13 @@ class Strategy(object):
 
             Returns None if no such state is found.  """
 
-        if goal_id is None:
-            return next(self.searchForStates(prop_assignments, state_list), None)
-        else:
+        if goal_id is not None:
             for state in self.searchForStates(prop_assignments, state_list):
                 if state.goal_id == goal_id:
-                    logging.debug('returning:' + str(state))
                     return state
+        
+        # if goal_id is not specified or cannot find state with that goal_id            
+        return next(self.searchForStates(prop_assignments, state_list), None)
 
     def exportAsDotFile(self, filename, regionMapping, starting_states=None):
         """ Output an explicit-state strategy to a .dot file of name `filename`.
