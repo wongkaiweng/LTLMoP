@@ -24,14 +24,16 @@ RegionFile: # Relative path of region description file
 ../../city.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-bob_policeStation2, 1
-bob_groceryStore, 1
-bob_bridge, 1
-bob_tunnel, 1
 bob_postOffice, 1
 bob_park, 1
-bob_policeStation1, 1
+bob_policeStation2, 1
+bob_bridge, 1
 bob_square, 1
+bob_groceryStore, 1
+bob_tunnel, 1
+bob_policeStation1, 1
+call_g, 1
+call_p, 1
 
 
 ======== SPECIFICATION ========
@@ -51,12 +53,24 @@ others =
 groceryStore = p9
 
 Spec: # Specification in structured English
-Robot starts in bridge
-Env starts with bob_groceryStore
+Robot starts in policeStation2
+Environment starts with bob_postOffice
 
-# Environment Assumptions
-if you were in bridge then do not bob_square
-if you were in square then do not bob_groceryStore
+# env goals #
+#infinitely often bob_policeStation2
+#infinitely often bob_groceryStore
+#infinitely often bob_policeStation1
+#infinitely often bob_postOffice
 
-visit groceryStore
+# env assumptions #
+if you were in policeStation1 then do not bob_park
+if you were in park then do not (bob_tunnel or bob_bridge or bob_policeStation1)
+if you were in tunnel then do not (bob_park or bob_square or bob_policeStation1 or bob_policeStation2)
+if you were in bridge then do not (bob_park or bob_square or bob_policeStation1 or bob_policeStation2)
+if you were in square then do not (bob_tunnel or bob_bridge or bob_policeStation2)
+if you were in policeStation2 then do not bob_square
+
+# system goals #
+visit policeStation1
+visit policeStation2
 

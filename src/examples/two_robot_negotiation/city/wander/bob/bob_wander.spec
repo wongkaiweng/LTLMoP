@@ -21,7 +21,7 @@ bob
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-../city.regions
+../../city.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 alice_policeStation2, 1
