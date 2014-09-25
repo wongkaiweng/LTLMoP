@@ -88,11 +88,11 @@ class RobotClient:
         
         # first replace our region bits to original region name with our robot name
         spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
-        
+        #logging.debug( specType + ':' + spec)
         # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
-        logging.info('ROBOTCLIENT: send system safety from ' + str(self.robotName))
-        logging.debug( specType + ':' + spec)
+        logging.info('ROBOTCLIENT: send '+ specType +' from ' + str(self.robotName))
+        
     
     def requestSpec(self, specType):
         """
@@ -149,7 +149,7 @@ class RobotClient:
         OUTPUT:
         realizable: dict of boolean. realizable['rob1'] = True
         """
-        self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus = ' + "''" '\n')
+        self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus = ' + "''" + '\n')
         logging.info('ROBOTCLIENT: request strategy status of other robots')
 
         #receive info
@@ -162,12 +162,52 @@ class RobotClient:
         """
         This function check if our specification is currently requested by the other robot
         """
-        self.clientObject.send(self.robotName + '-' + 'requestSpecStatus = ' + "''" '\n')
+        self.clientObject.send(self.robotName + '-' + 'requestSpecStatus = ' + "''" +  '\n')
         #logging.info('ROBOTCLIENT: check request spec status of other robots')
         
         #receive info
         self.specRequestFromOther = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         #logging.debug(self.specRequestFromOther)
+   
+    def checkNegotiationStatus(self):
+        """
+        This function check the current negotiation status.
+        None     : no negotiation has started.
+        robotName: This robot should resynthesize the specification with the spec snippets from the other robot.
+        True     : negotiation is completed.
+        False    : negotiation failed. Alternatives seeked.
+        """
+        self.clientObject.send(self.robotName + '-' + 'negotiationStatus = ' + "''" + '\n')
         
+        #receive info
+        negotiationStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        return negotiationStatus
+        
+    def setNegotiationStatus(self, status):
+        """
+        This function set the current negotiation status.
+        None     : no negotiation has started.
+        robotName: This robot should resynthesize the specification with the spec snippets from the other robot.
+        True     : negotiation is completed.
+        False    : negotiation failed. Alternatives seeked.
+        """
+
+        self.clientObject.send(self.robotName + '-' + 'negotiationStatus = ' + str(status) + '\n')
+        logging.info('ROBOTCLIENT: negotiation status set')
+        
+    def getViolationTimeStamp(self, otherRobotName):
+        """
+        This function gets the violation time stamp.
+        """
+        self.clientObject.send(self.robotName + '-' + 'violationTimeStamp = ' + "''" + '\n')
+        timeStamp = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        
+        return timeStamp[otherRobotName]
+        
+    def setViolationTimeStamp(self, timeStamp):
+        """
+        This function sets the violation time stamp.
+        """
+        self.clientObject.send(self.robotName + '-' + 'violationTimeStamp = ' + str(timeStamp) + '\n')
         
     

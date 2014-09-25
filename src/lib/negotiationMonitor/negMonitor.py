@@ -35,6 +35,8 @@ regionList = {}  #tracking region info for each robot
 spec       = {'SysTrans':{},'SysGoals':{},'EnvTrans':{},'EnvGoals':{}}
 strategyStatus = {} #tracking strategy status of each robot (true for realizable. False otherwise.)
 requestSpecStatus = {} # track what spec is being requested
+negotiationStatus = None # track the negotiation status
+violationTimeStamp = {} # track the time stamp that safety violation is detected
 
 def printRegionInfo():
     """
@@ -103,13 +105,15 @@ while keepConnection:
                         # set up spec for the robot
                         for specType, value in spec.iteritems():
                             spec[specType][item.group("robotName")] = ""
-                        logging.debug(spec)
                         
                         # initialize requestSpecStatus
                         requestSpecStatus[item.group("robotName")] = []
                         
                         # initialize strategy status
                         strategyStatus[item.group("robotName")] = None
+                        
+                        # initialize violation time stamp
+                        violationTimeStamp[item.group("robotName")] = 0
                         
                     elif item.group('packageType')  ==  "regionName":
                         # update region info of robot
@@ -131,7 +135,6 @@ while keepConnection:
                         else:
                             # robotClient is requesting spec, send back spec  
                             logging.info(item.group('packageType') + ' requested by ' + item.group("robotName"))              
-                            logging.debug(str(spec[item.group('packageType')]))  
                             # check if we need to request spec from the other robot
                             for robot, specStr in spec[item.group('packageType')].iteritems():
                                 if robot != item.group("robotName") and spec[item.group('packageType')][robot] == "":
@@ -161,11 +164,30 @@ while keepConnection:
                         x.send(str(requestSpecStatus[item.group('robotName')]))
                         # clear the list
                         requestSpecStatus[item.group('robotName')] = []
-                     
+                    
+                    elif item.group('packageType') == "negotiationStatus":
+                        if ast.literal_eval(item.group("packageValue")):
+                            # We got set negotiationStatus from robotClient
+                            negotiationStatus = item.group("packageValue")
+                            
+                        else:
+                            # send negotiationStatus back to the robot
+                            x.send(str(negotiationStatus))
+                    
+                    elif item.group('packageType') == "violationTimeStamp":
+                        if ast.literal_eval(item.group("packageValue")):
+                            # We got set violationTimeStamp from robotClient
+                            violationTimeStamp[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                            
+                        else:
+                            # send violationTimeStamp back to the robot
+                            x.send(str(violationTimeStamp))
+                                    
                     elif "closeConnection" in data:
                         x.close() 
                         clients.remove(x)
                         logging.info('NEGOTIATION_MONITOR: client ' + str(x) + 'is removed.' )
+                    
                     else:
                         pass
                 

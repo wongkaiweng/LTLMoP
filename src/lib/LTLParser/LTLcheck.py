@@ -47,14 +47,14 @@ class LTL_Check:
         self.ltlTree_to_lineNo = {}
         # correspond line numbers in spec to the structure English and the tree converted 
         for key,value in self.LTL2LineNo.iteritems():
-            removed_all = key.replace("\t", "").replace("\n", "").replace(" ", "")
+            removed_all = str(key).replace("\t", "").replace("\n", "").replace(" ", "")
             #remove trailing & 
             if "&" == removed_all[-1]:
                 removed_all = removed_all[:-1]
             tree = LTLFormula.parseLTL(removed_all)
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
-
+            
         # trim EnvTrans so that it only includes ltl but not tabs and nextlines
         read_ltl  = self.spec["EnvTrans"].replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
 
@@ -77,7 +77,7 @@ class LTL_Check:
         This function takes in an LTLFormula, parse it into a tree, and replace the existing one.
         """       
         logging.debug(ltlFormula)
-        self.ltl_tree = LTLFormula.parseLTL(ltlFormula)
+        self.ltl_tree = LTLFormula.parseLTL(str(ltlFormula))
         
     def checkViolation(self,cur_state,sensor_state):
         """
@@ -94,6 +94,11 @@ class LTL_Check:
         # for printing original spec violated
         if not self.ltl_treeEnvTrans is None:
             valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, LTLFormula.p.terminals, self.violated_spec_line_no)
+            #logging.debug('self.ltl_tree:' + str(self.ltl_tree))
+            #logging.debug('getInputs:' + str(self.sensor_state.getInputs()))
+            #logging.debug("valueEnvTrans:" + str(valueEnvTrans))
+            #logging.debug("value:" + str(value))
+            #logging.debug("self.violated_spec_line_no:" + str(self.violated_spec_line_no))
 
         if debug_proposition_values == True:
             logging.debug( "self.current_state:")
@@ -131,8 +136,8 @@ class LTL_Check:
         add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["1"] += add_ltl + ")"                                   
-        
+            self.env_safety_assumptions_stage["1"] += add_ltl + ")"   
+
         # for the second stage       
         nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
         add_ltl += " & " + nextInputs         
@@ -176,7 +181,7 @@ class LTL_Check:
         else: 
             new_env_safety  = new_env_safety + ")"     
 
-        self.ltl_tree = LTLFormula.parseLTL(originalEnvTrans + new_env_safety)
+        self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + new_env_safety))
 
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
         try:
@@ -347,7 +352,10 @@ class LTL_Check:
                     
                     if value == False: 
                         try:
-                            treeNo = self.ltlTree_to_lineNo[str(x)]                         
+                            logging.debug("violated line:" + str(x))
+                            logging.debug(self.ltlTree_to_lineNo)
+                            treeNo = self.ltlTree_to_lineNo[str(x)] 
+                            logging.debug('found tree no')                        
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
                                 violated_spec_line_no.append(treeNo)
                         except:     

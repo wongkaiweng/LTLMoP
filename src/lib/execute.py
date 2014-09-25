@@ -313,6 +313,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------- two_robot_negotiation ----------#
         self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
         self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+        self.negotiationStatus = self.robClient.checkNegotiationStatus()
         # -----------------------------------------#        
         
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
@@ -402,8 +403,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             
             # pass in current env assumptions if we have some
             if realizable:
-                self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(self.oriEnvTrans)       
+                self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))       
                 self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+                logging.debug(self.oriEnvTrans)
             else:
                 self.LTLViolationCheck.ltl_treeEnvTrans = None
         
@@ -414,6 +416,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         if init_state is None: 
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
+            self.postEvent('INFO','Finding init state failed.')
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
         if init_state is None:
@@ -468,7 +471,55 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             
             # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
-
+            
+            # ---------- two_robot_negotiation ------------- # 
+            # resynthesis request from the other robot
+            self.negotiationStatus = self.robClient.checkNegotiationStatus()
+            if not self.exchangedSpec and self.negotiationStatus == self.robClient.robotName:
+                # synthesize a new controller to incorporate the actions of the other robot. 
+                realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec()
+                if realizable:
+                    self.robClient.setNegotiationStatus(True)
+                    self.otherRobotStatus = False
+                    self.postEvent('RESOLVED','Using exchanged specification.')
+                    
+                    # reinitialize automaton
+                    spec_file = self.proj.getFilenamePrefix() + ".spec"
+                    aut_file = self.proj.getFilenamePrefix() + ".aut"    
+                    self.initialize(spec_file, aut_file, firstRun=False)  
+                    continue
+                    
+                else:
+                    self.postEvent('INFO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
+                    
+                    # send our spec to the other robot
+                    self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
+                    self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+                    self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+                    self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+                    
+                    # wait until the other robot resynthesize its controller
+                    while self.robClient.checkNegotiationStatus() != (True or False): 
+                        time.sleep(2)
+                        
+                    if self.robClient.checkNegotiationStatus() == True:
+                        #convert to the original specification
+                        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+                        # remove spec from other robots and resynthesize
+                        self.spec['SysTrans'] = oldSpecSysTrans
+                        self.spec['EnvGoals'] = oldSpecEnvGoals
+                        self.recreateLTLfile(self.proj)
+                        realizable, realizableFS, output  = self.compiler._synthesize()
+                        self.exchangedSpec = True
+                        self.otherRobotStatus = True # env characterization disabled
+                        self.postEvent('RESOLVED','The other robot has incorporated our action. Using original specification.')
+                    else:
+                        #TODO: spec analysis needed.
+                        self.postEvent('INFO','Negotiation Failed. Spec Analysis is needed.')
+                        self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)      
+                        return
+            
+            """    
             # if the other robot is requesting spec from us
             self.robClient.checkRequestSpec()
             for specType in self.robClient.specRequestFromOther:
@@ -476,19 +527,32 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 self.robClient.sendSpec(specType,self.spec[specType]) 
 
             self.robClient.specRequestFromOther = []
-                
+            """
+            # ------------------------------------------- #
+            
             # assumption didn't hold
             if not env_assumption_hold:
-
+            
+                # ------------ two_robot_negotiation ----------#
+                self.violationTimeStamp = time.time()
+                # store time stamp of violation            
+                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                # ---------------------------------------------# 
+                
                 # count the number of next state changes
                 if last_next_states != current_next_states:
                     self.envViolationCount += 1
-                    
+                
+                self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))    
+                self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo)) 
                 # print out the violated specs
                 for x in self.LTLViolationCheck.violated_spec_line_no:
+                    logging.debug("x not in self.currentViolationLineNo:" + str(x not in self.currentViolationLineNo))
                     if x not in self.currentViolationLineNo:
+                        logging.debug('x == 0:' + str(x == 0))
                         if x == 0 :
-                            if len(self.currentViolationLineNo) == 1:
+                            logging.debug('len(self.currentViolationLineNo) == 1:' + str(len(self.currentViolationLineNo) == 1))
+                            if len(self.LTLViolationCheck.violated_spec_line_no) == 1 and len(self.currentViolationLineNo) == 0:
                                 self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                         else:                 
                             self.postEvent("VIOLATION","Detected the following env safety violation:" )
@@ -533,7 +597,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # Modify the ltl file based on the enviornment change   
                         self.addStatetoEnvSafety(self.sensor_strategy)
             
-            else: 
+            else:
                 # assumption not violated but sensor state changes. we add in this new state
                 self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
 
