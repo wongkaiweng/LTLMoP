@@ -208,6 +208,10 @@ class SimGUI_Frame(wx.Frame):
                 elif eventType == "INFO":
                     wx.CallAfter(self.appendLog, eventData + "\n", color= self.currentColor) 
                     ############################################################### 
+                    # ---------------- two_robot_negotiation ------------ #
+                elif eventType == "NEGO":
+                    wx.CallAfter(self.appendLog, eventData + "\n", color= "#9933FF") 
+                    # --------------------------------------------------- #
                     # Detect our current goal index
                 elif eventData.startswith("Currently pursuing goal"):
                     m = re.search(r"#(\d+)", eventData)

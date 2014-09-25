@@ -406,7 +406,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if realizable:
                 self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))       
                 self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-                logging.debug(self.oriEnvTrans)
+
             else:
                 self.LTLViolationCheck.ltl_treeEnvTrans = None
         
@@ -470,8 +470,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
             for prop_name, value in sensor_state.iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
-            logging.debug(sensor_state)
-            logging.debug(self.strategy.current_state.getAll())
+
             # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
             
@@ -479,12 +478,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             # resynthesis request from the other robot
             self.negotiationStatus = self.robClient.checkNegotiationStatus()
             if not self.exchangedSpec and self.negotiationStatus == self.robClient.robotName:
+                self.postEvent('NEGO','-- NEGOTIATION STARTED --')
                 # synthesize a new controller to incorporate the actions of the other robot. 
                 realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec()
                 if realizable:
                     self.robClient.setNegotiationStatus(True)
                     self.otherRobotStatus = False
-                    self.postEvent('RESOLVED','Using exchanged specification.')
+                    self.postEvent('NEGO','Using exchanged specification.')
+                    self.postEvent('RESOLVED','')
                     
                     # reinitialize automaton
                     spec_file = self.proj.getFilenamePrefix() + ".spec"
@@ -493,7 +494,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     continue
                     
                 else:
-                    self.postEvent('INFO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
+                    self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
                     
                     # send our spec to the other robot
                     self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
@@ -515,10 +516,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         realizable, realizableFS, output  = self.compiler._synthesize()
                         self.exchangedSpec = True
                         self.otherRobotStatus = True # env characterization disabled
-                        self.postEvent('RESOLVED','The other robot has incorporated our action. Using original specification.')
+                        self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
+                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+                        self.postEvent('RESOLVED','')
                     else:
                         #TODO: spec analysis needed.
-                        self.postEvent('INFO','Negotiation Failed. Spec Analysis is needed.')
+                        self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
+                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                         self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)      
                         return
             
@@ -537,7 +541,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if not env_assumption_hold:
             
                 # ------------ two_robot_negotiation ----------#
-                self.violationTimeStamp = time.time()
+                self.violationTimeStamp = time.clock()
                 # store time stamp of violation            
                 self.robClient.setViolationTimeStamp(self.violationTimeStamp)
                 # ---------------------------------------------# 
