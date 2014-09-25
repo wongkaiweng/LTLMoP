@@ -140,6 +140,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------- two_robot_negotiation ----------#
         # -----------------------------------------#
         self.robClient = None
+        self.old_violated_specStr = []
         # -----------------------------------------#
         
 
@@ -172,7 +173,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
-        logging.debug([x.name.encode('ascii') for x in self.proj.rfi.regions])
+        #logging.debug([x.name.encode('ascii') for x in self.proj.rfi.regions])
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors,
@@ -424,6 +425,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
         else:
             logging.info("Starting from state %s." % init_state.state_id)
+            self.postEvent('INFO', "Starting from state %s." % init_state.state_id)
         
         self.strategy = new_strategy
         self.strategy.current_state = init_state
@@ -468,7 +470,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
             for prop_name, value in sensor_state.iteritems():
                 self.sensor_strategy.setPropValue(prop_name, value)
-            
+            logging.debug(sensor_state)
+            logging.debug(self.strategy.current_state.getAll())
             # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
             
@@ -543,21 +546,25 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 if last_next_states != current_next_states:
                     self.envViolationCount += 1
                 
-                self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))    
-                self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo)) 
+                #self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))    
+                #self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo)) 
                 # print out the violated specs
                 for x in self.LTLViolationCheck.violated_spec_line_no:
-                    logging.debug("x not in self.currentViolationLineNo:" + str(x not in self.currentViolationLineNo))
                     if x not in self.currentViolationLineNo:
-                        logging.debug('x == 0:' + str(x == 0))
                         if x == 0 :
-                            logging.debug('len(self.currentViolationLineNo) == 1:' + str(len(self.currentViolationLineNo) == 1))
                             if len(self.LTLViolationCheck.violated_spec_line_no) == 1 and len(self.currentViolationLineNo) == 0:
                                 self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                         else:                 
                             self.postEvent("VIOLATION","Detected the following env safety violation:" )
                             self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
-
+                
+                for x in self.LTLViolationCheck.violated_specStr:
+                    if x not in self.old_violated_specStr:
+                        self.postEvent("VIOLATION", x)
+                
+                # save a copy     
+                self.old_violated_specStr = self.LTLViolationCheck.violated_specStr
+                
                 if self.ENVcharacterization:    
                     if self.recovery:
                         ########################################
