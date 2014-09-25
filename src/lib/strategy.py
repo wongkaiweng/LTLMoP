@@ -632,13 +632,19 @@ class Strategy(object):
 
         raise NotImplementedError("Use a subclass of Strategy")
 
-    def searchForOneState(self, prop_assignments, state_list=None):
+    def searchForOneState(self, prop_assignments, state_list=None, goal_id=None):
         """ Iterate through all known states (or a subset specified in `state_list`)
             and return the first one that matches `prop_assignments`.
 
             Returns None if no such state is found.  """
 
-        return next(self.searchForStates(prop_assignments, state_list), None)
+        if goal_id is None:
+            return next(self.searchForStates(prop_assignments, state_list), None)
+        else:
+            for state in self.searchForStates(prop_assignments, state_list):
+                if state.goal_id == goal_id:
+                    logging.debug('returning:' + str(state))
+                    return state
 
     def exportAsDotFile(self, filename, regionMapping, starting_states=None):
         """ Output an explicit-state strategy to a .dot file of name `filename`.

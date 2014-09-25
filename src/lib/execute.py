@@ -141,6 +141,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -----------------------------------------#
         self.robClient = None
         self.old_violated_specStr = []
+        self.prev_z  = 0
         # -----------------------------------------#
         
 
@@ -358,7 +359,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
         
         #search for initial state in the strategy
-        init_state = new_strategy.searchForOneState(init_prop_assignments)
+        if firstRun:
+            init_state = new_strategy.searchForOneState(init_prop_assignments)
+        else:
+            init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = self.prev_z)
         
         ######## ENV Assumption Learning ###########                  
         if firstRun:
@@ -525,7 +529,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                         self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)      
                         return
-            
+                self.exchangedSpec = True
             """    
             # if the other robot is requesting spec from us
             self.robClient.checkRequestSpec()
