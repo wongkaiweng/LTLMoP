@@ -510,7 +510,7 @@ class ExecutorResynthesisExtensions(object):
             realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(True)
             self.postEvent("NEGO",'Adding only system guarantees.')
             if not realizable:
-                realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(False)
+                realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
                 self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
             
             if realizable:
@@ -653,7 +653,7 @@ class ExecutorResynthesisExtensions(object):
             logging.debug('Waiting for the other robot to yield our way.')
             #logging.debug(self.lastSensorState.getInputs())
             #logging.debug(sensor_state.getInputs())
-            if self.lastSensorState is None  or self.lastSensorState.getInputs() != sensor_state.getInputs():
+            if self.lastSensorState is None  or self.lastSensorState.getInputs() != sensor_state.getInputs() or not self.realizable:
                 # update spec with current state of the other robot
                 self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
                 self.recreateLTLfile(self.proj)

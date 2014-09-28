@@ -73,8 +73,9 @@ class ExecutorStrategyExtensions(object):
 
             self.next_state = random.choice(next_states)
             self.next_region = self.next_state.getPropValue('region')
-
-            self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+            
+            if self.next_state.goal_id != self.strategy.current_state.goal_id:
+                self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
             # See what we, as the system, need to do to get to this new state
             self.transition_contains_motion = self.next_region is not None and (self.next_region != self.current_region)

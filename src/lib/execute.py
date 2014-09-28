@@ -430,7 +430,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
         else:
             logging.info("Starting from state %s." % init_state.state_id)
-            self.postEvent('INFO', "Starting from state %s." % init_state.state_id)
+            if self.strategy is None or init_state.state_id != self.strategy.current_state.state_id:
+                self.postEvent('INFO', "Starting from state %s." % init_state.state_id)
         
         self.strategy = new_strategy
         self.strategy.current_state = init_state
@@ -489,7 +490,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(True)
                 self.postEvent("NEGO",'Adding only system guarantees.')
                 if not realizable:
-                    realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(False)
+                    realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
                     self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
                     
                 if realizable:
