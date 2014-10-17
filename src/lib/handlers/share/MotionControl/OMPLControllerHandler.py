@@ -53,6 +53,10 @@ import random
 import thread
 import threading
 
+import warnings
+def customwarn(message, category, filename, lineno, file=None, line=None):
+    print >>sys.__stdout__,message
+warnings.showwarning = customwarn
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -526,7 +530,12 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             print >>sys.__stdout__,"duration: " + str(duration)
         state.setX( start.getX() + control[0] * duration * cos(start.getYaw()) )
         state.setY( start.getY() + control[0] * duration * sin(start.getYaw()) )
-        state.setYaw(start.getYaw() + control[1] * duration)
+        if (start.getYaw() + control[1] * duration) < -pi:
+            state.setYaw(start.getYaw() + control[1] * duration + 2*pi)
+        elif (start.getYaw() + control[1] * duration) > pi:
+            state.setYaw(start.getYaw() + control[1] * duration - 2*pi)
+        else:
+            state.setYaw(start.getYaw() + control[1] * duration)
 
     def plan(self,goalPoints,current_region,next_region,samplerIndex):
         """
@@ -570,7 +579,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             cbounds.setLow(1,-pi/5)
             cbounds.setHigh(1,pi/5)
             cspace.setBounds(cbounds)
-
+        
             if self.system_print == True:
                 print cspace.settings()
 
@@ -585,7 +594,6 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             # set state validity checking for this space
             ss.setStatePropagator(oc.StatePropagatorFn(self.propagate))
         ss.setStateValidityChecker(ob.StateValidityCheckerFn(self.isStateValid))
-
 
         # create a start state
         start = ob.State(space)
@@ -639,7 +647,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         # set the start and goal states;
         ss.setGoal(goalStates)
         ss.setStartState(start)
-
+        
         # set sampler (optional; the default is uniform sampling)
         si = ss.getSpaceInformation()
 
@@ -666,9 +674,11 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             planner.setGoalBias(0.5)
         ss.setup()
 
-
-        # attempt to solve the problem within ten seconds of planning time
-        solved = ss.solve(1000.0) #10
+        solved = False
+        solveTime = 3 # attempt to solve the problem within three seconds of planning time
+        while not solved:
+            solved = ss.solve(solveTime) #10
+            solveTime = solveTime*2  # if not then double the time
 
         if (solved):
             print("Found solution:")
