@@ -171,6 +171,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         self.planner_dictionary['G']['EST'] = og.EST
         self.planner_dictionary['C']['RRT'] = oc.RRT
         self.planner_dictionary['C']['KPIECE1'] = oc.KPIECE1
+        self.planner_dictionary['C']['EST'] = oc.EST
 
         # Generate the boundary polygon
         for regionName,regionPoly in self.map['polygon'].iteritems():
@@ -496,6 +497,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         sleep(.001)
         # Valid states satisfy the following constraints:
         # inside the current region and the next region
+        self.state = state
         if self.Space_Dimension == 3:
 
             region_considered = Polygon.Polygon(self.nextAndcurrentRegionPoly)
@@ -537,12 +539,25 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         else:
             state.setYaw(start.getYaw() + control[1] * duration)
 
+
     def plan(self,goalPoints,current_region,next_region,samplerIndex):
         """
         goal points: array that contains the coordinates of all the possible goal states
         current_reg: name of the current region (p1 etc)
         next_reg   : name of the next region (p1 etc)
         """
+        def plannerTermination():
+            """
+            define the terminate condition for control space planner. (max distance from goal points)
+            """
+            for idx in range(goalStates.getStateCount()):
+                if self.system_print is True:
+                    print>>sys.__stdout__, ((goalStates.getState(idx).getX()-self.state.getX())**2 + (goalStates.getState(idx).getY()- self.state.getY())**2)**0.5
+                if ((goalStates.getState(idx).getX()-self.state.getX())**2 + (goalStates.getState(idx).getY()- self.state.getY())**2)**0.5 < self.radius:
+                    return True
+
+            return False
+
         # construct the state space we are planning in
         if self.Space_Dimension == 2:
             space = ob.SE2StateSpace()
@@ -579,7 +594,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             cbounds.setLow(1,-pi/5)
             cbounds.setHigh(1,pi/5)
             cspace.setBounds(cbounds)
-        
+
             if self.system_print == True:
                 print cspace.settings()
 
@@ -647,7 +662,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         # set the start and goal states;
         ss.setGoal(goalStates)
         ss.setStartState(start)
-        
+
         # set sampler (optional; the default is uniform sampling)
         si = ss.getSpaceInformation()
 
@@ -674,10 +689,17 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             planner.setGoalBias(0.5)
         ss.setup()
 
-        solved = False
-        solveTime = 3 # attempt to solve the problem within three seconds of planning time
-        while not solved:
-            solved = ss.solve(solveTime) #10
+        terminate = False
+        solveTime = 10 # attempt to solve the problem within three seconds of planning time
+        while not terminate:
+            if self.Geometric_Control == 'G':
+                solved = ss.solve(solveTime) #10
+                if solved.getStatus() == ob.PlannerStatus.EXACT_SOLUTION:
+                    terminate = True
+            else:
+                solved = ss.solve(ob.PlannerTerminationCondition(ob.PlannerTerminationConditionFn(plannerTermination)))
+                terminate = solved
+
             solveTime = solveTime*2  # if not then double the time
 
         if (solved):
