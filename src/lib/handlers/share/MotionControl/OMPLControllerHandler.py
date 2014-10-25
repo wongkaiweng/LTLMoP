@@ -243,7 +243,7 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
 
         ###This part will be run when the robot goes to a new region, otherwise, the original tree will be used.
         if not self.previous_next_reg == next_reg:
-
+            self.dist = 1000000 # reset distance for printing info
             # plotting current pose and the map
             if self.operate_system == 1 and self.plotting == True:
                 self.ax.cla()
@@ -295,9 +295,9 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
                 q_gBundle = mat(goalPoints)
                 face_normal = mat(face_normal)
                 for i in range(q_gBundle.shape[1]):
-                    q_g = q_gBundle[:,i]+face_normal[:,i]*1.5*self.radius    ##original 2*self.radius
+                    q_g = q_gBundle[:,i]+face_normal[:,i]*3*self.radius    ##original 2*self.radius
                     if not self.nextRegionPoly.isInside(q_g[0],q_g[1]):
-                        q_g = q_gBundle[:,i]-face_normal[:,i]*1.5*self.radius    ##original 2*self.radius
+                        q_g = q_gBundle[:,i]-face_normal[:,i]*3*self.radius    ##original 2*self.radius
                     goalPoints[0,i] = q_g[0,0]
                     goalPoints[1,i] = q_g[1,0]
 
@@ -332,8 +332,8 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         # check if robot is inside the current region
         departed = not self.currentRegionPoly.overlaps(RobotPoly)
         pose = self.pose_handler.getPose()
-        arrived  = self.nextRegionPoly.isInside(pose[0],pose[1])
-        #arrived  = self.nextRegionPoly.covers(RobotPoly)
+        #arrived  = self.nextRegionPoly.isInside(pose[0],pose[1])
+        arrived  = self.nextRegionPoly.covers(RobotPoly)
 
         if departed and (not arrived) and (time.time()-self.last_warning) > 0.5:
             # Figure out what region we think we stumbled into
@@ -497,7 +497,6 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         sleep(.001)
         # Valid states satisfy the following constraints:
         # inside the current region and the next region
-        self.state = state
         if self.Space_Dimension == 3:
 
             region_considered = Polygon.Polygon(self.nextAndcurrentRegionPoly)
@@ -519,6 +518,9 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
 
             return region_considered.covers(state_polygon) and (state.getZ()+self.height/2) < height and (state.getZ()-self.height/2) > 0
         else:
+            if self.nextAndcurrentRegionPoly.covers(PolyShapes.Circle(self.radius,(state.getX(),state.getY()))):
+                self.state = state
+            self.stateValid = self.nextAndcurrentRegionPoly.covers(PolyShapes.Circle(self.radius,(state.getX(),state.getY())))
             return self.nextAndcurrentRegionPoly.covers(PolyShapes.Circle(self.radius,(state.getX(),state.getY())))
 
 
@@ -539,7 +541,6 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
         else:
             state.setYaw(start.getYaw() + control[1] * duration)
 
-
     def plan(self,goalPoints,current_region,next_region,samplerIndex):
         """
         goal points: array that contains the coordinates of all the possible goal states
@@ -550,12 +551,15 @@ class OMPLControllerHandler(handlerTemplates.MotionControlHandler):
             """
             define the terminate condition for control space planner. (max distance from goal points)
             """
-            for idx in range(goalStates.getStateCount()):
-                if self.system_print is True:
-                    print>>sys.__stdout__, ((goalStates.getState(idx).getX()-self.state.getX())**2 + (goalStates.getState(idx).getY()- self.state.getY())**2)**0.5
-                if ((goalStates.getState(idx).getX()-self.state.getX())**2 + (goalStates.getState(idx).getY()- self.state.getY())**2)**0.5 < self.radius:
-                    return True
-
+            if self.stateValid:
+                for idx in range(goalStates.getStateCount()):
+                    dist = ((goalStates.getState(idx).getX()-self.state.getX())**2 + (goalStates.getState(idx).getY()- self.state.getY())**2)**0.5
+                    if self.dist > dist:
+                        print>>sys.__stdout__,"node to goal distnace: "+ str(dist)
+                        self.dist = dist
+                    if dist < self.radius:
+                        print>>sys.__stdout__, "returning now"
+                        return True
             return False
 
         # construct the state space we are planning in
