@@ -1,0 +1,87 @@
+[INPUT]
+rob1_r1_rc
+rob1_r2_rc
+rob1_r3_rc
+rob1_r4_rc
+rob1_r5_rc
+rob1_r6_rc
+rob1_r7_rc
+rob1_r8_rc
+
+[OUTPUT]
+rob1_r1
+rob1_r2
+rob1_r3
+rob1_r4
+rob1_r5
+rob1_r6
+rob1_r7
+rob1_r8
+
+[ENV_TRANS]
+| ! & rob1_r1_rc rob1_r1 rob1_r1_rc'
+| ! & rob1_r2_rc rob1_r2 rob1_r2_rc'
+| ! & rob1_r3_rc rob1_r3 rob1_r3_rc'
+| ! & rob1_r4_rc rob1_r4 rob1_r4_rc'
+| ! & rob1_r5_rc rob1_r5 rob1_r5_rc'
+| ! & rob1_r6_rc rob1_r6 rob1_r6_rc'
+| ! & rob1_r7_rc rob1_r7 rob1_r7_rc'
+| ! & rob1_r8_rc rob1_r8 rob1_r8_rc'
+| ! & rob1_r1_rc rob1_r2 | rob1_r1_rc' rob1_r2_rc'
+| ! & rob1_r2_rc rob1_r4 | rob1_r2_rc' rob1_r4_rc'
+| ! & rob1_r2_rc rob1_r1 | rob1_r2_rc' rob1_r1_rc'
+| ! & rob1_r2_rc rob1_r3 | rob1_r2_rc' rob1_r3_rc'
+| ! & rob1_r3_rc rob1_r2 | rob1_r2_rc' rob1_r3_rc'
+| ! & rob1_r4_rc rob1_r2 | rob1_r4_rc' rob1_r2_rc'
+| ! & rob1_r4_rc rob1_r5 | rob1_r4_rc' rob1_r5_rc'
+| ! & rob1_r5_rc rob1_r4 | rob1_r5_rc' rob1_r4_rc'
+| ! & rob1_r5_rc rob1_r7 | rob1_r5_rc' rob1_r7_rc'
+| ! & rob1_r6_rc rob1_r7 | rob1_r6_rc' rob1_r7_rc'
+| ! & rob1_r7_rc rob1_r6 | rob1_r6_rc' rob1_r7_rc'
+| ! & rob1_r7_rc rob1_r5 | rob1_r5_rc' rob1_r7_rc'
+| ! & rob1_r7_rc rob1_r8 | rob1_r8_rc' rob1_r7_rc'
+| ! & rob1_r8_rc rob1_r7 | rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r1_rc' ! | | | | | | rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r2_rc' ! | | | | | | rob1_r1_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r3_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r4_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r5_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r6_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r7_rc' rob1_r8_rc'
+| ! rob1_r7_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r8_rc'
+| ! rob1_r8_rc' ! | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc'
+| | | | | | | rob1_r1_rc' rob1_r2_rc' rob1_r3_rc' rob1_r4_rc' rob1_r5_rc' rob1_r6_rc' rob1_r7_rc' rob1_r8_rc'
+
+[ENV_INIT]
+& & & & & & & rob1_r1_rc ! rob1_r2_rc ! rob1_r3_rc ! rob1_r4_rc ! rob1_r5_rc ! rob1_r6_rc ! rob1_r7_rc ! rob1_r8_rc
+
+[SYS_TRANS]
+| ! rob1_r1_rc' | rob1_r1' rob1_r2'
+| ! rob1_r2_rc' | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4'
+| ! rob1_r3_rc' | rob1_r2' rob1_r3'
+| ! rob1_r4_rc' | | rob1_r2' rob1_r4' rob1_r5'
+| ! rob1_r5_rc' | | rob1_r4' rob1_r5' rob1_r7'
+| ! rob1_r6_rc' | rob1_r6' rob1_r7'
+| ! rob1_r7_rc' | | | rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r8_rc' | rob1_r7' rob1_r8'
+| ! rob1_r1' ! | | | | | | rob1_r2' rob1_r3' rob1_r4' rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r2' ! | | | | | | rob1_r1' rob1_r3' rob1_r4' rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r3' ! | | | | | | rob1_r1' rob1_r2' rob1_r4' rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r4' ! | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r5' ! | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4' rob1_r6' rob1_r7' rob1_r8'
+| ! rob1_r6' ! | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4' rob1_r5' rob1_r7' rob1_r8'
+| ! rob1_r7' ! | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4' rob1_r5' rob1_r6' rob1_r8'
+| ! rob1_r8' ! | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4' rob1_r5' rob1_r6' rob1_r7'
+| | | | | | | rob1_r1' rob1_r2' rob1_r3' rob1_r4' rob1_r5' rob1_r6' rob1_r7' rob1_r8'
+
+[SYS_INIT]
+& & & & & & & rob1_r1 ! rob1_r2 ! rob1_r3 ! rob1_r4 ! rob1_r5 ! rob1_r6 ! rob1_r7 ! rob1_r8
+
+[ENV_LIVENESS]
+& & & & & & & | ! rob1_r1 rob1_r1_rc' | ! rob1_r2 rob1_r2_rc' | ! rob1_r3 rob1_r3_rc' | ! rob1_r4 rob1_r4_rc' | ! rob1_r5 rob1_r5_rc' | ! rob1_r6 rob1_r6_rc' | ! rob1_r7 rob1_r7_rc' | ! rob1_r8 rob1_r8_rc'
+
+[SYS_LIVENESS]
+rob1_r1_rc
+rob1_r3_rc
+rob1_r6_rc
+rob1_r8_rc
+

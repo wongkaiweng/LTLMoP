@@ -365,7 +365,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.info("Starting from state %s." % init_state.state_id)
         
         ### RUNTIME MONITORING ###
-        self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(spec_file.replace('.spec','_envTrans.ltl'))
+        #self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(spec_file.replace('.spec','_envTrans.ltl'))
         ##########################
         
         self.strategy = new_strategy
@@ -408,7 +408,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.info(sensor_state)
                 
             # Check for environment violation - change the env_assumption_hold to int again 
-            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
+            #env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
             #self.checkForInternalFlags()
 
             #######################################
