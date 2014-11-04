@@ -126,7 +126,7 @@ class ExecutorStrategyExtensions(object):
         for robot in self.hsub.executing_config.robots:
 
             sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if (k.startswith(robot.name+"_") and k.endswith('_rc')))
-            logging.debug(robot.name + ": "+str(sensor_region))
+            #logging.debug(robot.name + ": "+str(sensor_region))
             sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
 
             if len(sensor_region_names) == 1:
@@ -139,10 +139,10 @@ class ExecutorStrategyExtensions(object):
                 decomposed_region_names  = self.prev_decomposed_region_names
                 break
 
-        logging.debug('--------------' + str(self.hsub.executing_config.robots))
+        #logging.debug('--------------' + str(self.hsub.executing_config.robots))
         for robot in self.hsub.executing_config.robots:
             self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[robot.name][0])]
-        logging.debug("decomposed_region_names" + str(decomposed_region_names))
+        #logging.debug("decomposed_region_names" + str(decomposed_region_names))
         self.prev_decomposed_region_names = decomposed_region_names
         self.prev_sensor_state            =sensor_state
         ##############################################################################
@@ -155,8 +155,8 @@ class ExecutorStrategyExtensions(object):
         if len(next_states) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
-            logging.error('State:' +self.strategy.current_state.state_id +' sensor_state:' + str(sensor_state) )
-            logging.info("decomposed_region_names" + str(decomposed_region_names))
+            #logging.error('State:' +self.strategy.current_state.state_id +' sensor_state:' + str(sensor_state) )
+            #logging.info("decomposed_region_names" + str(decomposed_region_names))
             return
 
         # See if we're beginning a new transition

@@ -3,7 +3,7 @@ import numpy as np
 import logging
 from collections import OrderedDict
 
-threshold = 1.5
+threshold = 10
 robRadius = OrderedDict([('rob2',0.5), ('rob1',0.5)])
 #robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
@@ -126,18 +126,20 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
 
     # run initialization function
     # [vx, vy]=getvelocity(pose, threshold, vertices,robots,destination)
-    getVelocityScript ='[vx, vy] = feval(@getvelocity, pose, threshold, vertices,robots,destination)'
+    getVelocityScript ='[vx, vy, changes] = feval(@getvelocity, pose, threshold, vertices,robots,destination)'
     session.putvalue('getVelocityScript',getVelocityScript)
     session.run('eval(getVelocityScript)')
 
     logging.debug('vx = ' + str(session.getvalue('vx')))
     logging.debug('vy = ' + str(session.getvalue('vy')))
+    logging.debug('changes = ' + str(session.getvalue('changes')))
 
     vx = session.getvalue('vx')
     vy = session.getvalue('vy')
+    regionChanges = session.getvalue('changes')
 
     # return velocities
-    return vx, vy
+    return vx, vy, regionChanges
 
 def closeInterface(session):
     """

@@ -97,13 +97,20 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         ################################
 
         # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
-        vx, vy = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+        vx, vy , regionChanges = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+
+        # check if we want a different region changes for now.
+        if regionChanges:
+            for idx, robot_name in enumerate(self.robotList):
+                current_regVertices[robot_name] = regionChanges[idx,0]
+                next_regVertices[robot_name]    = regionChanges[idx,1]
 
         #logging.debug("V:"+ str(V))
         # OUTPUT from Nora's motion control
         # for example: V = {'robot1':[1,2,3],'robot2':[4,5,6]}
 
         for idx, robot_name in enumerate(self.robotList):
+            logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
             self.drive_handler[robot_name].setVelocity(vx[idx], vy[idx], pose[robot_name][2])
 
             #logging.debug("pose:" + str(pose))

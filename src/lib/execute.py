@@ -49,7 +49,7 @@ import globalConfig, logging
 
 import LTLParser.LTLcheck
 import logging
-import LTLParser.LTLFormula 
+import LTLParser.LTLFormula
 
 ####################
 # HELPER FUNCTIONS #
@@ -102,6 +102,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         self.current_outputs = {}     # keep track on current outputs values (for actuations)
 
+        ######## RUNTIME MONIOTRING #################
+        self.runtimeMonitoring = False
+        #############################################
+
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
 
@@ -133,14 +137,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         """
         #region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         enabled_sensors = self.proj.enabled_sensors
-        
+
         regionSensorList = [x for x in self.proj.enabled_sensors if x.endswith('_rc')]
         self.proj.enabled_sensors =  [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
-        
+
         for robot in self.hsub.executing_config.robots:
             for x in regionSensorList:
                 self.proj.enabled_sensors.append(robot.name+'_' + x)
-        
+
         self.region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc')]
 
         #if self.proj.compile_options['fastslow']:
@@ -160,7 +164,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # TODO: move this to regions.py
         if rfi is None:
             rfi = self.proj.rfi
-        
+
         region = {}
         for robot_name, pose in self.hsub.getPoseMultiRobot().iteritems():
 
@@ -293,18 +297,18 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.debug(self.proj)
             logging.debug(self.proj.loadRegionFile(decomposed=True))
             init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
-            
+
             if init_region is None:
                 logging.error("Initial pose not inside any region!")
                 sys.exit(-1)
-            
+
             for x in self.proj.enabled_sensors:
                 if x.startswith(robot.name):
                     if x.replace(robot.name+"_","").replace("_rc","") == init_region.name:
                         init_prop_assignments.update({x:True})
                     else:
                         init_prop_assignments.update({x:False})
-           
+
 
             logging.info("Starting from initial region: " + init_region.name + ' for ' + robot.name)
         # include initial regions in picking states
@@ -353,7 +357,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if prop_name.endswith('_ac'):
                 init_prop_assignments.update({prop_name:self.current_outputs[prop_name.replace('_ac','')]})
         ###############################
-              
+
         logging.debug(init_prop_assignments)
         #search for initial state in the strategy
         init_state = new_strategy.searchForOneState(init_prop_assignments)
@@ -363,11 +367,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
         else:
             logging.info("Starting from state %s." % init_state.state_id)
-        
-        ### RUNTIME MONITORING ###
-        #self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(spec_file.replace('.spec','_envTrans.ltl'))
-        ##########################
-        
+
+        if self.runtimeMonitoring:
+            ### RUNTIME MONITORING ###
+            self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(spec_file.replace('.spec','_envTrans.ltl'))
+            ########   ##################
+
         self.strategy = new_strategy
         self.strategy.current_state = init_state
         self.last_sensor_state = self.strategy.current_state.getInputs()
@@ -403,13 +408,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             toc = self.timer_func()
 
             ### RUNTIME MONITORING ###
-            # Take a snapshot of our current sensor readings
-            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
-            logging.info(sensor_state)
-                
-            # Check for environment violation - change the env_assumption_hold to int again 
-            #env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
-            #self.checkForInternalFlags()
+            if self.runtimeMonitoring:
+                # Take a snapshot of our current sensor readings
+                sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+                logging.info(sensor_state)
+
+                # Check for environment violation - change the env_assumption_hold to int again
+
+                env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
+                #self.checkForInternalFlags()
 
             #######################################
 
@@ -428,7 +435,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             for robot_name, pose in poseAllRobots.iteritems():
                 poseAllRobots[robot_name] = self.hsub.coordmap_lab2map(pose[0:2])
             self.postEvent("POSE", poseAllRobots)
-                        
+
             last_gui_update_time = self.timer_func()
 
         logging.debug("execute.py quitting...")
