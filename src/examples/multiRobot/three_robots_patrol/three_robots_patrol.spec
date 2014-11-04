@@ -5,11 +5,21 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-r1_done, 1
-r3_done, 1
-r6_done, 1 
-r8_done, 1 
-all_done, 1
+r1_done_1, 1
+r3_done_1, 1
+r6_done_1, 1 
+r8_done_1, 1 
+all_done_1, 1
+r1_done_2, 1
+r3_done_2, 1
+r6_done_2, 1 
+r8_done_2, 1 
+all_done_2, 1
+r1_done_3, 1
+r3_done_3, 1
+r6_done_3, 1 
+r8_done_3, 1 
+all_done_3, 1
 
 CompileOptions:
 convexify: True
