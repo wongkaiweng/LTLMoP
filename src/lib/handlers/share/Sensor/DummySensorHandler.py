@@ -33,29 +33,29 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
     def _stop(self):
         if self.p_sensorHandler is not None:
-            print >>sys.__stderr__, "(SENS) Killing dummysensor GUI..."
+            print >> sys.__stderr__, "(SENS) Killing dummysensor GUI..."
             self.p_sensorHandler.stdin.write(":QUIT\n")
             self.p_sensorHandler.stdin.close()
 
-            print >>sys.__stderr__, "(SENS) Terminating dummysensor GUI listen thread..."
+            print >> sys.__stderr__, "(SENS) Terminating dummysensor GUI listen thread..."
             self._running = False
             self.sensorListenThread.join()
 
     def _createSubwindow(self):
             # Create a subprocess
             print "(SENS) Starting sensorHandler window and listen thread..."
-            self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Sensor","_SensorHandler.py")], stdin=subprocess.PIPE)
+            self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root, "lib", "handlers", "share", "Sensor", "_SensorHandler.py")], stdin=subprocess.PIPE)
 
             # Create new thread to communicate with subwindow
-            self.sensorListenThread = threading.Thread(target = self._sensorListen)
+            self.sensorListenThread = threading.Thread(target=self._sensorListen)
             self.sensorListenThread.daemon = True
             self.sensorListenThread.start()
 
             # Block until the sensor listener gets the go-ahead from the subwindow
             while not self.sensorListenInitialized:
-                time.sleep(0.05) # Yield cpu
+                time.sleep(0.05)  # Yield cpu
 
-    def regionBit(self,name,init_region,bit_num,initial=False):
+    def regionBit(self, name, init_region, bit_num, initial=False):
         """
         Return the value of bit #bit_num in the bit-vector encoding of the currently selected region
 
@@ -77,15 +77,15 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         else:
             if name in self.sensorValue:
                 reg_idx = self.proj.rfi.indexOfRegionWithName(self.sensorValue[name])
-                numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))
+                numBits = int(math.ceil(math.log(len(self.proj.rfi.regions), 2)))
                 reg_idx_bin = numpy.binary_repr(reg_idx, width=numBits)
-                #print name, bit_num, (reg_idx_bin[bit_num] == '1')
+                # print name, bit_num, (reg_idx_bin[bit_num] == '1')
                 return (reg_idx_bin[bit_num] == '1')
             else:
                 print "(SENS) WARNING: Region sensor %s is unknown!" % button_name
                 return None
 
-    def buttonPress(self,button_name,init_value,initial=False):
+    def buttonPress(self, button_name, init_value, initial=False):
         """
         Return a boolean value corresponding to the state of the sensor with name ``sensor_name``
         If such a sensor does not exist, returns ``None``
@@ -119,9 +119,9 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         host = 'localhost'
         port = 23459
         buf = 1024
-        addr = (host,port)
+        addr = (host, port)
 
-        UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        UDPSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         UDPSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         UDPSock.settimeout(1)
         try:
@@ -133,7 +133,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         while self._running:
             # Wait for and receive a message from the subwindow
             try:
-                input,addrFrom = UDPSock.recvfrom(1024)
+                input, addrFrom = UDPSock.recvfrom(1024)
             except socket.timeout:
                 continue
 
@@ -160,25 +160,65 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             else:
                 self.sensorValue[args[0]] = args[1]
 
-    def inRegion(self, regionName, robotName, initial = False):
+    def inRegion(self, regionName, robotName, initial=False):
         """
-        Check if the robot is in this region
+        Check if the robot is in this region. This is the normal version.
         regionName (string): Name of the region
         robotName  (string): Name of the robot
-        """    
+        """
 
-        if initial:
-            return True
-        
-        else: 
-            pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPoseByRobotName(robotName))
-            #########################################
-            ### Copied from vectorController.py #####
-            #########################################            
+        pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPoseByRobotName(robotName))
+        #########################################
+        ### Copied from vectorController.py #####
+        #########################################
 
-            regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
-            pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
-            #pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
-            vertices = numpy.mat(pointArray).T 
-            logging.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
-            return is_inside([pose[0], pose[1]], vertices)
+        regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
+        pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+        # pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+        vertices = numpy.mat(pointArray).T
+        logging.debug(self.proj.rfiold.regions[regionNo].name + ": " + str(is_inside([pose[0], pose[1]], vertices)))
+        return is_inside([pose[0], pose[1]], vertices)
+
+    def inRegionMATLAB(self, regionName, robotName, initial=False):
+        """
+        Check if the robot is in this region. This function is to be used with Nora's controller.
+        regionName (string): Name of the region
+        robotName  (string): Name of the robot
+        """
+
+        # if initial:
+        #    return True
+
+        # else:
+        pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPoseByRobotName(robotName))
+        #########################################
+        ### Copied from vectorController.py #####
+        #########################################
+
+        regionNewNameList = self.proj.regionMapping[regionName]
+        # self.executor.postEvent("INFO",'Old Name: '+ str(regionName) + ', New Name: '+str(regionNewNameList))
+
+        # find index number of the new region name
+        for regionNewName in regionNewNameList:
+            regionNo = self.proj.rfi.indexOfRegionWithName(regionNewName)
+
+            # self.executor.postEvent("INFO",'Region No: '+ str(regionNo) + ', robName: '+str(robotName))
+            pointArray = [x for x in self.proj.rfi.regions[regionNo].getPoints()]
+            vertices = numpy.mat(pointArray).T
+            # time.sleep(3)
+
+            # return region checking if no motion controller can be found
+            if self.executor.hsub.getHandlerInstanceByType(handlerTemplates.MotionControlHandler, 'rob1') is None:
+                if is_inside([pose[0], pose[1]], vertices):
+                    return True
+            elif self.executor.hsub.getHandlerInstanceByType(handlerTemplates.MotionControlHandler, 'rob1').current_regIndices[robotName] is None:
+                if is_inside([pose[0], pose[1]], vertices):
+                    return True
+            else:
+                # overwrite current location by Nora's controller
+                if regionNo == self.executor.hsub.getHandlerInstanceByType(handlerTemplates.MotionControlHandler, 'rob1').current_regIndices[robotName]:
+                    # self.executor.postEvent("INFO",'Overwriting region info.' + str(regionName) + str(robotName) + str(regionNo))
+                    return True
+
+        # not inside the current region
+        return False

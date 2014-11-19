@@ -2,8 +2,9 @@ import pymatlab
 import numpy as np
 import logging
 from collections import OrderedDict
+import time #for pause 
 
-threshold = 10
+threshold = 300
 robRadius = OrderedDict([('rob2',0.5), ('rob1',0.5)])
 #robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
@@ -107,9 +108,9 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
 
     session.putvalue('pose',robotPose)
 
-    logging.info('Set robotPose completed')
+    #logging.info('Set robotPose completed')
     logging.debug(robotPose)
-    logging.debug(session.getvalue('pose'))
+    #logging.debug(session.getvalue('pose'))
 
     #-------------------------------------------------------------------
     # -----PYTHON: robotNextRegion, MATLAB: destination SIZE: nx1-------
@@ -120,9 +121,9 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     robotNextRegion = np.int_([next_regIndices])
     session.putvalue('destination',robotNextRegion)
 
-    logging.info('Set robotNextRegion completed')
+    #logging.info('Set robotNextRegion completed')
     logging.debug("in python: " + str(robotNextRegion))
-    logging.debug("in MATLAB: " + str(session.getvalue('destination')))
+    #logging.debug("in MATLAB: " + str(session.getvalue('destination')))
 
     # run initialization function
     # [vx, vy]=getvelocity(pose, threshold, vertices,robots,destination)
@@ -130,13 +131,12 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     session.putvalue('getVelocityScript',getVelocityScript)
     session.run('eval(getVelocityScript)')
 
-    logging.debug('vx = ' + str(session.getvalue('vx')))
-    logging.debug('vy = ' + str(session.getvalue('vy')))
-    logging.debug('changes = ' + str(session.getvalue('changes')))
+    #logging.debug('vx = ' + str(session.getvalue('vx')))
+    #logging.debug('vy = ' + str(session.getvalue('vy')))
 
     vx = session.getvalue('vx')
     vy = session.getvalue('vy')
-    regionChanges = session.getvalue('changes')
+    regionChanges = session.getvalue('changes')-1
 
     # return velocities
     return vx, vy, regionChanges
