@@ -254,10 +254,10 @@ class BDDStrategy(strategy.Strategy):
         if from_state is None:
             from_state = self.current_state
 
-        # If possible, move on to the next goal (only possible if current states fulfils current goal)
+        # If possible, move on to the next goal (only possible if current transitions fulfils current goal)
         candidates = self._getNextStateBDD(from_state, prop_assignments, "Z")
         if candidates:
-            candidate_states = list(self.BDDToStates(candidates))
+            candidate_states = list(self.BDDToStates(candidates))  
             for s in candidate_states:
                 # add 1 to jx
                 s.goal_id = (s.goal_id + 1) % self.num_goals
@@ -286,8 +286,8 @@ class BDDStrategy(strategy.Strategy):
         next_state_restrictions = self.propAssignmentToBDD(prop_assignments, use_next=True)
         candidates = self.unprime(  self.stateToBDD(from_state)
                                   & self.strategy
+                                  & next_state_restrictions) 
                                   & strat_type_bdd
-                                  & next_state_restrictions)
         return candidates
 
     def getBDDFromJx(self, jx):
