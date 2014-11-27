@@ -20,6 +20,9 @@ import executeStrategy
 # -------- two_robot_negotiation ----#
 import logging
 # -----------------------------------#
+# &&& negotiation_counterstrategy &&&#
+from LTLParser.translateFromSlugsLTLFormatToLTLFormat import parseSLUGSCNFtoLTL
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 
 class ExecutorResynthesisExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
@@ -59,7 +62,7 @@ class ExecutorResynthesisExtensions(object):
 
         # Update the FSA function to point to our new one
         #executeStrategy.runStrategyIteration = runIterationWithResynthesisChecks
-        
+
         # ---two_robot_negotiation ------ #
         self.exchangedSpec = False
         self.otherRobotStatus = None
@@ -107,13 +110,13 @@ class ExecutorResynthesisExtensions(object):
 
     def _findGroupsInCorrespondenceWithGroup(self, group_name):
         """ Return a list of group names to which the group named `group_name` has a correspondence relation. """
-        
+
         # TODO: Move this to parser?
         CorrespondenceDefinitionRE = re.compile(r"^\s*" + group_name + r"\s+corresponds?\s+to\s+(?P<groupB>\w+)", \
                                                 re.MULTILINE | re.IGNORECASE)
-        
+
         corresponding_groups = [m.group("groupB") for m in CorrespondenceDefinitionRE.finditer(self.proj.specText)]
-        
+
         return corresponding_groups
 
     def _processInternalFlag(self, flag_name):
@@ -171,7 +174,7 @@ class ExecutorResynthesisExtensions(object):
                 logging.debug("Adding new sensor proposition {!r}".format(ref))
                 self.next_proj.enabled_sensors.append(ref)
                 self.next_proj.all_sensors.append(ref)
-            
+
             # Figure out if there are any corresponding groups which we will also need to update
             corresponding_groups = self._findGroupsInCorrespondenceWithGroup(m.group('groupName'))
             logging.debug("Need to also update corresponding groups: {}".format(corresponding_groups))
@@ -301,9 +304,9 @@ class ExecutorResynthesisExtensions(object):
         # TODO: Do we need to remove pre-exisiting constraints too? What about env?
         # Add in current system state to make strategy smaller
         gc = guarantees.getConjuncts()
-        
+
         if ltl_current_state != "":
-            gc.append(LTLFormula.fromString(ltl_current_state))  
+            gc.append(LTLFormula.fromString(ltl_current_state))
 
         # Write the file back
         createLTLfile(ltl_filename, assumptions, gc)
@@ -378,13 +381,13 @@ class ExecutorResynthesisExtensions(object):
 
         # Overwrite the specification text
         new_proj.specText = spec_text
-        
+
         return resynthesizeFromProject(new_proj)
 
     ########### ENV Assumption mining ###############
     ### added an option for env inputs ##############
     def getCurrentStateAsLTL(self, env_output=False):
-        """ Return a boolean formula (as a string) capturing the current discrete state of 
+        """ Return a boolean formula (as a string) capturing the current discrete state of
             the system (and, optionally, the environment as well) """
 
         if self.aut:
@@ -432,7 +435,53 @@ class ExecutorResynthesisExtensions(object):
 
         # Let anyone waiting for the response know that it is ready
         self.received_user_query_response.set()
-   
+
+    #&&&&&&& negotiation_counterstrategy &&&&&&&&&#
+    def initiateExchange(self):
+        """
+        negotiation implementation with counterStrategy
+        """
+        # compute counterStrategy with SLUGS and extract clauses
+        realizable, realizableFS, log = self.compiler._synthesize(counterstrategy_clauses = True)
+
+        # split to get only the CNF clauses
+        slugsStr = log.partition("# Safety assumptions for realizable spec:\n")[2][:-1]
+
+        # convert formula from slugs to our format
+        safetEnvLTL = parseSLUGSCNFtoLTL(slugsStr,self.proj.enabled_sensors)
+        logging.debug(safetEnvLTL)
+
+        # update envSafety in env characterization
+        for stageNo, ltl in self.LTLViolationCheck.env_safety_assumptions_stage.iteritems():
+            self.LTLViolationCheck.env_safety_assumptions_stage[stageNo] = ltl.replace("[]","[]((") + ") &" + safetEnvLTL + ")"
+            logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage[stageNo])
+
+        realizable = False
+        self.LTLViolationCheck.modify_stage = 0
+
+        # append clauses to our current spec
+        while self.LTLViolationCheck.modify_stage < 2 and not realizable:
+            # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
+            self.LTLViolationCheck.modify_stage += 1
+            self.spec['EnvTrans'] = self.LTLViolationCheck.env_safety_assumptions_stage[str(self.LTLViolationCheck.modify_stage)] +  ") &\n"
+            self.recreateLTLfile(self.proj)
+
+            # resyntehsize
+            realizable, realizableFS, output = self.compiler._synthesize()
+
+            if realizable:
+                logging.debug("Realizable.Talk to the other robot")
+            else:
+                logging.debug("Unrealizable. Keep going.")
+                pass
+
+        if not realizable:
+            loggng.debug("it should never come here. Should have falified env.")
+        time.sleep(30)
+        # ask the other robot to do so as well
+        pass
+    #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
+
     # --- two_robot_negotiation --- #
     def synthesizeWithExchangedSpec(self, level = False):
         """
@@ -443,57 +492,57 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
         self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
         self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-        
-        # obtain SysGoals, EnvTrans of the other robot 
+
+        # obtain SysGoals, EnvTrans of the other robot
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
-        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')      
-    
-        # see if we can take the other robot's actions into account. 
+        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')
+
+        # see if we can take the other robot's actions into account.
         # first we safe a copy of our SysTrans and EnvGoals before modification
-        oldSpecSysTrans = self.spec['SysTrans'].replace('\t',"").replace(' ','').replace('\n','') 
-        oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','') 
-        
+        oldSpecSysTrans = self.spec['SysTrans'].replace('\t',"").replace(' ','').replace('\n','')
+        oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','')
+
         # conjunct the spec of the other robots
         self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
         #logging.debug('SysTrans:' + self.spec['SysTrans'])
-        
+
         if level:
             # with only systrans
             self.spec['EnvGoals'] = oldSpecEnvGoals
         else:
             self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
         #logging.debug('EnvGoals:' + self.spec['EnvGoals'])
-        
+
         # resynthesize
         self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
         self.recreateLTLfile(self.proj)
         realizable, realizableFS, output  = self.compiler._synthesize()
-       
-        return realizable, oldSpecSysTrans, oldSpecEnvGoals 
-        
+
+        return realizable, oldSpecSysTrans, oldSpecEnvGoals
+
     def appendSpecFromEnvRobots(self):
         """
         asked for spec from negotiation monitor and append to our spec.
         """
-        
+
         # modify envTrans to remove all characterization. Restart Characterization
         self.spec['EnvTrans'] = self.oriEnvTrans + '&'
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
         self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
         self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-        self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
+        self.postEvent('NEGO','-- NEGOTIATION STARTED --')
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
         # send SysGoals, EnvTrans and EnvGoals
-        self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
+        self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
         self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-        self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+        self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
 
         self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
         while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
             # wait for the actions of the other robot
             time.sleep(2)
-        
+
         if self.robClient.checkNegotiationStatus() == True:
             # we need to use our original spec
             self.recreateLTLfile(self.proj)
@@ -502,7 +551,7 @@ class ExecutorResynthesisExtensions(object):
             self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.postEvent('RESOLVED','')
-            
+
         elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
             self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')
             # try to synthesize controller with spec from the other robot instead
@@ -512,7 +561,7 @@ class ExecutorResynthesisExtensions(object):
             if not realizable:
                 realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
                 self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
-            
+
             if realizable:
                 self.postEvent('NEGO','We can continue with the exchanged information.')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
@@ -524,59 +573,59 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.robClient.setNegotiationStatus(False)
                 self.otherRobotStatus = False # env characterization enabled
-                
+
         """
         # --------------------------------------------- #
-        # check if the other robot is realizable. 
+        # check if the other robot is realizable.
         otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
         # remove current robot status from the dict
         otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
         logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
-        
+
         # force the spec to use the original spec
         if True in otherRobotsStrategyStatus.values():
             realizable = False
-        
+
         # notify negotiation monitor our controller statues
-        self.robClient.updateStrategyStatus(realizable)  
+        self.robClient.updateStrategyStatus(realizable)
         # --------------------------------------------- #
-        
+
         logging.debug('realizable status sent')
         if not realizable:
-            self.postEvent("VIOLATION","Controller with exchanged information is unrealizable. Removing exchanged info from the spec")  
-            
+            self.postEvent("VIOLATION","Controller with exchanged information is unrealizable. Removing exchanged info from the spec")
+
             # remove spec from other robots
             self.spec['SysTrans'] = oldSpecSysTrans
             self.spec['EnvGoals'] = oldSpecEnvGoals
             self.recreateLTLfile(self.proj)
             realizable, realizableFS, output  = self.compiler._synthesize()
-            
+
         else:
-            self.postEvent("INFO",'Specification is realizable with the exchanged info.')    
-        
+            self.postEvent("INFO",'Specification is realizable with the exchanged info.')
+
         time.sleep(2)
-        # check if the other robot is realizable. 
+        # check if the other robot is realizable.
         otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
         logging.debug(otherRobotsStrategyStatus)
-        
+
         # remove current robot status from the dict
         otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
         logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
-        
+
         if True in otherRobotsStrategyStatus.values() and not realizable:
             # Yes.. it's great.. we can use our old spec. Maybe need liveness.
             self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us.')
             self.otherRobotStatus = True
-       
+
         #TODO: making one with exchanged spec and the other with the original spec
         elif True in otherRobotsStrategyStatus.values() and realizable:
             self.postEvent('RESOLVED','Determing one to be the priority.')
-            #TODO: currently assuming two robots. This has to be changed later. 
+            #TODO: currently assuming two robots. This has to be changed later.
             if self.robClient.robotName < otherRobotsStrategyStatus.keys()[0]:
                 # We are the priority. Stay with the original spec
                 self.otherRobotStatus = True
                 self.postEvent('INFO','I am prioritized. Using original Spec')
-                
+
                 # remove spec from other robots and resynthesize
                 self.spec['SysTrans'] = oldSpecSysTrans
                 self.spec['EnvGoals'] = oldSpecEnvGoals
@@ -586,67 +635,68 @@ class ExecutorResynthesisExtensions(object):
                 # We will yeild to the other robot.
                 self.otherRobotStatus = False
                 self.postEvent('INFO','I am NOT prioritized. Yield to the other robot.')
-       
+
         elif realizable:
             self.postEvent('RESOLVED','We will yield to the other robot.')
-            self.otherRobotStatus = False 
-            
+            self.otherRobotStatus = False
+
         else:
             # TODO: NO.. what should we do
             self.postEvent('INFO','What should we do.. Both of us are unrealizable... ')
             self.otherRobotStatus = False
         """
-        return realizable             
-            
-    # ------------------------------# 
-    
+        return realizable
+
+    # ------------------------------#
+
     ########### ENV Assumption Mining ####################
     def addStatetoEnvSafety(self,  sensor_state, firstRun = False):
         """
         append the current detected state to our safety
         """
-        
+
         if (self.otherRobotStatus is None) or (not self.otherRobotStatus):
             # Add the current state in init state of the LTL spec
             self.postEvent("VIOLATION","Adding the current state to our initial conditions")
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
-            
+
             if not firstRun:
                 self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
-            
+
             self.recreateLTLfile(self.proj)
             realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-             
+
             if not firstRun:
                 self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
                 if not realizable:
                     while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
 
-                        self.LTLViolationCheck.modify_stage += 1 
-                        self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")  
+                        self.LTLViolationCheck.modify_stage += 1
+                        self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
                         self.recreateLTLfile(self.proj)
                         realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-                        
-                        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))            
-            
+
+                        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+
                     #realizable = False
                     # ------ two_robot_negotiation  -------- #
                     # see if the other robot has violation before us
                     otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
                     logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
                     logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
-                    
-                    # exchange info with the other robot and see if it is realizable. 
+
+                    # exchange info with the other robot and see if it is realizable.
                     # later time can exchange spec
+                    self.initiateExchange() # testing
                     if (not self.exchangedSpec) and otherRobotViolationTimeStamp < self.violationTimeStamp:
-                        
+
                         # exchange spec
                         realizable = self.appendSpecFromEnvRobots()
                         self.exchangedSpec = True
                     else:
                         return
-                    # -------------------------------------- # 
-            
+                    # -------------------------------------- #
+
             self.realizable = realizable
 
         else:
@@ -659,24 +709,24 @@ class ExecutorResynthesisExtensions(object):
                 self.recreateLTLfile(self.proj)
                 self.realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                 self.postEvent('INFO','Recreating automaton based on the new env init state.')
-           
-        self.lastSensorState = sensor_state   
-        """      
+
+        self.lastSensorState = sensor_state
+        """
         if not realizable:
             self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
-            # Use Vasu's analysis tool 
+            # Use Vasu's analysis tool
             self.onMenuAnalyze()  # in resynthesis.py
-            realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable                  
-            
+            realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+
             if not realizable:
                 self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
                 sys.exit()
-            else:                   
+            else:
                 self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
         """
 
-             
-        # reload aut file if the new ltl is realizable                  
+
+        # reload aut file if the new ltl is realizable
         if self.realizable or self.otherRobotStatus:
             if not self.otherRobotStatus:
                 self.postEvent("RESOLVED", "The specification violation is resolved.")
@@ -688,17 +738,17 @@ class ExecutorResynthesisExtensions(object):
             else:
                 # wait for a while till we reload automaton
                 time.sleep(2)
-                
+
             spec_file = self.proj.getFilenamePrefix() + ".spec"
-            aut_file = self.proj.getFilenamePrefix() + ".aut"    
-            init_state, new_strategy = self.initialize(spec_file, aut_file, firstRun=False)  
-            
+            aut_file = self.proj.getFilenamePrefix() + ".aut"
+            init_state, new_strategy = self.initialize(spec_file, aut_file, firstRun=False)
+
         else:
             self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
-            sys.exit()            
-                
+            sys.exit()
+
         return init_state, new_strategy
-    
+
     def _setSpecificationInitialConditionsToCurrentInDNF(self, proj, firstRun, sensor_state):
         """ Add Env and Sys Init in disjunctive Normal form to LTL
         proj:     our current project
@@ -706,70 +756,70 @@ class ExecutorResynthesisExtensions(object):
         """
         ## for sensors
         current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
-        logging.debug("current_env_init_state:" + str(current_env_init_state)) 
+        logging.debug("current_env_init_state:" + str(current_env_init_state))
         ## for actuators and regions
         if firstRun:
             tempY = []
             # figure out our current region
             init_region = self._getCurrentRegionFromPose()
-            numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))          
+            numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))
             reg_idx_bin = numpy.binary_repr(init_region, width=numBits)
-            
+
             for x in range(numBits):
                 if init_region & 2**x:
                     tempY.append("s.bit" + str(x))
                 else:
                     tempY.append("!s.bit" + str(x))
-                             
+
             # Figure out our initially true outputs
             init_outputs = []
             for prop in self.proj.currentConfig.initial_truths:
                 if prop not in self.proj.enabled_sensors:
                     init_outputs.append(prop)
-            
+
             for x in self.proj.enabled_actuators:
                 if x not in init_outputs:
                     tempY.append("!s." + str(x))
                 else:
                     tempY.append("s." + str(x))
-                    
+
             for x in self.proj.all_customs:
                 if x not in init_outputs:
                     tempY.append("!s." + str(x))
                 else:
                     tempY.append("s." + str(x))
-                    
+
             current_sys_init_state = " & ".join(tempY)
 
         else:
             # find the current inputs and outputs from strategy and replace region_b
             current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
             current_sys_init_state = current_sys_init_state.replace('region_b','bit')
-        
+
         # try to compare current spec with the new clause so that no duplicates are added
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
         # connect the original sysInit with the current system init
         self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
-        #self.postEvent("INFO","new init:" + str(cur_sys_init)) 
-     
+        #self.postEvent("INFO","new init:" + str(cur_sys_init))
+
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
         rewrite the LTL file with the modified spec
-        spec: passed in LTL specificaion by the user. Defaulted to be self.spec 
+        spec: passed in LTL specificaion by the user. Defaulted to be self.spec
         """
-        
+
         if spec == None:
             spec = self.spec
-        
+
         if export:
             ltl_filename = proj.getFilenamePrefix() + "Generated.ltl"
         else:
-            ltl_filename = proj.getFilenamePrefix() + ".ltl"       
-        
+            ltl_filename = proj.getFilenamePrefix() + ".ltl"
+
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
         LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
-        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]       
+        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
         LTLspec_sys += "\n&\n" + spec['Topo']
 
@@ -789,19 +839,19 @@ class ExecutorResynthesisExtensions(object):
         # Populate tree based on .spec file
         self.analysisDialog.label_traceback.Show()
         self.analysisDialog.tree_ctrl_traceback.Show()
-        
+
         if not enableResynthesis:
             self.analysisDialog.button_refine.Disable()
-        
+
         if not exportSpecification:
-            self.analysisDialog.button_2.Disable() 
-                   
+            self.analysisDialog.button_2.Disable()
+
         self.analyzeCores()
         self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, [], self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) # [] was self.EnvTransRemoved
-        
+
         logging.debug('toHighlight in analyze cores'+ str(self.to_highlight))
         self.analysisDialog.ShowModal()
-        
+
     def onMenuResynthesize(self, envLiveness):
         """
         Resynthesize the specification with a new livenessEditor
@@ -820,81 +870,81 @@ class ExecutorResynthesisExtensions(object):
 
         # create a copy of the current spec just for resynthesis
         currentSpec = self.spec.copy()
-        
+
         # remove []<>(TRUE) if we find it
-        if "TRUE" in self.spec["EnvGoals"]: 
+        if "TRUE" in self.spec["EnvGoals"]:
             currentSpec["EnvGoals"] =  spec["EnvGoals"]  #envLiveness
         else:
             currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
-            
+
         for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
-            self.LTLViolationCheck.modify_stage  = x+1 
+            self.LTLViolationCheck.modify_stage  = x+1
             currentSpec["EnvTrans"] = self.LTLViolationCheck.modify_LTL_file("")
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
-            
+
             if self.analyzeCores(appendLog = False):
                 break
 
         self.postEvent("INFO","Reset stage to " + str(self.LTLViolationCheck.modify_stage))
-        
+
         if self.analyzeCores():
             self.spec = currentSpec  # realizable, replace the new spec to be the self.spec
-            
+
             # save the user added liveness for display in analysis dialog
             self.userAddedEnvLivenessEnglish.append(envLiveness)
             self.userAddedEnvLivenessLTL.append(spec["EnvGoals"].replace("\t",'').replace("\n",'').replace(" ",""))
-            
+
             #reprint the tree in the analysis dialog
             self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, [], self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) # [] was self.EnvTransRemoved
-         
+
         else:
             # return the ltl file back to normal as the newly added liveness is still unrealizable
-            self.recreateLTLfile(self.proj,self.spec)  
-    
+            self.recreateLTLfile(self.proj,self.spec)
+
     def analyzeCores(self,appendLog = True, generatedSpec = False):
         """
         EXCERPT from Vasu's code in specEditor.py
         """
         #TODO: not sure why realizable is false from GROneDebug even when it is realizable
         (realizable, self.unsat, nonTrivial, self.to_highlight, outputFromAnalyze) = self.compiler._analyze(generatedSpec)
-        realizable, realizableFS, outputFromSythesize = self.compiler._synthesize()          
-        
+        realizable, realizableFS, outputFromSythesize = self.compiler._synthesize()
+
         if realizable:
             output = outputFromSythesize
         else:
             output = outputFromAnalyze
-            
+
         # Remove lines about garbage collection from the output and remove extraenous lines
         output_lines = [line for line in output.split('\n') if line.strip() and
                         "Garbage collection" not in line and
                         "Resizing node table" not in line]
 
-        if appendLog:              
+        if appendLog:
             if realizable:
                 # Strip trailing \n from output so it doesn't scroll past it
                 self.analysisDialog.appendLog("\n"+'\n'.join(output_lines), "BLACK")
             else:
                 self.analysisDialog.appendLog(output.rstrip(), "RED")
             self.analysisDialog.appendLog('\n')
-        
+
         return realizable
 
-            
+
     def exportSpecification(self, appendLog = True):
         """
         export the generated spec
         """
         slugsEnvSafetyCNF = self.compiler._synthesize()[2]
-        normalEnvSafetyCNF = LTLParser.LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)         
-            
+        normalEnvSafetyCNF = LTLParser.LTLcheck.parseSlugsEnvTransToNormalEnvTrans(slugsEnvSafetyCNF,self.proj.enabled_sensors)
+
         self.originalLTLSpec["EnvGoals"] = self.spec["EnvGoals"]
         self.recreateLTLfile(self.proj, self.originalLTLSpec, export = True)
         if appendLog:
             self.analysisDialog.appendLog("\nThe generated specification with simplified environment safety assumptions is exported to " + self.proj.getFilenamePrefix()+"Generated.ltl","BLACK")
-            
+
             self.analyzeCores(appendLog = True, generatedSpec = True)
-            
+
         return slugsEnvSafetyCNF, normalEnvSafetyCNF
-        
+
     #########################################################################
