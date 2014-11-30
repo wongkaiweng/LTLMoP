@@ -24,18 +24,25 @@ MAGNIFY = 64
 if len(sys.argv)<2:
     print >>sys.stderr, "Error: Need BDD file"
     sys.exit(1)
-specFile = sys.argv[1]
+bddinfile = sys.argv[1]
+fileBasis = bddinfile[0:bddinfile.rfind(".bdd")]
+   
 
+# ==================================
+# Prepare Slugs Call
+# ==================================
+print "Using BDD file: "+bddinfile
+slugsLink = sys.argv[0][0:sys.argv[0].rfind("interactiveExecution.py")]+"../etc/slugs/src/slugs"
+print "Using SLUGS at: "+slugsLink
 
 # ==================================
 # Main loop
 # ==================================
 def actionLoop():
     
-    fileBasis = specFile[0:specFile.rfind(".bdd")]
     slugsinfile = fileBasis+".slugsin"
     
-     # Open Slugs
+    # Open Slugs
     slugsProcess = subprocess.Popen(slugsLink+" --interactiveStrategy "+slugsinfile, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     # Get input APs
