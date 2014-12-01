@@ -39,6 +39,10 @@ def createStrategyFromFile(filename, input_propositions, output_propositions):
             new_strategy = bdd.BDDStrategy(add = False)
         else:
             new_strategy = bdd.BDDStrategy(add = True)
+    elif filename.endswith(".slugsin"):
+        import interactiveExecution
+        logging.debug("using interactiveStrategy")
+        new_strategy = interactiveExecution.SLUGSInteractiveStrategy()
     else:
         raise ValueError("Unsupported strategy file type.  Filename must end with either '.aut' or '.bdd'.")
 
@@ -332,7 +336,6 @@ class State(object):
             A lot of sanity checking is performed to ensure the name and value are both appropriate. """
         # FIXME: Changing the value of subpropositions after the domain
         # has been upconverted will cause problems
-
         # Check that this is a known prop_name
         if (prop_name not in self.context.input_props) and \
            (prop_name not in self.context.output_props) and \
@@ -633,7 +636,6 @@ class Strategy(object):
             and return the first one that matches `prop_assignments`.
 
             Returns None if no such state is found.  """
-
         return next(self.searchForStates(prop_assignments, state_list), None)
 
     def exportAsDotFile(self, filename, regionMapping, starting_states=None):

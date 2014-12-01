@@ -179,16 +179,17 @@ class ExecutorStrategyExtensions(object):
             for robot in self.hsub.executing_config.robots:
                 heading_region = dict((k,v) for k, v in  currentOutputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'') in self.proj.regionMapping)
                 heading_region_names = [k for k, v in  heading_region.iteritems() if v]
-
                 if heading_region_names:
                     heading_region_name = heading_region_names[0].replace(robot.name+"_",'')
                     decomposed_heading_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+                    self.next_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_heading_region_names[robot.name][0])]
+                else:
+                    #TODO: This is a hack. bdd is giving no next region...
+                    self.next_region[robot.name] = self.current_region[robot.name]
 
-
-                self.next_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_heading_region_names[robot.name][0])]
             logging.debug("decomposed_heading_region_names" + str(decomposed_heading_region_names))
             #################################################################################
-
+            logging.debug("next_states:" + str(next_states))
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
             ##################################################################################
@@ -223,9 +224,6 @@ class ExecutorStrategyExtensions(object):
             self.arrived = True
             self.last_sensor_state = sensor_state
 
-        logging.debug('arrival'+ str(self.arrived))
-        logging.debug("next_state: " + str(self.next_state.state_id))
-        logging.debug("current_state: " + str(self.strategy.current_state.state_id))
         if not self.arrived or (self.next_state == self.strategy.current_state): # not sure what will happen
             # Move one step towards the next region (or stay in the same region)
             """
@@ -240,6 +238,9 @@ class ExecutorStrategyExtensions(object):
             #logging.debug(self.current_region)
             #logging.debug(self.next_region)
             self.arrived = self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
+        else:
+            #TODO: temp fix for BDD
+            self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
 
         # Check for completion of motion
         if self.arrived and self.next_state != self.strategy.current_state:
@@ -249,6 +250,12 @@ class ExecutorStrategyExtensions(object):
                         self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region[robot.name].name, self.nextRegionCompleted[robot.name].name))
                         self.postEvent("INFO", "Heading to region %s..." % self.nextRegionCompleted[robot.name].name)
             logging.debug('*****************CHANGING STATES****************************')
+            trueProp = []
+            for prop,value in self.next_state.getAll().iteritems():
+                if value:
+                    trueProp.append(prop)
+            logging.debug(trueProp)
+            logging.debug('************************************************************')
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset
 
