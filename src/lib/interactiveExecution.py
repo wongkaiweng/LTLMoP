@@ -81,7 +81,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         for idx,element in enumerate(currentState.partition(",")[0]):
             value = True if element == '1' else False
             if idx > len(self.inputAPs)-1:
-                prop_assignments[self.outputAPs[idx-len(self.inputAPs)-1]] = value
+                prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
                 prop_assignments[self.inputAPs[idx]] = value
         logging.debug(prop_assignments)
@@ -106,16 +106,17 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         nextLine = self.slugsProcess.stdout.readline().strip()
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
-        
+        logging.debug("currentState:" + str(currentState))
         # create state with the current state prop assignments
         prop_assignments = {}
         for idx,element in enumerate(currentState.partition(",")[0]):
             value = True if element == '1' else False
+
             if idx > len(self.inputAPs) - 1:
-                prop_assignments[self.outputAPs[idx-len(self.inputAPs)-1]] = value
+                prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
                 prop_assignments[self.inputAPs[idx]] = value
-        
+            
         curStateObject = strategy.State(self.states,prop_assignments)
-        
+
         return [curStateObject]
