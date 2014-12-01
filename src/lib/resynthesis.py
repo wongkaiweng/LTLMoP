@@ -437,13 +437,56 @@ class ExecutorResynthesisExtensions(object):
         self.received_user_query_response.set()
 
     #&&&&&&& negotiation_counterstrategy &&&&&&&&&#
-    def initiateExchange(self):
+    def addEnvTransitionsAndResythesize(self, safetEnvLTL):
         """
-        negotiation implementation with counterStrategy
+        This function adds the transitions obtained and resythesize.
         """
+
+        # reset all env assumptions with those containing current and incoming inputs
+        oldEnvTrans = self.LTLViolationCheck.env_safety_assumptions_stage[str(self.LTLViolationCheck.modify_stage)]
+        # update envSafety in env characterization
+        for stageNo, ltl in self.LTLViolationCheck.env_safety_assumptions_stage.iteritems():
+            self.LTLViolationCheck.env_safety_assumptions_stage[stageNo] = oldEnvTrans.replace("[]","[]((") + ") &" + safetEnvLTL + ")"
+            #logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage[stageNo])
+
+        # reset env characterization mode to 0 (increment to 1 at the beginning of the loop)
+        realizable = False
+        #self.LTLViolationCheck.modify_stage = 0
+
+        # append clauses to our current spec
+        #while self.LTLViolationCheck.modify_stage < 2 and not realizable:
+        # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
+        #self.LTLViolationCheck.modify_stage += 1
+
+        # should be at stage 2
+        self.spec['EnvTrans'] = self.LTLViolationCheck.env_safety_assumptions_stage[str(self.LTLViolationCheck.modify_stage)] +  ") &\n"
+        self.recreateLTLfile(self.proj)
+
+        # resyntehsize
+        realizable, realizableFS, output = self.compiler._synthesize()
+
+        if realizable:
+            logging.debug("Realizable.Talk to the other robot")
+
+            # update ltltree in LTLCheck (remove trailing &)
+            logging.debug(self.spec['EnvTrans'].replace(" ","").replace("\n","").replace("\t","")[:-1])
+            self.LTLViolationCheck.replaceLTLTree(self.spec['EnvTrans'].replace(" ","").replace("\n","").replace("\t","")[:-1])
+
+        else:
+            logging.debug("Unrealizable. Keep going.")
+
+        return realizable
+
+    def extractCounterStrategyTransitionsFromSLUGSINtoLTL(self):
+        """
+        This function extract counterstrategy transitions with SLUGS in slugsin format.
+        Then it also converts the clauses into formulas in .ltl format.
+        """
+        self.postEvent('NEGO','First find env transitions from counterstrategy')
+
         # compute counterStrategy with SLUGS and extract clauses
         realizable, realizableFS, log = self.compiler._synthesize(counterstrategy_clauses = True)
-
+        logging.debug(log)
         # split to get only the CNF clauses
         slugsStr = log.partition("# Safety assumptions for realizable spec:\n")[2][:-1]
 
@@ -451,35 +494,157 @@ class ExecutorResynthesisExtensions(object):
         safetEnvLTL = parseSLUGSCNFtoLTL(slugsStr,self.proj.enabled_sensors)
         logging.debug(safetEnvLTL)
 
-        # update envSafety in env characterization
-        for stageNo, ltl in self.LTLViolationCheck.env_safety_assumptions_stage.iteritems():
-            self.LTLViolationCheck.env_safety_assumptions_stage[stageNo] = ltl.replace("[]","[]((") + ") &" + safetEnvLTL + ")"
-            logging.debug(self.LTLViolationCheck.env_safety_assumptions_stage[stageNo])
+        return safetEnvLTL
 
-        realizable = False
-        self.LTLViolationCheck.modify_stage = 0
+    def initiateExchange(self):
+        """
+        negotiation implementation with counterStrategy
+        """
+        #track if both spec is realizable with counterstrategy
+        self.negoCounterStrategyCompletion = False
 
-        # append clauses to our current spec
-        while self.LTLViolationCheck.modify_stage < 2 and not realizable:
-            # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
-            self.LTLViolationCheck.modify_stage += 1
-            self.spec['EnvTrans'] = self.LTLViolationCheck.env_safety_assumptions_stage[str(self.LTLViolationCheck.modify_stage)] +  ") &\n"
-            self.recreateLTLfile(self.proj)
+        while not self.negoCounterStrategyCompletion:
+            self.postEvent('NEGO','-- NEGOTIATION STARTED --')
 
-            # resyntehsize
-            realizable, realizableFS, output = self.compiler._synthesize()
+            # extract ltl transitions from SLUGS
+            safetEnvLTL = self.extractCounterStrategyTransitionsFromSLUGSINtoLTL()
+            logging.debug(safetEnvLTL)
+            # update env safety assumptions and resynthesize
+            realizable = self.addEnvTransitionsAndResythesize(safetEnvLTL)
 
-            if realizable:
-                logging.debug("Realizable.Talk to the other robot")
-            else:
-                logging.debug("Unrealizable. Keep going.")
-                pass
+            if not realizable:
+                loggng.error("it should never come here. Should have falified env.")
+                return
+            # ----- the line above should be error-free ------- #
 
-        if not realizable:
-            loggng.debug("it should never come here. Should have falified env.")
-        time.sleep(30)
-        # ask the other robot to do so as well
-        pass
+            ##################################################
+            # ask the other robot to add these transitions ###
+            ##################################################
+            self.postEvent('NEGO','Ask the other robot to include our transitions from counterStrategy into its controller.')
+            # send SysGoals, EnvTrans and EnvGoals
+            # TODO: only Send the SLUGS snippets to the other robot
+            self.robClient.sendSpec('EnvTransSnippet',safetEnvLTL)
+
+            self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+            while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
+                # wait for the actions of the other robot
+                time.sleep(2)
+
+            if self.robClient.checkNegotiationStatus() == True:
+                # The other robot successfully incorporated our transitions from counterstrategy.
+                # Negotiation completed.
+                self.postEvent('NEGO','The other robot has incorporated our transitions. Negotiation has completed')
+                self.negoCounterStrategyCompletion = True # completed negotiation for now
+
+            elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
+                # The other robot has counterstrategy transitions for us. Try to resynthesize with those.
+                self.postEvent('NEGO','The other robot has transitions for us. We will try incorporating them.')
+                realizable = self.acceptExchange()
+
+                if realizable:
+                    self.robClient.setNegotiationStatus(True)
+                    self.negoCounterStrategyCompletion = True # complete negotiation for now.
+                    self.postEvent('NEGO','Using exchanged specification. Negotiation completed')
+                else:
+                    self.postEvent('NEGO','Unrealizable. Find counterstrategy transitions again.')
+
+        # reset assumption adding to stage 1
+        self.LTLViolationCheck.modify_stage = 1
+        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+        self.postEvent('RESOLVED','')
+        #time.sleep(30)
+
+        return realizable
+
+    def acceptExchange(self):
+        """
+        This function accepts request from the other robot and incorporate them into our spec.
+        """
+        # obtain EnvTrans of the other robot
+        otherRobotEnvTrans = self.robClient.requestSpec('EnvTransSnippet')
+
+        # conjunct the spec of the other robots
+        # now adding the clauses as a new sysTrans. may want to do [](varphi1 & varphi2) instead.
+        self.spec['SysTrans'] = self.spec['SysTrans'] + "[](" + otherRobotEnvTrans + ") &\n"
+        #logging.debug('SysTrans:' + self.spec['SysTrans'])
+
+        self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
+        self.recreateLTLfile(self.proj)
+        realizable, realizableFS, output  = self.compiler._synthesize()
+        logging.debug("realizable:" + str(realizable))
+        return realizable
+
+    def checkRequestFromTheOtherRobot(self):
+        """
+        This function check if request from the other robot is received.
+        If so, it will add transitions from the other robot and resyntehsize.
+        """
+        self.negotiationStatus = self.robClient.checkNegotiationStatus()
+        if self.negotiationStatus == self.robClient.robotName:
+
+            self.postEvent('NEGO','-- NEGOTIATION STARTED --')
+            # track if both spec is realizable with counterstrategy
+            self.negoCounterStrategyCompletion = False
+
+            # first we update our initial state before adding counterstrategy transitions
+            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+
+            while not self.negoCounterStrategyCompletion:
+
+                # synthesize a new controller to incorporate the actions of the other robot.
+                realizable = self.acceptExchange()
+                self.postEvent("NEGO",'Adding countestratey transitions from the other robot to the system guarantees.')
+
+                if realizable:
+                    self.robClient.setNegotiationStatus(True)
+                    self.negoCounterStrategyCompletion = True # complete negotiation for now.
+                    self.postEvent('NEGO','Using exchanged specification. Negotiation completed')
+
+                else:
+                    self.postEvent('NEGO','Unrealizable with exchanged info. Finding countestratey transitions.')
+
+                    # extract ltl transitions from SLUGS
+                    safetEnvLTL = self.extractCounterStrategyTransitionsFromSLUGSINtoLTL()
+                    # update env safety assumptions and resynthesize
+                    realizable = self.addEnvTransitionsAndResythesize(safetEnvLTL)
+
+                    if not realizable:
+                        loggng.error("it should never come here. Should have falified env.")
+                        return
+
+                    # send our spec to the other robot
+                    self.robClient.sendSpec('EnvTransSnippet',safetEnvLTL)
+                    self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+
+                    # wait until the other robot resynthesize its controller
+                    while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
+                        time.sleep(2)
+
+                    if self.robClient.checkNegotiationStatus() == True:
+                        self.negoCounterStrategyCompletion = True # complete negotiation for now.
+                        self.postEvent('NEGO','The other robot has incorporated our action. Continue execution.')
+                    else:
+                        self.postEvent('NEGO','The other robot has more requests.')
+
+            # reset assumption adding to stage 1
+            self.LTLViolationCheck.modify_stage = 1
+            self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+            self.postEvent('RESOLVED','')
+            #time.sleep(30)
+
+            self.violationTimeStamp = 0 # reset time stamp to zero.
+            # store time stamp of violation
+            self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+
+            # reinitialize automaton
+            spec_file = self.proj.getFilenamePrefix() + ".spec"
+            aut_file = self.proj.getFilenamePrefix() + ".aut"
+            self.initialize(spec_file, aut_file, firstRun=False)
+            logging.debug("Finish initialization.")
+
+            return True
+        else:
+            return False
     #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&#
 
     # --- two_robot_negotiation --- #
@@ -551,6 +716,7 @@ class ExecutorResynthesisExtensions(object):
             self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.postEvent('RESOLVED','')
+            #time.sleep(30)
 
         elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
             self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')
@@ -678,24 +844,43 @@ class ExecutorResynthesisExtensions(object):
 
                         self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
-                    #realizable = False
-                    # ------ two_robot_negotiation  -------- #
-                    # see if the other robot has violation before us
-                    otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
-                    logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                    logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+                    if not realizable:
 
-                    # exchange info with the other robot and see if it is realizable.
-                    # later time can exchange spec
-                    self.initiateExchange() # testing
-                    if (not self.exchangedSpec) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                        #realizable = False
+                        # ------ two_robot_negotiation  -------- #    # &&&&& negotiation_counterStrategy &&&& #
+                        # see if the other robot has violation before us
+                        otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
+                        logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                        logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
 
-                        # exchange spec
-                        realizable = self.appendSpecFromEnvRobots()
-                        self.exchangedSpec = True
-                    else:
-                        return
-                    # -------------------------------------- #
+                        # exchange info with the other robot and see if it is realizable.
+                        # later time can exchange spec
+                        if self.negotiation_counterstrategy:
+                            logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                            logging.debug("self.violationTimeStamp:" + str(self.violationTimeStamp))
+
+                            if otherRobotViolationTimeStamp < self.violationTimeStamp:
+                                self.postEvent("INFO","Initiate exchange with the other robot.")
+
+                                # start counterstrategy transition extraction
+                                realizable = self.initiateExchange()
+                            else:
+                                # we will take request of the other robot
+                                return
+                        elif self.two_robot_negotiation:
+                            if (not self.exchangedSpec) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+
+                                # exchange spec
+                                realizable = self.appendSpecFromEnvRobots()
+                                self.exchangedSpec = True
+                            else:
+                                # we will take request of the other robot
+                                return
+
+                        self.violationTimeStamp = 0 # reset timeStamp to zero.
+                        # store time stamp of violation
+                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                        # -------------------------------------- #
 
             self.realizable = realizable
 
