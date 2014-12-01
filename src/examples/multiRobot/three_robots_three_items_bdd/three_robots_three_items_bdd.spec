@@ -8,7 +8,9 @@ Actions: # List of action propositions and their state (enabled = 1, disabled = 
 rob1_pickup, 1
 rob2_pickup, 1
 rob3_pickup, 1
-all_done, 1
+rob1_drop, 1
+rob2_drop, 1
+rob3_drop, 1
 r1_done, 1
 r3_done, 1
 r6_done, 1
@@ -30,10 +32,14 @@ three_robots_three_items
 Customs: # List of custom propositions
 rob1_carrying_metal
 rob1_carrying_glass
+rob1_carrying_paper
 rob2_carrying_glass
 rob2_carrying_metal
+rob2_carrying_paper
 rob3_carrying_glass
 rob3_carrying_metal
+rob3_carrying_paper
+all_done
 
 RegionFile: # Relative path of region description file
 eight_regions.regions
