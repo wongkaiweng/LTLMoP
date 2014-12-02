@@ -464,7 +464,6 @@ class ExecutorResynthesisExtensions(object):
 
         # resyntehsize
         realizable, realizableFS, output = self.compiler._synthesize()
-
         if realizable:
             logging.debug("Realizable.Talk to the other robot")
 
@@ -521,9 +520,10 @@ class ExecutorResynthesisExtensions(object):
             # ask the other robot to add these transitions ###
             ##################################################
             self.postEvent('NEGO','Ask the other robot to include our transitions from counterStrategy into its controller.')
-            # send SysGoals, EnvTrans and EnvGoals
-            # TODO: only Send the SLUGS snippets to the other robot
+
+            # send EnvTransSnippet from SLUGS
             self.robClient.sendSpec('EnvTransSnippet',safetEnvLTL)
+            self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) #NEW
 
             self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
             while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
@@ -552,7 +552,6 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.modify_stage = 1
         self.postEvent('NEGO','-- NEGOTIATION ENDED --')
         self.postEvent('RESOLVED','')
-        #time.sleep(30)
 
         return realizable
 
@@ -588,6 +587,9 @@ class ExecutorResynthesisExtensions(object):
 
             # first we update our initial state before adding counterstrategy transitions
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+
+            # obtain sysGoals of the other robot and append it to our envGoals
+            self.spec['EnvGoals'] = self.spec['EnvGoals'] + "&" + self.robClient.requestSpec('SysGoals')
 
             while not self.negoCounterStrategyCompletion:
 
@@ -630,7 +632,6 @@ class ExecutorResynthesisExtensions(object):
             self.LTLViolationCheck.modify_stage = 1
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.postEvent('RESOLVED','')
-            #time.sleep(30)
 
             self.violationTimeStamp = 0 # reset time stamp to zero.
             # store time stamp of violation
@@ -716,7 +717,6 @@ class ExecutorResynthesisExtensions(object):
             self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.postEvent('RESOLVED','')
-            #time.sleep(30)
 
         elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
             self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')

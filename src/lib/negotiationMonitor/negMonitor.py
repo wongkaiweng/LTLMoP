@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
-BUFSIZE = 10000    #reasonably sized buffer for data
+BUFSIZE = 20000    #reasonably sized buffer for data
 
 ## now we create a new socket object (serv)
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -149,7 +149,7 @@ while keepConnection:
 
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info
-                        x.send(str(regionList))
+                        x.send(str(regionList)+"\n")
 
                     elif item.group('packageType')  == "updateStrategyStatus":
                         # received controller info

@@ -17,7 +17,7 @@ class RobotClient:
     """
     def __init__(self, hsub, proj):
         ADDR = ("localhost",6501)
-        self.BUFSIZE = 10000
+        self.BUFSIZE = 20000
 
         # initialize our variable
         self.robotName = ''
@@ -84,6 +84,11 @@ class RobotClient:
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
 
+        # replace disjuncts to region names
+        if specType == 'EnvTransSnippet':
+            spec = LTLParser.LTLRegion.replaceDisjunctedBitstoRegionNames(spec, self.regions, self.newRegionNameToOld, self.robotName)
+            logging.debug(spec)
+
         spec = spec.replace('\t',"").replace(' ','').replace('\n','')
 
         # first replace our region bits to original region name with our robot name
@@ -131,7 +136,8 @@ class RobotClient:
         robotRegionStatus: dict containing all region info
         """
         self.clientObject.send(self.robotName +'-' + 'sensorUpdate = ' + "''" + '\n')
-        robotRegionStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        received_msg = self.clientObject.recv(self.BUFSIZE)
+        robotRegionStatus = ast.literal_eval(received_msg.split('\n')[0])
 
         return robotRegionStatus
 
