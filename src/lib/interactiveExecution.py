@@ -5,7 +5,6 @@
 import math
 import os
 import sys, code
-import resource
 import subprocess
 import signal
 import tempfile
@@ -36,9 +35,17 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
 
         Basically just a lot of regexes.
         """
+        if os.name == "nt":
+            slugs_path = "\\".join(["etc", "slugs", "src", "slugs.exe"])
+            filename = filename.replace('C:', '/cygdrive/c')  # .replace("\\", '/')
+        else:
+            slugs_path = os.path.join("etc", "slugs", "src", "slugs")
+        logging.debug(slugs_path)
         logging.debug("filename:" + str(filename))
+        logging.debug(slugs_path + " --interactiveStrategy " + filename)
+
         # Open Slugs
-        self.slugsProcess = subprocess.Popen("slugs "+" --interactiveStrategy "+filename, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.slugsProcess = subprocess.Popen(slugs_path + " --interactiveStrategy " + filename, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Get input APs
         self.slugsProcess.stdin.write("XPRINTINPUTS\n")
