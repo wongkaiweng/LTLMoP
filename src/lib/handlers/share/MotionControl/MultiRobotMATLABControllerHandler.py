@@ -23,7 +23,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         """
         # get the list of robots
         self.robotList = [robot.name for robot in executor.hsub.executing_config.robots]
-
+        logging.debug("robotList:" + str(self.robotList))
         self.drive_handler = {}
         self.pose_handler = {}
         self.current_regIndices = {}
@@ -99,7 +99,16 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         ################################
 
         # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
-        vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+        try:
+            vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+        except:
+            logging.debug("caught exception")
+            vx = []
+            vy = []
+            regionChanges = array([])
+            for idx, robot_name in enumerate(self.robotList):
+                vx.append(0)
+                vy.append(0)
 
         # check if we want a different region changes for now.
         for idx, robot_name in enumerate(self.robotList):
@@ -108,7 +117,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 arrived[robot_name] = True
                 self.current_regIndices[robot_name] = currentLoc[idx]  # storing idx of decomposed regions
                 self.executor.postEvent("INFO", "regionChanges corrected. current_regIdx:" + str(self.current_regIndices[robot_name]))
-                time.sleep(3)
+                # time.sleep(3)
             else:
                 # Figure out whether we've reached the destination region
                 departed[robot_name] = False  # not is_inside([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name])

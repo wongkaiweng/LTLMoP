@@ -4,8 +4,15 @@ import logging
 from collections import OrderedDict
 import time  # for pause
 
+two_robots = False
 threshold = 300
-robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])
+
+if two_robots:
+    robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])
+else:
+    robRadius = OrderedDict([('rob3', 0.5), ('rob2', 0.5), ('rob1', 0.5)])
+
+
 # robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
 
@@ -48,6 +55,11 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
 
     session.putvalue('robots', robotRadius)
 
+    # map to vertical matrix
+    robotVerticalScript = "robots = robots'"
+    session.putvalue('robotVerticalScript', robotVerticalScript)
+    session.run('eval(robotVerticalScript)')
+
     logging.info('Set robotRadius completed')
     logging.debug("in python: " + str(robotRadius))
     logging.debug("in MATLAB: " + str(session.getvalue('robots')))
@@ -64,11 +76,11 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # # send each region vertices to MATLAB
     # code for getting vertices in LTLMoP
     for regionIdx, region in enumerate(regions):  # TODO: self.rfi.regions in LTLMoP and uncomment below
-        logging.debug(regionIdx)
+        # logging.debug(regionIdx)
         pointArray = [y for y in region.getPoints()]
         pointArray = map(coordmap_map2lab, pointArray)
         vertices = np.mat(pointArray)
-        # vertices = np.mat(region).T #TODO: remove in LTLMoP
+        # vertices = np.mat(region).T  # TODO: remove in LTLMoP
 
         # add tempRegion to MATLAB vertices array
         session.putvalue('region' + str(regionIdx), np.float_(vertices))
@@ -108,9 +120,9 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
 
     session.putvalue('pose', robotPose)
 
-    # logging.info('Set robotPose completed')
-    logging.debug(robotPose)
-    # logging.debug(session.getvalue('pose'))
+    logging.info('Set robotPose completed')
+    logging.debug("python:" + str(robotPose))
+    logging.debug("MATLAB:" + str(session.getvalue('pose')))
 
     #-------------------------------------------------------------------
     # -----PYTHON: robotNextRegion, MATLAB: destination SIZE: nx1-------
@@ -121,9 +133,9 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     robotNextRegion = np.int_([next_regIndices])
     session.putvalue('destination', robotNextRegion)
 
-    # logging.info('Set robotNextRegion completed')
+    logging.info('Set robotNextRegion completed')
     logging.debug("in python: " + str(robotNextRegion))
-    # logging.debug("in MATLAB: " + str(session.getvalue('destination')))
+    logging.debug("in MATLAB: " + str(session.getvalue('destination')))
 
     # run initialization function
     # [vx vy changes currentloc]=getvelocity(pose,threshold,vertices, robots, destination);

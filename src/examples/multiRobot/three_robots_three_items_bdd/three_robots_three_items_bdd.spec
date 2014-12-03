@@ -27,7 +27,7 @@ fastslow: True
 decompose: True
 
 CurrentConfigName:
-three_robots_three_items
+three_robots_three_items_bdd_MATLAB
 
 Customs: # List of custom propositions
 rob1_carrying_metal
