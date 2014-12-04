@@ -44,6 +44,9 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         # setup matlab communication
         self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
 
+        self.old_vx = None
+        self.old_vy = None
+
     def gotoRegion(self, current_regIndices, next_regIndices, last=False):
         """
         If ``last`` is True, we will move to the center of the destination region.
@@ -99,17 +102,42 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         ################################
 
         # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
-        try:
-            vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
-        except:
-            logging.debug("caught exception")
+        logging.debug("current:" + str(current_regIndices.values()))
+        logging.debug("next:" + str(next_regIndices.values()))
+        if not current_regIndices.values() == next_regIndices.values():
+            try:
+                vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+            except:
+                logging.debug("caught exception")
+                time.sleep(10)
+                if self.old_vx is None or self.old_vy is None:
+                    for idx, robot_name in enumerate(self.robotList):
+                        vx.append(0)
+                        vy.append(0)
+                else:
+                    vx = self.old_vx
+                    vy = self.old_vy
+                regionChanges = array([])
+                currentLoc = array([])
+
+                # restart MATLAB session
+                self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
+
+
+        else:
+            logging.debug('Staying in place. Velocities are now set to zero.')
             vx = []
             vy = []
             regionChanges = array([])
             for idx, robot_name in enumerate(self.robotList):
                 vx.append(0)
                 vy.append(0)
+            currentLoc = array([])
 
+
+        self.old_vx = vx
+        self.old_vy = vy
+        logging.debug("regionChanges:" + str(regionChanges) + " currentLoc:" + str(currentLoc))
         # check if we want a different region changes for now.
         for idx, robot_name in enumerate(self.robotList):
             if regionChanges.any():

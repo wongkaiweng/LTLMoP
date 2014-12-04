@@ -514,7 +514,12 @@ class SpecCompiler(object):
                     err = 1
 
     def _getSlugsCommand(self):
-        slugs_path = os.path.join(self.proj.ltlmop_root, "etc", "slugs", "src", "slugs")
+        if os.name == "nt":
+            slugs_path = os.path.join(self.proj.ltlmop_root, "etc", "slugs", "src", "slugs.exe")\
+            .replace("C:", '/cygdrive/c')  # .replace("\\", '/')
+        else:
+            slugs_path = os.path.join(self.proj.ltlmop_root, "etc", "slugs", "src", "slugs")
+        logging.debug(slugs_path)
 
         # Check that slugs is compiled
         if not os.path.exists(slugs_path):
