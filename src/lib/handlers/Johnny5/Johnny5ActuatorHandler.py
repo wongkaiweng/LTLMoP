@@ -8,6 +8,7 @@ import os
 import time
 import logging
 import globalConfig
+import threading
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -27,6 +28,8 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
         # load config info
         self.config = shared_data['DefaultConfig']
 
+        self.thread = {}  # a dictionary that holds the thread for each handler method config (hmc)
+        self.executor = executor
 
     def _runSequencer(self, FileName):
         """
@@ -138,6 +141,29 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
             # TODO: make this non-blocking
             time.sleep(1)
 
+    def openHand(self, actuatorVal, hand, initial=False):
+        """
+        Open Johnny 5 hand using designated hand, open the hand if actuatorVal is False
+
+        hand (string): The hand to use, left or right
+        """
+        if initial:
+            pass
+        else:
+            # open designated hands
+            if actuatorVal==True:
+                if hand=='left':
+                    # servo value when left hand is fully opened
+                    self.johnny5Serial.write('#7 P1100 T3000\r')
+                elif hand=='right':
+                    # servo value when right hand is fully opened
+                    self.johnny5Serial.write('#12 P1800 T3000\r')
+                else:
+                    raise ValueError('Cannot recognize hand with value {!r}'.format(hand))
+
+            # Pause to let the action complete, will block the locomotion cmd
+            # TODO: make this non-blocking
+            time.sleep(3)
 
     def closeHand(self, actuatorVal, hand, initial=False):
         """
@@ -159,13 +185,12 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
                     self.johnny5Serial.write('#12 P1300 T3000\r')
                 else:
                     raise ValueError('Cannot recognize hand with value {!r}'.format(hand))
-
-            # open up designated hands
             else:
-                if hand=='left':
+                # open designated hands
+                if hand == 'left':
                     # servo value when left hand is fully opened
                     self.johnny5Serial.write('#7 P1100 T3000\r')
-                elif hand=='right':
+                elif hand == 'right':
                     # servo value when right hand is fully opened
                     self.johnny5Serial.write('#12 P1800 T3000\r')
                 else:
@@ -175,3 +200,32 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
             # TODO: make this non-blocking
             time.sleep(3)
 
+    def pickup(self, actuatorVal, arm, hmc_ref, initial=False):
+        """
+        This function runs liftarm, openHand and dropHand.
+
+        arm (string): The arm to use, left or right
+        """
+        if initial:
+            # set the thread for this hmc
+            self.thread[hmc_ref] = threading.Thread()
+        else:
+            def callActions(self, hmc_ref, actuatorVal, arm):
+                self.liftArm(actuatorVal, arm)
+                self.closeHand(False, arm)
+                self.closeHand(True, arm)
+                self.executor.postEvent("INFO", "pickup_ac completed.")
+                hmc_ref.updateActuatorState(True)
+            if (not self.thread[hmc_ref].is_alive()) and (hmc_ref.actuator_state != actuatorVal):
+                # no thread is running
+                # renew the thread
+                if actuatorVal:
+                    self.thread[hmc_ref] = threading.Thread(target=callActions, args=(self, hmc_ref, actuatorVal, arm))
+                    self.thread[hmc_ref].start()
+                else:
+                    hmc_ref.updateActuatorState(False)
+
+            elif self.thread[hmc_ref].is_alive() and (self.actuator_status == actuatorVal):
+                # a thread is running
+                # we need to stop the thread
+                self.thread[hmc_ref].join()
