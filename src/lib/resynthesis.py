@@ -71,6 +71,11 @@ class ExecutorResynthesisExtensions(object):
         self.violationTimeStamp = 0
         # ------------------------------- #
 
+        # &&&& negotiation_counterstrateg &&& #
+        # if True, add goals for both robots. otherwise. only add that for the initiate robot
+        self.two_way_goal = False
+        # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& #
+
     def _checkForNewInternalFlags(self):
         """ Detect whether any "internal flags" (i.e. propositions beginning with an underscore)
             have become true in the last timestep, or resynthesis is pending; if so, perform an
@@ -501,18 +506,18 @@ class ExecutorResynthesisExtensions(object):
         """
         #track if both spec is realizable with counterstrategy
         self.negoCounterStrategyCompletion = False
+        self.postEvent('NEGO','-- NEGOTIATION STARTED --')
 
         while not self.negoCounterStrategyCompletion:
-            self.postEvent('NEGO','-- NEGOTIATION STARTED --')
 
             # extract ltl transitions from SLUGS
-            safetEnvLTL = self.extractCounterStrategyTransitionsFromSLUGSINtoLTL()
-            logging.debug(safetEnvLTL)
+            safetyEnvLTL = self.extractCounterStrategyTransitionsFromSLUGSINtoLTL()
+            logging.debug(safetyEnvLTL)
             # update env safety assumptions and resynthesize
-            realizable = self.addEnvTransitionsAndResythesize(safetEnvLTL)
+            realizable = self.addEnvTransitionsAndResythesize(safetyEnvLTL)
 
             if not realizable:
-                loggng.error("it should never come here. Should have falified env.")
+                logging.error("it should never come here. Should have falified env.")
                 return
             # ----- the line above should be error-free ------- #
 
@@ -522,13 +527,26 @@ class ExecutorResynthesisExtensions(object):
             self.postEvent('NEGO','Ask the other robot to include our transitions from counterStrategy into its controller.')
 
             # send EnvTransSnippet from SLUGS
-            self.robClient.sendSpec('EnvTransSnippet',safetEnvLTL)
+            self.robClient.sendSpec('EnvTransSnippet',safetyEnvLTL)
+            time.sleep(0.1)
             self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) #NEW
 
             self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
             while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
                 # wait for the actions of the other robot
-                time.sleep(2)
+                """
+                # if the other robot is requesting spec from us
+                self.robClient.checkRequestSpec()
+                for specType in self.robClient.specRequestFromOther:
+                    if specType == 'EnvTransSnippet':
+                        self.robClient.sendSpec(specType,safetyEnvLTL)
+                    else:
+                        # send SysGoals, EnvTrans and EnvGoals
+                        self.robClient.sendSpec(specType,self.spec[specType])
+
+                self.robClient.specRequestFromOther = []
+                """
+                time.sleep(1)
 
             if self.robClient.checkNegotiationStatus() == True:
                 # The other robot successfully incorporated our transitions from counterstrategy.
@@ -539,6 +557,11 @@ class ExecutorResynthesisExtensions(object):
             elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
                 # The other robot has counterstrategy transitions for us. Try to resynthesize with those.
                 self.postEvent('NEGO','The other robot has transitions for us. We will try incorporating them.')
+
+                # obtain sysGoals of the other robot and append it to our envGoals
+                if self.two_way_goal:
+                    self.spec['EnvGoals'] = self.spec['EnvGoals'] + "&" + self.robClient.requestSpec('SysGoals') #NEW
+
                 realizable = self.acceptExchange()
 
                 if realizable:
@@ -582,6 +605,8 @@ class ExecutorResynthesisExtensions(object):
         if self.negotiationStatus == self.robClient.robotName:
 
             self.postEvent('NEGO','-- NEGOTIATION STARTED --')
+            self.postEvent('NEGO','Received request from the other robot.')
+
             # track if both spec is realizable with counterstrategy
             self.negoCounterStrategyCompletion = False
 
@@ -595,12 +620,11 @@ class ExecutorResynthesisExtensions(object):
 
                 # synthesize a new controller to incorporate the actions of the other robot.
                 realizable = self.acceptExchange()
-                self.postEvent("NEGO",'Adding countestratey transitions from the other robot to the system guarantees.')
 
                 if realizable:
                     self.robClient.setNegotiationStatus(True)
                     self.negoCounterStrategyCompletion = True # complete negotiation for now.
-                    self.postEvent('NEGO','Using exchanged specification. Negotiation completed')
+                    self.postEvent('NEGO','Successfully incorporated exchanged specification. Negotiation completed')
 
                 else:
                     self.postEvent('NEGO','Unrealizable with exchanged info. Finding countestratey transitions.')
@@ -611,11 +635,14 @@ class ExecutorResynthesisExtensions(object):
                     realizable = self.addEnvTransitionsAndResythesize(safetEnvLTL)
 
                     if not realizable:
-                        loggng.error("it should never come here. Should have falified env.")
+                        logging.error("it should never come here. Should have falified env.")
                         return
 
                     # send our spec to the other robot
                     self.robClient.sendSpec('EnvTransSnippet',safetEnvLTL)
+                    if self.two_way_goal:
+                        self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
+
                     self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
 
                     # wait until the other robot resynthesize its controller
@@ -856,8 +883,6 @@ class ExecutorResynthesisExtensions(object):
                         # exchange info with the other robot and see if it is realizable.
                         # later time can exchange spec
                         if self.negotiation_counterstrategy:
-                            logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                            logging.debug("self.violationTimeStamp:" + str(self.violationTimeStamp))
 
                             if otherRobotViolationTimeStamp < self.violationTimeStamp:
                                 self.postEvent("INFO","Initiate exchange with the other robot.")
@@ -877,10 +902,10 @@ class ExecutorResynthesisExtensions(object):
                                 # we will take request of the other robot
                                 return
 
-                        self.violationTimeStamp = 0 # reset timeStamp to zero.
-                        # store time stamp of violation
-                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                        # -------------------------------------- #
+            self.violationTimeStamp = 0 # reset timeStamp to zero.
+            # store time stamp of violation
+            self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+            # -------------------------------------- #
 
             self.realizable = realizable
 

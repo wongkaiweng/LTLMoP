@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
-BUFSIZE = 20000    #reasonably sized buffer for data
+BUFSIZE = 50000    #reasonably sized buffer for data
 
 ## now we create a new socket object (serv)
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -140,8 +140,9 @@ while keepConnection:
                             # check if we need to request spec from the other robot
                             for robot, specStr in spec[item.group('packageType')].iteritems():
                                 if robot != item.group("robotName") and spec[item.group('packageType')][robot] == "":
-                                    requestSpecStatus[robot].append(item.group('packageType'))
-
+                                    if not (item.group('packageType') in requestSpecStatus[robot]):
+                                        requestSpecStatus[robot].append(item.group('packageType'))
+                                        logging.debug(requestSpecStatus)
                             # send spec back to the robot
                             x.send(str(spec[item.group('packageType')]))
 

@@ -11,7 +11,7 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: jtlv
+synthesizer: slugs
 fastslow: False
 decompose: True
 
@@ -40,15 +40,15 @@ OtherRobot: # The other robot in the same workspace
 bob
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-bridge = p10
+bridge = p9
 square = p2
 policeStation1 = p6
 policeStation2 = p5
 tunnel = p1
-park = p8
+park = p7
 postOffice = p4
 others = 
-groceryStore = p9
+groceryStore = p8
 
 Spec: # Specification in structured English
 Robot starts in policeStation2

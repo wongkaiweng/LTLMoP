@@ -11,7 +11,7 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: jtlv
+synthesizer: slugs
 fastslow: False
 decompose: True
 

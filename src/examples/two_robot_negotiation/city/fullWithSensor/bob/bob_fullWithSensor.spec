@@ -16,7 +16,7 @@ fastslow: False
 decompose: True
 
 CurrentConfigName:
-bobNao
+bob
 
 Customs: # List of custom propositions
 
