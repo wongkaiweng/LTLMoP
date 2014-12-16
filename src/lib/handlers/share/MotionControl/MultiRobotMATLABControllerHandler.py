@@ -78,7 +78,8 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
             # TODO: this should probably go in posehandler?
             if math.isnan(pose[robot_name][2]):
                 print "WARNING: No Vicon data! Pausing."
-                self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
+                for robot_name in self.robotList:
+                    self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
                 time.sleep(1)
                 # return False not leaving yet until all robots are checked
 
@@ -152,7 +153,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 arrived[robot_name] = False  # is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
                 self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
                 logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
-                self.drive_handler[robot_name].setVelocity(vx[idx], vy[idx], pose[robot_name][2])
+                self.drive_handler[robot_name].setVelocity(vx[idx] * 2, vy[idx] * 2, pose[robot_name][2])
 
             # logging.debug("current_regVertices[robot_name]"+str(current_regVertices[robot_name]))
             # logging.debug("departed[robot_name]" + str(departed[robot_name]))

@@ -11,10 +11,6 @@ rob3_pickup, 1
 rob1_drop, 1
 rob2_drop, 1
 rob3_drop, 1
-r1_done, 1
-r3_done, 1
-r6_done, 1
-r8_done, 1
 
 
 CompileOptions:
@@ -40,6 +36,10 @@ rob3_carrying_glass
 rob3_carrying_metal
 rob3_carrying_paper
 all_done
+r1_done
+r3_done
+r6_done
+r8_done
 
 RegionFile: # Relative path of region description file
 eight_regions.regions
