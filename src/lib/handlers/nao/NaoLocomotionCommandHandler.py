@@ -43,5 +43,5 @@ class NaoLocomotionCommandHandler(handlerTemplates.LocomotionCommandHandler):
         self.movProxy.setWalkTargetVelocity(vx,vy,w,f)
 
         # start timer
-        self.timer = threading.Timer(0.7, self.movProxy.setWalkTargetVelocity, args=[0, 0, 0, 0])
+        self.timer = threading.Timer(0.4, self.movProxy.setWalkTargetVelocity, args=[0, 0, 0, 0])
         self.timer.start()

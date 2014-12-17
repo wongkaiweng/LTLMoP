@@ -39,8 +39,18 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         # Get information about regions
         self.rfi = executor.proj.rfi
         self.coordmap_map2lab = executor.hsub.coordmap_map2lab
+        self.coordmap_lab2map = executor.hsub.coordmap_lab2map  # use pixels now
         self.last_warning = 0
 
+        # check if it's simulation or running in the lab
+        robotTypeList = [robot.r_type for robot in executor.hsub.executing_config.robots]
+        if "basicSim" in robotTypeList:
+            self.experimentInLab = False
+            logging.debug("In simulation")
+        else:
+            self.experimentInLab = True
+            logging.debug("Running in the lab")
+        
         # setup matlab communication
         self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
 
@@ -71,9 +81,10 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         for robot_name, current_reg in current_regIndices.iteritems():
             next_reg = next_regIndices[robot_name]
 
-            # Find our current configuration
-            pose.update([(robot_name, self.pose_handler[robot_name].getPose())])
-
+            # Find our current configuration (Using pixels now)
+            # pose.update([(robot_name, self.pose_handler[robot_name].getPose())])
+            pose.update([(robot_name, \
+                append(array(self.coordmap_lab2map(self.pose_handler[robot_name].getPose())), self.pose_handler[robot_name].getPose()[2]))])
             # Check if Vicon has cut out
             # TODO: this should probably go in posehandler?
             if math.isnan(pose[robot_name][2]):
@@ -84,10 +95,13 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 # return False not leaving yet until all robots are checked
 
             # NOTE: Information about region geometry can be found in self.rfi.regions:
-            vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[current_reg].getPoints()])).T
+            ##### (using pixels now) ####
+            # vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[current_reg].getPoints()])).T
+            vertices = mat([x for x in self.rfi.regions[current_reg].getPoints()])
             current_regVertices[robot_name] = vertices
 
-            vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[next_reg].getPoints()])).T
+            # vertices = mat(map(self.coordmap_map2lab, [x for x in self.rfi.regions[next_reg].getPoints()])).T
+            vertices = mat([x for x in self.rfi.regions[next_reg].getPoints()])
             next_regVertices[robot_name] = vertices
 
             """
@@ -110,7 +124,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
             except:
                 logging.debug("caught exception")
-                time.sleep(10)
+                # time.sleep(10)
                 if self.old_vx is None or self.old_vy is None:
                     for idx, robot_name in enumerate(self.robotList):
                         vx.append(0)
@@ -121,7 +135,10 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 regionChanges = array([])
                 currentLoc = array([])
 
-                # restart MATLAB session
+                # delete and restart MATLAB session
+                MATLABPythonInterface.closeInterface(self.session)
+                logging.info("Restarting the MATLAB interface and hopefully this will solve the problem")
+                # time.sleep(10)
                 self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
 
 
@@ -145,7 +162,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 departed[robot_name] = True
                 arrived[robot_name] = True
                 self.current_regIndices[robot_name] = currentLoc[idx]  # storing idx of decomposed regions
-                self.executor.postEvent("INFO", "regionChanges corrected. current_regIdx:" + str(self.current_regIndices[robot_name]))
+                # self.executor.postEvent("INFO", "regionChanges corrected. current_regIdx:" + str(self.current_regIndices[robot_name]))
                 # time.sleep(3)
             else:
                 # Figure out whether we've reached the destination region
@@ -153,6 +170,10 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 arrived[robot_name] = False  # is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
                 self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
                 logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
+                # conduct mapping because from lab to map
+                if self.experimentInLab:
+                    vy[idx] = -1 * vy[idx]
+
                 self.drive_handler[robot_name].setVelocity(vx[idx] * 2, vy[idx] * 2, pose[robot_name][2])
 
             # logging.debug("current_regVertices[robot_name]"+str(current_regVertices[robot_name]))
@@ -167,8 +188,10 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 # print "WARNING: Left current region but not in expected destination region"
                 # Figure out what region we think we stumbled into
                 for r in self.rfi.regions:
-                    pointArray = [self.coordmap_map2lab(x) for x in r.getPoints()]
-                    vertices = mat(pointArray).T
+                    # using pixels now
+                    # pointArray = [self.coordmap_map2lab(x) for x in r.getPoints()]
+                    # vertices = mat(pointArray).T
+                    vertices = mat([x for x in r.getPoints()])
                     if is_inside([pose[robot_name][0], pose[robot_name][1]], vertices):
                         logging.info("I think I'm in " + r.name)
                         break

@@ -5,12 +5,13 @@ from collections import OrderedDict
 import time  # for pause
 
 two_robots = False
+experimentInLab = False
 threshold = 300
 
-if two_robots:
-    robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])
-else:
-    robRadius = OrderedDict([('rob3', 0.5), ('rob2', 0.5), ('rob1', 0.5)])
+if two_robots:  # in pixels
+    robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])  # used to be 0.5
+else:  # in pixels
+    robRadius = OrderedDict([('rob3', 20), ('rob2', 20), ('rob1', 20)])  # used to be 0.5
 
 
 # robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
@@ -77,9 +78,14 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # code for getting vertices in LTLMoP
     for regionIdx, region in enumerate(regions):  # TODO: self.rfi.regions in LTLMoP and uncomment below
         # logging.debug(regionIdx)
-        pointArray = [y for y in region.getPoints()]
-        pointArray = map(coordmap_map2lab, pointArray)
-        vertices = np.mat(pointArray)
+        # pointArray = [y for y in region.getPoints()]
+        # pointArray = map(coordmap_map2lab, pointArray)
+        # vertices = np.mat(pointArray)
+        #------------------------------------------#
+        vertices = np.mat([y for y in region.getPoints()])
+        #------------------------------------------#
+        # logging.debug("regionIdx:" + str(regionIdx) + "vertices:" + str(vertices))
+        # time.sleep(10)
         # vertices = np.mat(region).T  # TODO: remove in LTLMoP
 
         # add tempRegion to MATLAB vertices array
@@ -120,7 +126,7 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
 
     session.putvalue('pose', robotPose)
 
-    logging.info('Set robotPose completed')
+    # logging.info('Set robotPose completed')
     logging.debug("python:" + str(robotPose))
     logging.debug("MATLAB:" + str(session.getvalue('pose')))
 
@@ -133,7 +139,7 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     robotNextRegion = np.int_([next_regIndices])
     session.putvalue('destination', robotNextRegion)
 
-    logging.info('Set robotNextRegion completed')
+    # logging.info('Set robotNextRegion completed')
     logging.debug("in python: " + str(robotNextRegion))
     logging.debug("in MATLAB: " + str(session.getvalue('destination')))
 

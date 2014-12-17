@@ -4,6 +4,8 @@ import logging,random
 import project
 from collections import OrderedDict
 
+import lib.handlers.handlerTemplates as handlerTemplates
+
 class ExecutorStrategyExtensions(object):
     """ Extensions to Executor to allow for the strategy structure.
         This class provides functions to update the outputs and to check for new states in every iteration.
@@ -23,6 +25,8 @@ class ExecutorStrategyExtensions(object):
         self.nextRegionCompleted          = {}
         self.prev_decomposed_region_names = {}
         self.prev_sensor_state            = {}
+
+        self.noChangeOccured = 0
 
     def updateOutputs(self, state=None):
         """
@@ -250,6 +254,13 @@ class ExecutorStrategyExtensions(object):
                         self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region[robot.name].name, self.nextRegionCompleted[robot.name].name))
                         self.postEvent("INFO", "Heading to region %s..." % self.nextRegionCompleted[robot.name].name)
             logging.debug('*****************CHANGING STATES****************************')
+            # stop robots
+            self.robotList = [robot.name for robot in self.hsub.executing_config.robots]
+            for robot_name in self.robotList:
+                self.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler, robot_name).setVelocity(0, 0)
+                logging.debug('Changing States. Stopping Robots')
+            self.noChangeOccured += 1
+            logging.debug("No of changed states:" + str(self.noChangeOccured))
             trueProp = []
             for prop,value in self.next_state.getAll().iteritems():
                 if value:
