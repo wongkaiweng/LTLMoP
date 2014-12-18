@@ -6,7 +6,7 @@ import time  # for pause
 
 two_robots = False
 experimentInLab = False
-threshold = 300
+threshold = 100  # 300
 
 if two_robots:  # in pixels
     robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])  # used to be 0.5

@@ -13,6 +13,7 @@ import time, math
 import logging
 import __MATLABPythonInterface as MATLABPythonInterface
 from collections import OrderedDict
+import copy
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -51,6 +52,9 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
             self.experimentInLab = True
             logging.debug("Running in the lab")
         
+        self.resetMATLAB = False  # default reset to zero
+        self.temp_next = None
+
         # setup matlab communication
         self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
 
@@ -120,8 +124,12 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         logging.debug("current:" + str(current_regIndices.values()))
         logging.debug("next:" + str(next_regIndices.values()))
         if not current_regIndices.values() == next_regIndices.values():
+            if self.temp_next is None or next_regIndices != self.temp_next:
+                logging.info([int(x) + 1 for x in next_regIndices.values()])
+                self.temp_next = copy.deepcopy(next_regIndices)
             try:
                 vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+                self.resetMATLAB = False
             except:
                 logging.debug("caught exception")
                 # time.sleep(10)
@@ -140,7 +148,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 logging.info("Restarting the MATLAB interface and hopefully this will solve the problem")
                 # time.sleep(10)
                 self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
-
+                self.resetMATLAB = True
 
         else:
             logging.debug('Staying in place. Velocities are now set to zero.')
@@ -151,6 +159,7 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 vx.append(0)
                 vy.append(0)
             currentLoc = array([])
+            self.resetMATLAB = False
 
 
         self.old_vx = vx
@@ -168,7 +177,10 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 # Figure out whether we've reached the destination region
                 departed[robot_name] = False  # not is_inside([pose[robot_name][0], pose[robot_name][1]], current_regVertices[robot_name])
                 arrived[robot_name] = False  # is_inside([pose[robot_name][0], pose[robot_name][1]], next_regVertices[robot_name])
-                self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
+                if self.resetMATLAB:
+                    self.current_regIndices[robot_name] = None
+                else:
+                    self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
                 logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
                 # conduct mapping because from lab to map
                 if self.experimentInLab:
