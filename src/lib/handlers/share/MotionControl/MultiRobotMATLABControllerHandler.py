@@ -183,10 +183,12 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                     self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
                 logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
                 # conduct mapping because from lab to map
+                multiplier = 1.5
                 if self.experimentInLab:
                     vy[idx] = -1 * vy[idx]
 
-                self.drive_handler[robot_name].setVelocity(vx[idx] * 2, vy[idx] * 2, pose[robot_name][2])
+                self.drive_handler[robot_name].setVelocity(vx[idx] * multiplier, \
+                                     vy[idx] * multiplier, pose[robot_name][2])
 
             # logging.debug("current_regVertices[robot_name]"+str(current_regVertices[robot_name]))
             # logging.debug("departed[robot_name]" + str(departed[robot_name]))

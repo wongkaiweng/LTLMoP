@@ -193,7 +193,6 @@ class ExecutorStrategyExtensions(object):
 
             logging.debug("decomposed_heading_region_names" + str(decomposed_heading_region_names))
             #################################################################################
-            logging.debug("next_states:" + str(next_states))
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
             ##################################################################################
@@ -253,24 +252,28 @@ class ExecutorStrategyExtensions(object):
                     if self.current_region[robot.name] != self.nextRegionCompleted[robot.name]:
                         self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region[robot.name].name, self.nextRegionCompleted[robot.name].name))
                         self.postEvent("INFO", "Heading to region %s..." % self.nextRegionCompleted[robot.name].name)
-            logging.debug('*****************CHANGING STATES****************************')
+            logging.info('*****************CHANGING STATES****************************')
             # stop robots
             self.robotList = [robot.name for robot in self.hsub.executing_config.robots]
             for robot_name in self.robotList:
                 self.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler, robot_name).setVelocity(0, 0)
-                logging.debug('Changing States. Stopping Robots')
             self.noChangeOccured += 1
-            logging.debug("No of changed states:" + str(self.noChangeOccured))
+            logging.info("No of changed states:" + str(self.noChangeOccured))
+            trueProp = []
+            for prop, value in self.strategy.current_state.getAll().iteritems():
+                if value:
+                    trueProp.append(prop)
+            logging.info("currentState:" + str(trueProp))
             trueProp = []
             for prop,value in self.next_state.getAll().iteritems():
                 if value:
                     trueProp.append(prop)
-            logging.debug(trueProp)
-            logging.debug('************************************************************')
+            logging.info("nextState:" + str(trueProp))
+            logging.info('************************************************************')
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset
-
-            self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+            if not self.usingSlugs:
+                self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
 
     def HSubGetSensorValue(self,sensorList):
         """

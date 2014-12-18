@@ -32,6 +32,9 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
 
         self.behavior_thread = {} # a dictionary that holds the thread for each handler method config (hmc)
         self.behavior_flag = {}
+        self.behaviorRunning = {}
+
+        self.moveProxy = None
 
     #####################################
     ### Available actuator functions: ###
@@ -142,17 +145,33 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
             if self.behaviorProxy is None:
                 self.behaviorProxy = self.naoInitHandler.createProxy('ALBehaviorManager')
 
+            # from locomotion handler
+            if self.moveProxy is None:
+                self.moveProxy = self.naoInitHandler.createProxy('ALMotion')
             # Preload behaviors to make sure they execute quickly
             self.behaviorProxy.preloadBehavior(startBehaviorName)
             if endBehaviorName != "":
                 self.behaviorProxy.preloadBehavior(endBehaviorName)
                 
-            self.behavior_flag[hmc_ref] = False    
+            self.behavior_flag[hmc_ref] = False
+            self.behaviorRunning[startBehaviorName] = False
             def completionThread(self):
                 while True:
                     if self.behavior_flag[hmc_ref]:
-                        actuator_status = not (startBehaviorName in self.behaviorProxy.getRunningBehaviors())
-                        hmc_ref.updateActuatorState(actuator_status)
+                        # first check the behavior has started.
+                        if not self.behaviorRunning[startBehaviorName]:
+                            self.behaviorRunning[startBehaviorName] = self.behaviorProxy.isBehaviorRunning(startBehaviorName)
+
+                        if self.behaviorRunning[startBehaviorName]:
+                            actuator_status = not (startBehaviorName in self.behaviorProxy.getRunningBehaviors())
+                            # logging.info(self.behaviorProxy.getRunningBehaviors())
+                            # logging.info('Actuator is now' + str(actuator_status))
+                            hmc_ref.updateActuatorState(actuator_status)
+                        else:
+                            # logging.info('behavior not running yet')
+                            hmc_ref.updateActuatorState(False)
+                    else:
+                        self.behaviorRunning[startBehaviorName] = False
 
             self.behavior_thread[hmc_ref] = threading.Thread(target = completionThread, args = (self,))
             self.behavior_thread[hmc_ref].start()
@@ -181,13 +200,16 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
                 else:
                     self._killBehaviors()
                     self.behaviorProxy.post.runBehavior(startBehaviorName)
+                    self.moveProxy.setWalkTargetVelocity(0, 0, 0, 0)
+                    # logging.info('starting Behavior:' + str(startBehaviorName))
                     self.behavior_flag[hmc_ref] = True
             else:
                 if repeat:
                     self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = False
-
-                self._killBehaviors()
-                self.behavior_flag[hmc_ref] = False
-                hmc_ref.updateActuatorState(False)
-                if endBehaviorName != "":
-                    self.behaviorProxy.runBehavior(endBehaviorName)
+                else:
+                    self.behavior_flag[hmc_ref] = False
+                    hmc_ref.updateActuatorState(False)
+                    self._killBehaviors()
+                    # logging.info('behavior:' + str(startBehaviorName) + " is stopped")
+                    if endBehaviorName != "":
+                        self.behaviorProxy.runBehavior(endBehaviorName)

@@ -297,9 +297,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
         init_prop_assignments = {}
         for robot in self.hsub.executing_config.robots:
-            logging.debug(self.proj.rfi)
-            logging.debug(self.proj)
-            logging.debug(self.proj.loadRegionFile(decomposed=True))
             init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
 
             if init_region is None:

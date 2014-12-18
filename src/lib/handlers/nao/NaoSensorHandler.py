@@ -21,6 +21,8 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.sttProxy = None
         self.ldmProxy = None
         
+        self.delayThreshold = 30
+        self.delayCount = {}
     ###################################
     ### Available sensor functions: ###
     ###################################
@@ -32,7 +34,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         landMark_id (int): The id number of bar code to detect
         """
         if initial:
-
+            self.delayCount[landMark_id] = self.delayThreshold
             # initialize landmark detection
             if self.ldmProxy == None:
                 self.ldmProxy = self.naoInitHandler.createProxy('ALLandMarkDetection')
@@ -70,12 +72,19 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
 
                         #if float(markShapeInfo[3])>0.05 and float(markShapeInfo[4])>0.05:
                         if landMark_id in markExtraInfo:
+                            logging.debug('landmark ID:' + str(landMark_id) + "found")
+                            self.delayCount[landMark_id] = 0
                             return True
 
                 except Exception, e:
                     print "Naomarks detected, but it seems getData is invalid. ALValue ="
                     print val
                     print "Error msg %s" % (str(e))
+
+            if self.delayCount[landMark_id] < self.delayThreshold:
+                self.delayCount[landMark_id] += 1
+                logging.debug('delaying landmark:' + str(landMark_id))
+                return True
             return False
 
 
