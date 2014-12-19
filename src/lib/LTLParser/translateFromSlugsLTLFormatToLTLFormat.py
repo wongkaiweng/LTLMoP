@@ -42,11 +42,15 @@ def parseSLUGSCNFtoLTL(slugsStr,enabled_sensors):
 
 if __name__ == "__main__":
 	# Test code
-	slugsStr = "|  ! ball' |  ! cat' bit0\n\
-	| ball' |  ! cat' bit0\n\
-	| ball |  ! ball' |  ! cat |  ! cat'  ! bit0\n\
-	| cat' bit0\n\
-	| ball |  ! ball' | cat |  ! cat'  ! bit0"
+	#slugsStr = "|  ! ball' |  ! cat' bit0\n\
+	#| ball' |  ! cat' bit0\n\
+	#| ball |  ! ball' |  ! cat |  ! cat'  ! bit0\n\
+	#| cat' bit0\n\
+	#| ball |  ! ball' | cat |  ! cat'  ! bit0"
 
+	slugsStr = "|  ! ball' |  ! cat' bit0\n\
+	 ! bit0\n\
+	| ball'  ! cat'\n\
+	|  ! ball' | cat' bit0"
 	enabled_sensors = ["ball","cat"]
 	print parseSLUGSCNFtoLTL(slugsStr,enabled_sensors)

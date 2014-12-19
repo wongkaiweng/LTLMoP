@@ -437,7 +437,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
             # TODO: add negotiation_counstrategy here so changes can be made from the other robot when get stuck
             self.checkRequestFromTheOtherRobot()
-            time.sleep(5)
+            #time.sleep(5)
 
             # Env might have changed. add new observation of the env.
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)
