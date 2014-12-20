@@ -1180,7 +1180,7 @@ class SpecEditorFrame(wx.Frame):
             if response != wx.YES:
                 return
 
-        if not os.path.isfile(self.proj.getFilenamePrefix()+".aut"):
+        if not (os.path.isfile(self.proj.getFilenamePrefix()+".aut") or os.path.isfile(self.proj.getFilenamePrefix()+".bdd")):
             # TODO: Deal with case where aut file exists but is lame
             wx.MessageBox("Cannot find automaton for simulation.  Please make sure compilation completed successfully.", "Error",
                         style = wx.OK | wx.ICON_ERROR)

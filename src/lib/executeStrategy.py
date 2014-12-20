@@ -3,6 +3,7 @@ import sys
 import logging,random
 import project
 from collections import OrderedDict
+import copy
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -15,6 +16,7 @@ class ExecutorStrategyExtensions(object):
         super(ExecutorStrategyExtensions, self).__init__()
 
         self.last_next_states= []
+        self.last_next_state = None
         self.last_sensor_state = {}
         self.next_state      = None
         #self.current_region  = None
@@ -22,7 +24,7 @@ class ExecutorStrategyExtensions(object):
 
         self.next_region                  = OrderedDict()
         self.current_region               = OrderedDict()
-        self.nextRegionCompleted          = {}
+        self.next_region_heading          = {}
         self.prev_decomposed_region_names = {}
         self.prev_sensor_state            = {}
 
@@ -40,6 +42,12 @@ class ExecutorStrategyExtensions(object):
         for key, output_val in state.getOutputs().iteritems():
             # Skip any region
             if 'region' == key: continue
+
+            # for fastslow
+            key_removedRobot = key
+            for robot in self.hsub.executing_config.robots:
+                key_removedRobot = key_removedRobot.replace(robot.name+"_",'')
+            if key_removedRobot in self.proj.regionMapping: continue
 
             if key not in self.current_outputs.keys() or output_val != self.current_outputs[key]:
 
@@ -143,10 +151,17 @@ class ExecutorStrategyExtensions(object):
                 decomposed_region_names  = self.prev_decomposed_region_names
                 break
 
-        #logging.debug('--------------' + str(self.hsub.executing_config.robots))
+        # the current region comes from strategy.current_state
+        currentInputs = self.strategy.current_state.getInputs()
+        decomposed_current_region_names = {}
         for robot in self.hsub.executing_config.robots:
-            self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[robot.name][0])]
-        #logging.debug("decomposed_region_names" + str(decomposed_region_names))
+            heading_region = dict((k,v) for k, v in  currentInputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'').replace('_rc','') in self.proj.regionMapping)
+            heading_region_names = [k for k, v in  heading_region.iteritems() if v]
+            if heading_region_names:
+                heading_region_name = heading_region_names[0].replace(robot.name+"_",'').replace('_rc','')
+                decomposed_current_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+                self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_current_region_names[robot.name][0])]
+
         self.prev_decomposed_region_names = decomposed_region_names
         self.prev_sensor_state            =sensor_state
         ##############################################################################
@@ -159,21 +174,26 @@ class ExecutorStrategyExtensions(object):
         if len(next_states) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
-            #logging.error('State:' +self.strategy.current_state.state_id +' sensor_state:' + str(sensor_state) )
-            #logging.info("decomposed_region_names" + str(decomposed_region_names))
             return
 
-        # See if we're beginning a new transition
         if next_states != self.last_next_states:
             # NOTE: The last_next_states comparison is also to make sure we don't
             # choose a different random next-state each time, in the case of multiple choices
             self.last_next_states = next_states
 
             # Only allow self-transitions if that is the only option!
-            if len(next_states) > 1 and self.strategy.current_state in next_states:
-                next_states.remove(self.strategy.current_state)
+            #if len(next_states) > 1 and self.strategy.current_state in next_states:
+            #    next_states.remove(self.strategy.current_state)
 
-            self.next_state = random.choice(next_states)
+            # biasing towards the same last next_state and keeping the current state as an option
+            # make sure we are only randomly picking when the set of next_states changed
+            if self.last_next_state in next_states:
+                self.next_state = self.last_next_state
+            else:
+                self.next_state = random.choice(next_states)
+                self.last_next_state = self.next_state
+            #self.next_state = random.choice(next_states)
+
             # find next region
             #############################################################################
             ############## not looking self.strategy.getPropValue('region')##############
@@ -198,48 +218,29 @@ class ExecutorStrategyExtensions(object):
             ##################################################################################
             ################ not looking at self.next_state.getPropValue('regionCompleted') ##
             ##################################################################################
-            nextStateInputs = self.next_state.getInputs()
-            next_input_region_names = {}
+            nextOutputs = self.next_state.getOutputs()
+            decomposed_heading_region_names = {}
             for robot in self.hsub.executing_config.robots:
-                nextInputRegion = [k for k, v in nextStateInputs.iteritems() if (k.startswith(robot.name+"_") and k.endswith('_rc') and v)]
+                heading_region = dict((k,v) for k, v in  nextOutputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'') in self.proj.regionMapping)
+                heading_region_names = [k for k, v in  heading_region.iteritems() if v]
+                if heading_region_names:
+                    heading_region_name = heading_region_names[0].replace(robot.name+"_",'')
+                    decomposed_heading_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+                    self.next_region_heading[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_heading_region_names[robot.name][0])]
 
-
-                if nextInputRegion:
-                    nextInputRegion_name = nextInputRegion[0].replace('_rc','').replace(robot.name+"_",'')
-                    next_input_region_names[robot.name] = self.proj.regionMapping[nextInputRegion_name]
-
-                self.nextRegionCompleted[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(next_input_region_names[robot.name][0])]
-            logging.debug("next_input_region_names"+ str(next_input_region_names))
+            #logging.debug("next_input_region_names"+ str(next_input_region_names))
             ##################################################################################
 
             # See what we, as the system, need to do to get to this new state
-            self.transition_contains_motion = None not in self.next_region.values() and False not in  [self.nextRegionCompleted[robot.name] != self.current_region[robot.name] for robot in self.hsub.executing_config.robots]
+            self.transition_contains_motion = None not in self.next_region.values() and True in  [self.next_region[robot.name] != self.current_region[robot.name] for robot in self.hsub.executing_config.robots]
 
             # Run actuators before motion
             self.updateOutputs(self.next_state)
-            """
-            # check if we have changes in sensor values
-            if self.last_sensor_state != sensor_state and False not in [self.nextRegionCompleted[robot.name] == self.current_region[robot.name] for robot in self.hsub.executing_config.robots]:
-                self.arrived = True
-            else:
-                self.arrived = False
-            """
             self.arrived = True
             self.last_sensor_state = sensor_state
 
         if not self.arrived or (self.next_state == self.strategy.current_state): # not sure what will happen
             # Move one step towards the next region (or stay in the same region)
-            """
-            current_regAllRobots = {}
-            next_regAllRobots = {}
-            ############################################################
-            for robot in self.hsub.executing_config.robots:
-                current_regAllRobots[robot.name] = self.proj.rfi.regions[self._getCurrentRegionFromPose()[robot.name]]
-                next_regAllRobots[robot.name] = self.next_region
-            ############################################################
-            """
-            #logging.debug(self.current_region)
-            #logging.debug(self.next_region)
             self.arrived = self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
         else:
             #TODO: temp fix for BDD
@@ -249,9 +250,9 @@ class ExecutorStrategyExtensions(object):
         if self.arrived and self.next_state != self.strategy.current_state:
             if self.transition_contains_motion:
                 for robot in self.hsub.executing_config.robots:
-                    if self.current_region[robot.name] != self.nextRegionCompleted[robot.name]:
-                        self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region[robot.name].name, self.nextRegionCompleted[robot.name].name))
-                        self.postEvent("INFO", "Heading to region %s..." % self.nextRegionCompleted[robot.name].name)
+                    if self.current_region[robot.name] != self.next_region[robot.name]:
+                        self.postEvent("INFO", "Crossed border from %s to %s!" % (self.proj.rfi.regions[self.current_region[robot.name]].name, self.proj.rfi.regions[self.next_region[robot.name]].name))
+                        self.postEvent("INFO", "Heading to region %s..." % self.next_region_heading[robot.name].name)
             logging.info('*****************CHANGING STATES****************************')
             # stop robots
             self.robotList = [robot.name for robot in self.hsub.executing_config.robots]
