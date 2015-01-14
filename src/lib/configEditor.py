@@ -53,7 +53,7 @@ def drawParamConfigPane(target, method, proj):
         if p.para_type is None:
             continue
 
-        if p.para_type.lower() == "region":
+        if p.para_type.lower() == "region" and proj.rfi:
             r_names = [r.name for r in proj.rfi.regions if r.name.lower() != "boundary" and not r.isObstacle]
             param_controls[p] = wx.ComboBox(target, -1, choices=r_names, style=wx.CB_DROPDOWN)
 
