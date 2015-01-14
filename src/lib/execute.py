@@ -128,10 +128,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
-        region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
-        strat = strategy.createStrategyFromFile(filename,
+        if self.proj.rfi:
+            region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+            strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
+        else:
+            strat = strategy.createStrategyFromFile(filename,
+                                                self.proj.enabled_sensors,
+                                                self.proj.enabled_actuators + self.proj.all_customs)
 
         return strat
 
@@ -263,13 +268,16 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         ## Region
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
-        init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
-        if init_region is None:
-            logging.error("Initial pose not inside any region!")
-            sys.exit(-1)
+        if self.proj.rfi:
+            init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
+            if init_region is None:
+                logging.error("Initial pose not inside any region!")
+                sys.exit(-1)
 
-        logging.info("Starting from initial region: " + init_region.name)
-        init_prop_assignments = {"region": init_region}
+            logging.info("Starting from initial region: " + init_region.name)
+            init_prop_assignments = {"region": init_region}
+        else:
+            init_prop_assignments = {}
 
         # initialize all sensor and actuator methods
         logging.info("Initializing sensor and actuator methods...")

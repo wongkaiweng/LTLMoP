@@ -78,13 +78,14 @@ def writeSpec(text, sensorList, regionList, robotPropList):
     # List of all robot prpositions
     allRobotProp = regionList + robotPropList
 
-    # Define the number of bits needed to encode the regions
-    numBits = int(numpy.ceil(numpy.log2(len(regionList))))
+    if regionList:
+        # Define the number of bits needed to encode the regions
+        numBits = int(numpy.ceil(numpy.log2(len(regionList))))
 
-    # creating the region bit encoding
-    bitEncode = bitEncoding(len(regionList),numBits)
-    currBitEnc = bitEncode['current']
-    nextBitEnc = bitEncode['next']
+        # creating the region bit encoding
+        bitEncode = bitEncoding(len(regionList),numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
 
     # Regular expressions to help us out
     EnvInitRE = re.compile('^(environment|env) starts with',re.IGNORECASE)
@@ -107,7 +108,8 @@ def writeSpec(text, sensorList, regionList, robotPropList):
     internal_props = []
 
     # Creating the 'Stay' formula - it is a constant formula given the number of bits.
-    StayFormula = createStayFormula(regionList)
+    if regionList:
+        StayFormula = createStayFormula(regionList)
 
     lineInd = 0
     
@@ -447,7 +449,7 @@ def writeSpec(text, sensorList, regionList, robotPropList):
                 if CondFormulaInfo['formula'] == '': failed = True
                 spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                 linemap[CondFormulaInfo['type']].append(lineInd)
-                LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
             elif QuantifierFlag == "ALL":
                 for r in RegionGroups[quant_group]:
                     tmp_req = copy.deepcopy(ReqFormulaInfo)
@@ -458,14 +460,14 @@ def writeSpec(text, sensorList, regionList, robotPropList):
                     if CondFormulaInfo['formula'] == '': failed = True
                     spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                     linemap[CondFormulaInfo['type']].append(lineInd)
-                    LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                    if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
             else:
                 # Parse the condition and add it to the requirement
                 CondFormulaInfo = parseConditional(Condition,ReqFormulaInfo,CondType,sensorList,allRobotProp,lineInd)
                 if CondFormulaInfo['formula'] == '': failed = True
                 spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                 linemap[CondFormulaInfo['type']].append(lineInd)
-                LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
                 
         # An "after each time" implicit memory statement
         elif AfterEachTimeRE.search(line):

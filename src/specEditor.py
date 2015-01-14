@@ -1003,10 +1003,10 @@ class SpecEditorFrame(wx.Frame):
         self.text_ctrl_spec.MarkerDeleteAll(MARKER_PARSEERROR)
 
 		# Let's make sure we have everything!
-        if self.proj.rfi is None:
-            wx.MessageBox("Please define regions before compiling.", "Error",
-                        style = wx.OK | wx.ICON_ERROR)
-            return
+        #if self.proj.rfi is None:
+        #    wx.MessageBox("Please define regions before compiling.", "Error",
+        #                style = wx.OK | wx.ICON_ERROR)
+        #    return
 
         if self.proj.specText.strip() == "":
             wx.MessageBox("Please write a specification before compiling.", "Error",
@@ -1019,7 +1019,7 @@ class SpecEditorFrame(wx.Frame):
             return
 
         # Check that there's a boundary region
-        if self.proj.compile_options["decompose"] and self.proj.rfi.indexOfRegionWithName("boundary") < 0:
+        if self.proj.rfi is not None and self.proj.compile_options["decompose"] and self.proj.rfi.indexOfRegionWithName("boundary") < 0:
             wx.MessageBox("Please define a boundary region before compiling.\n(Just add a region named 'boundary' in RegionEditor.)", "Error",
                         style = wx.OK | wx.ICON_ERROR)
             return
@@ -1041,9 +1041,10 @@ class SpecEditorFrame(wx.Frame):
 
         self.appendLog("Decomposing map into convex regions...\n", "BLUE")
 
-        compiler._decompose()
-        self.proj = compiler.proj
-        self.decomposedRFI = compiler.parser.proj.rfi
+        if self.proj.rfi is not None:
+            compiler._decompose()
+            self.proj = compiler.proj
+            self.decomposedRFI = compiler.parser.proj.rfi
 
         # Update workspace decomposition listbox
         if self.proj.regionMapping is not None:

@@ -18,9 +18,12 @@ class BasicSimInitHandler(handlerTemplates.InitHandler):
 
         rfi_original = executor.proj.loadRegionFile(decomposed=False)
 
-        # Start in the center of the defined initial region
-        init_region_obj = rfi_original.regions[rfi_original.indexOfRegionWithName(init_region)]
-        center = init_region_obj.getCenter()
+        if rfi_original:
+            # Start in the center of the defined initial region
+            init_region_obj = rfi_original.regions[rfi_original.indexOfRegionWithName(init_region)]
+            center = init_region_obj.getCenter()
+        else:
+            center = [0,0]
 
         #initialize the simulator
         self.simulator =  basicSimulator.basicSimulator([center[0],center[1],0.0])

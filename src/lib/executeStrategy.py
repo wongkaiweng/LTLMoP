@@ -44,8 +44,11 @@ class ExecutorStrategyExtensions(object):
         """
         Run, run, run the automaton!  (For one evaluation step)
         """
-        # find current region
-        self.current_region = self.strategy.current_state.getPropValue('region')
+        if self.proj.rfi:
+            # find current region
+            self.current_region = self.strategy.current_state.getPropValue('region')
+        else:
+            self.current_region = None
 
         # Take a snapshot of our current sensor readings
         sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
@@ -72,7 +75,10 @@ class ExecutorStrategyExtensions(object):
                 next_states.remove(self.strategy.current_state)
 
             self.next_state = random.choice(next_states)
-            self.next_region = self.next_state.getPropValue('region')
+            if self.proj.rfi:
+                self.next_region = self.next_state.getPropValue('region')
+            else:
+                self.next_region = None
 
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
 
@@ -90,8 +96,11 @@ class ExecutorStrategyExtensions(object):
             self.arrived = False
 
         if not self.arrived:
-            # Move one step towards the next region (or stay in the same region)
-            self.arrived = self.hsub.gotoRegion(self.current_region, self.next_region)
+            if self.proj.rfi:
+                # Move one step towards the next region (or stay in the same region)
+                self.arrived = self.hsub.gotoRegion(self.current_region, self.next_region)
+            else:
+                self.arrived = True
 
         # Check for completion of motion
         if self.arrived and self.next_state != self.strategy.current_state:
