@@ -65,7 +65,7 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     param_controls["Default"] = wx.ComboBox(target, -1, choices=methodDict[method["name"]], style=wx.CB_DROPDOWN)
 
     #Need to set old values
-    if method['para'] is not None and method['para'] in methodDict[method]:
+    if method['para'] is not None and method['para'] in methodDict[method["name"]]:
         param_controls["Default"].SetStringSelection(method['para'])
     else:
         param_controls["Default"].SetStringSelection(methodDict[method["name"]][0])
@@ -1270,7 +1270,7 @@ class propMappingDialog(wx.Dialog):
         self.text_ctrl_mapping = wx.richtext.RichTextCtrl(self, wx.ID_ANY, "")
         self.label_13 = wx.StaticText(self, wx.ID_ANY, _("\nRobot Components"), style=wx.ALIGN_CENTRE)
         self.button_9 = wx.Button(self, wx.ID_ANY, _("        ^\nInsert/Apply"))
-        self.label_7 = wx.StaticText(self, wx.ID_ANY, _("Robots:"))
+        self.label_7 = wx.StaticText(self, wx.ID_ANY, _("Possible Types:"))
         self.list_box_robots = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.label_8 = wx.StaticText(self, wx.ID_ANY, _("Sensors/Actuators:"))
         self.list_box_functions = wx.ListBox(self, wx.ID_ANY, choices=[])
@@ -1341,14 +1341,17 @@ class propMappingDialog(wx.Dialog):
         self.c.addConstConstraint(("state", "stateMachineName"), self.proj.getFilenamePrefix())
 
         try:
-            data = self.parseYAMLfile()
-            for group in data['connections']:
+            self.prevData = self.parseYAMLfile()
+            for group in self.prevData['connections']:
                 # prop component 
-                self.c.addSubcomponent(group[1][0], data["subcomponents"][group[1][0]]['object'])
+                self.c.addSubcomponent(group[1][0], self.prevData["subcomponents"][group[1][0]]['object'])
                 # ("state", prop), (prop, port)
                 self.c.addConnection(("state", group[1][0]), (group[1][0], group[1][1]))
         except:
             logging.debug("The YAML file does not exist now!")
+            # initialize self.prevData, which store all old settings in yaml file
+            self.prevData = {"connections":[],"interfaces":None, "parameters":None, \
+"subcomponents":{"state":{"objects":"StateMachine","parameters":{"stateMachineName":self.proj.getFilenamePrefix()}}}}
 
     def parseYAMLfile(self):
         yamlFile = open(self.proj.getFilenamePrefix()+".yaml", "r")
@@ -1561,6 +1564,45 @@ class propMappingDialog(wx.Dialog):
             self.list_box_robots.SetSelection(0)
             self.onSelectRobot(None)
 
+            # also set the previous selection
+            try:
+                # figure out sensor/actuator component and options
+                prevComponent = self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['object']
+                for [[_, _], [prop, port],_] in self.prevData['connections']:
+                    if prop == self.list_box_props.GetStringSelection():
+                        # set port port
+                        option = port
+
+                # check if the prop is a sensor or actuator
+                if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
+                    componentKey = "sensor"
+                elif  self.list_box_props.GetStringSelection() in self.proj.all_actuators:
+                    componentKey = "actuator"
+                else:
+                    logging.debug('Prop should be either sensors or actuators.')
+
+                # figure out the component type
+                for idx, componentType in enumerate(self.list_box_robots.GetItems()):
+                    if prevComponent in dict(filterComponents([componentKey,componentType])).keys():
+                        typeIdx = idx
+                        break
+
+                # set the list_box_robots selection
+                self.list_box_robots.SetSelection(typeIdx)
+                self.onSelectRobot(None)
+
+                # set the list_box_functions selection
+                prevComponentIdx = self.list_box_functions.GetItems().index(prevComponent)
+                self.list_box_functions.SetSelection(prevComponentIdx)
+                self.onSelectHandler(None, tempMethodPara = option)
+                logging.debug('successfully loaded old settings')
+            except:
+                logging.debug('did not have old settings. Loading default')
+                self.list_box_robots.SetSelection(0)
+                self.onSelectRobot(None)
+                self.list_box_functions.SetSelection(0)
+                self.onSelectHandler(None)
+
         # Auto-select the first term
         self.onClickMapping(None)
 
@@ -1571,17 +1613,35 @@ class propMappingDialog(wx.Dialog):
         if self.tempMethod is not None:
 
             component = self.tempMethod['name']
-            port = self.tempMethod['para']
-            prop = self.list_box_props.GetStringSelection()
+            port = str(self.tempMethod['para'])
+            prop = str(self.list_box_props.GetStringSelection())
             print "Grounding proposition", prop, "to component", component, "on port", port
+            # first remove existing component
+            try:
+                self.c.delSubcomponent(prop)
+            except:
+                logging.debug("The proposition is not added yet.")
+
+            # fist undate our prevData Object
+            if prop in self.prevData["subcomponents"].keys():
+                self.prevData["subcomponents"][prop]["object"] = component
+                for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
+                    if oldProp == self.list_box_props.GetStringSelection():
+                        self.prevData["connections"][idx][1][1] = port
+                        break
+            else: # if the key does not exist
+                self.prevData["subcomponents"][prop] = {"object": component, "parameters": "{}"}
+                self.prevData["connections"].append([["state",prop],[prop,port],"{}"])
+
+            # then add the component
             self.c.addSubcomponent(prop, component)
             self.c.addConnection(("state", prop), (prop, port))
 
             start, end = self.text_ctrl_mapping.GetSelection()
             if start < 0:
-                # If nothing is selected, just insert
+                # always replace all contents in the text_ctrl_mapping
                 start = self.text_ctrl_mapping.GetInsertionPoint()
-                end = start
+                end = self.text_ctrl_mapping.GetLineLength(0)
 
             if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
                 method_string = "sensor " + str(prop) + " " + str(component) + " " + str(port)
@@ -1590,7 +1650,7 @@ class propMappingDialog(wx.Dialog):
             else:
                 method_string = str(prop) + " " + str(component) + " " + str(port)
 
-            self.text_ctrl_mapping.Replace(start, end, method_string)
+            self.text_ctrl_mapping.SetValue(method_string)
             self.text_ctrl_mapping.SetSelection(start, start + len(method_string))
         event.Skip()
 
@@ -1637,7 +1697,7 @@ class propMappingDialog(wx.Dialog):
         if event is not None:
             event.Skip()
 
-    def onSelectHandler(self, event): # wxGlade: propMappingDialog.<event_handler>
+    def onSelectHandler(self, event, tempMethodPara = None): # wxGlade: propMappingDialog.<event_handler>
         if event is not None:
             event.Skip()
 
@@ -1649,7 +1709,7 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":None}
+        self.tempMethod = {"name":deepcopy(m), "para":tempMethodPara}
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
@@ -1660,13 +1720,18 @@ class propMappingDialog(wx.Dialog):
 
 
     def onClickOK(self, event): # wxGlade: propMappingDialog.<event_handler>
-        #print "Event handler `onClickOK' not implemented!"
-        self.c.toYaml(self.proj.getFilenamePrefix()+".yaml")
-        logging.debug("YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
-        event.Skip()
+        # first we check if all the props have groundings. If not, the user will have to do that.
+        if len(self.proj.all_sensors)+len(self.proj.all_actuators)+1 == len(self.prevData["subcomponents"].keys()):
+            # all props are grounded, then we can save the yaml file.
+            self.c.toYaml(self.proj.getFilenamePrefix()+".yaml")
+            logging.debug("YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
+            event.Skip()
+        else:
+            d = wx.MessageDialog(self, "Please make sure you have grounded all the propositions.", style = wx.OK | wx.ICON_ERROR)
+            d.ShowModal()
 
     def onClickCancel(self, event): # wxGlade: propMappingDialog.<event_handler>
-        #print "Event handler `onClickOK' not implemented!"
+        #print "Event handler `onClickCancel' not implemented!"
         event.Skip()
 
     def onClickMapping(self, event):
