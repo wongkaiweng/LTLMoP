@@ -5,7 +5,8 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-pickup, 1
+drop_um, 1
+pickup_dm, 1
 
 CompileOptions:
 convexify: True
@@ -22,11 +23,13 @@ Untitled configuration
 Customs: # List of custom propositions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-ball, 1
+ball_d, 1
+person_u, 1
 
 
 ======== SPECIFICATION ========
 
 Spec: # Specification in structured English
-if you are sensing ball then do pickup
+if you are sensing ball_d then do pickup_dm
+if you are sensing person_u then do drop_um
 

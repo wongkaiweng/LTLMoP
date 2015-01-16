@@ -30,6 +30,68 @@ from lib.hsubConfigObjects import ExperimentConfig, RobotConfig
 # begin wxGlade: extracode
 # end wxGlade
 
+###################################
+####### for robot components ######
+import logging
+sys.path.append(os.path.join(p,"..","ppr"))
+from svggen.library import filterComponents
+from svggen.api.component import Component
+
+import gettext
+###################################
+
+
+def drawParamConfigPaneRobotComponents(target, method, methodDict):
+    """
+    method = {name: name of component chosen, para: value chosen}
+    methodDict = dictionary of all possible components
+    """
+    if target.GetSizer() is not None:
+        target.GetSizer().Clear(deleteWindows=True)
+
+    list_sizer = wx.BoxSizer(wx.VERTICAL)
+
+    label_info = wx.StaticText(target, -1, "Name:\t\t\tOptions:")
+    label_info.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
+    static_line = wx.StaticLine(target, -1)
+    list_sizer.Add(label_info, 0, wx.ALL|wx.EXPAND, 5)
+    list_sizer.Add(static_line, 0, wx.EXPAND, 0)
+
+    param_controls = {}
+
+    item_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    param_label = wx.StaticText(target, -1, "%s:" % method["name"])
+
+    param_controls["Default"] = wx.ComboBox(target, -1, choices=methodDict[method["name"]], style=wx.CB_DROPDOWN)
+
+    #Need to set old values
+    if method['para'] is not None and method['para'] in methodDict[method]:
+        param_controls["Default"].SetStringSelection(method['para'])
+    else:
+        param_controls["Default"].SetStringSelection(methodDict[method["name"]][0])
+        method["para"] = methodDict[method["name"]][0]
+
+    #param_label.SetToolTip(wx.ToolTip(p.desc))
+    item_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    item_sizer.Add(param_label, 0, wx.ALL, 5)
+    item_sizer.Add(param_controls["Default"], 1, wx.ALL, 5)
+    list_sizer.Add(item_sizer, 0, wx.EXPAND, 0)
+
+    # TODO: is there a better way to do this?
+    def paramPaneCallback(event):
+        method['para'] = param_controls["Default"].GetValue()
+
+    target.Bind(wx.EVT_TEXT, paramPaneCallback)
+    target.Bind(wx.EVT_COMBOBOX, paramPaneCallback)
+    target.Bind(wx.EVT_CHECKBOX, paramPaneCallback)
+    target.Bind(wx.lib.intctrl.EVT_INT, paramPaneCallback)
+
+    target.SetSizer(list_sizer)
+    target.Layout()
+
+    label_info.Wrap(list_sizer.GetSize()[0])
+
+
 CALIB_PORT = 23460
 
 def drawParamConfigPane(target, method, proj):
@@ -140,11 +202,11 @@ class regionTagsDialog(wx.Dialog):
         # begin wxGlade: regionTagsDialog.__init__
         kwds["style"] = wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
-        self.label_5 = wx.StaticText(self, wx.ID_ANY, "Tags:")
+        self.label_5 = wx.StaticText(self, wx.ID_ANY, _("Tags:"))
         self.list_box_tags = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_SINGLE)
         self.button_add_tag = wx.Button(self, wx.ID_ADD, "")
         self.button_remove_tag = wx.Button(self, wx.ID_REMOVE, "")
-        self.label_12 = wx.StaticText(self, wx.ID_ANY, "Regions:")
+        self.label_12 = wx.StaticText(self, wx.ID_ANY, _("Regions:"))
         self.list_box_regions = wx.CheckListBox(self, wx.ID_ANY, choices=[])
         self.static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         self.button_5 = wx.Button(self, wx.ID_OK, "")
@@ -164,7 +226,7 @@ class regionTagsDialog(wx.Dialog):
 
     def __set_properties(self):
         # begin wxGlade: regionTagsDialog.__set_properties
-        self.SetTitle("Edit Region Tags...")
+        self.SetTitle(_("Edit Region Tags..."))
         self.SetSize((577, 419))
         # end wxGlade
 
@@ -284,7 +346,7 @@ class handlerConfigDialog(wx.Dialog):
         kwds["style"] = wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
         self.panel_configs = wx.ScrolledWindow(self, wx.ID_ANY, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
-        self.button_defaults = wx.Button(self, wx.ID_ANY, "Reset to Defaults")
+        self.button_defaults = wx.Button(self, wx.ID_ANY, _("Reset to Defaults"))
         self.button_OK = wx.Button(self, wx.ID_OK, "")
         self.button_1 = wx.Button(self, wx.ID_CANCEL, "")
 
@@ -300,7 +362,7 @@ class handlerConfigDialog(wx.Dialog):
 
     def __set_properties(self):
         # begin wxGlade: handlerConfigDialog.__set_properties
-        self.SetTitle("Configure XXXhandler")
+        self.SetTitle(_("Configure XXXhandler"))
         self.panel_configs.SetScrollRate(10, 10)
         self.button_OK.SetDefault()
         # end wxGlade
@@ -469,26 +531,26 @@ class simSetupDialog(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.list_box_experiment_name = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.button_cfg_new = wx.Button(self, wx.ID_NEW, "")
-        self.button_cfg_import = wx.Button(self, wx.ID_ANY, "Import...")
+        self.button_cfg_import = wx.Button(self, wx.ID_ANY, _("Import..."))
         self.button_cfg_delete = wx.Button(self, wx.ID_DELETE, "")
-        self.sizer_28_staticbox = wx.StaticBox(self, wx.ID_ANY, "Experiment Configurations:")
-        self.label_9 = wx.StaticText(self, wx.ID_ANY, "Experiment Name: ")
+        self.sizer_28_staticbox = wx.StaticBox(self, wx.ID_ANY, _("Experiment Configurations:"))
+        self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Experiment Name: "))
         self.text_ctrl_sim_experiment_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.label_2 = wx.StaticText(self, wx.ID_ANY, "Custom Propositions:")
-        self.list_box_init_customs = wx.CheckListBox(self, wx.ID_ANY, choices=["1", "2"])
-        self.label_2_copy = wx.StaticText(self, wx.ID_ANY, "Action Propositions:")
-        self.list_box_init_actions = wx.CheckListBox(self, wx.ID_ANY, choices=["3", "4"])
-        self.button_edit_region_tags = wx.Button(self, wx.ID_ANY, "Edit region tags...")
-        self.sizer_22_staticbox = wx.StaticBox(self, wx.ID_ANY, "Initial Conditions")
-        self.label_1 = wx.StaticText(self, wx.ID_ANY, "Robots:")
+        self.label_2 = wx.StaticText(self, wx.ID_ANY, _("Custom Propositions:"))
+        self.list_box_init_customs = wx.CheckListBox(self, wx.ID_ANY, choices=[_("1"), _("2")])
+        self.label_2_copy = wx.StaticText(self, wx.ID_ANY, _("Action Propositions:"))
+        self.list_box_init_actions = wx.CheckListBox(self, wx.ID_ANY, choices=[_("3"), _("4")])
+        self.button_edit_region_tags = wx.Button(self, wx.ID_ANY, _("Edit region tags..."))
+        self.sizer_22_staticbox = wx.StaticBox(self, wx.ID_ANY, _("Initial Conditions"))
+        self.label_1 = wx.StaticText(self, wx.ID_ANY, _("Robots:"))
         self.list_box_robots = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.button_addrobot = wx.Button(self, wx.ID_ANY, "Add robot...")
-        self.button_2 = wx.Button(self, wx.ID_ANY, "Configure robot...")
-        self.button_3 = wx.Button(self, wx.ID_ANY, "Remove robot")
-        self.button_defaultrobot = wx.Button(self, wx.ID_ANY, "Set as Main Robot")
-        self.button_4 = wx.Button(self, wx.ID_ANY, "Edit proposition mapping...")
-        self.sizer_1_staticbox = wx.StaticBox(self, wx.ID_ANY, "Execution Environment")
-        self.sizer_27_staticbox = wx.StaticBox(self, wx.ID_ANY, "Experiment Settings")
+        self.button_addrobot = wx.Button(self, wx.ID_ANY, _("Add robot..."))
+        self.button_2 = wx.Button(self, wx.ID_ANY, _("Configure robot..."))
+        self.button_3 = wx.Button(self, wx.ID_ANY, _("Remove robot"))
+        self.button_defaultrobot = wx.Button(self, wx.ID_ANY, _("Set as Main Robot"))
+        self.button_4 = wx.Button(self, wx.ID_ANY, _("Edit proposition mapping..."))
+        self.sizer_1_staticbox = wx.StaticBox(self, wx.ID_ANY, _("Execution Environment"))
+        self.sizer_27_staticbox = wx.StaticBox(self, wx.ID_ANY, _("Experiment Settings"))
         self.button_sim_apply = wx.Button(self, wx.ID_APPLY, "")
         self.button_sim_ok = wx.Button(self, wx.ID_OK, "")
         self.button_sim_cancel = wx.Button(self, wx.ID_CANCEL, "")
@@ -563,7 +625,7 @@ class simSetupDialog(wx.Dialog):
 
     def __set_properties(self):
         # begin wxGlade: simSetupDialog.__set_properties
-        self.SetTitle("Configure Execution")
+        self.SetTitle(_("Configure Execution"))
         self.SetSize((935, 580))
         self.text_ctrl_sim_experiment_name.SetMinSize((300, 27))
         self.list_box_init_customs.SetSelection(0)
@@ -951,9 +1013,9 @@ class addRobotDialog(wx.Dialog):
         # begin wxGlade: addRobotDialog.__init__
         kwds["style"] = wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
-        self.label_3 = wx.StaticText(self, wx.ID_ANY, "Robot type:")
+        self.label_3 = wx.StaticText(self, wx.ID_ANY, _("Robot type:"))
         self.combo_box_robottype = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.label_4 = wx.StaticText(self, wx.ID_ANY, "Robot name:")
+        self.label_4 = wx.StaticText(self, wx.ID_ANY, _("Robot name:"))
         self.text_ctrl_robotname = wx.TextCtrl(self, wx.ID_ANY, "")
         self.static_line_1 = wx.StaticLine(self, wx.ID_ANY)
         self.button_7 = wx.Button(self, wx.ID_CANCEL, "")
@@ -1019,7 +1081,7 @@ class addRobotDialog(wx.Dialog):
 
     def __set_properties(self):
         # begin wxGlade: addRobotDialog.__set_properties
-        self.SetTitle("Add/Configure Robot")
+        self.SetTitle(_("Add/Configure Robot"))
         self.SetSize((637, 410))
         # end wxGlade
 
@@ -1202,16 +1264,17 @@ class propMappingDialog(wx.Dialog):
         # begin wxGlade: propMappingDialog.__init__
         kwds["style"] = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.THICK_FRAME
         wx.Dialog.__init__(self, *args, **kwds)
-        self.label_6 = wx.StaticText(self, wx.ID_ANY, "Propositions:")
+        self.label_6 = wx.StaticText(self, wx.ID_ANY, _("Propositions:"))
         self.list_box_props = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_ALWAYS_SB)
-        self.label_11 = wx.StaticText(self, wx.ID_ANY, "Continuous controller mapping:")
+        self.label_11 = wx.StaticText(self, wx.ID_ANY, _("Continuous controller mapping:"))
         self.text_ctrl_mapping = wx.richtext.RichTextCtrl(self, wx.ID_ANY, "")
-        self.button_9 = wx.Button(self, wx.ID_ANY, "        ^\nInsert/Apply")
-        self.label_7 = wx.StaticText(self, wx.ID_ANY, "Robots:")
+        self.label_13 = wx.StaticText(self, wx.ID_ANY, _("\nRobot Components"), style=wx.ALIGN_CENTRE)
+        self.button_9 = wx.Button(self, wx.ID_ANY, _("        ^\nInsert/Apply"))
+        self.label_7 = wx.StaticText(self, wx.ID_ANY, _("Robots:"))
         self.list_box_robots = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.label_8 = wx.StaticText(self, wx.ID_ANY, "Sensors/Actuators:")
+        self.label_8 = wx.StaticText(self, wx.ID_ANY, _("Sensors/Actuators:"))
         self.list_box_functions = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.label_10 = wx.StaticText(self, wx.ID_ANY, "Parameters:")
+        self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Parameters:"))
         self.panel_method_cfg = wx.ScrolledWindow(self, wx.ID_ANY, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
         self.button_11 = wx.Button(self, wx.ID_OK, "")
         self.button_10 = wx.Button(self, wx.ID_CANCEL, "")
@@ -1224,7 +1287,8 @@ class propMappingDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.onClickApply, self.button_9)
         self.Bind(wx.EVT_LISTBOX, self.onSelectRobot, self.list_box_robots)
         self.Bind(wx.EVT_LISTBOX, self.onSelectHandler, self.list_box_functions)
-        self.Bind(wx.EVT_BUTTON, self.onClickOK, self.button_10)
+        self.Bind(wx.EVT_BUTTON, self.onClickOK, self.button_11)
+        self.Bind(wx.EVT_BUTTON, self.onClickCancel, self.button_10)
         # end wxGlade
 
         self.text_ctrl_mapping.Bind(wx.EVT_TEXT, self.onEditMapping)
@@ -1240,10 +1304,13 @@ class propMappingDialog(wx.Dialog):
 
         # Set up the list of robots
 
-        for i, r in enumerate(self.robots):
-            self.list_box_robots.Insert("%s (%s)" % (r.name, r.r_type), i, r)
+        #for i, r in enumerate(self.robots):
+        #    self.list_box_robots.Insert("%s (%s)" % (r.name, r.r_type), i, r)
 
-        self.list_box_robots.Append("(Simulated)")
+        #self.list_box_robots.Append("(All)")
+        self.list_box_robots.Append("mechanical")
+        self.list_box_robots.Append("device")
+        self.list_box_robots.Append("UI")
         self.list_box_robots.SetSelection(0)
 
         # Set up the list of props
@@ -1268,9 +1335,129 @@ class propMappingDialog(wx.Dialog):
         self.list_box_props.SetSelection(0)
         self.onSelectProp(None)
 
+        ### initializing the writing of yaml file
+        self.c = Component()
+        self.c.addSubcomponent("state", "StateMachine")
+        self.c.addConstConstraint(("state", "stateMachineName"), self.proj.getFilenamePrefix())
+
+        try:
+            data = self.parseYAMLfile()
+            for group in data['connections']:
+                # prop component 
+                self.c.addSubcomponent(group[1][0], data["subcomponents"][group[1][0]]['object'])
+                # ("state", prop), (prop, port)
+                self.c.addConnection(("state", group[1][0]), (group[1][0], group[1][1]))
+        except:
+            logging.debug("The YAML file does not exist now!")
+
+    def parseYAMLfile(self):
+        yamlFile = open(self.proj.getFilenamePrefix()+".yaml", "r")
+        logging.debug("yaml file opened")
+        data = {}
+        connectionsDone = False
+        interfacesDone = False
+        parametersDone = False
+        subcomponentsDone = False
+        tempList = []
+        tempDict = {}
+        tempDictName = ""
+        patternConnection = "\[(?P<term1>\w+), (?P<term2>\w+)\]"
+        patternSubcomponents = "(?P<key>\w+): (?P<value>[\w\/]+)"
+
+        for line in yamlFile.readlines():
+
+            # parse Connections
+            if not connectionsDone:
+                pass
+                if "connections" in line:
+                    data['connections'] = []
+                elif "  connection"in line:
+                    # finish last list if it's not empty
+                    if tempList:
+                        data['connections'].append(tempList)
+                        tempList = []
+
+                    line = line.replace("- - ","")
+                    result = re.finditer(patternConnection, line)
+                    for item in result:
+                        tempList.append([item.group('term1'),item.group('term2')])
+
+                elif "  - " in line:
+                    line = line.replace("  - ","")
+                    if not "{}" in line:
+                        result = re.finditer(patternConnection, line)
+                        for item in result:
+                            tempList.append([item.group('term1'),item.group('term2')])
+                    else:
+                        line = line.replace('\n',"")
+                        tempList.append(line)
+
+                # move on to the next type
+                if "interfaces:" in line:
+                    # finish last list if it's not empty
+                    if tempList:
+                        data['connections'].append(tempList)
+                        tempList = []
+                    connectionsDone = True
+
+            # parse Interfaces
+            if connectionsDone and not interfacesDone:
+                if "interfaces" in line:
+                    data["interfaces"] = line.replace("interfaces: ","").replace("\n","")
+
+                # move on to the next type
+                if "parameters:" in line:
+                    interfacesDone = True
+
+            # parse Parameters
+            if connectionsDone and interfacesDone and not parametersDone:
+                if "parameters" in line:
+                    data["parameters"] = line.replace("parameters: ","").replace("\n","")
+
+                # move on to the next type
+                if "subcomponents:" in line:
+                    parametersDone = True
+
+            # parse Subcomponents
+            if connectionsDone and interfacesDone and parametersDone and not subcomponentsDone:
+                if "subcomponents" in line:
+                    data["subcomponents"] = {}
+
+                if "    " in line:
+                    if "parameters" in line:
+                        line = line.replace("    parameters: ","")
+                        if "{}" in line:
+                            tempDict.update({"parameters":"{}"})
+                        else: # state subcomponents
+                            line = line.replace("{","").replace("}","")
+                            result = re.finditer(patternSubcomponents, line.replace("    ",""))
+                            for item in result:
+                                tempDict.update({"parameters":{item.group('key'):item.group('value')}})
+
+                    else:
+                        result = re.finditer(patternSubcomponents, line.replace("    ",""))
+                        for item in result:
+                            tempDict.update({item.group('key'):item.group('value')})
+
+                elif "  "in line:
+                    # add dict object to our list 
+                    if tempDictName:
+                        data["subcomponents"].update({tempDictName: deepcopy(tempDict)})
+                        tempDict = {}
+                        tempDictName = ""
+                        logging.debug("sub:" + str(data["subcomponents"]))
+                    tempDictName = line.replace("  ","").replace(":\n","")
+
+        if tempDictName:
+            data["subcomponents"].update({tempDictName: deepcopy(tempDict)})
+        logging.debug(data)
+        yamlFile.close()
+        logging.debug('yaml file closed')
+
+        return data
+
     def _mapping2dialog(self, mapping):
         self.mapping = mapping
-
         # Set defaults as necessary
         for p in self.proj.all_sensors:
             if p not in mapping or self.mapping[p].strip() == "":
@@ -1288,8 +1475,9 @@ class propMappingDialog(wx.Dialog):
 
     def __set_properties(self):
         # begin wxGlade: propMappingDialog.__set_properties
-        self.SetTitle("Proposition Mapping")
+        self.SetTitle(_("Proposition Mapping"))
         self.SetSize((981, 419))
+        self.label_13.SetMinSize((300, 32))
         self.panel_method_cfg.SetScrollRate(10, 10)
         # end wxGlade
 
@@ -1309,7 +1497,7 @@ class propMappingDialog(wx.Dialog):
         sizer_14.Add(sizer_15, 1, wx.EXPAND, 0)
         sizer_16.Add(self.label_11, 0, wx.ALL, 5)
         sizer_16.Add(self.text_ctrl_mapping, 1, wx.ALL | wx.EXPAND, 5)
-        sizer_18.Add((20, 20), 1, wx.EXPAND, 0)
+        sizer_18.Add(self.label_13, 0, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_18.Add(self.button_9, 0, wx.ALL, 5)
         sizer_18.Add((20, 20), 1, wx.EXPAND, 0)
         sizer_16.Add(sizer_18, 0, wx.EXPAND, 0)
@@ -1346,10 +1534,32 @@ class propMappingDialog(wx.Dialog):
             self.list_box_functions.Enable(True)
             self.onSelectRobot(None)
 
-            if event.GetString() in self.mapping:
-                self.text_ctrl_mapping.SetValue(self.mapping[event.GetString()])
+            # load default values afterwards
+            self.text_ctrl_mapping.SetValue(self.mapping[event.GetString()])
+
+            # need to disable some of the types
+            self.list_box_robots.Clear()
+            if "_md" in self.list_box_props.GetStringSelection() or "_dm" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("mechanical")
+                self.list_box_robots.Append("device")
+            elif "_du" in self.list_box_props.GetStringSelection() or "ud" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("UI")
+                self.list_box_robots.Append("device")
+            elif "_mu" in self.list_box_props.GetStringSelection() or "um" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("UI")
+                self.list_box_robots.Append("mechanical")
+            elif "_m" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("mechanical")
+            elif "_d" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("device")
+            elif "_u" in self.list_box_props.GetStringSelection():
+                self.list_box_robots.Append("UI")
             else:
-                self.text_ctrl_mapping.SetValue("")
+                self.list_box_robots.Append("mechanical")
+                self.list_box_robots.Append("device")
+                self.list_box_robots.Append("UI")
+            self.list_box_robots.SetSelection(0)
+            self.onSelectRobot(None)
 
         # Auto-select the first term
         self.onClickMapping(None)
@@ -1359,27 +1569,33 @@ class propMappingDialog(wx.Dialog):
 
     def onClickApply(self, event): # wxGlade: propMappingDialog.<event_handler>
         if self.tempMethod is not None:
-            #for p in self.tempMethod.para:
-            #    print p.name, p.value
 
-            rname = self.list_box_robots.GetStringSelection().split(" ")[0]
-            if rname == "(Simulated)":
-                rname = "share"
-            method_string = self.hsub.method2String(self.tempMethod, rname)
-            if method_string is None:
-                print "ERROR: Method cannot be mapped to string"
+            component = self.tempMethod['name']
+            port = self.tempMethod['para']
+            prop = self.list_box_props.GetStringSelection()
+            print "Grounding proposition", prop, "to component", component, "on port", port
+            self.c.addSubcomponent(prop, component)
+            self.c.addConnection(("state", prop), (prop, port))
+
+            start, end = self.text_ctrl_mapping.GetSelection()
+            if start < 0:
+                # If nothing is selected, just insert
+                start = self.text_ctrl_mapping.GetInsertionPoint()
+                end = start
+
+            if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
+                method_string = "sensor " + str(prop) + " " + str(component) + " " + str(port)
+            elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
+                method_string = "actuator " + str(prop) + " " + str(component) + " " + str(port)
             else:
-                start, end = self.text_ctrl_mapping.GetSelection()
-                if start < 0:
-                    # If nothing is selected, just insert
-                    start = self.text_ctrl_mapping.GetInsertionPoint()
-                    end = start
+                method_string = str(prop) + " " + str(component) + " " + str(port)
 
-                self.text_ctrl_mapping.Replace(start, end, method_string)
-                self.text_ctrl_mapping.SetSelection(start, start + len(method_string))
+            self.text_ctrl_mapping.Replace(start, end, method_string)
+            self.text_ctrl_mapping.SetSelection(start, start + len(method_string))
         event.Skip()
 
     def onSelectRobot(self, event): # wxGlade: propMappingDialog.<event_handler>
+
         # Populate list of functions
         self.list_box_functions.Clear()
         pos = self.list_box_robots.GetSelection()
@@ -1387,24 +1603,36 @@ class propMappingDialog(wx.Dialog):
 
         # Only show sensors for sensor props, and actuators for actuator props
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
-            if self.list_box_robots.GetStringSelection() == "(Simulated)":
-                # TODO: might there be more than one type of handler in share?
-                methods = self.hsub.handler_configs["share"][ht.SensorHandler][0].methods
+
+            if self.list_box_robots.GetStringSelection() == "mechanical":
+                methods = dict(filterComponents(["sensor","mechanical"]))
+            elif self.list_box_robots.GetStringSelection() == "device":
+                methods = dict(filterComponents(["sensor","device"]))
+            elif self.list_box_robots.GetStringSelection() == "UI":
+                methods = dict(filterComponents(["sensor","UI"]))
             else:
-                methods = getattr(r.getHandlerOfRobot(ht.SensorHandler), 'methods', [])
+                pass
 
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
-            if self.list_box_robots.GetStringSelection() == "(Simulated)":
-                # TODO: might there be more than one type of handler in share?
-                methods = self.hsub.handler_configs["share"][ht.ActuatorHandler][0].methods
+
+            if self.list_box_robots.GetStringSelection() == "mechanical":
+                methods = dict(filterComponents(["actuator","mechanical"]))
+            elif self.list_box_robots.GetStringSelection() == "device":
+                methods = dict(filterComponents(["actuator","device"]))
+            elif self.list_box_robots.GetStringSelection() == "UI":
+                methods = dict(filterComponents(["actuator","UI"]))
             else:
-                methods = getattr(r.getHandlerOfRobot(ht.ActuatorHandler), 'methods', [])
+                pass
+
         else:
             print ("WARNING: Selected proposition '%s' that is neither sensor nor actuator. " +
                   "This should be impossible.") % (self.list_box_props.GetStringSelection())
 
-        for i, m in enumerate([m for m in methods if not m.name.startswith("_")]):
-            self.list_box_functions.Insert("%s" % (m.name), i, m)
+        try:
+            for i, key in enumerate(methods.keys()):
+                self.list_box_functions.Insert("%s" % (key), i, key)
+        except:
+            logging.debug("Cannot run this when clearning the box.")
 
         if event is not None:
             event.Skip()
@@ -1421,12 +1649,23 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = deepcopy(m)
-        drawParamConfigPane(self.panel_method_cfg, self.tempMethod, self.proj)
+        self.tempMethod = {"name":deepcopy(m), "para":None}
+        if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
+            drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
+        elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
+            drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["actuator"])))
+        else:
+            logging.error("The current selected prop should be either sensors or actuators.")
         self.Layout()
 
 
     def onClickOK(self, event): # wxGlade: propMappingDialog.<event_handler>
+        #print "Event handler `onClickOK' not implemented!"
+        self.c.toYaml(self.proj.getFilenamePrefix()+".yaml")
+        logging.debug("YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
+        event.Skip()
+
+    def onClickCancel(self, event): # wxGlade: propMappingDialog.<event_handler>
         #print "Event handler `onClickOK' not implemented!"
         event.Skip()
 
@@ -1486,14 +1725,14 @@ class propMappingDialog(wx.Dialog):
             return
 
         # Make sure the robot name is valid
-        rname = cd_local.name[0]
-        if rname == "share":
-            rname = "(Simulated)"
-        corresponding_robots = [n for n in self.list_box_robots.GetItems() if n.startswith(rname)]
+        #rname = cd_local.name[0]
+        #if rname == "share":
+        #    rname = "(All)"
+        #corresponding_robots = [n for n in self.list_box_robots.GetItems() if n.startswith(rname)]
 
-        if len(corresponding_robots) != 1:
-            print "WARNING: No unique robot corresponding to name '%s'." % m.group("robot_name")
-            return
+        #if len(corresponding_robots) != 1:
+        #    print "WARNING: No unique robot corresponding to name '%s'." % m.group("robot_name")
+        #    return
 
         # Force selection of the entire keyword, and place insertion caret as appropriate
         self.text_ctrl_mapping.SetSelection(cd_local.start_pos, cd_local.end_pos)
@@ -1506,12 +1745,27 @@ class propMappingDialog(wx.Dialog):
                     self.text_ctrl_mapping.MoveCaret(cd_local.end_pos-1)
 
         # Load detailed view of keyword below
-        self.list_box_robots.SetStringSelection(corresponding_robots[0])
+        #self.list_box_robots.SetStringSelection(corresponding_robots[0])
         self.onSelectRobot(None)
-        self.list_box_functions.SetStringSelection(cd_local.name[2])
+        #self.list_box_functions.SetStringSelection(cd_local.name[2])
 
-        self.tempMethod = self.hsub.string2Method(s[cd_local.start_pos:cd_local.end_pos], self.robots)
-        drawParamConfigPane(self.panel_method_cfg, self.tempMethod, self.proj)
+        #self.tempMethod = self.hsub.string2Method(s[cd_local.start_pos:cd_local.end_pos], self.robots)
+        #drawParamConfigPane(self.panel_method_cfg, self.tempMethod, self.proj)
+        pos = self.list_box_functions.GetSelection()
+
+        if pos < 0:
+            if self.panel_method_cfg.GetSizer() is not None:
+                self.panel_method_cfg.GetSizer().Clear(deleteWindows=True)
+            return
+
+        m = self.list_box_functions.GetClientData(pos)
+        self.tempMethod = {"name":deepcopy(m), "para":None}
+        if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
+            drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
+        elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
+            drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["actuator"])))
+        else:
+            logging.error("The current selected prop should be either sensors or actuators.")
         self.Layout()
 
     def onEditMapping(self, event): # wxGlade: propMappingDialog.<event_handler>
@@ -1520,13 +1774,14 @@ class propMappingDialog(wx.Dialog):
 
         prop_name = self.list_box_props.GetStringSelection()
         self.mapping[prop_name] = self.text_ctrl_mapping.GetValue()
-
         event.Skip()
 
 # end of class propMappingDialog
 
 
 if __name__ == "__main__":
+    gettext.install('app')
+
     SimConfigEditor = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
     SimSetupDialog = simSetupDialog(None, -1, "")
