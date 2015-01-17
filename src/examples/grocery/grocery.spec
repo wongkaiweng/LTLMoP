@@ -5,79 +5,88 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-look_leftright, 1
-call_manager, 1
-sit_down, 1
-say_impossible, 1
-say_spill, 1
+lookLeftright, 1
+sayImpossible, 1
+callManager, 1
+rest, 1
+dropItem, 1
+pickupItem, 1
+sayBlockage, 1
 
 CompileOptions:
 convexify: True
 parser: structured
+symbolic: False
+use_region_bit_encoding: True
+synthesizer: jtlv
 fastslow: False
 decompose: True
-use_region_bit_encoding: True
 
 CurrentConfigName:
 basicSim
 
 Customs: # List of custom propositions
-spill_top
-spill_bottom
+topBlockage
+bottomBlockage
 
 RegionFile: # Relative path of region description file
 grocery.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-see_spill, 1
-see_missingitem, 1
-head_tapped, 1
+seeMissingitem, 1
+headTapped, 1
+seeBlockage, 1
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r4 = p9
-office = p13
-between$r3$and$r4$ = p14
-r3 = p10
-between$r1$and$r2$ = p15
-r2 = p11
-others = p1, p2, p3, p4, p5
-r1 = p12
+r1 = p6
+between$r1$and$r2$ = p9
+r3 = p4
+office = p7
+between$r3$and$office$ = p8
+r2 = p5
+others = p1, p2
 
 Spec: # Specification in structured English
-group Corners is r1, r2, r3, r4
+group Corners is r1, r2, r3, office
 robot starts in any Corner with false
 
-# Remember spills you've detected
-spill_top is set on (r1 or r2) and see_spill and reset on false
-spill_bottom is set on (r3 or r4) and see_spill and reset on false
+# Remember blockages you've detected
+topBlockage is set on (r1 or r2) and seeBlockage and reset on false
+bottomBlockage is set on (r3 or office) and seeBlockage and reset on false
+if start of topBlockage then stay there
+if start of bottomBlockage then stay there
 
-# Avoid aisles with spills
-if you are activating spill_top then always not between r1 and r2
-if you are activating spill_bottom then always not between r3 and r4
+# shout out for blockage
+do sayBlockage if and only if start of topBlockage and you are not activating sayImpossible or start of bottomBlockage and you are not activating sayImpossible
+
+# Avoid aisles with blockages
+if you are activating topBlockage then always not between r1 and r2
+if you are activating bottomBlockage then always not between r3 and office
 
 # Call the manager when you find a missing item
-call_manager is set on see_missingitem and reset on head_tapped
-#if you are activating call_manager then stay there
-if start of call_manager then stay there
-if you are activating call_manager and you are not activating spill_top and spill_bottom then visit office
+callManager is set on seeMissingitem and reset on headTapped
+# Pick up the missingitem and send it to the office
+if you are activating start of callManager then stay there
+if you are activating start of callManager then do pickupItem
+if you are activating callManager and you are not activating topBlockage and bottomBlockage then visit office
 
-if you are sensing head_tapped then stay there
-infinitely often not head_tapped
+# drop item to manger
+if you are activating end of callManager then do dropItem
 
-if start of spill_bottom then stay there
-if start of spill_top then stay there
+if you are sensing headTapped then stay there
+infinitely often not headTapped
 
 # Patrol the store
-if you are not activating call_manager and you are not activating spill_top and spill_bottom then visit all Corners
-#if you are not activating spill_top and spill_bottom then visit all Corners
-do look_leftright if and only if you are not activating call_manager and you were in (between r1 and r2 or between r3 and r4)
+if you are not activating callManager and you are not activating topBlockage and bottomBlockage then visit all Corners
 
-do say_impossible if and only if you are activating spill_top and spill_bottom
-do sit_down if and only if you are activating spill_top and spill_bottom
-if you are activating sit_down then stay there
+# look around next to the shelves
+do lookLeftright if and only if you are not activating callManager and you were in (between r1 and r2 or between r3 and office)
 
-do say_spill if and only if start of spill_top and you are not activating say_impossible or start of spill_bottom and you are not activating say_impossible
+#give up if both of the aisles are blocked
+do sayImpossible if and only if you are activating topBlockage and bottomBlockage
+do rest if and only if you are activating topBlockage and bottomBlockage
+if you are activating rest then stay there
 
