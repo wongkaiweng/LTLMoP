@@ -1954,10 +1954,10 @@ tempMethodDataFunction = deepcopy(dataFunction))
 
         # Populate list of functions
         self.list_box_functions.Clear()
-        pos = self.list_box_robots.GetSelection()
-        r = self.list_box_robots.GetClientData(pos)
+        # pos = self.list_box_robots.GetSelection()
+        # r = self.list_box_robots.GetClientData(pos)
 
-        logging.debug("pos in onSelectRobot:" + str(pos))
+        # logging.debug("pos in onSelectRobot:" + str(pos))
         # Only show sensors for sensor props, and actuators for actuator props
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
 
