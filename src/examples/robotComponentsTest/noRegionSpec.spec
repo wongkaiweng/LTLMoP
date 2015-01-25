@@ -5,8 +5,8 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-drop_um, 1
 pickup_dm, 1
+drop_dm, 1
 
 CompileOptions:
 convexify: True
@@ -31,5 +31,8 @@ person_u, 1
 
 Spec: # Specification in structured English
 if you are sensing ball_d then do pickup_dm
-if you are sensing person_u then do drop_um
+if you are sensing person_u then do drop_dm
+#testCustom is set on person_u and reset on ball_d
+
+#if you are activating testCustom then do hello
 

@@ -1,0 +1,56 @@
+connections:
+  connection0:
+  - [state, ball_d]
+  - [ball_d, curValue]
+  - {}
+  connection1:
+  - [state, person_u]
+  - [person_u, curState]
+  - {}
+  connection2:
+  - [state, pickup_dm]
+  - [pickup_dm_Function, input]
+  - {}
+  connection3:
+  - [pickup_dm_Function, output]
+  - [pickup_dm, control]
+  - {}
+  connection4:
+  - [state, drop_dm]
+  - [drop_dm_Function, input]
+  - {}
+  connection5:
+  - [drop_dm_Function, output]
+  - [drop_dm, control]
+  - {}
+interfaces: {}
+parameters: {}
+subcomponents:
+  ball_d:
+    classname: LineDetector
+    kwargs: {}
+    parameters: {ledControllerPin: A1, sensorControllerPin: A0}
+  drop_dm:
+    classname: EServo
+    kwargs: {}
+    parameters: {controllerPin: 9, motionType: continuous}
+  drop_dm_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*30}
+  person_u:
+    classname: UIToggle
+    kwargs: {}
+    parameters: {}
+  pickup_dm:
+    classname: EServo
+    kwargs: {}
+    parameters: {controllerPin: 3, motionType: continuous}
+  pickup_dm_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*30*-1}
+  state:
+    classname: StateMachine
+    kwargs: {}
+    parameters: {stateMachineName: /home/catherine/LTLMoP/src/examples/robotComponentsTest/noRegionSpec}

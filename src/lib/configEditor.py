@@ -81,7 +81,7 @@ def drawParamConfigPaneMakeOutput(target, errorMsg, msgDict):
             msgDict[para] = str(param_controls[para].GetValue())
 
         msgDict["allSame"] = bool(param_controls["allSame"].GetValue())
-        logging.debug("msgDict:"+ str(msgDict))
+        logging.debug("drawParamConfigPaneMakeOutput - msgDict:"+ str(msgDict))
 
     target.Bind(wx.EVT_TEXT, paramPaneCallback)
     target.Bind(wx.EVT_COMBOBOX, paramPaneCallback)
@@ -97,7 +97,7 @@ def drawParamConfigPaneMakeOutput(target, errorMsg, msgDict):
 
 def drawParamConfigPaneRobotComponents(target, method, methodDict):
     """
-    method = {name: name of component chosen, para: value chosen}
+    method = {name: name of component chosen, para: value chosen, others: other parameters for this component}
     methodDict = dictionary of all possible components
     """
     if target.GetSizer() is not None:
@@ -118,7 +118,7 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
 
     param_controls["Default"] = wx.ComboBox(target, -1, choices=methodDict[method["name"]], style=wx.CB_DROPDOWN)
 
-    #Need to set old values
+    #if we can load the grounding of this prop, then load the settings here
     if method['para'] is not None and method['para'] in methodDict[method["name"]]:
         param_controls["Default"].SetStringSelection(method['para'])
     else:
@@ -131,9 +131,9 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     item_sizer.Add(param_controls["Default"], 1, wx.ALL, 5)
     list_sizer.Add(item_sizer, 0, wx.EXPAND, 0)
 
-    # CATHERINE check if this is actuator. If that's the case, add a dataFunction option
+    #check if this is actuator. If that's the case, add a dataFunction option
     if "dataFunction" in method:
-        logging.debug("This is an actuator.")
+        logging.debug("drawParamConfigPaneRobotComponents - This is an actuator.")
         param_controls["dataFunction"] = wx.TextCtrl(target, -1, method["dataFunction"])
         param_label = wx.StaticText(target, -1, "%s:" % "dataFunction")
         item_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -142,11 +142,9 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
         list_sizer.Add(item_sizer, 0, wx.EXPAND, 0)
         param_label.SetToolTip(wx.ToolTip("Enter function for converting the binary state output (optional). Use \"input\" to indicate the binary value in your function."))
     else:
-        logging.debug("This is an sensor.")
+        logging.debug("drawParamConfigPaneRobotComponents - This is an sensor.")
 
     # Allow user to set parameters of the component
-    #logging.debug('parameter name for component:' + str(method["name"]))
-    #logging.debug("paramName:" + str(getComponent(method["name"]).parameters.keys()))
     for paramName in getComponent(method["name"]).parameters.keys():
         if paramName in method["others"]:
             # see if the key exists, if so set the value to the setting before
@@ -177,7 +175,7 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
             method["dataFunction"] = str(param_controls["dataFunction"].GetValue())
         except:
             pass
-        logging.debug("method:" + str(method))
+        logging.debug("drawParamConfigPaneRobotComponents - current component settings:" + str(method))
 
     target.Bind(wx.EVT_TEXT, paramPaneCallback)
     target.Bind(wx.EVT_COMBOBOX, paramPaneCallback)
@@ -1488,7 +1486,7 @@ class propMappingDialog(wx.Dialog):
                 # if the prop get renamed it's not added here
                 if group[1][0] in self.proj.all_actuators or group[1][0] in self.proj.all_sensors or group[1][0].replace("_Function","") in self.proj.all_actuators or group[1][0].replace("_Function","") in self.proj.all_sensors:
                     # prop component 
-                    self.c.addSubcomponent(group[1][0], self.prevData["subcomponents"][group[1][0]]['object'])
+                    self.c.addSubcomponent(group[1][0], self.prevData["subcomponents"][group[1][0]]['classname'])
 
                     # ("state", prop), (prop, port)
                     self.c.addConnection((group[0][0], group[0][1]), (group[1][0], group[1][1]))
@@ -1511,7 +1509,7 @@ class propMappingDialog(wx.Dialog):
             logging.debug("The YAML file does not exist now!")
             # initialize self.prevData, which store all old settings in yaml file
             self.prevData = {"connections":[],"interfaces":{}, "parameters":{}, \
-"subcomponents":{"state":{"objects":"StateMachine","parameters":{"stateMachineName":self.proj.getFilenamePrefix()}}}}
+"subcomponents":{"state":{"classname":"StateMachine","parameters":{"stateMachineName":self.proj.getFilenamePrefix()}}}}
 
         logging.debug("self.prevData:" + str(self.prevData))
 
@@ -1530,7 +1528,6 @@ class propMappingDialog(wx.Dialog):
         patternSubcomponents = "{?(?P<key>\w+): (?P<value>[\w\-*\/]+)(, )?}?"
         patternSubcomponentsFirstFilter = "{?(?P<key>\w+): \{?(?P<value>[^\}]+)\}?}?"
 
-        # CATHERINE need to change the data loading to commodate for new things
         for line in yamlFile.readlines():
 
             # parse Connections
@@ -1613,9 +1610,7 @@ class propMappingDialog(wx.Dialog):
                     data["subcomponents"] = {}
 
                 if "      " in line:
-                    logging.debug("6 dots here")
                     # keys and values in parameters
-                    logging.debug(line)
                     result = re.finditer(patternSubcomponentsFirstFilter, line.replace("      ",""))
                     for item in result:
                         tempSubDict = {}
@@ -1646,7 +1641,7 @@ class propMappingDialog(wx.Dialog):
                     continue
 
                 elif "  "in line:
-                    # add dict object to our list 
+                    # add dict classname to our list 
                     if tempDictName:
                         #logging.debug('---------tempDict-----------------')
                         #logging.debug(tempDict)
@@ -1654,7 +1649,6 @@ class propMappingDialog(wx.Dialog):
                         data["subcomponents"].update({tempDictName: deepcopy(tempDict)})
                         tempDict = {}
                         tempDictName = ""
-                        #logging.debug("sub:" + str(data["subcomponents"]))
                     tempDictName = line.replace("  ","").replace(":\r\n","").replace(":\n","")
 
         if tempDictName:
@@ -1777,13 +1771,15 @@ class propMappingDialog(wx.Dialog):
             # also set the previous selection
             try:
                 # figure out sensor/actuator component and options
-                prevComponent = self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['object']
+                prevComponent = self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['classname']
+                para = ""
                 for [[_, _], [prop, port],_] in self.prevData['connections']:
                     if prop == self.list_box_props.GetStringSelection():
                         # set port port
                         para = port
                         break
-
+                logging.debug("onSelectProp - self.prevData['connections']:" + str(self.prevData['connections']))
+                logging.debug('onSelectProp - port:' + str(para))
                 # check if the prop is a sensor or actuator
                 dataFunction = ""
                 if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
@@ -1795,7 +1791,7 @@ class propMappingDialog(wx.Dialog):
                     if prop + '_Function' in self.prevData["subcomponents"]:
                         dataFunction = self.prevData["subcomponents"][prop + '_Function']['parameters']['function']
                 else:
-                    logging.debug('Prop should be either sensors or actuators.')
+                    logging.debug('onSelectProp - Prop should be either sensors or actuators.')
 
                 # figure out the component type
                 for idx, componentType in enumerate(self.list_box_robots.GetItems()):
@@ -1809,25 +1805,25 @@ class propMappingDialog(wx.Dialog):
 
                 # set the list_box_functions selection
                 prevComponentIdx = self.list_box_functions.GetItems().index(prevComponent)
+                logging.debug("onSelectProp - " + str(prevComponent) + "prevComponentIdx:" + str(prevComponentIdx))
                 self.list_box_functions.SetSelection(prevComponentIdx)
-
-                logging.debug("prevComponent:" + str(prevComponent))
                 # Add the other parameters here if they exist to tempMethodOthers
                 others = {}
-                logging.debug("parameters:" + str(self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters']))
+                logging.debug("onSelectProp - parameters:" + str(self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters']))
                 if self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters']:
                     for paraKey, paraVal in self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters'].iteritems():
                         if not isinstance(paraVal,dict):
                             others.update({paraKey:paraVal})
-                            logging.debug("added:" + str(paraKey) +": " + str(paraVal))
+                            logging.debug("onSelectProp - added:" + str(paraKey) +": " + str(paraVal))
                         else:
                             # need to figure out how it works for global parameters
                             pass
+
                 self.onSelectHandler(None, tempMethodPara = para, tempMethodOthers = deepcopy(others),\
 tempMethodDataFunction = deepcopy(dataFunction))
-                logging.debug('successfully loaded old settings')
+                logging.debug('onSelectProp - successfully loaded old settings')
             except:
-                logging.debug('did not have old settings. Loading default')
+                logging.debug('onSelectProp - did not have old settings. Loading default')
                 self.list_box_robots.SetSelection(0)
                 self.onSelectRobot(None)
                 self.list_box_functions.SetSelection(0)
@@ -1851,21 +1847,19 @@ tempMethodDataFunction = deepcopy(dataFunction))
                 self.c.delSubcomponent(prop)
                 self.c.delSubcomponent(prop+"_Function")
             except:
-                logging.debug("The proposition is not added yet.")
+                logging.debug("onClickApply - The proposition is not added yet.")
 
-            # fist update our prevData Object
+            # fist update our prevData classname
             ##########################
             ### update subcomponent ##
             ##########################
             if prop in self.prevData["subcomponents"].keys():
-                self.prevData["subcomponents"][prop]["object"] = component
+                self.prevData["subcomponents"][prop]["classname"] = component
                 self.prevData["subcomponents"][prop]["parameters"] = deepcopy(self.tempMethod['others'])
 
-                
             else: # if the key does not exist
-                self.prevData["subcomponents"][prop] = {"object": component, "parameters":deepcopy(self.tempMethod['others'])}
-                #self.prevData["connections"].append([["state",prop],[prop,port],{}])
-            logging.debug(self.prevData["subcomponents"][prop])
+                self.prevData["subcomponents"][prop] = {"classname": component, "parameters":deepcopy(self.tempMethod['others'])}
+            logging.debug("onClickApply - " + str(prop)+"'s subComponent updated to:"+ str(self.prevData["subcomponents"][prop]))
             ##########################################
             # dataFunction operation with connection #
             ##########################################
@@ -1883,7 +1877,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
                                 break
                     else:
                         # create a new instance of dataFunction
-                        self.prevData["subcomponents"][prop+"_Function"] = {"object":"DataFunction",\
+                        self.prevData["subcomponents"][prop+"_Function"] = {"classname":"DataFunction",\
 "parameters":{"function":self.tempMethod["dataFunction"]}}
 
                         # create new connection
@@ -1894,6 +1888,11 @@ tempMethodDataFunction = deepcopy(dataFunction))
                                 self.prevData["connections"].append([[oldProp+"_Function","output"],\
 [oldProp,port],{}])
                                 break
+                        else: # no connections yet. add them here.
+                            self.prevData["connections"].append([["state", prop],\
+[prop+"_Function",'input'],{}])
+                            self.prevData["connections"].append([[prop+"_Function","output"],\
+[prop,port],{}])
                 else:
                     # remove existing dataFunction
                     if prop + "_Function" in self.prevData["subcomponents"].keys():
@@ -1904,6 +1903,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
                         for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
                             if oldProp == str(self.list_box_props.GetStringSelection()):
                                 self.prevData["connections"][idx] = [["state",oldProp],[oldProp,port],{}]
+                                break
                     # no existing connection. adding one.
                     else:
                         self.prevData["connections"].append([["state",prop],[prop,port],{}])
@@ -1916,6 +1916,8 @@ tempMethodDataFunction = deepcopy(dataFunction))
                     if oldProp == self.list_box_props.GetStringSelection():
                         self.prevData["connections"][idx][1][1] = port
                         break
+                else: # does not exist. adding one now
+                    self.prevData["connections"].append([["state",prop],[prop,port],{}])
 
 
             # then add the component
@@ -1954,10 +1956,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
 
         # Populate list of functions
         self.list_box_functions.Clear()
-        # pos = self.list_box_robots.GetSelection()
-        # r = self.list_box_robots.GetClientData(pos)
 
-        # logging.debug("pos in onSelectRobot:" + str(pos))
         # Only show sensors for sensor props, and actuators for actuator props
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
 
@@ -1989,7 +1988,8 @@ tempMethodDataFunction = deepcopy(dataFunction))
             for i, key in enumerate(methods.keys()):
                 self.list_box_functions.Insert("%s" % (key), i, key)
         except:
-            logging.debug("Cannot run this when clearning the box.")
+            pass
+            #logging.debug("Cannot run this when clearning the box.")
 
         if event is not None:
             event.Skip()
@@ -1999,14 +1999,15 @@ tempMethodDataFunction = deepcopy(dataFunction))
             event.Skip()
 
         pos = self.list_box_functions.GetSelection()
-        logging.debug("pos:"+str(pos))
+        logging.debug("onSelectHandler- position selected:"+str(pos))
         if pos < 0:
             if self.panel_method_cfg.GetSizer() is not None:
                 self.panel_method_cfg.GetSizer().Clear(deleteWindows=True)
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":tempMethodPara, "others":tempMethodOthers}
+        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers)}
+        logging.debug("onSelectHandler - self.tempMethod:" + str(self.tempMethod))
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
@@ -2028,7 +2029,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
         if allComponentsGrounded:
             # all props are grounded, then we can save the yaml file.
             self.c.toYaml(self.proj.getFilenamePrefix()+".yaml")
-            logging.debug("YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
+            logging.debug("onClickOK - YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
             self.makeOutput(self.proj.getFilenamePrefix()+"groundedOutput")
             event.Skip()
         else:
@@ -2167,8 +2168,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
                         newValue = float(newValue)
                     except:
                         pass
-            # See if we should use this value again on future components
-            #allSame = raw_input('\tConstrain all future components\' parameters with this name to this value? y/n: ').lower() == 'y'
+            # See if we should use this value again on all future components
             if allSame:
                 # Add a parameter at the top level if it doesn't already exist
                 try:
@@ -2180,8 +2180,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
                 # Constrain the subcomponent's parameter to the top level parameter
                 self.c.addConstraint((subcomponentName, paramName), paramName)
                 self.c.setParameter(paramName, newValue)
-                logging.debug("finished adding all SAME")
-                logging.debug('adding constraint for ' + str(subcomponentName))
+                logging.debug('parameterPrompt- Adding ALL SAME and constraint for ' + str(subcomponentName))
             else:
                 # Only using the value for this component, so just use a constant constraint
                 self.c.addConstConstraint((subcomponentName, paramName), newValue)
@@ -2192,9 +2191,6 @@ tempMethodDataFunction = deepcopy(dataFunction))
         while tryAgain:
             tryAgain = False
             try:
-                logging.debug(self.c.parameters)
-                logging.debug(self.c.subcomponents)
-                logging.debug(self.c.connections)
                 self.c.makeOutput(filedir)
             except KeyError as error:
                 e = str(error)
@@ -2202,16 +2198,14 @@ tempMethodDataFunction = deepcopy(dataFunction))
                 # If the error was due to a parameter not being set, allow the user to set it
                 if 'not yet set' in e:
                     paramName = e[e.lower().find('parameter') + len('parameter') : e.find('not yet set')].strip()
-                    #print '*** Parameter ' + paramName + ' needs to be set to continue ***'
-
-                    # Edit existing handler object
+                    # Edit existing handler classname
                     msgDict = {"allSame":False}
                     for (componentName, component) in self.c.components.iteritems():
                         if paramName in component[0].parameters.keys():
                             if not msgDict["allSame"]:
                                 errorMsg = "Parameter " + paramName + " for component " + componentName+" needs to be set to continue"
                                 msgDict.update({paramName:""})
-                                logging.debug("msgDict:" + str(msgDict))
+                                logging.debug("makeOutput - msgDict:" + str(msgDict))
                                 dlg = componentsMakeOutputDialog(self, -1, "")
                                 dlg._msg2Dialog(errorMsg, msgDict)
 
@@ -2222,7 +2216,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
 
                                 dlg.Destroy()
                             else:
-                                logging.debug("componentName:" + str(componentName) + ", paramName:" + str(paramName))
+                                logging.debug("makeOutput - componentName:" + str(componentName) + ", paramName:" + str(paramName))
                                 # set all the other components with the same parameter
                                 self._parameterPrompt(componentName, paramName, "", evalVal=True, allSame = True)
 
