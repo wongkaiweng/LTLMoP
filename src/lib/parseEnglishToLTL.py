@@ -10,6 +10,7 @@ import re
 import copy
 import numpy
 import math
+import logging
 
 #nextify = lambda x: " next(%s) " % x
 
@@ -1335,6 +1336,7 @@ def bitEncoding(numRegions,numBits):
     currBitEnc = []
     nextBitEnc = []
     envBitEnc = []
+    envNextBitEnc = []
     for num in range(numRegions):
         binary = numpy.binary_repr(num) # regions encoding start with 0
         # Adding zeros
@@ -1344,31 +1346,38 @@ def bitEncoding(numRegions,numBits):
         envTempString = '('
         currTempString = '('
         nextTempString = '('
+        envNextTempString = '('
         for bitNum in range(numBits):
             if bitNum>0:
                 envTempString = envTempString + ' & '
                 currTempString = currTempString + ' & '
                 nextTempString = nextTempString + ' & '
+                envNextTempString = envNextTempString + '&'
             if bitString[bitNum]=='1':
                 envTempString = envTempString + 'e.sbit' + str(bitNum)
                 currTempString = currTempString + 's.bit' + str(bitNum)
                 nextTempString = nextTempString + 'next(s.bit' + str(bitNum) + ')'
+                envNextTempString = envNextTempString + 'next(e.sbit' + str(bitNum) + ')'
             if bitString[bitNum]=='0':
                 envTempString = envTempString + '!e.sbit' + str(bitNum)
                 currTempString = currTempString + '!s.bit' + str(bitNum)
                 nextTempString = nextTempString + '!next(s.bit' + str(bitNum) + ')'
+                envNextTempString = envNextTempString + '!next(e.sbit' + str(bitNum) + ')'
 
         envTempString = envTempString + ')'
         currTempString = currTempString + ')'
         nextTempString = nextTempString + ')'
+        envNextTempString = envNextTempString + ')'
         
         envBitEnc.append(envTempString)
         currBitEnc.append(currTempString)
         nextBitEnc.append(nextTempString)
+        envNextBitEnc.append(envNextTempString)
 
     bitEncode['env'] = envBitEnc
     bitEncode['current'] = currBitEnc
     bitEncode['next'] = nextBitEnc
+    bitEncode['envNext'] = envNextBitEnc
 
     return bitEncode
 

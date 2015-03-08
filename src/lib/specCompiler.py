@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 from copy import deepcopy
@@ -347,10 +347,20 @@ class SpecCompiler(object):
 
         # Store some data needed for later analysis
         self.spec = {}
-        if self.proj.compile_options["decompose"]:
-            self.spec['Topo'] = createTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+        if self.proj.compile_options["fastslow"]:
+            if self.proj.compile_options["decompose"]:
+                self.spec['Topo'] = createIASysTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.parser.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['Topo'] = createIASysTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         else:
-            self.spec['Topo'] = createTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            if self.proj.compile_options["decompose"]:
+                self.spec['Topo'] = createTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['Topo'] = createTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
 
         # Substitute any macros that the parsers passed us
         LTLspec_env = self.substituteMacros(LTLspec_env)
@@ -384,8 +394,17 @@ class SpecCompiler(object):
             self.spec['InitRegionSanityCheck'] = createInitialRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
-        if not self.proj.compile_options['fastslow']:
-            LTLspec_sys += "\n&\n" + self.spec['Topo']
+        if self.proj.compile_options["fastslow"]:
+            if self.proj.compile_options["decompose"]:
+                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            LTLspec_env += "\n&\n" + self.spec['InitEnvRegionSanityCheck']
+
+        LTLspec_sys += "\n&\n" + self.spec['Topo']
+        if self.proj.compile_options['fastslow']:
+            LTLspec_env += "\n&\n" + self.spec['EnvTopo']
+            LTLspec_env += "\n&\n" + self.spec['SysImplyEnv']
 
         createLTLfile(self.proj.getFilenamePrefix(), LTLspec_env, LTLspec_sys)
 
