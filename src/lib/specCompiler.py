@@ -578,18 +578,29 @@ class SpecCompiler(object):
         else:
             regions = self.proj.rfi.regions
 
-        region_domain = strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB)
+        if self.proj.compile_options["use_region_bit_encoding"]:
+            region_domain = [ strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB) ]
+        else:
+            region_domain = [x.name for x in regions]
         enabled_sensors = self.proj.enabled_sensors
 
-        if self.proj.compile_options['fastslow']:
-            regionCompleted_domain = [strategy.Domain("regionCompleted", regions, strategy.Domain.B0_IS_MSB)]
-            enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+        if self.proj.compile_options['fastslow'] :
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                regionCompleted_domain = [strategy.Domain("regionCompleted", [x.name+"_rc" for x in regions], strategy.Domain.B0_IS_MSB)]
+                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+            else:
+                regionCompleted_domain = []
+                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc')]
+                if self.proj.compile_options["decompose"]:
+                    enabled_sensors.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
+                else:
+                    enabled_sensors.extend([r.name+"_rc" for r in self.proj.rfi.regions])
         else:
             regionCompleted_domain = []
 
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 enabled_sensors + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
+                                                self.proj.enabled_actuators + self.proj.all_customs +  region_domain)
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 
