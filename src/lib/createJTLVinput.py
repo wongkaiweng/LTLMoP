@@ -227,7 +227,7 @@ def createIAEnvTopologyFragment(adjData, regions, use_bits=True):
 
                 # not empty, hence there is a transition
                 adjFormula = adjFormula + ' | '
-                adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+regions[dest].name+")")
+                adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+regions[dest].name+"_rc)")
                 adjFormula = adjFormula + ') )'
                 adjFormulas.append(adjFormula)
 
