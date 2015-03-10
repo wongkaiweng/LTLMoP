@@ -177,7 +177,7 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
 
     return " & \n".join(adjFormulas)
 
-def createIAEnvTopologyFragment(adjData, regions, use_bits=True):
+def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     """
     Obtain []( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))
     """
@@ -255,6 +255,16 @@ def createIAEnvTopologyFragment(adjData, regions, use_bits=True):
 
     logging.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
     logging.debug(adjFormula)
+
+    """
+    [](action_ac & action) -> action_ac'
+    [](! action_ac & ! action) -> ! action_ac'
+    """
+    for prop in actuatorList:
+        adjFormula = '\t\t\t []( (e.' + prop + '_ac & s.' + prop + ') -> next(e.' + prop + '_ac) )'
+        adjFormulas.append(adjFormula)
+        adjFormula = '\t\t\t []( (!(e.' + prop + '_ac) & !(s.' + prop + ')) -> !next(e.' + prop + '_ac) )'
+        adjFormulas.append(adjFormula)
 
     """
     [] regionProp1' | regionProp2' | regionProp3'
