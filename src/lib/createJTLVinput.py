@@ -13,6 +13,8 @@ import textwrap
 from LTLParser.LTLFormula import LTLFormula, LTLFormulaType, treeToString
 import logging
 
+onDebugMode = False
+
 def createSMVfile(fileName, sensorList, robotPropList):
     ''' This function writes the skeleton SMV file.
     It takes as input a filename, the number of regions, the list of the
@@ -60,9 +62,14 @@ def createSMVfile(fileName, sensorList, robotPropList):
 
 # -------------- fastslow ---------------- #
 #  IA stands for instantaneous actions --- #
+
 def createIASysPropImpliesEnvPropLivenessFragment(sysProp, regions, envProp, adjData, use_bits=True, other_robot_name = ''):
     """
-    Obtain "[]<> (regionProp -> regionProp_rc(envProp))" and "[]<> (sysProp -> sysProp_ac(envProp))"
+    Obtain for region: "[]<>((regionProp & regionProp_rc(envProp)) | (regionProp & !next(regionProp)))"
+    Obtain for actions:"[]<>((actionProp & next(actionProp_ac(envProp))) |
+                            (!actionProp & !next(actionProp_ac(envProp))) |
+                            (actionProp & !next(actionProp)) |
+                            (!actionProp & next(actionProp)) )"
     """
     if use_bits:
         numBits = int(math.ceil(math.log(len(adjData),2)))
@@ -76,31 +83,47 @@ def createIASysPropImpliesEnvPropLivenessFragment(sysProp, regions, envProp, adj
     # The topological relation (adjacency)
     adjFormulas = []
 
+    adjFormula = '\t\t\t []<>( '
+    adjSubFormulaArray = []
     for Origin in range(len(regions)):
         # skip boundary and obstacles
         if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
             continue
 
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []<>( ('
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "s." +regions[Origin].name)
-        adjFormula = adjFormula + ') -> ( '
+        curProp = (currBitEnc[Origin] if use_bits else "s." +regions[Origin].name)
+        nextProp = (nextBitEnc[Origin] if use_bits else "next(s."+regions[Origin].name+")")
         # TODO: maybe pass in env region list and use it here instead
-        adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ regions[Origin].name+"_rc)")
-        adjFormula = adjFormula + ')'
+        nextEnvProp = (envNextBitEnc[Origin] if use_bits else "next(e."+ regions[Origin].name+"_rc)")
+        adjSubFormulaArray.append('('+curProp+' & '+nextEnvProp+') | ('+curProp+' & !'+nextProp+')\n')
 
-        # closing this region
+    # closing the formula
+    adjFormula = adjFormula + "\t\t\t\t| ".join(adjSubFormulaArray)
+    adjFormula = adjFormula + ' ) '
+
+    adjFormulas.append(adjFormula)
+
+    if len(sysProp):
+        adjFormula = '\t\t\t []<>( '
+        adjSubFormulaArray = []
+        for idx in range(len(sysProp)):
+            # from action to action completion
+            if sysProp[idx]+"_ac" in envProp:
+
+                curActProp = 's.' + sysProp[idx]
+                nextActProp = 'next(s.' + sysProp[idx] + ')'
+                nextEnvActProp = 'next(e.' + sysProp[idx] + '_ac)'
+                # from region i we can stay in region i
+                adjSubFormulaArray.append('('+curActProp+' & '+nextEnvActProp+') | (!'+curActProp+' & !'+nextEnvActProp+') | ('+curActProp+' & !'+nextActProp+') | (!'+curActProp+' & '+nextActProp+')\n')
+
+        # closing the formula
+        adjFormula = adjFormula + "\t\t\t\t| ".join(adjSubFormulaArray)
         adjFormula = adjFormula + ' ) '
 
         adjFormulas.append(adjFormula)
 
-    for idx in range(len(sysProp)):
-        # from action to action completion
-        if sysProp[idx]+"_ac" in envProp:
-            adjFormula = '\t\t\t []<>( ( s.' + sysProp[idx] + ') -> ( next(e.' + sysProp[idx] + "_ac) ) )"
-            adjFormulas.append(adjFormula)
+    if onDebugMode:
+        logging.debug(" & \n".join(adjFormulas))
 
-    logging.debug(" & \n".join(adjFormulas))
     return " & \n".join(adjFormulas)
 
 def createIASysTopologyFragment(adjData, regions, use_bits=True):
@@ -140,8 +163,11 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
         adjFormula = adjFormula + ' ) ) '
 
         adjFormulas.append(adjFormula)
-    logging.debug("[]( next(regionProp1_rc) -> (next(regionProp1) | next(regionProp2))")
-    logging.debug(adjFormulas)
+
+    if onDebugMode:
+        logging.debug("[]( next(regionProp1_rc) -> (next(regionProp1) | next(regionProp2))")
+        logging.debug(adjFormulas)
+
     """
     []regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')
     """
@@ -162,8 +188,9 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
 
         adjFormulas.append(adjFormula)
 
-    logging.debug("[]regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')")
-    logging.debug(adjFormula)
+    if onDebugMode:
+        logging.debug("[]regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')")
+        logging.debug(adjFormula)
 
     """
     [] regionProp1' | regionProp2' | regionProp3'
@@ -172,8 +199,9 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
     # In a BDD strategy, it's best to explicitly exclude these
     adjFormulas.append("[]"+createInitialRegionFragment(regions, use_bits))
 
-    logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-    logging.debug("[]"+createInitialRegionFragment(regions, use_bits))
+    if onDebugMode:
+        logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
+        logging.debug("[]"+createInitialRegionFragment(regions, use_bits))
 
     return " & \n".join(adjFormulas)
 
@@ -208,8 +236,10 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
 
         adjFormulas.append(adjFormula)
 
-    logging.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
-    logging.debug(adjFormulas)
+    if onDebugMode:
+        logging.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
+        logging.debug(adjFormulas)
+
     """
     Obtain []( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))
     """
@@ -231,18 +261,19 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
                 adjFormula = adjFormula + ') )'
                 adjFormulas.append(adjFormula)
 
-    logging.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
-    logging.debug(adjFormula)
+    if onDebugMode:
+        logging.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
+        logging.debug(adjFormula)
 
     """
-    []regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
+    []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
     """
     for Origin in range(len(adjData)):
 
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
         adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
-        adjFormula = adjFormula + ') -> ! ( '
+        adjFormula = adjFormula + ') <-> ! ( '
         regPropRCs = []
         for Others in range(len(adjData)):
             if not regions[Origin].name == regions[Others].name:
@@ -253,8 +284,9 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         adjFormula = adjFormula + ") ) "
         adjFormulas.append(adjFormula)
 
-    logging.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
-    logging.debug(adjFormula)
+    if onDebugMode:
+        logging.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
+        logging.debug(adjFormula)
 
     """
     [](action_ac & action) -> action_ac'
@@ -273,8 +305,9 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     # In a BDD strategy, it's best to explicitly exclude these
     adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits))
 
-    logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-    logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits))
+    if onDebugMode:
+        logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
+        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits))
 
     return " & \n".join(adjFormulas)
 
