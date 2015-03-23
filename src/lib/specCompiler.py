@@ -164,6 +164,8 @@ class SpecCompiler(object):
         #regionList = [r.name for r in self.parser.proj.rfi.regions]
         regionList = [r.name for r in self.proj.rfi.regions]
         sensorList = deepcopy(self.proj.enabled_sensors)
+        actuatorList = deepcopy(self.proj.enabled_actuators)
+        customsList = deepcopy(self.proj.all_customs)
         robotPropList = self.proj.enabled_actuators + self.proj.all_customs
 
         text = self.proj.specText
@@ -297,7 +299,10 @@ class SpecCompiler(object):
 
                 regionList = ["s."+x.name for x in self.proj.rfi.regions]
 
-            spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, robotPropList)
+            if self.proj.compile_options["fastslow"]:
+                spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow = True,use_bits = self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, actuatorList, customsList, use_bits = self.proj.compile_options["use_region_bit_encoding"])
 
             # Abort compilation if there were any errors
             if failed:
@@ -350,11 +355,11 @@ class SpecCompiler(object):
         if self.proj.compile_options["fastslow"]:
             if self.proj.compile_options["decompose"]:
                 self.spec['Topo'] = createIASysTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.parser.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
                 self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.parser.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
             else:
                 self.spec['Topo'] = createIASysTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
                 self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         else:
             if self.proj.compile_options["decompose"]:
@@ -363,8 +368,8 @@ class SpecCompiler(object):
                 self.spec['Topo'] = createTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
 
         # Substitute any macros that the parsers passed us
-        LTLspec_env = self.substituteMacros(LTLspec_env)
-        LTLspec_sys = self.substituteMacros(LTLspec_sys)
+        LTLspec_env = self.substituteMacros(LTLspec_env,self.proj.compile_options["fastslow"])
+        LTLspec_sys = self.substituteMacros(LTLspec_sys,self.proj.compile_options["fastslow"])
 
         # If we are not using bit-encoding, we need to
         # explicitly encode a mutex for regions
@@ -417,7 +422,7 @@ class SpecCompiler(object):
 
         return self.spec, traceback, response
 
-    def substituteMacros(self, text):
+    def substituteMacros(self, text, fastslow):
         """
         Replace any macros passed to us by the parser.  In general, this is only necessary in cases
         where bitX propositions are needed, since the parser is not supposed to know about them.
@@ -445,9 +450,9 @@ class SpecCompiler(object):
 
         if "STAY_THERE" in text:
             if self.proj.compile_options["decompose"]:
-                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]))
+                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"], fastslow=fastslow))
             else:
-                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]))
+                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"], fastslow=fastslow))
 
         if "TARGET_IS_STATIONARY" in text:
             text = text.replace("TARGET_IS_STATIONARY", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]).replace("s.","e.s"))
@@ -481,7 +486,7 @@ class SpecCompiler(object):
         if self.proj.compile_options["use_region_bit_encoding"]:
             text = replaceRegionName(text, bitEncode, regionList)
 
-        text = self.substituteMacros(text)
+        text = self.substituteMacros(text,self.proj.compile_options["fastslow"])
 
         return text
 
@@ -600,7 +605,7 @@ class SpecCompiler(object):
 
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 enabled_sensors + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs +  region_domain)
+                                                self.proj.enabled_actuators + self.proj.all_customs + self.proj.internal_props +  region_domain)
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 
