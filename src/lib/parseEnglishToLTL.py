@@ -1380,8 +1380,12 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
     ResetEvent = replaceLogicOp(ResetEvent)
 
     # String to match
-    MatchPropStr = '((?:finished\s+)?\(?[\w\.]+\)?)'
-    StripPropStr = '((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+    if fastslow:
+        MatchPropStr = '((?:finished\s+)?\(?[\w\.]+\)?)'
+        StripPropStr = '((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+    else:
+        MatchPropStr = '([\w\.]+)'
+        StripPropStr = '(?P<prop>[\w\.]+)'
 
     if fastslow:
         regionGroupSetEvent = re.findall('((?:finished\s+\(?)(?P<propGroup>[\w\.\s+?\|?]+)\)?)', SetEvent)
