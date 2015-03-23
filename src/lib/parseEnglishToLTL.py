@@ -1254,12 +1254,6 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
 
             else:
                 for prop in props:
-                    if NextFlag and (prop in allRobotProp) and (ReqType == 'EnvTrans') :
-                        print 'Warning: In the sentence in line '+ str(lineInd)+' :'
-                        print prop + ' is a robot proposition and should be in the past form in an environment safety requirement'
-                        print 'The next operator was not added\n'
-                        continue
-
                     if fastslow and 'finished' in prop:
                         propStriped = re.search('((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop')
                         if propStriped in regionList:
@@ -1272,6 +1266,12 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                         subTempFormula = re.sub(prop,newProp,subTempFormula)
                         prop = newProp
 
+                    if NextFlag and (prop in allRobotProp) and (ReqType == 'EnvTrans') and (not fastslow or not CompletionFlag):
+                        print 'Warning: In the sentence in line '+ str(lineInd)+' :'
+                        print prop + ' is a robot proposition and should be in the past form in an environment safety requirement'
+                        print 'The next operator was not added\n'
+                        continue
+
                     if NextFlag:
                         # replace every occurrence of the proposition with next(proposition)
                         # it is written this way to prevent nesting of 'next' (as with the .replace method)
@@ -1279,6 +1279,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
 
             if fastslow and CompletionFlag:
                 for prop in props:
+                    prop = prop.replace('(','').replace(')','')
                     if prop in regionList:
                         subTempFormula = subTempFormula.replace(prop,"e." + prop.replace("s.","") + "_rc")
                     elif prop in actuatorList:
