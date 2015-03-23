@@ -1,0 +1,73 @@
+[INPUT]
+person
+ball
+camera_ac
+gripper_ac
+sbit0
+sbit1
+
+[OUTPUT]
+camera
+gripper
+actionDone
+setReset1
+setReset2
+bit0
+bit1
+
+[ENV_TRANS]
+| ! & & & ! sbit0 ! sbit1 ! bit0 ! bit1 & ! sbit0' ! sbit1'
+| ! & & & ! sbit0 sbit1 ! bit0 bit1 & ! sbit0' sbit1'
+| ! & & & sbit0 ! sbit1 bit0 ! bit1 & sbit0' ! sbit1'
+| ! & & & sbit0 sbit1 bit0 bit1 & sbit0' sbit1'
+| ! & & & ! sbit0 ! sbit1 ! bit0 bit1 | & ! sbit0' ! sbit1' & ! sbit0' sbit1'
+| ! & & & ! sbit0 ! sbit1 bit0 ! bit1 | & ! sbit0' ! sbit1' & sbit0' ! sbit1'
+| ! & & & ! sbit0 sbit1 ! bit0 ! bit1 | & ! sbit0' sbit1' & ! sbit0' ! sbit1'
+| ! & & & sbit0 ! sbit1 ! bit0 ! bit1 | & sbit0' ! sbit1' & ! sbit0' ! sbit1'
+| ! & & & sbit0 ! sbit1 bit0 bit1 | & sbit0' ! sbit1' & sbit0' sbit1'
+| ! & & & sbit0 sbit1 bit0 ! bit1 | & sbit0' sbit1' & sbit0' ! sbit1'
+| & ! & ! sbit0' ! sbit1' ! ! | | & ! sbit0' sbit1' & sbit0' ! sbit1' & sbit0' sbit1' & & ! sbit0' ! sbit1' ! | | & ! sbit0' sbit1' & sbit0' ! sbit1' & sbit0' sbit1'
+| & ! & ! sbit0' sbit1' ! ! | | & ! sbit0' ! sbit1' & sbit0' ! sbit1' & sbit0' sbit1' & & ! sbit0' sbit1' ! | | & ! sbit0' ! sbit1' & sbit0' ! sbit1' & sbit0' sbit1'
+| & ! & sbit0' ! sbit1' ! ! | | & ! sbit0' ! sbit1' & ! sbit0' sbit1' & sbit0' sbit1' & & sbit0' ! sbit1' ! | | & ! sbit0' ! sbit1' & ! sbit0' sbit1' & sbit0' sbit1'
+| & ! & sbit0' sbit1' ! ! | | & ! sbit0' ! sbit1' & ! sbit0' sbit1' & sbit0' ! sbit1' & & sbit0' sbit1' ! | | & ! sbit0' ! sbit1' & ! sbit0' sbit1' & sbit0' ! sbit1'
+| ! & camera_ac camera camera_ac'
+| ! & ! camera_ac ! camera ! camera_ac'
+| ! & gripper_ac gripper gripper_ac'
+| ! & ! gripper_ac ! gripper ! gripper_ac'
+| | | & ! sbit0 ! sbit1 & ! sbit0 sbit1 & sbit0 ! sbit1 & sbit0 sbit1
+
+[ENV_LIVENESS]
+| | | | | | | & & & ! bit0 ! bit1 ! sbit0' ! sbit1' & & ! bit0 ! bit1 ! & ! bit0' ! bit1' & & & ! bit0 bit1 ! sbit0' sbit1' & & ! bit0 bit1 ! & ! bit0' bit1' & & & bit0 ! bit1 sbit0' ! sbit1' & & bit0 ! bit1 ! & bit0' ! bit1' & & & bit0 bit1 sbit0' sbit1' & & bit0 bit1 ! & bit0' bit1'
+| | | | | | | & camera camera_ac' & ! camera ! camera_ac' & camera ! camera' & ! camera camera' & gripper gripper_ac' & ! gripper ! gripper_ac' & gripper ! gripper' & ! gripper gripper'
+
+[ENV_INIT]
+person
+! sbit0
+sbit1
+! camera_ac
+| | | & ! sbit0 ! sbit1 & ! sbit0 sbit1 & sbit0 ! sbit1 & sbit0 sbit1
+
+[SYS_TRANS]
+| ! person' camera'
+| ! camera_ac' camera'
+| ! person' camera'
+| ! & ! sbit0' ! sbit1' | | & ! bit0' ! bit1' & ! bit0' bit1' & bit0' ! bit1'
+| ! & ! sbit0' sbit1' | & ! bit0' bit1' & ! bit0' ! bit1'
+| ! & sbit0' ! sbit1' | | & bit0' ! bit1' & ! bit0' ! bit1' & bit0' bit1'
+| ! & sbit0' sbit1' | & bit0' bit1' & bit0' ! bit1'
+| ! & ! bit0' ! bit1' ! | | & ! bit0' bit1' & bit0' ! bit1' & bit0' bit1'
+| ! & ! bit0' bit1' ! | | & ! bit0' ! bit1' & bit0' ! bit1' & bit0' bit1'
+| ! & bit0' ! bit1' ! | | & ! bit0' ! bit1' & ! bit0' bit1' & bit0' bit1'
+| ! & bit0' bit1' ! | | & ! bit0' ! bit1' & ! bit0' bit1' & bit0' ! bit1'
+| | | & ! bit0 ! bit1 & ! bit0 bit1 & bit0 ! bit1 & bit0 bit1
+
+[SYS_LIVENESS]
+& ! sbit0' sbit1'
+| & sbit0' ! sbit1' & sbit0' sbit1'
+
+[SYS_INIT]
+! bit0
+bit1
+! camera
+| | | & ! bit0 ! bit1 & ! bit0 bit1 & bit0 ! bit1 & bit0 bit1
+
