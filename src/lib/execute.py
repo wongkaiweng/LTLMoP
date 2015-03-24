@@ -174,10 +174,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
-        #logging.debug([x.name.encode('ascii') for x in self.proj.rfi.regions])
         region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+        enabled_sensors = self.proj.enabled_sensors
+
+        if self.proj.compile_options['fastslow']:
+            regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+            enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+        else:
+            regionCompleted_domain = []
+
         strat = strategy.createStrategyFromFile(filename,
-                                                self.proj.enabled_sensors,
+                                                enabled_sensors + regionCompleted_domain ,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         return strat
@@ -329,11 +336,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             sys.exit(-1)
 
         logging.info("Starting from initial region: " + init_region.name)
-        init_prop_assignments = {"region": init_region}
+        # include initial regions in picking states
+        if self.proj.compile_options['fastslow']:
+            init_prop_assignments = {"regionCompleted": init_region}
+            # TODO: check init_region format
+        else:
+            init_prop_assignments = {"region": init_region}
 
         # initialize all sensor and actuator methods
         logging.info("Initializing sensor and actuator methods...")
         self.hsub.initializeAllMethods()
+
 
         ## outputs
         if firstRun or self.strategy is None:
@@ -356,8 +369,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             else:
                 otherRobotsReady = True
         # -------------------------------- #
-        init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
-        
+
+        if self.proj.compile_options['fastslow']:
+            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc')]))
+        else:
+        	init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+
         #search for initial state in the strategy
         if firstRun:
             init_state = new_strategy.searchForOneState(init_prop_assignments)
@@ -435,7 +452,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         
         self.strategy = new_strategy
         self.strategy.current_state = init_state
-        
+        self.last_sensor_state = self.strategy.current_state.getInputs()
+
         return  init_state, self.strategy
 
     def run(self):
@@ -469,7 +487,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             tic = self.timer_func()
             ###### ENV VIOLATION CHECK ######  
             last_next_states = self.last_next_states
-            self.runStrategyIteration()
+
+            if not self.proj.compile_options['fastslow']:
+                self.runStrategyIteration()
+            else:
+                self.runStrategyIterationInstanteousAction()
+
             current_next_states = self.last_next_states
 
             # Take a snapshot of our current sensor readings
@@ -727,7 +750,7 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
 
     # Start the executor's main loop in this thread
     e.run()
-    
+
     # Clean up on exit
     logging.info("Waiting for XML-RPC server to shut down...")
     xmlrpc_server.shutdown()

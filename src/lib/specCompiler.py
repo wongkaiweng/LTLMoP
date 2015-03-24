@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment, createSysMutualExclusion
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -136,11 +136,23 @@ class SpecCompiler(object):
         # Add in regions as robot outputs
         if self.proj.compile_options["use_region_bit_encoding"]:
             robotPropList.extend(["bit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
+            if self.proj.compile_options['fastslow']:
+                # remove _rc props from sensor_list and add in sbit for region completion
+                sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
         else:
             if self.proj.compile_options["decompose"]:
                 robotPropList.extend([r.name for r in self.parser.proj.rfi.regions])
+                # added in region_rc with the decomposed region names
+                if self.proj.compile_options['fastslow']:
+                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
             else:
                 robotPropList.extend([r.name for r in self.proj.rfi.regions])
+                # added in region_rc with the original region names
+                if self.proj.compile_options['fastslow']:
+                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
         self.propList = sensorList + robotPropList
 
@@ -157,6 +169,8 @@ class SpecCompiler(object):
         #regionList = [r.name for r in self.parser.proj.rfi.regions]
         regionList = [r.name for r in self.proj.rfi.regions]
         sensorList = deepcopy(self.proj.enabled_sensors)
+        actuatorList = deepcopy(self.proj.enabled_actuators)
+        customsList = deepcopy(self.proj.all_customs)
         robotPropList = self.proj.enabled_actuators + self.proj.all_customs
 
         text = self.proj.specText
@@ -254,11 +268,15 @@ class SpecCompiler(object):
                     if not (r.isObstacle or r.name.lower() == "boundary"):
                         LTLspec_env = re.sub('\\b(?:s\.)?' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_env)
                         LTLspec_sys = re.sub('\\b(?:s\.)?' + r.name + '\\b', "("+' | '.join(["s."+x for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_sys)
+                        LTLspec_env = re.sub('\\b(?:e\.)?' + r.name + "_rc" + '\\b', "("+' | '.join(["e."+x+"_rc" for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_env)
+                        LTLspec_sys = re.sub('\\b(?:e\.)?' + r.name + "_rc" + '\\b', "("+' | '.join(["e."+x+"_rc" for x in self.parser.proj.regionMapping[r.name]])+")", LTLspec_sys)
             else:
                 for r in self.proj.rfi.regions:
                     if not (r.isObstacle or r.name.lower() == "boundary"):
                         LTLspec_env = re.sub('\\b(?:s\.)?' + r.name + '\\b', "s."+r.name, LTLspec_env)
                         LTLspec_sys = re.sub('\\b(?:s\.)?' + r.name + '\\b', "s."+r.name, LTLspec_sys)
+                        LTLspec_env = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_env)
+                        LTLspec_sys = re.sub('\\b(?:e\.)?' + r.name+"_rc" + '\\b' , "e."+r.name+"_rc", LTLspec_sys)
 
             traceback = [] # HACK: needs to be something other than None
         elif self.proj.compile_options["parser"] == "structured":
@@ -286,7 +304,10 @@ class SpecCompiler(object):
 
                 regionList = ["s."+x.name for x in self.proj.rfi.regions]
 
-            spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, robotPropList)
+            if self.proj.compile_options["fastslow"]:
+                spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow = True,use_bits = self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                spec, traceback, failed, self.LTL2SpecLineNumber, self.proj.internal_props = parseEnglishToLTL.writeSpec(text, sensorList, regionList, actuatorList, customsList, use_bits = self.proj.compile_options["use_region_bit_encoding"])
 
             # Abort compilation if there were any errors
             if failed:
@@ -330,8 +351,10 @@ class SpecCompiler(object):
 
         if self.proj.compile_options["decompose"]:
             regionList = [x.name for x in self.parser.proj.rfi.regions]
+            regionListCompleted = [x.name+"_rc" for x in self.parser.proj.rfi.regions]
         else:
             regionList = [x.name for x in self.proj.rfi.regions]
+            regionListCompleted = [x.name+"_rc" for x in self.proj.rfi.regions]
 
         if self.proj.compile_options["use_region_bit_encoding"]:
             # Define the number of bits needed to encode the regions
@@ -341,10 +364,13 @@ class SpecCompiler(object):
             bitEncode = bitEncoding(len(regionList),numBits)
             currBitEnc = bitEncode['current']
             nextBitEnc = bitEncode['next']
+            envBitEnc  = bitEncode['env']
 
             # switch to bit encodings for regions
             LTLspec_env = replaceRegionName(LTLspec_env, bitEncode, regionList)
             LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionList)
+            LTLspec_env = replaceRegionName(LTLspec_env, bitEncode, regionListCompleted)
+            LTLspec_sys = replaceRegionName(LTLspec_sys, bitEncode, regionListCompleted)
 
             if self.LTL2SpecLineNumber is not None:
                 for k in self.LTL2SpecLineNumber.keys():
@@ -360,14 +386,24 @@ class SpecCompiler(object):
 
         # Store some data needed for later analysis
         self.spec = {}
-        if self.proj.compile_options["decompose"]:
-            self.spec['Topo'] = createTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+        if self.proj.compile_options["fastslow"]:
+            if self.proj.compile_options["decompose"]:
+                self.spec['Topo'] = createIASysTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.parser.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.parser.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['Topo'] = createIASysTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         else:
-            self.spec['Topo'] = createTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            if self.proj.compile_options["decompose"]:
+                self.spec['Topo'] = createTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['Topo'] = createTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
 
         # Substitute any macros that the parsers passed us
-        LTLspec_env = self.substituteMacros(LTLspec_env)
-        LTLspec_sys = self.substituteMacros(LTLspec_sys)
+        LTLspec_env = self.substituteMacros(LTLspec_env,self.proj.compile_options["fastslow"])
+        LTLspec_sys = self.substituteMacros(LTLspec_sys,self.proj.compile_options["fastslow"])
 
         # If we are not using bit-encoding, we need to
         # explicitly encode a mutex for regions
@@ -397,7 +433,18 @@ class SpecCompiler(object):
             self.spec['InitRegionSanityCheck'] = createInitialRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
 
+        if self.proj.compile_options["fastslow"]:
+            if self.proj.compile_options["decompose"]:
+                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            else:
+                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+            LTLspec_env += "\n&\n" + self.spec['InitEnvRegionSanityCheck']
+
         LTLspec_sys += "\n&\n" + self.spec['Topo']
+
+        if self.proj.compile_options['fastslow']:
+            LTLspec_env += "\n&\n" + self.spec['EnvTopo']
+            LTLspec_env += "\n&\n" + self.spec['SysImplyEnv']
         
         ###### ENV Assumptions Learning #############
         ## Saving LTL Spec in separated parts to be used for assumption mining #####
@@ -424,7 +471,7 @@ class SpecCompiler(object):
         return self.spec, traceback, response
         #######################################
 
-    def substituteMacros(self, text):
+    def substituteMacros(self, text, fastslow):
         """
         Replace any macros passed to us by the parser.  In general, this is only necessary in cases
         where bitX propositions are needed, since the parser is not supposed to know about them.
@@ -452,9 +499,9 @@ class SpecCompiler(object):
 
         if "STAY_THERE" in text:
             if self.proj.compile_options["decompose"]:
-                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]))
+                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"], fastslow=fastslow))
             else:
-                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]))
+                text = text.replace("STAY_THERE", createStayFormula([r.name for r in self.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"], fastslow=fastslow))
 
         if "TARGET_IS_STATIONARY" in text:
             text = text.replace("TARGET_IS_STATIONARY", createStayFormula([r.name for r in self.parser.proj.rfi.regions], use_bits=self.proj.compile_options["use_region_bit_encoding"]).replace("s.","e.s"))
@@ -488,7 +535,7 @@ class SpecCompiler(object):
         if self.proj.compile_options["use_region_bit_encoding"]:
             text = replaceRegionName(text, bitEncode, regionList)
 
-        text = self.substituteMacros(text)
+        text = self.substituteMacros(text,self.proj.compile_options["fastslow"])
 
         return text
 
@@ -589,7 +636,26 @@ class SpecCompiler(object):
         else:
             regions = self.proj.rfi.regions
 
-        region_domain = strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB)
+        if self.proj.compile_options["use_region_bit_encoding"]:
+            region_domain = [ strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB) ]
+        else:
+            region_domain = [x.name for x in regions]
+        enabled_sensors = self.proj.enabled_sensors
+
+        if self.proj.compile_options['fastslow'] :
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                regionCompleted_domain = [strategy.Domain("regionCompleted", [x.name+"_rc" for x in regions], strategy.Domain.B0_IS_MSB)]
+                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+            else:
+                regionCompleted_domain = []
+                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc')]
+                if self.proj.compile_options["decompose"]:
+                    enabled_sensors.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
+                else:
+                    enabled_sensors.extend([r.name+"_rc" for r in self.proj.rfi.regions])
+        else:
+            regionCompleted_domain = []
+
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 self.proj.enabled_sensors,
                                                 self.proj.enabled_actuators + self.proj.all_customs + [region_domain])
@@ -627,12 +693,12 @@ class SpecCompiler(object):
         to_highlight = []
         for dline in subp.stdout:
             output += dline
-            if "Specification is synthesizable!" in dline:   
-                realizable = True            
+            if "Specification is synthesizable!" in dline:
+                realizable = True
                 nonTrivial = self._autIsNonTrivial()
                 if nonTrivial:
                     break
-        
+
             ### Highlight sentences corresponding to identified errors ###
 
             # System unsatisfiability
@@ -706,6 +772,7 @@ class SpecCompiler(object):
         #takes as input sentences marked for highlighting, and formula describing bad initial states
         #from synthesis engine.
 
+        #find number of states in automaton/counter for unsat/unreal core max unrolling depth ("recurrence diameter")
         proj_copy = deepcopy(self.proj)
         proj_copy.rfi = self.parser.proj.rfi
         proj_copy.sensor_handler = None
@@ -733,6 +800,7 @@ class SpecCompiler(object):
 
         #find livelocked goal and corresponding one-step propositional formula from spec (by stripping LTL operators)
         desiredGoal = [h_item[2] for h_item in to_highlight if h_item[1] == "goals"]
+
 
         if desiredGoal:
             desiredGoal = desiredGoal[0]
@@ -798,6 +866,7 @@ class SpecCompiler(object):
 
         #have to use all initial conditions if no single bad initial state given
         useInitFlag = badInit is None
+
         #other highlighted LTL formulas
         conjuncts = self.ltlConjunctsFromBadLines(to_highlight, useInitFlag)
 
@@ -842,6 +911,7 @@ class SpecCompiler(object):
         #returns LTL formulas that appear in the guilty set for *any* deadlocked or livelocked state,
         #i.e. formulas that cause deadlock/livelock in these states
 
+        #try the different cases of unsatisfiability (need to pass in command and proplist to coreUtils function)
         if deadlockFlag:
             initDepth = 1
             maxDepth = 10
@@ -884,7 +954,7 @@ class SpecCompiler(object):
                 guiltyList = [unsatCoreCases(cmd, self.propList, topo, '', conjuncts, maxDepth, initDepth, extra)]
          
         guilty = reduce(set.union,map(set,[g for t, g in guiltyList]))
-        
+
         return guilty
 
 
@@ -893,6 +963,7 @@ class SpecCompiler(object):
 
     def _getPicosatCommand(self):
         # look for picosat
+
         paths = [p for p in glob.glob(os.path.join(self.proj.ltlmop_root,"lib","cores","picosat-*")) if os.path.isdir(p)]
         if len(paths) == 0:
             logging.error("Where is your sat solver? We use Picosat.")
@@ -905,7 +976,7 @@ class SpecCompiler(object):
             cmd = os.path.join(paths[0],"picomus.exe")
         else:
             cmd = [os.path.join(paths[0],"picomus")]
-            
+
         return cmd
 
 
@@ -925,8 +996,10 @@ class SpecCompiler(object):
             if h_item[1] == "goals":
                 #special treatment for goals: (1) we already know which one to highlight, and (2) we need to check both tenses
                 #TODO: separate out the check for present and future tense -- what if you have to toggle but can still do so infinitely often?
+                #newCs = ivd[self.traceback[tb_key][h_item[2]]].split('\n')
                 goals = self.spec[tb_key].split('\n')
                 newCs = [goals[h_item[2]]]
+                newCsOld = newCs
 
             elif h_item[1] == "trans" or h_item[1] == "init" and useInitFlag:
                 newCs =  self.spec[tb_key].replace("\t", "\n").split("\n")
@@ -934,7 +1007,6 @@ class SpecCompiler(object):
             conjuncts.extend(newCs)
 
         return conjuncts
-    
 
     def _synthesize(self, with_safety_aut=False):
         """ Call the synthesis tool, and block until it completes.
@@ -996,8 +1068,8 @@ class SpecCompiler(object):
             cmd = self._getSlugsCommand()
 
             # Make sure flags are compatible
-            if any(self.proj.compile_options[k] for k in ("fastslow", "symbolic")):
-                raise RuntimeError("Slugs does not currently support fast/slow or symbolic compilation options.")
+            if self.proj.compile_options["symbolic"]:
+                raise RuntimeError("Slugs does not currently support symbolic compilation options.")
 
             # Create proper input for Slugs
             logging.info("Preparing Slugs input...")
@@ -1062,6 +1134,7 @@ class SpecCompiler(object):
             return
 
         #self._checkForEmptyGaits()
+        logging.info("Synthesizing a strategy...")
 
         return self._synthesize()
 
