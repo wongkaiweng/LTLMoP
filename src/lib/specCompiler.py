@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment, createSysMutualExclusion
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createEnvTopologyFragment, createSysMutualExclusion, createInitialEnvRegionFragment
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -311,14 +311,15 @@ class SpecCompiler(object):
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
             # ------------------------------------------#
-            LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
-
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
             ########### for combining sys init with env init ############## 
             spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
-            spec["EnvInit"] = ""           
-            
+            spec["EnvInit"] = ""
+
+            #spec["EnvInit"] += createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+            #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]
+            LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
             # ---------- two_robot_negotiation -----------#
             spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
             # --------------------------------------------#

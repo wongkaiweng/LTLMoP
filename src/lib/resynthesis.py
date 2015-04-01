@@ -768,8 +768,11 @@ class ExecutorResynthesisExtensions(object):
             ltl_filename = proj.getFilenamePrefix() + ".ltl"       
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
-        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]       
+        if not spec["EnvInit"] == "":
+            LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
+        else:
+            LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
+        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
         LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
         LTLspec_sys += "\n&\n" + spec['Topo']
 
