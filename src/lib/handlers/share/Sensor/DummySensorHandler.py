@@ -172,3 +172,26 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 self.sensorValue[args[0]] = False
             else:
                 self.sensorValue[args[0]] = args[1]
+
+    # ----- two_robot_negotiation ---- #
+    def _requestRegionInfo(self, initial = False):
+        """
+        This function update the region values from negMonitor.
+        """
+        if self.robClient is None:
+            self.robClient = self.executor.robClient # fetch robClient from executor 
+
+        self.robotRegionStatus = self.robClient.requestRegionInfo()
+
+    def otherRobotLocation(self, robot_name, region, initial = False):
+        """
+        request other robot's location from negotiation Monitor.
+        robot_name (string): name of the robot
+        region (string): region name
+        """
+        try:
+            logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
+            return self.robotRegionStatus[region][robot_name]
+        except:
+            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            return None

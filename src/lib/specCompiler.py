@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -320,7 +320,7 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
-            spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
+            spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
             
             for idx in range(len(self.proj.rfi.regions)):
                 # exclude boundary and obstacles
@@ -332,13 +332,17 @@ class SpecCompiler(object):
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
             # ------------------------------------------#
-            LTLspec_env =  spec["EnvTrans"] + spec["EnvGoals"]
+
+            if spec["EnvGoals"]:
+                LTLspec_env =  spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
+            else:
+                LTLspec_env = spec["EnvTrans"]
 
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
             ########### for combining sys init with env init ############## 
             spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
-            spec["EnvInit"] = ""           
+            spec["EnvInit"] = ""
             
             # ---------- two_robot_negotiation -----------#
             spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
@@ -390,11 +394,11 @@ class SpecCompiler(object):
             if self.proj.compile_options["decompose"]:
                 self.spec['Topo'] = createIASysTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
                 self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.parser.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.parser.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(actuatorList, self.parser.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
             else:
                 self.spec['Topo'] = createIASysTopologyFragment(adjData, self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
                 self.spec['EnvTopo'] = createIAEnvTopologyFragment(adjData, self.proj.rfi.regions, actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(robotPropList+regionList, self.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(actuatorList, self.proj.rfi.regions, sensorList, adjData, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         else:
             if self.proj.compile_options["decompose"]:
                 self.spec['Topo'] = createTopologyFragment(adjData, self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
@@ -445,7 +449,7 @@ class SpecCompiler(object):
         if self.proj.compile_options['fastslow']:
             LTLspec_env += "\n&\n" + self.spec['EnvTopo']
             LTLspec_env += "\n&\n" + self.spec['SysImplyEnv']
-        
+
         ###### ENV Assumptions Learning #############
         ## Saving LTL Spec in separated parts to be used for assumption mining #####
         self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
