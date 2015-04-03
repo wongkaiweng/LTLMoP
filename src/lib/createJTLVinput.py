@@ -420,11 +420,11 @@ def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name 
         adjFormulas.append(adjFormula)
 
     # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, other_robot_name))
+    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
 
     return " & \n".join(adjFormulas)
     
-def createInitialEnvRegionFragment(regions, use_bits=True, other_robot_name = ''):
+def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, other_robot_name = ''):
     # Setting the system initial formula to allow only valid
     #  region (encoding). This may be redundant if an initial region is
     #  specified, but it is here to ensure the system cannot start from
@@ -451,7 +451,10 @@ def createInitialEnvRegionFragment(regions, use_bits=True, other_robot_name = ''
             initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
         initreg_formula = initreg_formula + '\t\t\t) \n'
     else:
-        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+other_robot_name + '_' +r2.name + ')' if r is r2 else "!next(e."+other_robot_name + '_' +r2.name+")" for r2 in regions])) for r in regions]))
+        if nextProp:
+            initreg_formula = "\n\t({})".format(" |\n ".join(["({})".format(" & ".join(["next(e."+other_robot_name + '_' +r2.name + ')' if r is r2 else "!next(e."+other_robot_name + '_' +r2.name+")" for r2 in regions])) for r in regions]))
+        else:
+            initreg_formula = "\n\t({})".format(" |\n ".join(["({})".format(" & ".join(["e."+other_robot_name + '_' +r2.name if r is r2 else "!e."+other_robot_name + '_' +r2.name for r2 in regions])) for r in regions]))
         
     return initreg_formula
 

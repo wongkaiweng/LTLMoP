@@ -320,6 +320,10 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
+            ########### for combining sys init with env init ##############
+            spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
+            spec["EnvInit"] = ""
+
             spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
             
             for idx in range(len(self.proj.rfi.regions)):
@@ -331,20 +335,16 @@ class SpecCompiler(object):
                         self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
-            # ------------------------------------------#
 
+            spec["EnvInit"] += createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
             if spec["EnvGoals"]:
-                LTLspec_env =  spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
+                LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
             else:
-                LTLspec_env = spec["EnvTrans"]
+                LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"]
 
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
-            ########### for combining sys init with env init ############## 
-            spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
-            spec["EnvInit"] = ""
-            
-            # ---------- two_robot_negotiation -----------#
+
             spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
             # --------------------------------------------#
             LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
@@ -454,10 +454,21 @@ class SpecCompiler(object):
         ## Saving LTL Spec in separated parts to be used for assumption mining #####
         self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
         self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList)
-        self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)   
-        self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList) 
-        self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList) 
-        self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)  
+        self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)
+        self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList)
+        self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList)
+        self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)
+        if self.proj.compile_options['fastslow']:
+            self.spec['SysImplyEnv']=replaceRegionName(self.spec['SysImplyEnv'], bitEncode, regionList)
+            self.spec['EnvTopo']   = replaceRegionName(self.spec['EnvTopo'], bitEncode, regionList)
+            self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionListCompleted)
+            self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionListCompleted)
+            self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionListCompleted)
+            self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionListCompleted)
+            self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionListCompleted)
+            self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionListCompleted)
+            self.spec['SysImplyEnv']=replaceRegionName(self.spec['SysImplyEnv'], bitEncode, regionListCompleted)
+            self.spec['EnvTopo']   = replaceRegionName(self.spec['EnvTopo'], bitEncode, regionListCompleted)
 
         #only write to LTLfile with specEditor
         if createLTL == True:
@@ -661,8 +672,8 @@ class SpecCompiler(object):
             regionCompleted_domain = []
 
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
-                                                self.proj.enabled_sensors,
-                                                self.proj.enabled_actuators + self.proj.all_customs + [region_domain])
+                                                enabled_sensors  + regionCompleted_domain,
+                                                self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain)
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 

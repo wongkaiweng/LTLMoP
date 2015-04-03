@@ -183,6 +183,28 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
         self.robotRegionStatus = self.robClient.requestRegionInfo()
 
+    def inRegion(self, regionName , initial = False):
+        """
+        Check if the robot is in this region
+        regionName (string): Name of the region
+        """
+
+        if initial:
+            return True
+
+        else:
+            pose = self.executor.hsub.coordmap_lab2map(self.executor.hsub.getPose())
+            #########################################
+            ### Copied from vectorController.py #####
+            #########################################
+
+            regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
+            pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+            pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+            vertices = numpy.mat(pointArray).T
+            #print >>sys.__stdout__, self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices))    
+            return is_inside([pose[0], pose[1]], vertices)
+
     def otherRobotLocation(self, robot_name, region, initial = False):
         """
         request other robot's location from negotiation Monitor.

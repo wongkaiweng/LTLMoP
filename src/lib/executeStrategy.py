@@ -182,6 +182,12 @@ class ExecutorStrategyExtensions(object):
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region.name, self.next_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
+                # ------------------------------- #
+                # --- two_robot_negotiation ----- #
+                # ------------------------------- #
+                self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted').name)
+                # ------------------------------- #
+
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset
 

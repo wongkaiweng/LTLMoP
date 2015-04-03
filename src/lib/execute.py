@@ -362,6 +362,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # Make sure the other robot is loaded
         logging.info('Waiting for other robots to be ready')
         otherRobotsReady = False
+
         while not otherRobotsReady:
             for key, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 if value is None:
@@ -407,9 +408,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 self.spec['EnvTrans'] = "\t[](FALSE) &\n"
                 self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
             else:
-                # put all clauses in EnvTrans into conjuncts           
-                self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
-                self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+                # put all clauses in EnvTrans into conjuncts
+                if self.proj.compile_options['fastslow']:
+                    self.oriEnvTrans = (self.spec['EnvTrans']+"&"+self.spec["EnvTopo"])
+                    self.spec['EnvTrans'] = '[]((' + copy.copy(self.oriEnvTrans.replace('[]','')) +'))&\n'
+                else:
+                    self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
+                    self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
                 self.EnvTransRemoved = []
              
             # rewrite ltl file   
