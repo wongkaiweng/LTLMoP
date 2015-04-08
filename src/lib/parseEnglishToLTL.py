@@ -1506,9 +1506,7 @@ def replaceRegionName(formula,bitEncode,regionList):
     
     # first replace all 'next' region names with the next encoding
     for nextProp in re.findall('(next\(s\.\w+\)|next\(\(s\.\w+\)\))',tempFormula):
-        prop = nextProp.replace('next((s.','')
-        prop = prop.replace('next(s.','')
-        prop = prop.replace(')','')
+        prop = nextProp.replace('next((s.','').replace('next(s.','').replace(')','')
 
         if prop in regionList:
             ind = regionList.index(prop)
@@ -1526,7 +1524,16 @@ def replaceRegionName(formula,bitEncode,regionList):
             tempFormula = re.sub('\\bs\.'+prop+'\\b', bitEncode['current'][ind],tempFormula)
 
             #tempFormula = tempFormula.replace(prop, bitEncode['current'][ind])
-    
+
+    # Handle region sensor names. first replace all 'next' region names with the next encoding
+    for nextProp in re.findall('(next\(e\.\w+\)|next\(\(e\.\w+\)\))',tempFormula):
+        prop = nextProp.replace('next((e.','').replace('next(e.','').replace(')','')
+
+        if prop in regionList:
+            ind = regionList.index(prop)
+            tempFormula = tempFormula.replace(nextProp, bitEncode['envNext'][ind])
+            # 'replace' is fine here because we are replacing next(region) and that cannot be a partial name
+
     # Handle region sensor names
     for prop in re.findall('e\.(\w+)',tempFormula):
         if prop in regionList:

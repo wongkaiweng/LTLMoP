@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
-BUFSIZE = 10000    #reasonably sized buffer for data
+BUFSIZE = 20000    #reasonably sized buffer for data
  
 ## now we create a new socket object (serv)
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
@@ -172,7 +172,7 @@ while keepConnection:
                             
                         else:
                             # send negotiationStatus back to the robot
-                            x.send(str(negotiationStatus))
+                            x.send(":" + str(negotiationStatus))
                     
                     elif item.group('packageType') == "violationTimeStamp":
                         if ast.literal_eval(item.group("packageValue")):

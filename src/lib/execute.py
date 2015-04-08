@@ -501,9 +501,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             current_next_states = self.last_next_states
 
             # Take a snapshot of our current sensor readings
-            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors) 
+            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
             for prop_name, value in sensor_state.iteritems():
+                if self.proj.compile_options['fastslow'] and "_rc" in prop_name:
+                    continue
+
                 self.sensor_strategy.setPropValue(prop_name, value)
+
+            if self.proj.compile_options['fastslow']:
+                self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[self._getCurrentRegionFromPose()])
 
             # Check for environment violation - change the env_assumption_hold to int again 
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
@@ -539,7 +545,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     # send our spec to the other robot
                     self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-                    self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+                    #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
                     self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
                     
                     # wait until the other robot resynthesize its controller

@@ -336,10 +336,20 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True):
 
 # ------ two_robot_negotiation ------------#  
 def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = ''):
+
+    # skip any boundary or obstacles
+    regions_old = regions
+    regions = []
+    for reg in regions_old:
+        if reg.name == 'boundary' or reg.isObstacle:
+            continue
+        else:
+            regions.append(reg)
+
     if use_bits:
-        numBits = int(math.ceil(math.log(len(adjData),2)))
+        numBits = int(math.ceil(math.log(len(regions),2)))
         # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+        bitEncode = parseEnglishToLTL.bitEncoding(len(regions), numBits)
         currBitEnc = bitEncode['current']
         nextBitEnc = bitEncode['next']
         
@@ -358,7 +368,7 @@ def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_
             
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name) + ")"
+        adjFormula = adjFormula + "next(e."+ other_robot_name + '_' +regions[Origin].name + ")"
         adjFormula = adjFormula + ') -> ( !('
         first = True
         for subreg in regionMapping[str(regions[Origin].name)]:
@@ -459,12 +469,24 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
     return initreg_formula
 
 def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = ''):
+
+    # skip any boundary or obstacles
+    regions_old = regions
+    regions = []
+    for reg in regions_old:
+        if reg.name == 'boundary' or reg.isObstacle:
+            continue
+        else:
+            regions.append(reg)
+
     if use_bits:
-        numBits = int(math.ceil(math.log(len(adjData),2)))
+        numBits = int(math.ceil(math.log(len(regions),2)))
         # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+        bitEncode = parseEnglishToLTL.bitEncoding(len(regions), numBits)
         currBitEnc = bitEncode['current']
         nextBitEnc = bitEncode['next']
+        envBitEnc = bitEncode['env']
+        envNextBitEnc = bitEncode['envNext']
         
     # The topological relation (adjacency)
     adjFormulas = []
@@ -481,7 +503,7 @@ def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robo
             
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name) + ")"
+        adjFormula = adjFormula + "next(e."+ other_robot_name + '_' +regions[Origin].name + ")"
         adjFormula = adjFormula + ') -> ( !('
         first = True
         for subreg in regionMapping[str(regions[Origin].name)]:
@@ -490,7 +512,7 @@ def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robo
             else:
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
                 
-            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(s."+ subreg +")")
+            adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ subreg +"_rc)")
             adjFormula = adjFormula + ')'
 
         # closing this region

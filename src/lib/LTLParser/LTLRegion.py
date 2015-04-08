@@ -7,7 +7,7 @@ import ast                  # for parsing spec dict from negtiation monitor
 import re                   # for parsing specstr
 import parseEnglishToLTL    # for replacing original region name to region bits
 
-def findRegionBits(ltlFormula):
+def findRegionBits(ltlFormula, fastslow=False):
     """
     This function finds regions in bits in ltl formula.
     INPUT:
@@ -15,12 +15,15 @@ def findRegionBits(ltlFormula):
     OUTPUT:
     regionBitsList: list of regionbits strings 
     """
-    pattern = "\(((!?next\(s.bit[0-9]\)&?)|(!?s.bit[0-9]&?))+\)"
+    if fastslow:
+        pattern = "\(((!?next\(e.sbit[0-9]\)&?)|(!?e.sbit[0-9]&?))+\)"
+    else:
+        pattern = "\(((!?next\(s.bit[0-9]\)&?)|(!?s.bit[0-9]&?))+\)"
     regionBitsList = [x.group() for x in re.finditer(pattern,ltlFormula)]
     
     return regionBitsList
     
-def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = ''):
+def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False):
     """
     This function takes in a region bit string and regionList and return the actual region string (with next)
     INPUT:
@@ -40,19 +43,27 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
         nextTimeStep = False
     
     # isolate each bit
-    pattern_bit = "!?(next\()?s.bit[0-9]\)?"
+    if fastslow:
+        pattern_bit = "!?(next\()?e.sbit[0-9]\)?"
+    else:
+        pattern_bit = "!?(next\()?s.bit[0-9]\)?"
     individualBitsList = [x.group() for x in re.finditer(pattern_bit, regionBitStr)]
 
     regionProps = {}
     # calculate region number
     for bit in individualBitsList:
         bit = bit.replace('next(','').replace(')','')
-        
-        if '!' not in bit:
-            regionProps[bit.replace('s.bit','region_b')] = True
+        if fastslow:
+            if '!' not in bit:
+                regionProps[bit.replace('e.sbit','regionCompleted_b')] = True
+            else:
+                regionProps[bit.replace('!e.sbit','regionCompleted_b')] = False
         else:
-            regionProps[bit.replace('!s.bit','region_b')] = False
-        
+            if '!' not in bit:
+                regionProps[bit.replace('s.bit','region_b')] = True
+            else:
+                regionProps[bit.replace('!s.bit','region_b')] = False
+
     # find region in new name
     targetRegionNew = regions[region_domain.propAssignmentsToNumericValue(regionProps)]
 
@@ -65,7 +76,7 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
     else:
         return 'e.' + robotName + '_' + targetRegionOrig
         
-def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = ''):
+def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False):
     """
     This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
     INPUT:
@@ -85,18 +96,18 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     ltlFormulaReplaced = ltlFormula
 
     # find the list of bit regions
-    regionBitsList = findRegionBits(ltlFormula)
+    regionBitsList = findRegionBits(ltlFormula, fastslow)
     
     for regionBitStr in regionBitsList:
         # find original region name 
-        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName)
+        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow)
         
         # replace region bits to name
         ltlFormulaReplaced = ltlFormulaReplaced.replace(regionBitStr, regionName)
 
     return ltlFormulaReplaced  
     
-def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionList):
+def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionList, fastslow=False):
     """
     This function takes in an ltlFormula, the bitEncode, robotName and the regionList and returns an ltlFormula with the robotName+ region replaced to region bits.
     INPUT:
@@ -113,11 +124,14 @@ def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionLis
     """ 
     
     # remove our robot name from the spec
-    ltlFormula = ltlFormula.replace('e.' + robotName + '_', 's.')
-    
+    if fastslow:
+        ltlFormula = ltlFormula.replace('e.' + robotName + '_', 'e.')
+    else:
+        ltlFormula = ltlFormula.replace('e.' + robotName + '_', 's.')
+
     # map region name to bits
     ltlFormulaReplaced  = parseEnglishToLTL.replaceRegionName(ltlFormula, bitEncode, regionList)
-    
+
     return ltlFormulaReplaced
                 
     

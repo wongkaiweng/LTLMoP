@@ -17,13 +17,19 @@ class RobotClient:
     """
     def __init__(self, hsub, proj):
         ADDR = ("localhost",6501)
-        self.BUFSIZE = 10000
-        
+        self.BUFSIZE = 20000
+
+        # check if we are using fastslow:
+        self.fastslow = proj.compile_options['fastslow']
+
         # initialize our variable
         self.robotName = ''
         self.regions    = proj.rfi.regions # contains decomposed names
-        self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
-        
+        if self.fastslow:
+            self.region_domain = strategy.Domain("regionCompleted",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+        else:
+            self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+
         #find out mapping from new_names to old ones
         self.newRegionNameToOld = {}
         for rname, subregs in proj.regionMapping.iteritems():
@@ -47,7 +53,7 @@ class RobotClient:
          
         # track if spec is requested
         self.specRequestFromOther = [] # list of spec requested
-    
+
     def initializeRegionExchange(self, hsub):
         """
         This function obtains the name of the robot and also the list of region and send the info to the negotiation Monitor
@@ -87,7 +93,7 @@ class RobotClient:
         spec = spec.replace('\t',"").replace(' ','').replace('\n','') 
         
         # first replace our region bits to original region name with our robot name
-        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
+        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, self.fastslow)
         #logging.debug( specType + ':' + spec)
         # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
@@ -108,20 +114,20 @@ class RobotClient:
         specToAppend = ""
         
         #TODO: need to get full picture of all robots. The current solution only deals with two robots
-        while not len(specToAppend):    
+        while not len(specToAppend):
             self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
             logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
 
             #receive info
             SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        
+
             for robot, spec in SpecDict.iteritems():
                 #self.robotName = 'alice' #TODO: remove this later
                 if self.robotName  != robot:
             
                     # change region props with our name to region bits (parseEnglishToLTL?)              
-                    specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList)
-        
+                    specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow)
+
         return specToAppend 
         
     def requestRegionInfo(self):
@@ -180,7 +186,9 @@ class RobotClient:
         self.clientObject.send(self.robotName + '-' + 'negotiationStatus = ' + "''" + '\n')
         
         #receive info
-        negotiationStatus = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        originalStr = self.clientObject.recv(self.BUFSIZE)
+        bufferData = originalStr.split(':').pop()
+        negotiationStatus = ast.literal_eval(bufferData)
         return negotiationStatus
         
     def setNegotiationStatus(self, status):

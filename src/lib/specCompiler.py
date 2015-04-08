@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createIASysMutualExclusion
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -345,7 +345,10 @@ class SpecCompiler(object):
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
 
-            spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
+            #if self.proj.compile_options['fastslow']:
+            #    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+            #else:
+            #spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
             # --------------------------------------------#
             LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
             ####################################################
@@ -452,23 +455,13 @@ class SpecCompiler(object):
 
         ###### ENV Assumptions Learning #############
         ## Saving LTL Spec in separated parts to be used for assumption mining #####
-        self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionList) 
-        self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionList)
-        self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionList)
-        self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionList)
-        self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionList)
-        self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionList)
-        if self.proj.compile_options['fastslow']:
-            self.spec['SysImplyEnv']=replaceRegionName(self.spec['SysImplyEnv'], bitEncode, regionList)
-            self.spec['EnvTopo']   = replaceRegionName(self.spec['EnvTopo'], bitEncode, regionList)
-            self.spec['EnvInit']   = replaceRegionName(spec['EnvInit'], bitEncode, regionListCompleted)
-            self.spec['EnvTrans']  = replaceRegionName(spec['EnvTrans'], bitEncode, regionListCompleted)
-            self.spec['EnvGoals']  = replaceRegionName(spec['EnvGoals'], bitEncode, regionListCompleted)
-            self.spec['SysInit']   = replaceRegionName(spec['SysInit'], bitEncode, regionListCompleted)
-            self.spec['SysTrans']  = replaceRegionName(spec['SysTrans'], bitEncode, regionListCompleted)
-            self.spec['SysGoals']  = replaceRegionName(spec['SysGoals'] , bitEncode, regionListCompleted)
-            self.spec['SysImplyEnv']=replaceRegionName(self.spec['SysImplyEnv'], bitEncode, regionListCompleted)
-            self.spec['EnvTopo']   = replaceRegionName(self.spec['EnvTopo'], bitEncode, regionListCompleted)
+        if self.proj.compile_options["use_region_bit_encoding"]:
+            for key, value in spec.iteritems():
+                self.spec[key] = replaceRegionName(value, bitEncode, regionList)
+
+            if self.proj.compile_options['fastslow']:
+                for key, value in self.spec.iteritems():
+                    self.spec[key] = replaceRegionName(value, bitEncode, regionListCompleted)
 
         #only write to LTLfile with specEditor
         if createLTL == True:

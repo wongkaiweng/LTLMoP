@@ -267,12 +267,14 @@ class LTL_Check:
             # for environement propositions
             elif "e." in tree[0]:                
                 key = tree[0].replace("e.","")
+                if "sbit" in key:
+                    key = key.replace("sbit","regionCompleted_b")
                 if debug_proposition_values == True:
                     print " next: " + str(next)
                     print "evaluating env propositions: " + str(key) 
 
                 if next == True:
-                    return int(self.sensor_state.getInputs()[key]), negate, False
+                    return int(self.sensor_state.getInputs(expand_domains = True)[key]), negate, False
                 else:
                     return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
             

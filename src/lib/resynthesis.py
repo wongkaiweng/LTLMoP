@@ -487,7 +487,7 @@ class ExecutorResynthesisExtensions(object):
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-        self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+        #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
 
         self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
         while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
@@ -524,7 +524,11 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.robClient.setNegotiationStatus(False)
                 self.otherRobotStatus = False # env characterization enabled
-                
+        else:
+            logging.error("RESYN ERROR(1): You should have wait for the other robot's status")
+            #logging.debug("self.robClient.checkNegotiationStatus()" + str(self.robClient.checkNegotiationStatus()))
+            #logging.debug("self.proj.otherRobot[0]"+ str(self.proj.otherRobot[0]))
+            #logging.debug("self.robClient.robotName"+ str(self.robClient.robotName))
         """
         # --------------------------------------------- #
         # check if the other robot is realizable. 
@@ -744,14 +748,14 @@ class ExecutorResynthesisExtensions(object):
         else:
             # find the current inputs and outputs from strategy and replace region_b
             current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
-            current_sys_init_state = current_sys_init_state.replace('region_b','bit')
-        
+
         # try to compare current spec with the new clause so that no duplicates are added
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        cur_sys_init = cur_sys_init.replace('region_b','bit').replace('regionCompleted_b','sbit')
 
         # connect the original sysInit with the current system init
         self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
-        #self.postEvent("INFO","new init:" + str(cur_sys_init)) 
+        #self.postEvent("INFO","new init:" + str(cur_sys_init))
      
     def recreateLTLfile(self, proj, spec = None , export = False):
         """

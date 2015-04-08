@@ -185,7 +185,7 @@ class ExecutorStrategyExtensions(object):
                 # ------------------------------- #
                 # --- two_robot_negotiation ----- #
                 # ------------------------------- #
-                self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted').name)
+                self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
                 # ------------------------------- #
 
             self.strategy.current_state = self.next_state
