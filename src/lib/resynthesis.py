@@ -19,6 +19,7 @@ import executeStrategy
 ######################################
 # -------- two_robot_negotiation ----#
 import logging
+import copy
 # -----------------------------------#
 
 class ExecutorResynthesisExtensions(object):
@@ -61,10 +62,12 @@ class ExecutorResynthesisExtensions(object):
         #executeStrategy.runStrategyIteration = runIterationWithResynthesisChecks
         
         # ---two_robot_negotiation ------ #
-        self.exchangedSpec = False
-        self.otherRobotStatus = None
+        self.exchangedSpec = False #track if we have exchanged spec with the other robot
+        self.otherRobotStatus = None #track if we are prioritized. False: env Characterization enabled. True: env Char disabled. None: no negotiation 
         self.lastSensorState  = None
-        self.negotiationStatus= None
+        self.negotiationStatus= None #track who is appending spec
+        self.receivedSpec = False #track if we have recevied request from the other robot
+        self.sentSpec = False #track if we have sent spec to the other robot
         self.violationTimeStamp = 0
         # ------------------------------- #
 
@@ -441,18 +444,22 @@ class ExecutorResynthesisExtensions(object):
         # reset env characterization
         self.spec['EnvTrans'] = self.oriEnvTrans + '&'
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','')[:-2] +'))&\n'
         self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
         
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
         otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')      
-    
+        self.receivedSpec = True
+
         # see if we can take the other robot's actions into account. 
         # first we safe a copy of our SysTrans and EnvGoals before modification
-        oldSpecSysTrans = self.spec['SysTrans'].replace('\t',"").replace(' ','').replace('\n','') 
-        oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','') 
+        #oldSpecSysTrans = self.spec['SysTrans'].replace('\t',"").replace(' ','').replace('\n','')
+        #oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','')
+        oldSpecSysTrans = self.spec['SysTrans']
+        oldSpecEnvGoals = self.spec['EnvGoals']
         
         # conjunct the spec of the other robots
         self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
@@ -461,6 +468,8 @@ class ExecutorResynthesisExtensions(object):
         if level:
             # with only systrans
             self.spec['EnvGoals'] = oldSpecEnvGoals
+        elif  "[]<>(TRUE)" in oldSpecEnvGoals:
+            self.spec['EnvGoals'] = otherRobotSysGoals
         else:
             self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
         #logging.debug('EnvGoals:' + self.spec['EnvGoals'])
@@ -480,7 +489,8 @@ class ExecutorResynthesisExtensions(object):
         # modify envTrans to remove all characterization. Restart Characterization
         self.spec['EnvTrans'] = self.oriEnvTrans + '&'
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
+        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','')[:-2] +'))&\n'
         self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
@@ -488,6 +498,7 @@ class ExecutorResynthesisExtensions(object):
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+        self.sentSpec = True
 
         self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
         while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
@@ -496,22 +507,20 @@ class ExecutorResynthesisExtensions(object):
         
         if self.robClient.checkNegotiationStatus() == True:
             # we need to use our original spec
-            self.recreateLTLfile(self.proj)
+            self.spec = copy.deepcopy(self.originalSpec)
+            self.recreateLTLfile(self.proj, spec = self.originalSpec)
             realizable, realizableFS, output  = self.compiler._synthesize()
             self.otherRobotStatus = True # env characterization disabled
             self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.postEvent('RESOLVED','')
             
-        elif self.robClient.checkNegotiationStatus() == self.robClient.robotName:
+        elif self.robClient.checkNegotiationStatus() == self.robClient.robotName and not self.receivedSpec:
             self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')
             # try to synthesize controller with spec from the other robot instead
-            ###### NOW SEPARATED INTO TWO STEPS
-            realizable, oldSpecSysTrans, oldSpecEnvGoals = self.synthesizeWithExchangedSpec(True)
-            self.postEvent("NEGO",'Adding only system guarantees.')
-            if not realizable:
-                realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
-                self.postEvent("NEGO",'Unrealizable. Now adding system guarantees with environment goals.')
+            ###### ONE STEP ####
+            realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
+            self.postEvent("NEGO",'Adding system guarantees with environment goals.')
             
             if realizable:
                 self.postEvent('NEGO','We can continue with the exchanged information.')
@@ -524,7 +533,18 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.robClient.setNegotiationStatus(False)
                 self.otherRobotStatus = False # env characterization enabled
-                
+
+        else: #We have received spec before and it's unrealizable
+            realizable = False
+            self.postEvent('NEGO','Negotiation failed')
+            self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+            self.robClient.setNegotiationStatus(False)
+            self.otherRobotStatus = False # env characterization enabled
+
+        # reset violtion timestamp
+        self.violationTimeStamp = 0
+        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+        time.sleep(1)
         """
         # --------------------------------------------- #
         # check if the other robot is realizable. 
@@ -635,10 +655,10 @@ class ExecutorResynthesisExtensions(object):
                     otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
                     logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
                     logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
-                    
+
                     # exchange info with the other robot and see if it is realizable. 
                     # later time can exchange spec
-                    if (not self.exchangedSpec) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                    if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
                         
                         # exchange spec
                         realizable = self.appendSpecFromEnvRobots()
@@ -695,6 +715,7 @@ class ExecutorResynthesisExtensions(object):
             
         else:
             self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
+            self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
             sys.exit()            
                 
         return init_state, new_strategy

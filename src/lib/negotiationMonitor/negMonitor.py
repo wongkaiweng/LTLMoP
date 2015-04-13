@@ -175,14 +175,14 @@ while keepConnection:
                             x.send(str(negotiationStatus))
                     
                     elif item.group('packageType') == "violationTimeStamp":
-                        if ast.literal_eval(item.group("packageValue")):
+                        if ast.literal_eval(item.group("packageValue")) != '':
                             # We got set violationTimeStamp from robotClient
                             violationTimeStamp[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
                             
                         else:
                             # send violationTimeStamp back to the robot
                             x.send(str(violationTimeStamp))
-                                    
+
                     elif "closeConnection" in data:
                         x.close() 
                         clients.remove(x)
