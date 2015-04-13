@@ -16,7 +16,7 @@ fastslow: False
 decompose: True
 
 CurrentConfigName:
-aliceNao
+alice
 
 Customs: # List of custom propositions
 
