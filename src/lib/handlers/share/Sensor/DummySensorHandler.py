@@ -211,9 +211,12 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         robot_name (string): name of the robot
         region (string): region name
         """
-        try:
-            logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
+        try:   
+            #logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
             return self.robotRegionStatus[region][robot_name]
         except:
             #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
+        
+        
+    

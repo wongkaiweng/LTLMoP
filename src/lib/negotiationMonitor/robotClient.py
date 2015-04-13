@@ -90,7 +90,8 @@ class RobotClient:
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
         
-        spec = spec.replace('\t',"").replace(' ','').replace('\n','') 
+        #spec = spec.replace('\t',"").replace(' ','').replace('\n','')
+        spec = spec.replace(' ','').replace('\n','')
         
         # first replace our region bits to original region name with our robot name
         spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, self.fastslow)
@@ -209,7 +210,7 @@ class RobotClient:
         """
         self.clientObject.send(self.robotName + '-' + 'violationTimeStamp = ' + "''" + '\n')
         timeStamp = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        
+
         return timeStamp[otherRobotName]
         
     def setViolationTimeStamp(self, timeStamp):
