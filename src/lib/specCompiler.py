@@ -317,9 +317,9 @@ class SpecCompiler(object):
             spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
             spec["EnvInit"] = ""
 
-            #spec["EnvInit"] += createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
-            #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]
-            LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
+            spec["EnvInit"] += createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+            LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]
+            #LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
             # ---------- two_robot_negotiation -----------#
             spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, False, self.proj.otherRobot[0]) + "\n&\n" 
             # --------------------------------------------#

@@ -750,7 +750,9 @@ class ExecutorResynthesisExtensions(object):
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
         # connect the original sysInit with the current system init
-        self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
+        #self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
+        self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
         #self.postEvent("INFO","new init:" + str(cur_sys_init)) 
      
     def recreateLTLfile(self, proj, spec = None , export = False):
