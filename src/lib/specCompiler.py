@@ -320,10 +320,6 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
-            ########### for combining sys init with env init ##############
-            spec["SysInit"] = "(" + spec["EnvInit"].replace("(","").replace(")","") + " & " + spec["SysInit"].replace("(","").replace(")","")  + ")"
-            spec["EnvInit"] = ""
-
             spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
             
             for idx in range(len(self.proj.rfi.regions)):
@@ -336,7 +332,7 @@ class SpecCompiler(object):
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
 
-            spec["EnvInit"] += createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+            spec["EnvInit"] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
             if spec["EnvGoals"]:
                 LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
             else:

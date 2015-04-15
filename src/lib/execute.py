@@ -185,7 +185,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             regionCompleted_domain = []
 
         strat = strategy.createStrategyFromFile(filename,
-                                                self.proj.enabled_sensors,
+                                                enabled_sensors + regionCompleted_domain ,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
 
         return strat
@@ -554,7 +554,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
                     #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
                     self.sentSpec = True
-					self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+                    self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
                     
                     # wait until the other robot resynthesize its controller
                     while self.robClient.checkNegotiationStatus() != (True or False): 
