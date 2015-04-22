@@ -494,30 +494,40 @@ def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robo
     if not other_robot_name:
         logging.info('robot_name not provided!')
         return
-        
-    for Origin in range(len(regions)):
-        
+
+    # retrieve only the region names
+    regionNames = [x.name for x in regions]
+
+    for reg, subregList in regionMapping.iteritems():
+        reg = reg.encode('ascii','ignore')
+
         # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+        skipRegion = False
+        for subReg in subregList:
+            if regions[regionNames.index(subReg)].isObstacle:
+                skipRegion = True
+                continue
+
+        if reg == 'boundary' or reg == 'others' or skipRegion:
             continue
-            
+
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + "next(e."+ other_robot_name + '_' +regions[Origin].name + ")"
+        adjFormula = adjFormula + "next(e."+ other_robot_name + '_' + reg + ")"
         adjFormula = adjFormula + ') -> ( !('
         first = True
-        for subreg in regionMapping[str(regions[Origin].name)]:
+        for subReg in subregList:
+            subRegIdx = regionNames.index(subReg)
             if first:
                 first  = False
             else:
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
                 
-            adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ subreg +"_rc)")
+            adjFormula = adjFormula + (envNextBitEnc[subRegIdx] if use_bits else "next(e."+ subReg +"_rc)")
             adjFormula = adjFormula + ')'
 
         # closing this region
-        adjFormula = adjFormula + ' ) ) '
-
+        adjFormula = adjFormula + ' ) )'
         adjFormulas.append(adjFormula)
 
     return " & \n".join(adjFormulas)

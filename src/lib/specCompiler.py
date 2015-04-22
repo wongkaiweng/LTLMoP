@@ -341,10 +341,14 @@ class SpecCompiler(object):
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
 
-            #if self.proj.compile_options['fastslow']:
-            #    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
-            #else:
-            #spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+            if self.proj.compile_options['fastslow']:
+                if self.proj.compile_options['decompose']:
+                    # make sure the bits are mapped correctly with the use of self.parser
+                    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+                else:
+                    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+            else:
+                spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
             # --------------------------------------------#
             LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
             ####################################################
