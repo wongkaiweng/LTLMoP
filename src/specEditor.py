@@ -1297,6 +1297,9 @@ class SpecEditorFrame(wx.Frame):
             other_proj = project.Project()
             other_proj.loadProject(self.proj.getFilenamePrefix()+".spec")
             self.proj.current_config= other_proj.current_config
+            # reload new spec
+            self.proj.specText = other_proj.specText
+            self.text_ctrl_spec.SetText(self.proj.specText)
             self.subprocess["Simulation Configuration"] = None
 
         self.subprocess["Simulation Configuration"] = WxAsynchronousProcessThread([sys.executable, "-u", "-m", "lib.configEditor", self.proj.getFilenamePrefix()+".spec"], simConfigCallback, None)

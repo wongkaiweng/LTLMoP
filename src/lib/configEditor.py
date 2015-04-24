@@ -41,6 +41,7 @@ from svggen.library import getComponent
 import gettext
 import traceback
 from svggen.library.Arduino import ArduinoProMini
+import yaml
 ###################################
 
 def drawParamConfigPaneMakeOutput(target, errorMsg, msgDict):
@@ -2031,6 +2032,52 @@ tempMethodDataFunction = deepcopy(dataFunction))
             self.c.toYaml(self.proj.getFilenamePrefix()+".yaml")
             logging.debug("onClickOK - YAML file saved to :" + str(self.proj.getFilenamePrefix())+".yaml")
             self.makeOutput(self.proj.getFilenamePrefix()+"groundedOutput")
+
+            # Load data from the yaml file
+            #templateData = yaml.load(open('RSS_example_1.yaml'))
+            templateData = yaml.load(open(self.proj.getFilenamePrefix()+'.yaml'))
+
+            # Create new dictionary for proposition/component pairings
+            propositionAssignments = {} # Keys are propositions, values are components
+
+            # Retrieve proposition/component pairs
+            for k,v in templateData['subcomponents'].iteritems():
+                propositionAssignments[k] = v['classname']
+
+            # Search for duplicate component values
+            componentAssociations = {} # Keys are components, values are associated propositions
+            for k,v in propositionAssignments.iteritems():
+                # k = propositions, v = components
+                if v in componentAssociations:
+                    componentAssociations[v].append(k)
+                else:
+                    componentAssociations[v] = [k]
+
+            conflictingProps = {}
+            # Sort through componentAssociations, delete entries with only one value
+            for k,v in componentAssociations.iteritems():
+                if k == 'DataFunction':
+                    continue
+
+                if len(v) >1:
+                    # If there is only one associated proposition, record the data
+                    conflictingProps[k] = v
+
+            logging.debug("conflict props:" + str(conflictingProps))
+
+            # find structured Eng spec to add
+            sensor = []
+            for component, propList in conflictingProps.iteritems():
+                # True if it's a sensor, false otherwise
+                if propList[0] in self.proj.all_sensors:
+                    sensor.append(True)
+                else:
+                    sensor.append(True)
+            structEngStr = self.createStructuredEngMutualExclusion(conflictingProps, sensor)
+            self.proj.specText += '\n' + structEngStr
+            d = wx.MessageDialog(self, "The following mutual exclusions are appended to your specification:\n\n" + structEngStr, style = wx.OK | wx.ICON_ERROR)
+            d.ShowModal()
+
             event.Skip()
         else:
             d = wx.MessageDialog(self, "Please make sure you have grounded all the propositions.", style = wx.OK | wx.ICON_ERROR)
@@ -2226,6 +2273,41 @@ tempMethodDataFunction = deepcopy(dataFunction))
                     raise error
 
 # end of class propMappingDialog
+
+    def createStructuredEngMutualExclusion(self, componentsDict, sensor):
+        """
+        componentsDict: {component: [prop1,prop2,prop3...]}
+        sensor=[true, false] true if all props involved are sensor propositions, otherwise they are actuator propositions
+        Obtain if you are activating prop1 then do not prop2 or prop3
+               if you are sensing prop1 then do not prop2 or prop3
+        """
+
+        # new structured English clauses to append to the spec
+        structEngFormulas = []
+        componentIdx = 0
+
+        for component,propList in componentsDict.iteritems():
+            if sensor[componentIdx]:
+                verb = ' sensing '
+            else:
+                verb = ' activating '
+
+            # iterate the entire propList
+            for idx, prop in enumerate(propList):
+
+                engFormula = 'if you are'+ verb + prop + ' then do not '
+                engFormula = engFormula +"("+ " or ".join([x for x in propList if x != prop])
+                engFormula = engFormula + ')\n'
+
+                structEngFormulas.append(engFormula)
+
+            componentIdx += 1
+
+        logging.debug("Mutual Exclusion Structural English")
+        logging.debug(structEngFormulas)
+
+        return "".join(structEngFormulas)
+
 
 
 if __name__ == "__main__":
