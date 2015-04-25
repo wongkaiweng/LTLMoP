@@ -115,8 +115,21 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     param_controls = {}
 
     item_sizer = wx.BoxSizer(wx.HORIZONTAL)
-    param_label = wx.StaticText(target, -1, "%s:" % method["name"])
 
+    param_label = wx.StaticText(target, -1, "%s:" % "subComponentName")
+    #first we will process the identifier
+    if method['identifier'] is not None:
+        param_controls["identifier"] = wx.TextCtrl(target, -1, method["identifier"])
+    else:
+        param_controls["identifier"] = wx.TextCtrl(target, -1, method["name"])
+        method["identifier"] = method['name']
+
+    item_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    item_sizer.Add(param_label, 0, wx.ALL, 5)
+    item_sizer.Add(param_controls["identifier"], 1, wx.ALL, 5)
+    list_sizer.Add(item_sizer, 0, wx.EXPAND, 0)
+
+    param_label = wx.StaticText(target, -1, "%s:" % method["name"])
     param_controls["Default"] = wx.ComboBox(target, -1, choices=methodDict[method["name"]], style=wx.CB_DROPDOWN)
 
     #if we can load the grounding of this prop, then load the settings here
@@ -149,7 +162,7 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     for paramName in getComponent(method["name"]).parameters.keys():
         if paramName in method["others"]:
             # see if the key exists, if so set the value to the setting before
-            param_controls[paramName] = wx.TextCtrl(target, -1, method["others"][paramName])
+            param_controls[paramName] = wx.TextCtrl(target, -1, str(method["others"][paramName]))
         else:
             param_controls[paramName] = wx.TextCtrl(target, -1, "")
         param_label = wx.StaticText(target, -1, "%s:" % paramName)
@@ -170,6 +183,9 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
             else:
                 # remove the variable from the method dict
                 method["others"].pop(paramName, None)
+
+        # Save identifier
+        method["identifier"] = str(param_controls["identifier"].GetValue())
 
         # Save dataFunction for actuators
         try:
@@ -1481,11 +1497,14 @@ class propMappingDialog(wx.Dialog):
         self.constrainedParams = []
 
         try:
-            self.prevData = self.parseYAMLfile()
-            toDelete = []
-            for group in self.prevData['connections']:
+            self.prevData = yaml.load(open(self.proj.getFilenamePrefix()+'.yaml'))
+            #self.prevData = self.parseYAMLfile()
+            toDelete = {}
+            activeComponentList = []
+            inactiveComponentList = []
+            for connection, group in self.prevData['connections'].iteritems():
                 # if the prop get renamed it's not added here
-                if group[1][0] in self.proj.all_actuators or group[1][0] in self.proj.all_sensors or group[1][0].replace("_Function","") in self.proj.all_actuators or group[1][0].replace("_Function","") in self.proj.all_sensors:
+                if group[0][1] in self.proj.all_actuators or group[0][1] in self.proj.all_sensors or group[0][0].replace("_Function","") in self.proj.all_actuators or group[0][0].replace("_Function","") in self.proj.all_sensors:
                     # prop component 
                     self.c.addSubcomponent(group[1][0], self.prevData["subcomponents"][group[1][0]]['classname'])
 
@@ -1498,18 +1517,27 @@ class propMappingDialog(wx.Dialog):
                             self._parameterPrompt(group[1][0], otherPara, otherParaVal)
                         else:
                             pass
+
+                    # track what are the subcomponents used
+                    if group[1][0].replace("_Function","") not in zip(self.proj.all_sensors, self.proj.all_actuators):
+                        activeComponentList.append(group[1][0])
                 else:
-                    toDelete.append(group)
+                    toDelete.update({connection:group})
+                    if group[1][0].replace("_Function","") not in zip(self.proj.all_sensors, self.proj.all_actuators):
+                        inactiveComponentList.append(group[1][0])
 
             #remove the prop from the previous data
-            for group in toDelete:
-                self.prevData["subcomponents"].pop(group[1][0],None)
-                self.prevData["connections"].remove(group)
+            for connection,group in toDelete.iteritems():
+                self.prevData["connections"].pop(connection, None)
+
+                for x in inactiveComponentList:
+                    if x not in activeComponentList:
+                        self.prevData["subcomponents"].pop(x,None)
 
         except:
             logging.debug("The YAML file does not exist now!")
             # initialize self.prevData, which store all old settings in yaml file
-            self.prevData = {"connections":[],"interfaces":{}, "parameters":{}, \
+            self.prevData = {"connections":{},"interfaces":{}, "parameters":{}, \
 "subcomponents":{"state":{"classname":"StateMachine","parameters":{"stateMachineName":self.proj.getFilenamePrefix()}}}}
 
         logging.debug("self.prevData:" + str(self.prevData))
@@ -1771,10 +1799,8 @@ class propMappingDialog(wx.Dialog):
 
             # also set the previous selection
             try:
-                # figure out sensor/actuator component and options
-                prevComponent = self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['classname']
                 para = ""
-                for [[_, _], [prop, port],_] in self.prevData['connections']:
+                for connection, [[_, prop], [identifier, port],_] in self.prevData['connections'].iteritems():
                     if prop == self.list_box_props.GetStringSelection():
                         # set port port
                         para = port
@@ -1783,6 +1809,7 @@ class propMappingDialog(wx.Dialog):
                 logging.debug('onSelectProp - port:' + str(para))
                 # check if the prop is a sensor or actuator
                 dataFunction = ""
+                prevComponent= ""
                 if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
                     componentKey = "sensor"
                 elif  self.list_box_props.GetStringSelection() in self.proj.all_actuators:
@@ -1791,8 +1818,17 @@ class propMappingDialog(wx.Dialog):
                     # check if a data function exists
                     if prop + '_Function' in self.prevData["subcomponents"]:
                         dataFunction = self.prevData["subcomponents"][prop + '_Function']['parameters']['function']
+                    # change identifier
+                    for connection, [[propFunction, _], [identifier, _],_] in self.prevData['connections'].iteritems():
+                        if propFunction == prop + '_Function':
+                            # set identifier
+                            break
+
                 else:
                     logging.debug('onSelectProp - Prop should be either sensors or actuators.')
+
+                # figure out sensor/actuator component and options
+                prevComponent = self.prevData["subcomponents"][identifier]['classname']
 
                 # figure out the component type
                 for idx, componentType in enumerate(self.list_box_robots.GetItems()):
@@ -1806,13 +1842,13 @@ class propMappingDialog(wx.Dialog):
 
                 # set the list_box_functions selection
                 prevComponentIdx = self.list_box_functions.GetItems().index(prevComponent)
-                logging.debug("onSelectProp - " + str(prevComponent) + "prevComponentIdx:" + str(prevComponentIdx))
+                logging.debug("onSelectProp - " + str(prevComponent) + " prevComponentIdx:" + str(prevComponentIdx))
                 self.list_box_functions.SetSelection(prevComponentIdx)
                 # Add the other parameters here if they exist to tempMethodOthers
                 others = {}
-                logging.debug("onSelectProp - parameters:" + str(self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters']))
-                if self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters']:
-                    for paraKey, paraVal in self.prevData["subcomponents"][self.list_box_props.GetStringSelection()]['parameters'].iteritems():
+                logging.debug("onSelectProp - parameters:" + str(self.prevData["subcomponents"][identifier]['parameters']))
+                if self.prevData["subcomponents"][identifier]['parameters']:
+                    for paraKey, paraVal in self.prevData["subcomponents"][identifier]['parameters'].iteritems():
                         if not isinstance(paraVal,dict):
                             others.update({paraKey:paraVal})
                             logging.debug("onSelectProp - added:" + str(paraKey) +": " + str(paraVal))
@@ -1821,7 +1857,7 @@ class propMappingDialog(wx.Dialog):
                             pass
 
                 self.onSelectHandler(None, tempMethodPara = para, tempMethodOthers = deepcopy(others),\
-tempMethodDataFunction = deepcopy(dataFunction))
+    tempMethodDataFunction = deepcopy(dataFunction),tempIdentifier = deepcopy(identifier))
                 logging.debug('onSelectProp - successfully loaded old settings')
             except:
                 logging.debug('onSelectProp - did not have old settings. Loading default')
@@ -1842,11 +1878,16 @@ tempMethodDataFunction = deepcopy(dataFunction))
             component = self.tempMethod['name']
             port = str(self.tempMethod['para'])
             prop = str(self.list_box_props.GetStringSelection())
-            print "Grounding proposition", prop, "to component", component, "on port", port
+            identifier = str(self.tempMethod['identifier'])
+            print "Grounding proposition", prop, "to component", component, "on port", port, "with subcomponent name", identifier
             # first remove existing component
             try:
-                self.c.delSubcomponent(prop)
+                # remove old subComponent
+                self.c.delSubcomponent(str(self.tempMethod['oldIdentifier']))
+                self.prevData['subcomponents'].pop(str(self.tempMethod['oldIdentifier']), None)
+                self.tempMethod['oldIdentifier'] = identifier
                 self.c.delSubcomponent(prop+"_Function")
+
             except:
                 logging.debug("onClickApply - The proposition is not added yet.")
 
@@ -1854,16 +1895,26 @@ tempMethodDataFunction = deepcopy(dataFunction))
             ##########################
             ### update subcomponent ##
             ##########################
-            if prop in self.prevData["subcomponents"].keys():
-                self.prevData["subcomponents"][prop]["classname"] = component
-                self.prevData["subcomponents"][prop]["parameters"] = deepcopy(self.tempMethod['others'])
+            if identifier in self.prevData["subcomponents"].keys():
+                self.prevData["subcomponents"][identifier]["classname"] = component
+                self.prevData["subcomponents"][identifier]["parameters"] = deepcopy(self.tempMethod['others'])
 
             else: # if the key does not exist
-                self.prevData["subcomponents"][prop] = {"classname": component, "parameters":deepcopy(self.tempMethod['others'])}
-            logging.debug("onClickApply - " + str(prop)+"'s subComponent updated to:"+ str(self.prevData["subcomponents"][prop]))
+                self.prevData["subcomponents"][identifier] = {"classname": component, "parameters":deepcopy(self.tempMethod['others'])}
+            logging.debug("onClickApply - " + str(prop)+"'s subComponent updated to:"+ str(self.prevData["subcomponents"][identifier]))
             ##########################################
             # dataFunction operation with connection #
             ##########################################
+            connectionIdx = sorted([int(x.replace('connection','')) for x in self.prevData["connections"].keys()])
+            missingIdx = sorted(set(range(connectionIdx[0], connectionIdx[-1])).difference(connectionIdx))
+
+            # find idx to use
+            if missingIdx:
+                newIdx = 'connection' + str(missingIdx[0])
+                missingIdx.remove(missingIdx[0])
+            else:
+                newIdx = 'connection' + str(len(connectionIdx))
+
             if "dataFunction" in self.tempMethod: # actuator
                 if self.tempMethod["dataFunction"]:
                     # update dataFunction
@@ -1872,9 +1923,9 @@ tempMethodDataFunction = deepcopy(dataFunction))
                         self.prevData["subcomponents"][prop+"_Function"]["parameters"]["function"] = self.tempMethod["dataFunction"]
 
                         # modify exisitng connection
-                        for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
-                            if oldProp == str(self.list_box_props.GetStringSelection()):
-                                self.prevData["connections"][idx][1][1] = port
+                        for idx, [[oldProp, _], [_, oldPort],_] in self.prevData["connections"].iteritems():
+                            if oldProp == str(self.list_box_props.GetStringSelection())+'_Function':
+                                self.prevData["connections"][idx][1] = [identifier, port]
                                 break
                     else:
                         # create a new instance of dataFunction
@@ -1882,59 +1933,64 @@ tempMethodDataFunction = deepcopy(dataFunction))
 "parameters":{"function":self.tempMethod["dataFunction"]}}
 
                         # create new connection
-                        for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
+                        for idx, [[_, oldProp], [_, oldPort],_] in self.prevData["connections"].iteritems():
                             if oldProp == str(self.list_box_props.GetStringSelection()):
                                 self.prevData["connections"][idx] = [["state", oldProp],\
 [oldProp+"_Function",'input'],{}]
-                                self.prevData["connections"].append([[oldProp+"_Function","output"],\
-[oldProp,port],{}])
+                                self.prevData["connections"].update({newIdx,[[oldProp+"_Function","output"],[identifier,port],{}]})
                                 break
                         else: # no connections yet. add them here.
-                            self.prevData["connections"].append([["state", prop],\
-[prop+"_Function",'input'],{}])
-                            self.prevData["connections"].append([[prop+"_Function","output"],\
-[prop,port],{}])
+                            self.prevData["connections"].update({newIdx,[["state", prop],\
+[prop+"_Function",'input'],{}]})
+                            # find idx to use
+                            if missingIdx:
+                                newIdx = 'connection' + str(missingIdx[0])
+                                missingIdx.remove(missingIdx[0])
+                            else:
+                                newIdx = 'connection' + str(len(connectionIdx))
+                            self.prevData["connections"].update({newIdx,[[prop+"_Function","output"],\
+[identifier,port],{}]})
                 else:
                     # remove existing dataFunction
                     if prop + "_Function" in self.prevData["subcomponents"].keys():
                         self.prevData["subcomponents"].pop(prop + "_Function", None)
 
                         # amend connection
-                        self.prevData["connections"].remove([["state", prop], [prop+"_Function", "input"],{}])
-                        for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
+                        self.prevData["connections"] = {key: value for key, value in self.prevData["connections"].items() if value is not [["state", prop], [prop+"_Function", "input"],{}]}
+
+                        for idx, [[_, oldProp], [_, oldPort],_] in self.prevData["connections"].iteritems():
                             if oldProp == str(self.list_box_props.GetStringSelection()):
-                                self.prevData["connections"][idx] = [["state",oldProp],[oldProp,port],{}]
+                                self.prevData["connections"][idx] = [["state",oldProp],[identifier,port],{}]
                                 break
                     # no existing connection. adding one.
                     else:
-                        self.prevData["connections"].append([["state",prop],[prop,port],{}])
+                        self.prevData["connections"].update({newIdx,[["state",prop],[identifier,port],{}]})
 
             else: #sensor
                 ######################
                 # update connection ##
                 ######################
-                for idx, [[_, _], [oldProp, oldPort],_] in enumerate(self.prevData["connections"]):
+                for idx, [[_, oldProp], [_, oldPort],_] in self.prevData["connections"].iteritems():
                     if oldProp == self.list_box_props.GetStringSelection():
                         self.prevData["connections"][idx][1][1] = port
                         break
                 else: # does not exist. adding one now
-                    self.prevData["connections"].append([["state",prop],[prop,port],{}])
-
+                    self.prevData["connections"].update({newIdx,[["state",prop],[identifier,port],{}]})
 
             # then add the component
-            self.c.addSubcomponent(prop, component)
+            self.c.addSubcomponent(identifier, component)
             if "dataFunction" in self.tempMethod and len(self.tempMethod["dataFunction"]) > 0:
                 dataFunctionName = prop + '_Function'
                 self.c.addSubcomponent(dataFunctionName, 'DataFunction')
                 self.c.addConstConstraint((dataFunctionName, 'function'), self.tempMethod["dataFunction"])
                 self.c.addConnection(('state', prop), (dataFunctionName, 'input'))
-                self.c.addConnection((dataFunctionName, 'output'), (prop, port))
+                self.c.addConnection((dataFunctionName, 'output'), (identifier, port))
             else:
-                self.c.addConnection(("state", prop), (prop, port))
+                self.c.addConnection(("state", prop), (identifier, port))
 
             # Adding the new parameters here
             for otherPara, otherParaVal in self.tempMethod['others'].iteritems():
-                self._parameterPrompt(prop, otherPara, otherParaVal)
+                self._parameterPrompt(identifier, otherPara, otherParaVal)
 
             start, end = self.text_ctrl_mapping.GetSelection()
             if start < 0:
@@ -1995,7 +2051,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
         if event is not None:
             event.Skip()
 
-    def onSelectHandler(self, event, tempMethodPara = None, tempMethodOthers = {}, tempMethodDataFunction = ""): # wxGlade: propMappingDialog.<event_handler>
+    def onSelectHandler(self, event, tempMethodPara = None, tempMethodOthers = {}, tempMethodDataFunction = "",tempIdentifier = None): # wxGlade: propMappingDialog.<event_handler>
         if event is not None:
             event.Skip()
 
@@ -2007,7 +2063,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers)}
+        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers), "identifier": deepcopy(tempIdentifier),'oldIdentifier':deepcopy(tempIdentifier)}
         logging.debug("onSelectHandler - self.tempMethod:" + str(self.tempMethod))
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
@@ -2023,7 +2079,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
         # first we check if all the props have groundings. If not, the user will have to do that.
         allComponentsGrounded = True
         for prop in [j for i in zip(self.proj.all_sensors,self.proj.all_actuators) for j in i]:
-            if prop not in self.prevData["subcomponents"]:
+            if prop not in [x[0][1] for x in self.prevData["connections"].values()]:
                 allComponentsGrounded = False
                 break
 
@@ -2034,33 +2090,31 @@ tempMethodDataFunction = deepcopy(dataFunction))
             self.makeOutput(self.proj.getFilenamePrefix()+"groundedOutput")
 
             # Load data from the yaml file
-            #templateData = yaml.load(open('RSS_example_1.yaml'))
             templateData = yaml.load(open(self.proj.getFilenamePrefix()+'.yaml'))
 
             # Create new dictionary for proposition/component pairings
             propositionAssignments = {} # Keys are propositions, values are components
+            for idx, [[_,prop],[subcomponent,_],_] in templateData['connections'].iteritems():
 
-            # Retrieve proposition/component pairs
-            for k,v in templateData['subcomponents'].iteritems():
-                propositionAssignments[k] = v['classname']
+                # skip dataFunction
+                if prop == 'output':
+                    continue
+                # check if the prop is mapped to dataFunction, if so, find the real subcomponent
+                if subcomponent == prop + '_Function':
+                    for dataIdx, [[dataProp,_],[dataSubcomponent,_],_] in templateData['connections'].iteritems():
+                        if dataProp == prop + '_Function':
+                            subcomponent = dataSubcomponent
+                            break
 
-            # Search for duplicate component values
-            componentAssociations = {} # Keys are components, values are associated propositions
-            for k,v in propositionAssignments.iteritems():
-                # k = propositions, v = components
-                if v in componentAssociations:
-                    componentAssociations[v].append(k)
+                if subcomponent in propositionAssignments:
+                    propositionAssignments[subcomponent].append(prop)
                 else:
-                    componentAssociations[v] = [k]
+                    propositionAssignments.update({subcomponent: [prop]})
 
             conflictingProps = {}
-            # Sort through componentAssociations, delete entries with only one value
-            for k,v in componentAssociations.iteritems():
-                if k == 'DataFunction':
-                    continue
-
+            # Sort through componentAssociations, save entries with more than one value
+            for k,v in propositionAssignments.iteritems():
                 if len(v) >1:
-                    # If there is only one associated proposition, record the data
                     conflictingProps[k] = v
 
             logging.debug("conflict props:" + str(conflictingProps))
@@ -2177,7 +2231,7 @@ tempMethodDataFunction = deepcopy(dataFunction))
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{}}
+        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{},'identifier':None, 'oldIdentifier':None}
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
