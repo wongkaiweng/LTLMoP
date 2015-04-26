@@ -10,6 +10,7 @@ rightForward, 1
 gripperClosed, 1
 indicateHaveObject, 1
 indicateComplete, 1
+gripperOpened, 1
 
 CompileOptions:
 convexify: True
@@ -24,9 +25,7 @@ CurrentConfigName:
 Untitled configuration
 
 Customs: # List of custom propositions
-haveObject
 followPath
-taskComplete
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 onPath, 1
@@ -43,22 +42,22 @@ others = p3, p4, p5, p6
 Spec: # Specification in structured English
 robot starts with false
 
-haveObject is set on gripperClosed and reset on not gripperClosed
-taskComplete is set on atGoal and not haveObject and reset on false
-
 # Follow the path to get to the object and to move with the object
-followPath is set on (not atObject and not haveObject) or (haveObject and not atGoal) and reset on (atObject and not haveObject) or taskComplete
+followPath is set on (not atObject and gripperOpened) or (gripperClosed and not atGoal) and reset on (atObject and gripperOpened) or (atGoal and gripperOpened)
 
 # Follow the path
 do leftForward if and only if (not onPath) and followPath
 do rightForward if and only if onPath and followPath
 
 # Grasp object when reached and release it when at goal
-do gripperClosed if and only if (atObject or haveObject) and not atGoal and not taskComplete
+do gripperClosed if and only if (atObject or gripperClosed) and not atGoal
 
 # Indicate when object is grasped
-do indicateHaveObject if and only if haveObject
+do indicateHaveObject if and only if gripperClosed
 
 # Indicate when task is complete
-do indicateComplete if and only if taskComplete
+do indicateComplete if and only if (atGoal and gripperOpened)
+
+If you are sensing gripperClosed then do not gripperOpened
+If you are sensing gripperOpened then do not gripperClosed
 
