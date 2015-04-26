@@ -121,8 +121,8 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     if method['identifier'] is not None:
         param_controls["identifier"] = wx.TextCtrl(target, -1, method["identifier"])
     else:
-        param_controls["identifier"] = wx.TextCtrl(target, -1, method["name"])
-        method["identifier"] = method['name']
+        param_controls["identifier"] = wx.TextCtrl(target, -1, method["prop"])
+        method["identifier"] = method['prop']
 
     item_sizer = wx.BoxSizer(wx.HORIZONTAL)
     item_sizer.Add(param_label, 0, wx.ALL, 5)
@@ -1805,6 +1805,9 @@ class propMappingDialog(wx.Dialog):
                         # set port port
                         para = port
                         break
+                else: # fallback if connection is found
+                    identifier = ""
+
                 logging.debug("onSelectProp - self.prevData['connections']:" + str(self.prevData['connections']))
                 logging.debug('onSelectProp - port:' + str(para))
                 # check if the prop is a sensor or actuator
@@ -1812,17 +1815,20 @@ class propMappingDialog(wx.Dialog):
                 prevComponent= ""
                 if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
                     componentKey = "sensor"
-                elif  self.list_box_props.GetStringSelection() in self.proj.all_actuators:
+                elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
                     componentKey = "actuator"
 
                     # check if a data function exists
-                    if prop + '_Function' in self.prevData["subcomponents"]:
+                    if self.list_box_props.GetStringSelection() + '_Function' in self.prevData["subcomponents"]:
                         dataFunction = self.prevData["subcomponents"][prop + '_Function']['parameters']['function']
-                    # change identifier
-                    for connection, [[propFunction, _], [identifier, _],_] in self.prevData['connections'].iteritems():
-                        if propFunction == prop + '_Function':
-                            # set identifier
-                            break
+                        # change identifier
+                        for connection, [[propFunction, _], [identifier, _],_] in self.prevData['connections'].iteritems():
+                            if propFunction == self.list_box_props.GetStringSelection() + '_Function':
+                                # set identifier
+                                logging.debug('set identifier: propFunction:' + str(propFunction) + ' prop:' + str(prop))
+                                break
+                        else: # fallback if connection is found
+                            identifier = ""
 
                 else:
                     logging.debug('onSelectProp - Prop should be either sensors or actuators.')
@@ -1906,7 +1912,10 @@ class propMappingDialog(wx.Dialog):
             # dataFunction operation with connection #
             ##########################################
             connectionIdx = sorted([int(x.replace('connection','')) for x in self.prevData["connections"].keys()])
-            missingIdx = sorted(set(range(connectionIdx[0], connectionIdx[-1])).difference(connectionIdx))
+            if connectionIdx:
+                missingIdx = sorted(set(range(connectionIdx[0], connectionIdx[-1])).difference(connectionIdx))
+            else:
+                missingIdx = []
 
             # find idx to use
             if missingIdx:
@@ -1937,18 +1946,18 @@ class propMappingDialog(wx.Dialog):
                             if oldProp == str(self.list_box_props.GetStringSelection()):
                                 self.prevData["connections"][idx] = [["state", oldProp],\
 [oldProp+"_Function",'input'],{}]
-                                self.prevData["connections"].update({newIdx,[[oldProp+"_Function","output"],[identifier,port],{}]})
+                                self.prevData["connections"].update({newIdx:[[oldProp+"_Function","output"],[identifier,port],{}]})
                                 break
                         else: # no connections yet. add them here.
-                            self.prevData["connections"].update({newIdx,[["state", prop],\
+                            self.prevData["connections"].update({newIdx:[["state", prop],\
 [prop+"_Function",'input'],{}]})
                             # find idx to use
                             if missingIdx:
                                 newIdx = 'connection' + str(missingIdx[0])
                                 missingIdx.remove(missingIdx[0])
                             else:
-                                newIdx = 'connection' + str(len(connectionIdx))
-                            self.prevData["connections"].update({newIdx,[[prop+"_Function","output"],\
+                                newIdx = 'connection' + str(len(self.prevData["connections"]))
+                            self.prevData["connections"].update({newIdx:[[prop+"_Function","output"],\
 [identifier,port],{}]})
                 else:
                     # remove existing dataFunction
@@ -1964,7 +1973,7 @@ class propMappingDialog(wx.Dialog):
                                 break
                     # no existing connection. adding one.
                     else:
-                        self.prevData["connections"].update({newIdx,[["state",prop],[identifier,port],{}]})
+                        self.prevData["connections"].update({newIdx:[["state",prop],[identifier,port],{}]})
 
             else: #sensor
                 ######################
@@ -1975,7 +1984,7 @@ class propMappingDialog(wx.Dialog):
                         self.prevData["connections"][idx][1][1] = port
                         break
                 else: # does not exist. adding one now
-                    self.prevData["connections"].update({newIdx,[["state",prop],[identifier,port],{}]})
+                    self.prevData["connections"].update({newIdx:[["state",prop],[identifier,port],{}]})
 
             # then add the component
             self.c.addSubcomponent(identifier, component)
@@ -2063,7 +2072,7 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers), "identifier": deepcopy(tempIdentifier),'oldIdentifier':deepcopy(tempIdentifier)}
+        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers), "identifier": deepcopy(tempIdentifier),'oldIdentifier':deepcopy(tempIdentifier),'prop': self.list_box_props.GetStringSelection()}
         logging.debug("onSelectHandler - self.tempMethod:" + str(self.tempMethod))
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
@@ -2231,7 +2240,7 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{},'identifier':None, 'oldIdentifier':None}
+        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{},'identifier':None, 'oldIdentifier':None,'prop': self.list_box_props.GetStringSelection()}
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:
