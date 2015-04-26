@@ -148,7 +148,7 @@ def drawParamConfigPaneRobotComponents(target, method, methodDict):
     #check if this is actuator. If that's the case, add a dataFunction option
     if "dataFunction" in method:
         logging.debug("drawParamConfigPaneRobotComponents - This is an actuator.")
-        param_controls["dataFunction"] = wx.TextCtrl(target, -1, method["dataFunction"])
+        param_controls["dataFunction"] = wx.TextCtrl(target, -1, str(method["dataFunction"]))
         param_label = wx.StaticText(target, -1, "%s:" % "dataFunction")
         item_sizer = wx.BoxSizer(wx.HORIZONTAL)
         item_sizer.Add(param_label, 0, wx.ALL, 5)
@@ -1889,7 +1889,10 @@ class propMappingDialog(wx.Dialog):
             # first remove existing component
             try:
                 # remove old subComponent
-                self.c.delSubcomponent(str(self.tempMethod['oldIdentifier']))
+                # first check if it is used by other propositions
+                if [x for [_,[x,_],_] in self.prevData['connections'].values()].count(str(self.tempMethod['oldIdentifier'])) <= 1:
+                    self.c.delSubcomponent(str(self.tempMethod['oldIdentifier']))
+
                 self.prevData['subcomponents'].pop(str(self.tempMethod['oldIdentifier']), None)
                 self.tempMethod['oldIdentifier'] = identifier
                 self.c.delSubcomponent(prop+"_Function")
@@ -2072,7 +2075,7 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers), "identifier": deepcopy(tempIdentifier),'oldIdentifier':deepcopy(tempIdentifier),'prop': self.list_box_props.GetStringSelection()}
+        self.tempMethod = {"name":deepcopy(m), "para":deepcopy(tempMethodPara), "others":deepcopy(tempMethodOthers), "identifier": deepcopy(tempIdentifier),'oldIdentifier':deepcopy(tempIdentifier),'prop': str(self.list_box_props.GetStringSelection())}
         logging.debug("onSelectHandler - self.tempMethod:" + str(self.tempMethod))
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
@@ -2240,7 +2243,7 @@ class propMappingDialog(wx.Dialog):
             return
 
         m = self.list_box_functions.GetClientData(pos)
-        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{},'identifier':None, 'oldIdentifier':None,'prop': self.list_box_props.GetStringSelection()}
+        self.tempMethod = {"name":deepcopy(m), "para":None, "others":{},'identifier':None, 'oldIdentifier':None,'prop': str(self.list_box_props.GetStringSelection())}
         if self.list_box_props.GetStringSelection() in self.proj.all_sensors:
             drawParamConfigPaneRobotComponents(self.panel_method_cfg, self.tempMethod, dict(filterComponents(["sensor"])))
         elif self.list_box_props.GetStringSelection() in self.proj.all_actuators:

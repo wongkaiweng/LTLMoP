@@ -4,20 +4,16 @@ connections:
   - [indicateHaveObject, newState]
   - {}
   connection1:
-  - [state, indicateComplete]
-  - [indicateComplete, control]
+  - [state, gripperClosed]
+  - [gripperClosed_Function, input]
   - {}
   connection10:
-  - [state, onPath]
-  - [onPath, curValue]
-  - {}
-  connection11:
   - [state, atObject]
   - [atObject, touched]
   - {}
-  connection12:
-  - [state, atGoal]
-  - [atGoal, curState]
+  connection11:
+  - [state, leftForward]
+  - [leftForward_Function, input]
   - {}
   connection2:
   - [state, gripperOpened]
@@ -28,28 +24,28 @@ connections:
   - [gripper, control]
   - {}
   connection4:
-  - [state, gripperClosed]
-  - [gripperClosed_Function, input]
-  - {}
-  connection5:
   - [gripperClosed_Function, output]
   - [gripper, control]
   - {}
-  connection6:
-  - [state, leftForward]
-  - [leftForward_Function, input]
-  - {}
-  connection7:
+  connection5:
   - [leftForward_Function, output]
   - [leftForward, control]
   - {}
-  connection8:
+  connection6:
+  - [state, atGoal]
+  - [atGoal, curState]
+  - {}
+  connection7:
   - [state, rightForward]
   - [rightForward_Function, input]
   - {}
-  connection9:
+  connection8:
   - [rightForward_Function, output]
   - [rightForward, control]
+  - {}
+  connection9:
+  - [state, onPath]
+  - [onPath, curValue]
   - {}
 interfaces: {}
 parameters: {}
@@ -69,15 +65,11 @@ subcomponents:
   gripperClosed_Function:
     classname: DataFunction
     kwargs: {}
-    parameters: {function: '-180'}
+    parameters: {function: input*-2}
   gripperOpened_Function:
     classname: DataFunction
     kwargs: {}
-    parameters: {function: '180'}
-  indicateComplete:
-    classname: LED
-    kwargs: {}
-    parameters: {type: digital}
+    parameters: {function: input*1}
   indicateHaveObject:
     classname: UIToggle
     kwargs: {}
