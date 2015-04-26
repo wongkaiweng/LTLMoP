@@ -1,0 +1,108 @@
+connections:
+  connection0:
+  - [state, indicateHaveObject]
+  - [indicateHaveObject, newState]
+  - {}
+  connection1:
+  - [state, indicateComplete]
+  - [indicateComplete, control]
+  - {}
+  connection10:
+  - [state, onPath]
+  - [onPath, curValue]
+  - {}
+  connection11:
+  - [state, atObject]
+  - [atObject, touched]
+  - {}
+  connection12:
+  - [state, atGoal]
+  - [atGoal, curState]
+  - {}
+  connection2:
+  - [state, gripperOpened]
+  - [gripperOpened_Function, input]
+  - {}
+  connection3:
+  - [gripperOpened_Function, output]
+  - [gripper, control]
+  - {}
+  connection4:
+  - [state, gripperClosed]
+  - [gripperClosed_Function, input]
+  - {}
+  connection5:
+  - [gripperClosed_Function, output]
+  - [gripper, control]
+  - {}
+  connection6:
+  - [state, leftForward]
+  - [leftForward_Function, input]
+  - {}
+  connection7:
+  - [leftForward_Function, output]
+  - [leftForward, control]
+  - {}
+  connection8:
+  - [state, rightForward]
+  - [rightForward_Function, input]
+  - {}
+  connection9:
+  - [rightForward_Function, output]
+  - [rightForward, control]
+  - {}
+interfaces: {}
+parameters: {}
+subcomponents:
+  atGoal:
+    classname: UIToggle
+    kwargs: {}
+    parameters: {default: 0, label: At Goal}
+  atObject:
+    classname: TouchSensor
+    kwargs: {}
+    parameters: {sensorControllerPin: 4}
+  gripper:
+    classname: EServo
+    kwargs: {}
+    parameters: {controllerPin: 6, motionType: angle}
+  gripperClosed_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: '-180'}
+  gripperOpened_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: '180'}
+  indicateComplete:
+    classname: LED
+    kwargs: {}
+    parameters: {type: digital}
+  indicateHaveObject:
+    classname: UIToggle
+    kwargs: {}
+    parameters: {default: 0, label: Have Object}
+  leftForward:
+    classname: EServo
+    kwargs: {}
+    parameters: {controllerPin: 3, motionType: continuous}
+  leftForward_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*-10}
+  onPath:
+    classname: LineDetector
+    kwargs: {}
+    parameters: {ledControllerPin: 8, sensorControllerPin: A0}
+  rightForward:
+    classname: EServo
+    kwargs: {}
+    parameters: {controllerPin: 9, motionType: continuous}
+  rightForward_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*10}
+  state:
+    classname: StateMachine
+    kwargs: {}
+    parameters: {stateMachineName: /home/catherine/LTLMoP/src/examples/robotComponentsTest/pathGrab/pathGrab}
