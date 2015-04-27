@@ -1,60 +1,60 @@
 connections:
   connection0:
-  - [leftForward_Function, output]
-  - [leftForward, control]
+  - [releaseObject_d_Function, output]
+  - [gripper, control]
   - {}
   connection1:
-  - [state, onPath]
-  - [onPath, curValue]
+  - [state, releaseObject_d]
+  - [releaseObject_d_Function, input]
   - {}
   connection10:
-  - [state, releaseObject]
-  - [releaseObject_Function, input]
+  - [secureObject_d_Function, output]
+  - [gripper, control]
   - {}
   connection11:
-  - [releaseObject_Function, output]
-  - [gripper, control]
+  - [state, secureObject_d]
+  - [secureObject_d_Function, input]
   - {}
   connection2:
-  - [rightForward_Function, output]
-  - [rightForward, control]
+  - [state, rightForward_d]
+  - [rightForward_d_Function, input]
   - {}
   connection3:
-  - [state, rightForward]
-  - [rightForward_Function, input]
+  - [rightForward_d_Function, output]
+  - [rightForward_d, control]
   - {}
   connection4:
-  - [state, atGoal]
-  - [atGoal, curState]
+  - [state, onPath_d]
+  - [onPath_d, curValue]
   - {}
   connection5:
-  - [state, leftForward]
-  - [leftForward_Function, input]
+  - [leftForward_d_Function, output]
+  - [leftForward_d, control]
   - {}
   connection6:
-  - [state, atObject]
-  - [atObject, touched]
+  - [state, indicateHaveObject_du]
+  - [indicateHaveObject_du, newState]
   - {}
   connection7:
-  - [state, indicateHaveObject]
-  - [indicateHaveObject, newState]
+  - [state, atObject_d]
+  - [atObject_d, touched]
   - {}
   connection8:
-  - [state, secureObject]
-  - [secureObject_Function, input]
+  - [state, leftForward_d]
+  - [leftForward_d_Function, input]
   - {}
   connection9:
-  - [secureObject_Function, output]
-  - [gripper, control]
+  - [state, atGoal_du]
+  - [atGoal_du, curState]
   - {}
 interfaces: {}
 parameters: {}
 subcomponents:
-  atGoal:
+  atGoal_du:
     classname: UIToggle
     kwargs: {}
     parameters: {default: 0, label: At Goal}
-  atObject:
+  atObject_d:
     classname: TouchSensor
     kwargs: {}
     parameters: {sensorControllerPin: 4}
@@ -62,35 +62,35 @@ subcomponents:
     classname: EServo
     kwargs: {}
     parameters: {controllerPin: 6, motionType: angle}
-  indicateHaveObject:
+  indicateHaveObject_du:
     classname: UIToggle
     kwargs: {}
     parameters: {default: 0, label: Have Object}
-  leftForward:
+  leftForward_d:
     classname: EServo
     kwargs: {}
     parameters: {controllerPin: 3, motionType: continuous}
-  leftForward_Function:
+  leftForward_d_Function:
     classname: DataFunction
     kwargs: {}
     parameters: {function: input*-10}
-  onPath:
+  onPath_d:
     classname: LineDetector
     kwargs: {}
     parameters: {ledControllerPin: 8, sensorControllerPin: A0}
-  releaseObject_Function:
+  releaseObject_d_Function:
     classname: DataFunction
     kwargs: {}
     parameters: {function: input*1}
-  rightForward:
+  rightForward_d:
     classname: EServo
     kwargs: {}
     parameters: {controllerPin: 9, motionType: continuous}
-  rightForward_Function:
+  rightForward_d_Function:
     classname: DataFunction
     kwargs: {}
     parameters: {function: input*10}
-  secureObject_Function:
+  secureObject_d_Function:
     classname: DataFunction
     kwargs: {}
     parameters: {function: input*-1}

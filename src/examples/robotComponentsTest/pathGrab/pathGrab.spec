@@ -5,12 +5,12 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-leftForward, 1
-rightForward, 1
-indicateHaveObject, 1
-indicateComplete, 1
-secureObject, 1
-releaseObject, 1
+secureObject_d, 1
+releaseObject_d, 1
+indicateHaveObject_du, 1
+indicateComplete_md, 1
+leftForward_d, 1
+rightForward_d, 1
 
 CompileOptions:
 convexify: True
@@ -28,9 +28,9 @@ Customs: # List of custom propositions
 followPath
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-onPath, 1
-atObject, 1
-atGoal, 1
+atGoal_du, 1
+atObject_d, 1
+onPath_d, 1
 
 
 ======== SPECIFICATION ========
@@ -43,22 +43,22 @@ Spec: # Specification in structured English
 robot starts with false
 
 # Follow the path to get to the object and to move with the object
-followPath is set on (not atObject and (not secureObject or releaseObject)) or (secureObject and not atGoal) and reset on (atObject and releaseObject) or (atGoal and releaseObject)
+followPath is set on (not atObject_d and (not secureObject_d or releaseObject_d)) or (secureObject_d and not atGoal_du) and reset on (atObject_d and releaseObject_d) or (atGoal_du and releaseObject_d)
 
 # Follow the path
-do leftForward if and only if (not onPath) and followPath
-do rightForward if and only if onPath and followPath
+do leftForward_d if and only if (not onPath_d) and followPath
+do rightForward_d if and only if onPath_d and followPath
 
 # Grasp object when reached and release it when at goal
-do secureObject if and only if (atObject or secureObject) and not atGoal
-do releaseObject if and only if atGoal
+do secureObject_d if and only if (atObject_d or secureObject_d) and not atGoal_du
+do releaseObject_d if and only if atGoal_du
 
 # Indicate when object is grasped
-do indicateHaveObject if and only if secureObject
+do indicateHaveObject_du if and only if secureObject_d
 
 # Indicate when task is complete
-do indicateComplete if and only if (atGoal and releaseObject)
+do indicateComplete_md if and only if (atGoal_du and releaseObject_d)
 
-if you are activating secureObject then do not (releaseObject)
-if you are activating releaseObject then do not (secureObject)
+if you are activating secureObject_d then do not (releaseObject_d)
+if you are activating releaseObject_d then do not (secureObject_d)
 
