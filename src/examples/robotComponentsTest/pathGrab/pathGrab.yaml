@@ -1,51 +1,51 @@
 connections:
   connection0:
-  - [state, indicateHaveObject]
-  - [indicateHaveObject, newState]
-  - {}
-  connection1:
-  - [state, gripperClosed]
-  - [gripperClosed_Function, input]
-  - {}
-  connection10:
-  - [state, atObject]
-  - [atObject, touched]
-  - {}
-  connection11:
-  - [state, leftForward]
-  - [leftForward_Function, input]
-  - {}
-  connection2:
-  - [state, gripperOpened]
-  - [gripperOpened_Function, input]
-  - {}
-  connection3:
-  - [gripperOpened_Function, output]
-  - [gripper, control]
-  - {}
-  connection4:
-  - [gripperClosed_Function, output]
-  - [gripper, control]
-  - {}
-  connection5:
   - [leftForward_Function, output]
   - [leftForward, control]
   - {}
-  connection6:
-  - [state, atGoal]
-  - [atGoal, curState]
+  connection1:
+  - [state, onPath]
+  - [onPath, curValue]
   - {}
-  connection7:
-  - [state, rightForward]
-  - [rightForward_Function, input]
+  connection10:
+  - [state, releaseObject]
+  - [releaseObject_Function, input]
   - {}
-  connection8:
+  connection11:
+  - [releaseObject_Function, output]
+  - [gripper, control]
+  - {}
+  connection2:
   - [rightForward_Function, output]
   - [rightForward, control]
   - {}
+  connection3:
+  - [state, rightForward]
+  - [rightForward_Function, input]
+  - {}
+  connection4:
+  - [state, atGoal]
+  - [atGoal, curState]
+  - {}
+  connection5:
+  - [state, leftForward]
+  - [leftForward_Function, input]
+  - {}
+  connection6:
+  - [state, atObject]
+  - [atObject, touched]
+  - {}
+  connection7:
+  - [state, indicateHaveObject]
+  - [indicateHaveObject, newState]
+  - {}
+  connection8:
+  - [state, secureObject]
+  - [secureObject_Function, input]
+  - {}
   connection9:
-  - [state, onPath]
-  - [onPath, curValue]
+  - [secureObject_Function, output]
+  - [gripper, control]
   - {}
 interfaces: {}
 parameters: {}
@@ -62,14 +62,6 @@ subcomponents:
     classname: EServo
     kwargs: {}
     parameters: {controllerPin: 6, motionType: angle}
-  gripperClosed_Function:
-    classname: DataFunction
-    kwargs: {}
-    parameters: {function: input*-2}
-  gripperOpened_Function:
-    classname: DataFunction
-    kwargs: {}
-    parameters: {function: input*1}
   indicateHaveObject:
     classname: UIToggle
     kwargs: {}
@@ -86,6 +78,10 @@ subcomponents:
     classname: LineDetector
     kwargs: {}
     parameters: {ledControllerPin: 8, sensorControllerPin: A0}
+  releaseObject_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*1}
   rightForward:
     classname: EServo
     kwargs: {}
@@ -94,7 +90,11 @@ subcomponents:
     classname: DataFunction
     kwargs: {}
     parameters: {function: input*10}
+  secureObject_Function:
+    classname: DataFunction
+    kwargs: {}
+    parameters: {function: input*-1}
   state:
     classname: StateMachine
     kwargs: {}
-    parameters: {stateMachineName: /home/catherine/LTLMoP/src/examples/robotComponentsTest/pathGrab/pathGrab}
+    parameters: {stateMachineName: 'c:\Users\Catherine\LTLMoP\src\examples\robotComponentsTest\pathGrab\pathGrab'}
