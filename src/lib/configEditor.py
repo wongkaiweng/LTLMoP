@@ -2138,7 +2138,8 @@ class propMappingDialog(wx.Dialog):
                 if propList[0] in self.proj.all_sensors:
                     sensor.append(True)
                 else:
-                    sensor.append(True)
+                    sensor.append(False)
+
             structEngStr = self.createStructuredEngMutualExclusion(conflictingProps, sensor)
             self.proj.specText += '\n' + structEngStr
             d = wx.MessageDialog(self, "The following mutual exclusions are appended to your specification:\n\n" + structEngStr, style = wx.OK | wx.ICON_ERROR)
