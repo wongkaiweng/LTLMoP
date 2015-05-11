@@ -125,8 +125,11 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         # nextLine = self.slugsProcess.stdout.readline().strip()
         #=======================================================================
         nextLine = self.getTrans(nextInput)
+        logging.debug("nextLine:" + str(nextLine))
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
+        else:
+            return []
         logging.debug("currentState:" + str(currentState))
         # create state with the current state prop assignments
         prop_assignments = {}

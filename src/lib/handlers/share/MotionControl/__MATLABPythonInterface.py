@@ -6,15 +6,20 @@ import time  # for pause
 
 two_robots = False
 experimentInLab = False
-threshold = 100  # 300
+if experimentInLab:
+    threshold = 100  # 300
+else:
+    threshold = 1000
+
+usingLTLMoP = False
 
 if two_robots:  # in pixels
     robRadius = OrderedDict([('rob2', 0.5), ('rob1', 0.5)])  # used to be 0.5
 else:  # in pixels
     robRadius = OrderedDict([('rob3', 20), ('rob2', 20), ('rob1', 20)])  # used to be 0.5
+    if experimentInLab:
+        robRadius = OrderedDict([('rob1', 0.5), ('rob2', 0.5), ('rob3', 1)])
 
-
-# robRadius = OrderedDict([('rob1',0.5), ('rob2',0.5),('rob3',1)])
 robots = robRadius
 
 def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
@@ -81,12 +86,12 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
         # pointArray = [y for y in region.getPoints()]
         # pointArray = map(coordmap_map2lab, pointArray)
         # vertices = np.mat(pointArray)
+        try:
         #------------------------------------------#
-        vertices = np.mat([y for y in region.getPoints()])
+            vertices = np.mat([y for y in region.getPoints()])  # for LTLMoP
         #------------------------------------------#
-        # logging.debug("regionIdx:" + str(regionIdx) + "vertices:" + str(vertices))
-        # time.sleep(10)
-        # vertices = np.mat(region).T  # TODO: remove in LTLMoP
+        except:
+            vertices = np.mat(region).T  # TODO: remove in LTLMoP
 
         # add tempRegion to MATLAB vertices array
         session.putvalue('region' + str(regionIdx), np.float_(vertices))
@@ -111,10 +116,11 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # return matlab session
     return session
 
-def getMATLABVelocity(session, poseDic, next_regIndicesDict):
+def getMATLABVelocity(session, poseDic, next_regIndicesDict, replan):
     """
     pose  = {'rob1':[-1 ,.5],'rob2':[1,1],'rob3':[3.5 , -1]}
     next_regIndices = {'rob1': 2,'rob2':3,'rob3':3}
+    replan = True or False
     """
     #-------------------------------------------------------------------
     #------PYTHON: robotPose, MATLAB: pose  SIZE: n x d-----------------
@@ -127,7 +133,7 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     session.putvalue('pose', robotPose)
 
     # logging.info('Set robotPose completed')
-    logging.debug("python:" + str(robotPose))
+    # logging.debug("python:" + str(robotPose))
     logging.debug("MATLAB:" + str(session.getvalue('pose')))
 
     #-------------------------------------------------------------------
@@ -140,12 +146,19 @@ def getMATLABVelocity(session, poseDic, next_regIndicesDict):
     session.putvalue('destination', robotNextRegion)
 
     # logging.info('Set robotNextRegion completed')
-    logging.debug("in python: " + str(robotNextRegion))
+    # logging.debug("in python: " + str(robotNextRegion))
     logging.debug("in MATLAB: " + str(session.getvalue('destination')))
+
+    #-------------------------------------------------------------------
+    # -----PYTHON: replan, MATLAB: replace SIZE: bool-------
+    #-------------------------------------------------------------------
+    session.putvalue('replan', np.array(replan))
+    # logging.debug("in python: " + str(replan))
+    logging.debug("in MATLAB: " + str(session.getvalue('replan')))
 
     # run initialization function
     # [vx vy changes currentloc]=getvelocity(pose,threshold,vertices, robots, destination);
-    getVelocityScript = '[vx, vy, changes, currentLoc] = feval(@getvelocity, pose, threshold, vertices, robots, destination)'
+    getVelocityScript = '[vx, vy, changes, currentLoc] = feval(@getvelocity, pose, threshold, vertices, robots, destination, replan)'
     session.putvalue('getVelocityScript', getVelocityScript)
     session.run('eval(getVelocityScript)')
 

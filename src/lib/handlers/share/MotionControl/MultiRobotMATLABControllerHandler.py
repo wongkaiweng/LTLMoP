@@ -60,6 +60,9 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
 
         self.old_vx = None
         self.old_vy = None
+        self.old_regionChanges = array([])
+        self.old_next_regIndices = array([])
+        self.old_currentLoc = array([])
 
     def gotoRegion(self, current_regIndices, next_regIndices, last=False):
         """
@@ -95,7 +98,6 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 print "WARNING: No Vicon data! Pausing."
                 for robot_name in self.robotList:
                     self.drive_handler[robot_name].setVelocity(0, 0)  # So let's stop
-                time.sleep(1)
                 # return False not leaving yet until all robots are checked
 
             # NOTE: Information about region geometry can be found in self.rfi.regions:
@@ -121,25 +123,69 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         ################################
 
         # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
-        logging.debug("current:" + str(current_regIndices.values()))
-        logging.debug("next:" + str(next_regIndices.values()))
+        # check region is correct
+        # for regionIdx, region in enumerate(self.rfi.regions):
+        #    self.session.putvalue('insertRegiontoCellScript', 'region' + str(regionIdx) + '= vertices {' + str(regionIdx + 1) + '}')
+        #    self.session.run('eval(insertRegiontoCellScript)')
+        #    logging.debug(self.session.getvalue('region' + str(regionIdx)))
+
+        logging.debug("current:" + str(current_regIndices.values()) + ", next:" + str(next_regIndices.values()))
+        logging.debug("self.old_regionChanges:" + str(self.old_regionChanges))
+        logging.debug("self.old_currentLoc:" + str(self.old_currentLoc) + 'current_regIndices:' + str(current_regIndices) + 'self.current_regIndices:' + str(self.current_regIndices))
+        logging.debug("self.old_next_regIndices:" + str(self.old_next_regIndices) + " next_regIndices:" + str(next_regIndices))
+        vx = []
+        vy = []
         if not current_regIndices.values() == next_regIndices.values():
-            if self.temp_next is None or next_regIndices != self.temp_next:
-                logging.info([int(x) + 1 for x in next_regIndices.values()])
-                self.temp_next = copy.deepcopy(next_regIndices)
             try:
-                vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices)
+                if self.old_regionChanges.any() or self.old_next_regIndices != next_regIndices or self.resetMATLAB:  # we will replan
+                    vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [1])
+                else:  # no replanning
+                    vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [0])
                 self.resetMATLAB = False
+
             except:
-                logging.debug("caught exception")
-                # time.sleep(10)
-                if self.old_vx is None or self.old_vy is None:
+                # try to get exception str from matlab
+                self.session.putvalue('MSCRIPT', 'msgString = lasterror')
+                self.session.run('eval(MSCRIPT)')
+                self.session.putvalue('MSCRIPTmsg', 'errMsg = msgString.message')
+                self.session.run('eval(MSCRIPTmsg)')
+                self.session.putvalue('MSCRIPTIdentifier', 'errIdentifier = msgString.identifier')
+                self.session.run('eval(MSCRIPTIdentifier)')
+                logging.error(self.session.getvalue('errMsg'))
+                logging.error(self.session.getvalue('errIdentifier'))
+
+                # get size of stack
+                self.session.putvalue('MSCRIPTstackSize', 'stackSize = size(msgString.stack)')
+                self.session.run('eval(MSCRIPTstackSize)')
+                stackSize = self.session.getvalue('stackSize')[0]
+                logging.error('stackSize:' + str(self.session.getvalue('stackSize')) + ' stackSize:' + str(stackSize))
+                for x in range(int(stackSize)):
+                    self.session.putvalue('MSCRIPTmsgStack', 'errStack' + str(x + 1) + '= msgString.stack(' + str(x + 1) + ',1)')
+                    self.session.run('eval(MSCRIPTmsgStack)')
+                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'File', 'errStack' + str(x + 1) + 'File = errStack' + str(x + 1) + '.file')
+                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'File)')
+                    # logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')))
+                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Name', 'errStack' + str(x + 1) + 'Name = errStack' + str(x + 1) + '.name')
+                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Name)')
+                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Line', 'errStack' + str(x + 1) + 'Line = errStack' + str(x + 1) + '.line')
+                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Line)')
+                    logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')) + \
+                                  'name:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Name')) + \
+                                  'line:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Line')))
+                time.sleep(5)
+
+                if self.old_vx.any() and self.old_vy.any():  # self.old_vx is None or self.old_vy is None:
                     for idx, robot_name in enumerate(self.robotList):
                         vx.append(0)
                         vy.append(0)
+                    logging.debug('did we come here?')
                 else:
                     vx = self.old_vx
                     vy = self.old_vy
+                    logging.debug('did we come here?')
+                    logging.debug("self.old_vx:" + str(self.old_vx))
+                    logging.debug("self.old_vy:" + str(self.old_vy))
+
                 regionChanges = array([])
                 currentLoc = array([])
 
@@ -152,8 +198,6 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
 
         else:
             logging.debug('Staying in place. Velocities are now set to zero.')
-            vx = []
-            vy = []
             regionChanges = array([])
             for idx, robot_name in enumerate(self.robotList):
                 vx.append(0)
@@ -162,9 +206,15 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
             self.resetMATLAB = False
 
 
-        self.old_vx = vx
-        self.old_vy = vy
+        self.old_vx = array(vx)
+        self.old_vy = array(vy)
+        self.old_regionChanges = array(regionChanges)
+        self.old_next_regIndices = copy.deepcopy(next_regIndices)
+        self.old_currentLoc = array(currentLoc)
+        logging.debug('vx:' + str(vx) + ' vy:' + str(vy))
         logging.debug("regionChanges:" + str(regionChanges) + " currentLoc:" + str(currentLoc))
+        if regionChanges.any():
+            logging.info("current region:" + str(currentLoc))
         # check if we want a different region changes for now.
         for idx, robot_name in enumerate(self.robotList):
             if regionChanges.any():
@@ -180,8 +230,13 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                 if self.resetMATLAB:
                     self.current_regIndices[robot_name] = None
                 else:
-                    self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
+                    if currentLoc.size:
+                        self.current_regIndices[robot_name] = currentLoc[idx]
+                    else:
+                        self.current_regIndices[robot_name] = current_regIndices[robot_name]  # storing idx of decomposed regions
+
                 logging.debug(robot_name + '-vx:' + str(vx[idx]) + ' vy:' + str(vy[idx]))
+
                 # conduct mapping because from lab to map
                 multiplier = 1.5
                 if self.experimentInLab:
@@ -211,5 +266,6 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
                         break
                 self.last_warning = time.time()
 
-        # logging.debug("arrived:" + str(arrived))
+        logging.debug("arrived:" + str(arrived))
+        logging.debug('#######################################################')
         return (True in arrived.values())  # arrived[self.executor.hsub.getMainRobot().name]

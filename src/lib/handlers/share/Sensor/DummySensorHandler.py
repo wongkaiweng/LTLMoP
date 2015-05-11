@@ -217,7 +217,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             else:
                 # overwrite current location by Nora's controller
                 if regionNo == self.executor.hsub.getHandlerInstanceByType(handlerTemplates.MotionControlHandler, 'rob1').current_regIndices[robotName]:
-                    # self.executor.postEvent("INFO",'Overwriting region info.' + str(regionName) + str(robotName) + str(regionNo))
+                    # logging.debug('Overwriting region info.' + str(regionName) + "-" + str(robotName) + "-" + str(regionNo))
+                    # self.executor.postEvent("INFO", 'Overwriting region info.' + str(regionName) + str(robotName) + str(regionNo))
                     return True
 
         # not inside the current region

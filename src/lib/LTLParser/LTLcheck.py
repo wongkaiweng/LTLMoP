@@ -15,7 +15,7 @@ import logging
 """
 
 # Debugging stdouts (set to True to print)
-debug_proposition_values = False # print system and env proposition values
+debug_proposition_values = False  # print system and env proposition values
 debug_implication = False        # print operations relating ->
 debug_disjunction = False        # print operations relating to & and |
 debug_negate      = False        # print operations relating to !
@@ -40,10 +40,10 @@ class LTL_Check:
         f.closed
 
         # trim EnvTrans so that it only includes ltl but not tabs and nextlines
-        read_ltl  = self.read_spec.replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
-
+        # read_ltl  = self.read_spec.replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
+        read_ltl = self.read_spec
         self.ltl_tree = LTLFormula.parseLTL(read_ltl)
-        logging.info(self.ltl_tree)
+        # logging.info(self.ltl_tree)
         if debug_tree_terminal == True: 
             pass
             #logging.info("Here's the ltl of the environment assumptions from spec:")
@@ -244,7 +244,7 @@ class LTL_Check:
                     return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
             
             elif tree[0] == 'Assignment':
-                key = tree[1][0].replace("bit","region_b")
+                key = tree[1][0].replace("bit", "region_b").replace('e.', '').replace('s.', '')
                 if debug_proposition_values == True:
                     logging.info( " next: " + str(next))
                     logging.info( "evaluating propositions: " + str(key) )

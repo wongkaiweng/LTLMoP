@@ -103,7 +103,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.current_outputs = {}     # keep track on current outputs values (for actuations)
 
         ######## RUNTIME MONIOTRING #################
-        self.runtimeMonitoring = False
+        self.runtimeMonitoring = True
         self.usingSlugs = True
         #############################################
 
@@ -412,10 +412,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if self.runtimeMonitoring:
                 # Take a snapshot of our current sensor readings
                 sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-                logging.info(sensor_state)
+                # logging.info(sensor_state)
 
                 # Check for environment violation - change the env_assumption_hold to int again
-
                 env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, sensor_state)
                 #self.checkForInternalFlags()
 

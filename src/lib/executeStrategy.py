@@ -4,6 +4,7 @@ import logging,random
 import project
 from collections import OrderedDict
 import copy
+import time
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -144,6 +145,8 @@ class ExecutorStrategyExtensions(object):
             if len(sensor_region_names) == 1:
                 sensor_region_name = sensor_region_names[0].replace('_rc','').replace(robot.name+"_",'')
                 decomposed_region_names[robot.name] = self.proj.regionMapping[sensor_region_name]
+                self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[robot.name][0])]
+
             else:
                 # maybe we should change the inputs as well? or just wait for next iteration
                 logging.info('not inside any region!')
@@ -151,19 +154,25 @@ class ExecutorStrategyExtensions(object):
                 decomposed_region_names  = self.prev_decomposed_region_names
                 break
 
+        """
         # the current region comes from strategy.current_state
         currentInputs = self.strategy.current_state.getInputs()
         decomposed_current_region_names = {}
         for robot in self.hsub.executing_config.robots:
             heading_region = dict((k,v) for k, v in  currentInputs.iteritems() if k.startswith(robot.name+"_") and k.replace(robot.name+"_",'').replace('_rc','') in self.proj.regionMapping)
             heading_region_names = [k for k, v in  heading_region.iteritems() if v]
+            logging.debug("heading_region_names:" + str(heading_region_names))
             if heading_region_names:
                 heading_region_name = heading_region_names[0].replace(robot.name+"_",'').replace('_rc','')
                 decomposed_current_region_names[robot.name] = self.proj.regionMapping[heading_region_name]
+                logging.debug("decomposed_current_region_names:" + str(decomposed_current_region_names))
                 self.current_region[robot.name] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_current_region_names[robot.name][0])]
 
+        """
         self.prev_decomposed_region_names = decomposed_region_names
         self.prev_sensor_state            =sensor_state
+        logging.debug("self.current_region:" + str(self.current_region))
+
         ##############################################################################
 
         # Let's try to transition
@@ -242,17 +251,21 @@ class ExecutorStrategyExtensions(object):
         if not self.arrived or (self.next_state == self.strategy.current_state): # not sure what will happen
             # Move one step towards the next region (or stay in the same region)
             self.arrived = self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
-        else:
+        # else:
             #TODO: temp fix for BDD
-            self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
+        #    self.hsub.gotoRegionMultiRobot(self.current_region, self.next_region)
 
         # Check for completion of motion
         if self.arrived and self.next_state != self.strategy.current_state:
             if self.transition_contains_motion:
                 for robot in self.hsub.executing_config.robots:
                     if self.current_region[robot.name] != self.next_region[robot.name]:
-                        self.postEvent("INFO", "Crossed border from %s to %s!" % (self.proj.rfi.regions[self.current_region[robot.name]].name, self.proj.rfi.regions[self.next_region[robot.name]].name))
-                        self.postEvent("INFO", "Heading to region %s..." % self.next_region_heading[robot.name].name)
+                        if not isinstance(self.current_region[robot.name], int):
+                            self.current_region[robot.name] = self.proj.rfi.regions.index(self.current_region[robot.name])
+                        if not isinstance(self.next_region[robot.name], int):
+                            self.next_region[robot.name] = self.proj.rfi.regions.index(self.next_region[robot.name])
+                        self.postEvent("INFO", "Crossed border from %s to %s!(%s)" % (self.proj.rfi.regions[self.current_region[robot.name]].name, self.proj.rfi.regions[self.next_region[robot.name]].name, robot.name))
+                        self.postEvent("INFO", "Heading to region %s...(%s)" % (self.next_region_heading[robot.name].name, robot.name))
             logging.info('*****************CHANGING STATES****************************')
             # stop robots
             self.robotList = [robot.name for robot in self.hsub.executing_config.robots]
