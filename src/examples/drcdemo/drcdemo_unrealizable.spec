@@ -31,9 +31,6 @@ naoActions
 Customs: # List of custom propositions
 gotTicket
 
-RegionFile: # Relative path of region description file
-drcdemo.regions
-
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 person, 1
 touchhead, 1

@@ -665,20 +665,24 @@ class SpecCompiler(object):
         #from synthesis engine.
 
         proj_copy = deepcopy(self.proj)
-        proj_copy.rfi = self.parser.proj.rfi
         proj_copy.sensor_handler = None
         proj_copy.actuator_handler = None
         proj_copy.h_instance = None
 
-        if self.proj.compile_options["decompose"]:
-            regions = self.parser.proj.rfi.regions
-        else:
-            regions = self.proj.rfi.regions
+        if self.proj.rfi:
+            proj_copy.rfi = self.parser.proj.rfi
 
-        region_domain = strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB)
-        strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
-                                                self.proj.enabled_actuators + self.proj.all_customs + [region_domain],
-                                                self.proj.enabled_sensors)
+            if self.proj.compile_options["decompose"]:
+                regions = self.parser.proj.rfi.regions
+            else:
+                regions = self.proj.rfi.regions
+
+            region_domain = strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB)
+            strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
+                                                            self.proj.enabled_actuators + self.proj.all_customs + [region_domain], self.proj.enabled_sensors)
+        else:
+            strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
+                                                            self.proj.enabled_actuators + self.proj.all_customs, self.proj.enabled_sensors)
 
         #find deadlocked states in the automaton (states with no out-transitions)
         deadStates = [s for s in strat.states if not strat.findTransitionableStates({}, from_state = s)]
@@ -734,7 +738,8 @@ class SpecCompiler(object):
         #size of counterstrategy and number of regions
         #useful for determininig a good unroll depth
         numStates = len(strat.states)
-        numRegions = len(self.parser.proj.rfi.regions)
+        if self.proj.rfi:
+            numRegions = len(self.parser.proj.rfi.regions)
 
         if forceDeadlockLTL:
             deadlockFlag = True
@@ -750,9 +755,12 @@ class SpecCompiler(object):
         #                               #
         #################################
 
-        #topology
-        topo =self.spec['Topo'].replace('\n','')
-        topo = topo.replace('\t','')
+        if self.proj.rfi:
+            #topology
+            topo =self.spec['Topo'].replace('\n','')
+            topo = topo.replace('\t','')
+        else:
+            topo = ''
 
         #have to use all initial conditions if no single bad initial state given
         useInitFlag = badInit is None
@@ -887,7 +895,8 @@ class SpecCompiler(object):
                 newCs = [goals[h_item[2]]]
 
             elif h_item[1] == "trans" or h_item[1] == "init" and useInitFlag:
-                newCs =  self.spec[tb_key].replace("\t", "\n").split("\n")
+                if not h_item[1] == "trans" or self.proj.rfi:
+                    newCs =  self.spec[tb_key].replace("\t", "\n").split("\n")
 
             conjuncts.extend(newCs)
 
