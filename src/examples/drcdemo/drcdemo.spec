@@ -26,13 +26,10 @@ fastslow: False
 decompose: True
 
 CurrentConfigName:
-naoActions
+simulationOnly
 
 Customs: # List of custom propositions
 gotTicket
-
-RegionFile: # Relative path of region description file
-drcdemo.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 person, 1
@@ -44,11 +41,6 @@ ExpiredTicket, 1
 
 
 ======== SPECIFICATION ========
-
-RegionMapping: # Mapping between region names and their decomposed counterparts
-r1 = p2
-r2 = p1
-others = 
 
 Spec: # Specification in structured English
 # get ticket
