@@ -11,10 +11,10 @@ standup, 0
 sitdown, 0
 headNod, 1
 greet, 1
-blinkEyes, 1
 sayTicket, 1
 inspect, 1
 sayNo, 1
+headShake, 1
 
 CompileOptions:
 convexify: True
@@ -26,7 +26,7 @@ fastslow: False
 decompose: True
 
 CurrentConfigName:
-simulationOnly
+naoActions
 
 Customs: # List of custom propositions
 gotTicket
@@ -35,8 +35,6 @@ Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 
 person, 1
 touchhead, 0
 VIPticket, 1
-NormalTicket, 0
-StudentTicket, 0
 ExpiredTicket, 1
 
 
@@ -48,11 +46,11 @@ do sayTicket and pickup if and only if you are sensing person and you are not ac
 
 # check ticket
 do inspect if and only if you are activating gotTicket
-if you are activating inspect and you are sensing VIPticket then do headNod and greet
-if you are activating inspect and you are sensing ExpiredTicket then do blinkEyes and sayNo
+do headNod and greet if and only if you are activating gotTicket and you are sensing VIPticket
+do headShake and sayNo if and only if you are activating gotTicket and you are sensing ExpiredTicket
 
 # return ticket
-do drop if and only if you were activating inspect and you are activating gotTicket
+do drop if and only if you were activating (headNod or headShake) and you are activating gotTicket
 gotTicket is set on pickup and reset on drop
 
 # assumptions

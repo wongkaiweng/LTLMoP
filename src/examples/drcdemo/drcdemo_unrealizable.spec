@@ -10,11 +10,11 @@ drop, 1
 standup, 1
 sitdown, 1
 headNod, 0
-greet, 0
-blinkEyes, 0
+greet, 1
 sayTicket, 0
 inspect, 0
 sayNo, 0
+headShake, 0
 
 CompileOptions:
 convexify: True
@@ -35,8 +35,6 @@ Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 
 person, 1
 touchhead, 1
 VIPticket, 1
-NormalTicket, 0
-StudentTicket, 0
 ExpiredTicket, 0
 
 
@@ -51,7 +49,7 @@ Spec: # Specification in structured English
 If you are sensing person then do standup
 if you are sensing touchhead then do sitdown
 
-If you are sensing VIPticket then do pickup
+If you are sensing VIPticket then do greet and pickup
 If you are not sensing VIPticket then do drop
 
 # action constraints
