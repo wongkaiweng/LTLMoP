@@ -7,34 +7,34 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 pickup, 1
 drop, 1
-standup, 1
-sitdown, 1
+standup, 0
+sitdown, 0
 headNod, 0
-greet, 1
+greet, 0
 sayTicket, 0
 inspect, 0
 sayNo, 0
 headShake, 0
-tweet, 0
-sayTweet, 0
+tweet, 1
+sayTweet, 1
 
 CompileOptions:
 convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: jtlv
+synthesizer: slugs
 fastslow: False
 decompose: True
+
+Customs: # List of custom propositions
+detectVIP
 
 CurrentConfigName:
 naoActions
 
-Customs: # List of custom propositions
-gotTicket
-
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-person, 1
+person, 0
 touchhead, 1
 VIPticket, 1
 ExpiredTicket, 0
@@ -42,19 +42,11 @@ ExpiredTicket, 0
 
 ======== SPECIFICATION ========
 
-RegionMapping: # Mapping between region names and their decomposed counterparts
-r1 = p2
-r2 = p1
-others = 
-
 Spec: # Specification in structured English
-If you are sensing person then do standup
-if you are sensing touchhead then do sitdown
+# detectVIP 
+detectVIP is set on VIPticket and reset on tweet
+if you are sensing VIPticket then do sayTweet
+do tweet if and only if you are activating detectVIP and you are sensing touchhead
 
-If you are sensing VIPticket then do greet and pickup
-If you are not sensing VIPticket then do drop
 
-# action constraints
-always not (standup and sitdown)
-always not (pickup and drop)
 

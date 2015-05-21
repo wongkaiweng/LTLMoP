@@ -15,6 +15,8 @@ sayTicket, 1
 inspect, 1
 sayNo, 1
 headShake, 1
+tweet, 0
+sayTweet, 0
 
 CompileOptions:
 convexify: True
