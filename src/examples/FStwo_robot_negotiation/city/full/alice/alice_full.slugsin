@@ -1,0 +1,50 @@
+[INPUT]
+bob_postOffice
+bob_park
+bob_policeStation2
+bob_bridge
+bob_square
+bob_groceryStore
+bob_tunnel
+bob_policeStation1
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+& & & & & & & & & & & & & & | ! & & ! bit0 bit1 ! bit2 ! bob_park' | ! & & bit0 ! bit1 bit2 ! | | bob_tunnel' bob_bridge' bob_policeStation1' | ! & & ! bit0 ! bit1 bit2 ! | bob_park' bob_square' | ! & & bit0 bit1 bit2 ! | bob_park' bob_square' | ! & & ! bit0 ! bit1 ! bit2 ! | | bob_tunnel' bob_bridge' bob_policeStation2' | ! & & bit0 ! bit1 ! bit2 ! bob_square' | ! bob_postOffice | bob_postOffice' bob_park' | ! bob_park | | | | bob_park' bob_postOffice' bob_bridge' bob_tunnel' bob_policeStation1' | ! bob_policeStation2 | bob_policeStation2' bob_square' | ! bob_bridge | | bob_bridge' bob_park' bob_square' | ! bob_square | | | | bob_square' bob_policeStation2' bob_bridge' bob_groceryStore' bob_tunnel' | ! bob_groceryStore | bob_groceryStore' bob_square' | ! bob_tunnel | | bob_tunnel' bob_park' bob_square' | ! bob_policeStation1 | bob_policeStation1' bob_park' | | | | | | | & & & & & & & bob_postOffice' ! bob_park' ! bob_policeStation2' ! bob_bridge' ! bob_square' ! bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' bob_park' ! bob_policeStation2' ! bob_bridge' ! bob_square' ! bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' bob_policeStation2' ! bob_bridge' ! bob_square' ! bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' ! bob_policeStation2' bob_bridge' ! bob_square' ! bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' ! bob_policeStation2' ! bob_bridge' bob_square' ! bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' ! bob_policeStation2' ! bob_bridge' ! bob_square' bob_groceryStore' ! bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' ! bob_policeStation2' ! bob_bridge' ! bob_square' ! bob_groceryStore' bob_tunnel' ! bob_policeStation1' & & & & & & & ! bob_postOffice' ! bob_park' ! bob_policeStation2' ! bob_bridge' ! bob_square' ! bob_groceryStore' ! bob_tunnel' bob_policeStation1'
+
+[ENV_LIVENESS]
+1
+
+[ENV_INIT]
+
+[SYS_TRANS]
+| ! bob_postOffice' ! & & ! bit0' bit1' bit2'
+| ! bob_park' ! & & bit0' ! bit1' bit2'
+| ! bob_policeStation2' ! & & bit0' ! bit1' ! bit2'
+| ! bob_bridge' ! & & bit0' bit1' bit2'
+| ! bob_square' ! & & ! bit0' ! bit1' ! bit2'
+| ! bob_groceryStore' ! & & bit0' bit1' ! bit2'
+| ! bob_tunnel' ! & & ! bit0' ! bit1' bit2'
+| ! bob_policeStation1' ! & & ! bit0' bit1' ! bit2'
+| ! & & ! bit0 ! bit1 ! bit2 | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & ! bit0 ! bit1 bit2 | | & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2'
+| ! & & ! bit0 bit1 ! bit2 | & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' bit2'
+| ! & & ! bit0 bit1 bit2 | & & ! bit0' bit1' bit2' & & bit0' ! bit1' bit2'
+| ! & & bit0 ! bit1 ! bit2 | & & bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' ! bit2'
+| ! & & bit0 ! bit1 bit2 | | | | & & bit0' ! bit1' bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' bit1' bit2'
+| ! & & bit0 bit1 ! bit2 | & & bit0' bit1' ! bit2' & & ! bit0' ! bit1' ! bit2'
+| ! & & bit0 bit1 bit2 | | & & bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2'
+| | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
+
+[SYS_LIVENESS]
+& & ! bit0' bit1' ! bit2'
+& & bit0' ! bit1' ! bit2'
+
+[SYS_INIT]
+| & & & bob_postOffice bit0 ! bit1 ! bit2 & & & & & & & & & & ! bob_policeStation1 ! bob_policeStation2 ! bob_tunnel ! bob_groceryStore ! bob_postOffice ! bob_square bob_park ! bob_bridge ! bit0 ! bit1 bit2
+| | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
+

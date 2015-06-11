@@ -1,0 +1,113 @@
+[INPUT]
+alice_policeStation2
+alice_groceryStore
+alice_square
+alice_bridge
+alice_tunnel
+alice_postOffice
+alice_park
+alice_policeStation1
+sbit0
+sbit1
+sbit2
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+| ! | & & sbit0 sbit1 ! sbit2 & & bit0 bit1 ! bit2 ! alice_square'
+| ! | & & ! sbit0 ! sbit1 ! sbit2 & & ! bit0 ! bit1 ! bit2 ! alice_tunnel'
+| ! | & & ! sbit0 ! sbit1 sbit2 & & ! bit0 ! bit1 bit2 ! alice_park'
+| ! | & & ! sbit0 sbit1 sbit2 & & ! bit0 bit1 bit2 ! alice_postOffice'
+| ! alice_square | | | | alice_square' alice_policeStation2' alice_bridge' alice_groceryStore' alice_tunnel'
+| ! alice_park | | | | alice_park' alice_postOffice' alice_bridge' alice_tunnel' alice_policeStation1'
+| ! alice_postOffice | alice_postOffice' alice_park'
+| ! alice_policeStation2 | alice_policeStation2' alice_square'
+| ! alice_bridge | | alice_bridge' alice_square' alice_park'
+| ! alice_groceryStore | alice_groceryStore' alice_square'
+| ! alice_tunnel | | alice_tunnel' alice_square' alice_park'
+| ! alice_policeStation1 | alice_policeStation1' alice_park'
+| | | | | | | & & & & & & & alice_square' ! alice_park' ! alice_postOffice' ! alice_policeStation2' ! alice_bridge' ! alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' alice_park' ! alice_postOffice' ! alice_policeStation2' ! alice_bridge' ! alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' alice_postOffice' ! alice_policeStation2' ! alice_bridge' ! alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' ! alice_postOffice' alice_policeStation2' ! alice_bridge' ! alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' ! alice_postOffice' ! alice_policeStation2' alice_bridge' ! alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' ! alice_postOffice' ! alice_policeStation2' ! alice_bridge' alice_groceryStore' ! alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' ! alice_postOffice' ! alice_policeStation2' ! alice_bridge' ! alice_groceryStore' alice_tunnel' ! alice_policeStation1' & & & & & & & ! alice_square' ! alice_park' ! alice_postOffice' ! alice_policeStation2' ! alice_bridge' ! alice_groceryStore' ! alice_tunnel' alice_policeStation1'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 ! bit0 ! bit1 ! bit2 & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 ! bit1 bit2 & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 ! sbit2 ! bit0 bit1 ! bit2 & & ! sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 bit1 bit2 & & ! sbit0' sbit1' sbit2'
+| ! & & & & & sbit0 ! sbit1 ! sbit2 bit0 ! bit1 ! bit2 & & sbit0' ! sbit1' ! sbit2'
+| ! & & & & & sbit0 ! sbit1 sbit2 bit0 ! bit1 bit2 & & sbit0' ! sbit1' sbit2'
+| ! & & & & & sbit0 sbit1 ! sbit2 bit0 bit1 ! bit2 & & sbit0' sbit1' ! sbit2'
+| ! & & & & & sbit0 sbit1 sbit2 bit0 bit1 bit2 & & sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 ! bit0 ! bit1 bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 bit0 ! bit1 bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 bit0 bit1 ! bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 bit0 bit1 bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 ! bit1 ! bit2 | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 bit1 bit2 | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 ! sbit2 ! bit0 bit1 bit2 | & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 ! bit1 bit2 | & & ! sbit0' sbit1' sbit2' & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 bit1 ! bit2 | & & ! sbit0' sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 bit0 ! bit1 ! bit2 | & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 bit0 bit1 bit2 | & & ! sbit0' sbit1' sbit2' & & sbit0' sbit1' sbit2'
+| ! & & & & & sbit0 ! sbit1 ! sbit2 ! bit0 bit1 bit2 | & & sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2'
+| ! & & & & & sbit0 ! sbit1 sbit2 ! bit0 ! bit1 ! bit2 | & & sbit0' ! sbit1' sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & sbit0 sbit1 ! sbit2 ! bit0 ! bit1 ! bit2 | & & sbit0' sbit1' ! sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & sbit0 sbit1 sbit2 ! bit0 ! bit1 ! bit2 | & & sbit0' sbit1' sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & sbit0 sbit1 sbit2 ! bit0 bit1 bit2 | & & sbit0' sbit1' sbit2' & & ! sbit0' sbit1' sbit2'
+| & ! & & ! sbit0' ! sbit1' ! sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & ! sbit0' ! sbit1' ! sbit2' ! | | | | | | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & ! sbit0' ! sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & ! sbit0' ! sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & ! sbit0' sbit1' ! sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & ! sbit0' sbit1' ! sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & ! sbit0' sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & ! sbit0' sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & sbit0' ! sbit1' ! sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & sbit0' ! sbit1' ! sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & sbit0' ! sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & sbit0' ! sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & sbit0' sbit1' ! sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' sbit2' & & & sbit0' sbit1' ! sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' sbit2'
+| & ! & & sbit0' sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & & sbit0' sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2'
+| | | | | | | & & ! sbit0 ! sbit1 ! sbit2 & & ! sbit0 ! sbit1 sbit2 & & ! sbit0 sbit1 ! sbit2 & & ! sbit0 sbit1 sbit2 & & sbit0 ! sbit1 ! sbit2 & & sbit0 ! sbit1 sbit2 & & sbit0 sbit1 ! sbit2 & & sbit0 sbit1 sbit2
+
+[ENV_LIVENESS]
+| | | | | | | | | | | | | | | & & & & & ! bit0 ! bit1 ! bit2 ! sbit0' ! sbit1' ! sbit2' & & & ! bit0 ! bit1 ! bit2 ! & & ! bit0' ! bit1' ! bit2' & & & & & ! bit0 ! bit1 bit2 ! sbit0' ! sbit1' sbit2' & & & ! bit0 ! bit1 bit2 ! & & ! bit0' ! bit1' bit2' & & & & & ! bit0 bit1 ! bit2 ! sbit0' sbit1' ! sbit2' & & & ! bit0 bit1 ! bit2 ! & & ! bit0' bit1' ! bit2' & & & & & ! bit0 bit1 bit2 ! sbit0' sbit1' sbit2' & & & ! bit0 bit1 bit2 ! & & ! bit0' bit1' bit2' & & & & & bit0 ! bit1 ! bit2 sbit0' ! sbit1' ! sbit2' & & & bit0 ! bit1 ! bit2 ! & & bit0' ! bit1' ! bit2' & & & & & bit0 ! bit1 bit2 sbit0' ! sbit1' sbit2' & & & bit0 ! bit1 bit2 ! & & bit0' ! bit1' bit2' & & & & & bit0 bit1 ! bit2 sbit0' sbit1' ! sbit2' & & & bit0 bit1 ! bit2 ! & & bit0' bit1' ! bit2' & & & & & bit0 bit1 bit2 sbit0' sbit1' sbit2' & & & bit0 bit1 bit2 ! & & bit0' bit1' bit2'
+
+[ENV_INIT]
+sbit0
+sbit1
+! sbit2
+alice_bridge
+| | | | | | | & & & & & & & alice_square ! alice_park ! alice_postOffice ! alice_policeStation2 ! alice_bridge ! alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square alice_park ! alice_postOffice ! alice_policeStation2 ! alice_bridge ! alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park alice_postOffice ! alice_policeStation2 ! alice_bridge ! alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park ! alice_postOffice alice_policeStation2 ! alice_bridge ! alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park ! alice_postOffice ! alice_policeStation2 alice_bridge ! alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park ! alice_postOffice ! alice_policeStation2 ! alice_bridge alice_groceryStore ! alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park ! alice_postOffice ! alice_policeStation2 ! alice_bridge ! alice_groceryStore alice_tunnel ! alice_policeStation1 & & & & & & & ! alice_square ! alice_park ! alice_postOffice ! alice_policeStation2 ! alice_bridge ! alice_groceryStore ! alice_tunnel alice_policeStation1
+| | | | | | | & & ! sbit0 ! sbit1 ! sbit2 & & ! sbit0 ! sbit1 sbit2 & & ! sbit0 sbit1 ! sbit2 & & ! sbit0 sbit1 sbit2 & & sbit0 ! sbit1 ! sbit2 & & sbit0 ! sbit1 sbit2 & & sbit0 sbit1 ! sbit2 & & sbit0 sbit1 sbit2
+
+[SYS_TRANS]
+| ! alice_bridge' ! & & sbit0' sbit1' sbit2'
+| ! alice_square' ! & & ! sbit0' ! sbit1' ! sbit2'
+| ! alice_policeStation1' ! & & ! sbit0' sbit1' ! sbit2'
+| ! alice_policeStation2' ! & & sbit0' ! sbit1' sbit2'
+| ! alice_tunnel' ! & & ! sbit0' ! sbit1' sbit2'
+| ! alice_park' ! & & ! sbit0' sbit1' sbit2'
+| ! alice_postOffice' ! & & sbit0' ! sbit1' ! sbit2'
+| ! alice_groceryStore' ! & & sbit0' sbit1' ! sbit2'
+| ! & & ! sbit0' ! sbit1' ! sbit2' | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & ! sbit0' ! sbit1' sbit2' | | & & ! bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! sbit0' sbit1' ! sbit2' | & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! sbit0' sbit1' sbit2' | | | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & sbit0' ! sbit1' ! sbit2' | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & sbit0' ! sbit1' sbit2' | & & bit0' ! bit1' bit2' & & ! bit0' ! bit1' ! bit2'
+| ! & & sbit0' sbit1' ! sbit2' | & & bit0' bit1' ! bit2' & & ! bit0' ! bit1' ! bit2'
+| ! & & sbit0' sbit1' sbit2' | | & & bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0' ! bit1' ! bit2' ! | | | | | | & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & ! bit0' ! bit1' bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & ! bit0' bit1' ! bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & ! bit0' bit1' bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & bit0' ! bit1' ! bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & bit0' ! bit1' bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' bit1' ! bit2' & & bit0' bit1' bit2'
+| ! & & bit0' bit1' ! bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' bit2'
+| ! & & bit0' bit1' bit2' ! | | | | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2' & & bit0' ! bit1' bit2' & & bit0' bit1' ! bit2'
+| | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
+
+[SYS_LIVENESS]
+& & sbit0' ! sbit1' ! sbit2'
+
+[SYS_INIT]
+bit0
+bit1
+! bit2
+| | | | | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2 & & bit0 ! bit1 bit2 & & bit0 bit1 ! bit2 & & bit0 bit1 bit2
+
