@@ -451,7 +451,7 @@ class ExecutorResynthesisExtensions(object):
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
-        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')      
+        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')
         self.receivedSpec = True
 
         # see if we can take the other robot's actions into account. 
@@ -460,7 +460,7 @@ class ExecutorResynthesisExtensions(object):
         #oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','')
         oldSpecSysTrans = self.spec['SysTrans']
         oldSpecEnvGoals = self.spec['EnvGoals']
-        
+
         # conjunct the spec of the other robots
         self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
         #logging.debug('SysTrans:' + self.spec['SysTrans'])
@@ -774,6 +774,10 @@ class ExecutorResynthesisExtensions(object):
         # connect the original sysInit with the current system init
         #self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
         self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "").replace('region_b','bit').replace('regionCompleted_b','sbit') + ")"
+
+        # adding also other initial mutual exclusions
+        self.spec["EnvInit"] += " &\n " + self.spec['InitEnvRegionSanityCheck']
+
         self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "").replace('region_b','bit').replace('regionCompleted_b','sbit') + ")"
         #self.postEvent("INFO","new init:" + str(cur_sys_init)) 
      
@@ -801,10 +805,17 @@ class ExecutorResynthesisExtensions(object):
         LTLspec_sys += "\n&\n" + spec['Topo']
 
         if proj.compile_options["fastslow"]:
+            """
             if spec["EnvGoals"] == "":
                 LTLspec_env += spec['EnvTopo'] + "&\n"  + spec['SysImplyEnv']
             else:
                 LTLspec_env += "\n&"+ spec['EnvTopo'] + "&\n"  + spec['SysImplyEnv']
+            """
+
+            #if spec["EnvGoals"] == "":
+            LTLspec_env += "\n&"+spec['SysImplyEnv']
+            #else:
+            #    LTLspec_env += "\n&"+ spec['SysImplyEnv']
 
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)

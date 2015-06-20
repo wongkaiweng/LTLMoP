@@ -303,15 +303,15 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     """
 
     # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits))
+    adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     if onDebugMode:
         logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits))
+        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     return " & \n".join(adjFormulas)
 
-def createIAInitialEnvRegionFragment(regions, use_bits=True):
+def createIAInitialEnvRegionFragment(regions, use_bits=True, nextProp=False):
     # Setting the system initial formula to allow only valid
     #  region (encoding). This may be redundant if an initial region is
     #  specified, but it is here to ensure the system cannot start from
@@ -323,12 +323,21 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True):
         envBitEnc = bitEncode['env']
         envNextBitEnc = bitEncode['envNext']
 
-        initreg_formula = '( ' + envBitEnc[0] + ' \n'
-        for regionInd in range(1,len(envBitEnc)):
-            initreg_formula = initreg_formula + '\t\t\t\t | ' + envBitEnc[regionInd] + '\n'
-        initreg_formula = initreg_formula + '\t\t\t) \n'
+        if nextProp:
+            initreg_formula = '( ' + envNextBitEnc[0] + ' \n'
+            for regionInd in range(1,len(envNextBitEnc)):
+                initreg_formula = initreg_formula + '\t\t\t\t | ' + envNextBitEnc[regionInd] + '\n'
+            initreg_formula = initreg_formula + '\t\t\t) \n'
+        else:
+            initreg_formula = '( ' + envBitEnc[0] + ' \n'
+            for regionInd in range(1,len(envBitEnc)):
+                initreg_formula = initreg_formula + '\t\t\t\t | ' + envBitEnc[regionInd] + '\n'
+            initreg_formula = initreg_formula + '\t\t\t) \n'
     else:
-        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in regions])) for r in regions]))
+        if nextProp:
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+r2.name+"_rc)" if r is r2 else "!next(e."+r2.name+"_rc)" for r2 in regions])) for r in regions]))
+        else:
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in regions])) for r in regions]))
 
     return initreg_formula
 

@@ -332,7 +332,17 @@ class SpecCompiler(object):
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
 
-            spec["EnvInit"] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+            # appending initial mutual exclusion to envInit
+            spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+
+            if self.proj.compile_options["fastslow"]:
+                if self.proj.compile_options["decompose"]:
+                    spec['InitEnvRegionSanityCheck'] += " &\n " + createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                else:
+                    spec['InitEnvRegionSanityCheck'] += " &\n " + createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+
+            spec["EnvInit"] += " &\n " + spec['InitEnvRegionSanityCheck']
+
             if spec["EnvGoals"]:
                 LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
             else:
@@ -439,13 +449,6 @@ class SpecCompiler(object):
         else:
             self.spec['InitRegionSanityCheck'] = createInitialRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
         LTLspec_sys += "\n&\n" + self.spec['InitRegionSanityCheck']
-
-        if self.proj.compile_options["fastslow"]:
-            if self.proj.compile_options["decompose"]:
-                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-            else:
-                self.spec['InitEnvRegionSanityCheck'] = createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
-            LTLspec_env += "\n&\n" + self.spec['InitEnvRegionSanityCheck']
 
         LTLspec_sys += "\n&\n" + self.spec['Topo']
 
