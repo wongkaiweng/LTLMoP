@@ -551,7 +551,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     
                     # send our spec to the other robot
                     self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
-                    self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+                    if self.proj.compile_options["fastslow"]:
+                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeBitFromEnvTrans(self.oriEnvTrans)+'&')
+                    else:
+                        self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
                     #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
                     self.sentSpec = True
                     self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")

@@ -451,7 +451,7 @@ class ExecutorResynthesisExtensions(object):
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
-        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans')
+        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans').replace('[]','\n\t\t\t[]')
         self.receivedSpec = True
 
         # see if we can take the other robot's actions into account. 
@@ -468,7 +468,7 @@ class ExecutorResynthesisExtensions(object):
         if level:
             # with only systrans
             self.spec['EnvGoals'] = oldSpecEnvGoals
-        elif  "[]<>(TRUE)" in oldSpecEnvGoals:
+        elif  "[]<>(TRUE)" in oldSpecEnvGoals or not oldSpecEnvGoals:
             self.spec['EnvGoals'] = otherRobotSysGoals
         else:
             self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
@@ -496,7 +496,10 @@ class ExecutorResynthesisExtensions(object):
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
-        self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+        if self.proj.compile_options["fastslow"]:
+            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeBitFromEnvTrans(self.oriEnvTrans)+'&')
+        else:
+            self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
         self.sentSpec = True
 
@@ -812,10 +815,7 @@ class ExecutorResynthesisExtensions(object):
                 LTLspec_env += "\n&"+ spec['EnvTopo'] + "&\n"  + spec['SysImplyEnv']
             """
 
-            #if spec["EnvGoals"] == "":
             LTLspec_env += "\n&"+spec['SysImplyEnv']
-            #else:
-            #    LTLspec_env += "\n&"+ spec['SysImplyEnv']
 
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)

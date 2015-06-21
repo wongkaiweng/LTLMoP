@@ -22,6 +22,40 @@ debug_negate      = False        # print operations relating to !
 debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
+
+def removeBitFromEnvTrans(spec):
+    # return an LTLFomula with all clauses containing s.bit removed
+    value, LTLlist = findLTLWithNoBitInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals)
+    return " &\n ".join(LTLlist)
+
+def findLTLWithNoBitInEnvTrans(tree, terminals, level=0):
+    """
+    Return an LTLFomula with formulas involving bits removed
+    """
+    final_value  = False     #false for no s.bit LTL. True for having s.bit LTL
+    LTLlist = []
+
+    if not tree[0] in terminals or tree[0] in ('FALSE','TRUE'):
+
+        # for system propositions
+        if "s." in tree[0]:
+            return True, []
+
+        for x in tree[1:]:
+            # skip ltl that does not contain a global operator
+            if level == 0 :
+                pass
+
+            value, LTLsubList = findLTLWithNoBitInEnvTrans(x, terminals, level+1)
+
+            final_value = final_value or value
+
+            if level == 0:
+                if value == False: # no s.bit in this formula
+                    LTLlist.append(LTLFormula.treeToString(x))
+
+    return final_value, LTLlist
+
 class LTL_Check:
 
     """
@@ -133,14 +167,14 @@ class LTL_Check:
         add_ltl = "\t | ("                
                         
         # for the first stage 
-        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
+        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False).replace('regionCompleted_b','sbit')
         add_ltl += curInputs          
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
         if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
             self.env_safety_assumptions_stage["1"] += add_ltl + ")"   
 
         # for the second stage       
-        nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
+        nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False).replace('regionCompleted_b','sbit')
         add_ltl += " & " + nextInputs         
         # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
         if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 : 
