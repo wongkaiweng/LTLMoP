@@ -689,13 +689,17 @@ class ExecutorResynthesisExtensions(object):
                     #TODO: spec analysis needed.
                     self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                    self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+                    self.robClient.setNegotiationStatus(False)
+                    sys.exit()
+                    #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                     return
             else: # sent spec before
                 #TODO: spec analysis needed.
                 self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+                self.robClient.setNegotiationStatus(False)
+                sys.exit()
+                #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                 return
 
             self.exchangedSpec = True
@@ -744,6 +748,8 @@ class ExecutorResynthesisExtensions(object):
                             # exchange spec
                             realizable = self.appendSpecFromEnvRobots()
                             self.exchangedSpec = True
+                        elif self.sentSpec and self.receivedSpec:
+                            pass
                         else:
                             return
                         # -------------------------------------- #
@@ -799,7 +805,7 @@ class ExecutorResynthesisExtensions(object):
             
         else:
             self.postEvent("VIOLATION", "Specification is still unrealizable. We will exit the execution")
-            self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+            #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
             sys.exit()            
                 
         return init_state, new_strategy

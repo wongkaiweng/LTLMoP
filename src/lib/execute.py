@@ -610,13 +610,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         #TODO: spec analysis needed.
                         self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
                         self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                        self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)      
+                        self.robClient.setNegotiationStatus(False)
+                        sys.exit()
+                        #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                         return
                 else: # sent spec before
                     #TODO: spec analysis needed.
                     self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                    self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+                    self.robClient.setNegotiationStatus(False)
+                    sys.exit()
+                    #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                     return
 
                 self.exchangedSpec = True

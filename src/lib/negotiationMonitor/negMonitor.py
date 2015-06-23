@@ -166,10 +166,9 @@ while keepConnection:
                         requestSpecStatus[item.group('robotName')] = []
                     
                     elif item.group('packageType') == "negotiationStatus":
-                        if ast.literal_eval(item.group("packageValue")):
+                        if ast.literal_eval(item.group("packageValue")) or ast.literal_eval(item.group("packageValue")) == False:
                             # We got set negotiationStatus from robotClient
                             negotiationStatus = item.group("packageValue")
-                            
                         else:
                             # send negotiationStatus back to the robot
                             x.send(":" + str(negotiationStatus))
