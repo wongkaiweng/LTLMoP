@@ -345,6 +345,7 @@ class SpecEditorFrame(wx.Frame):
         global MENU_SYNTHESIZER_JTLV; MENU_SYNTHESIZER_JTLV = wx.NewId()
         global MENU_SYNTHESIZER_SLUGS; MENU_SYNTHESIZER_SLUGS = wx.NewId()
         global MENU_SYMBOLIC; MENU_SYMBOLIC = wx.NewId()
+        global MENU_RECOVERY; MENU_RECOVERY = wx.NewId()
         global MENU_SIMULATE; MENU_SIMULATE = wx.NewId()
         global MENU_SIMCONFIG; MENU_SIMCONFIG = wx.NewId()
         global MENU_ANALYZE; MENU_ANALYZE = wx.NewId()
@@ -383,6 +384,7 @@ class SpecEditorFrame(wx.Frame):
         wxglade_tmp_menu_sub_sub.Append(MENU_SYNTHESIZER_SLUGS, "Slugs", "", wx.ITEM_RADIO)
         wxglade_tmp_menu_sub.AppendMenu(MENU_SYNTHESIZER, "Synthesizer", wxglade_tmp_menu_sub_sub, "")
         wxglade_tmp_menu_sub.Append(MENU_SYMBOLIC, "Use symbolic strategy", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub.Append(MENU_RECOVERY, "Use Recovery", "", wx.ITEM_CHECK)
         wxglade_tmp_menu.AppendMenu(MENU_COMPILECONFIG, "Compilation options", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(MENU_SIMULATE, "&Simulate\tF6", "", wx.ITEM_NORMAL)
@@ -455,6 +457,7 @@ class SpecEditorFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_SYNTHESIZER_JTLV)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_SYNTHESIZER_SLUGS)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_SYMBOLIC)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_RECOVERY)
         self.Bind(wx.EVT_MENU, self.onMenuSimulate, id=MENU_SIMULATE)
         self.Bind(wx.EVT_MENU, self.onMenuConfigSim, id=MENU_SIMCONFIG)
         self.Bind(wx.EVT_MENU, self.onMenuAnalyze, id=MENU_ANALYZE)
@@ -987,6 +990,7 @@ class SpecEditorFrame(wx.Frame):
         self.frame_1_menubar.Check(MENU_BITVECTOR, self.proj.compile_options["use_region_bit_encoding"])
         self.frame_1_menubar.Check(MENU_FASTSLOW, self.proj.compile_options["fastslow"])
         self.frame_1_menubar.Check(MENU_SYMBOLIC, self.proj.compile_options["symbolic"])
+        self.frame_1_menubar.Check(MENU_RECOVERY, self.proj.compile_options["recovery"])
 
         if self.proj.compile_options["parser"] == "slurp":
             self.frame_1_menubar.Check(MENU_PARSERMODE_SLURP, True)
@@ -1784,6 +1788,7 @@ class SpecEditorFrame(wx.Frame):
         self.proj.compile_options["fastslow"] = self.frame_1_menubar.IsChecked(MENU_FASTSLOW)
         self.proj.compile_options["use_region_bit_encoding"] = self.frame_1_menubar.IsChecked(MENU_BITVECTOR)
         self.proj.compile_options["symbolic"] = self.frame_1_menubar.IsChecked(MENU_SYMBOLIC)
+        self.proj.compile_options["recovery"] = self.frame_1_menubar.IsChecked(MENU_RECOVERY)
 
         if self.frame_1_menubar.IsChecked(MENU_PARSERMODE_SLURP):
             self.proj.compile_options["parser"] = "slurp"

@@ -165,6 +165,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.proj.loadProject(filename)
         self.hsub = handlerSubsystem.HandlerSubsystem(self, self.proj.project_root)
 
+        # update recovery status
+        self.recovery = self.proj.compile_options["recovery"]
 
         # Tell GUI to load the spec file
         self.postEvent("SPEC", self.proj.getFilenamePrefix() + ".spec")

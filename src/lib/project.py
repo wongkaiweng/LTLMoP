@@ -50,7 +50,8 @@ class Project:
                                 "decompose": True,  # Create regions for free space and region overlaps (required for Locative Preposition support)
                                 "use_region_bit_encoding": True, # Use a vector of "bitX" propositions to represent regions, for efficiency
                                 "synthesizer": "jtlv", # Name of synthesizer to use ("jtlv" or "slugs")
-                                "parser": "structured"}  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
+                                "parser": "structured",  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
+                                "recovery": False } # adding recovery transitions in synthesis is set to be false
 
         self.ltlmop_root = globalConfig.get_ltlmop_root()
 
