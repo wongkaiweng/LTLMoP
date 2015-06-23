@@ -478,7 +478,9 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
     return initreg_formula
 
 def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = ''):
-
+    """
+    []( (next(e.other_robot_name_reg)) -> ( !(next(e.reg_rc))))
+    """
     # skip any boundary or obstacles
     regions_old = regions
     regions = []
@@ -532,7 +534,7 @@ def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robo
             else:
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
                 
-            adjFormula = adjFormula + (envNextBitEnc[subRegIdx] if use_bits else "next(e."+ subReg +"_rc)")
+            adjFormula = adjFormula + (envNextBitEnc[subRegIdx] if use_bits else "next(e."+ subReg+ "_rc)")
             adjFormula = adjFormula + ')'
 
         # closing this region

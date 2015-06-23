@@ -27,7 +27,7 @@ import strategy
 
 # Hack needed to ensure there's only one
 _SLURP_SPEC_GENERATOR = None
-
+useRecovery = False
 
 class SpecCompiler(object):
     def __init__(self, spec_filename=None):
@@ -605,7 +605,10 @@ class SpecCompiler(object):
             # TODO: automatically compile for the user
             raise RuntimeError("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
 
-        cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+        if useRecovery:
+            cmd = [slugs_path, "--sysInitRoboticsSemantics","--simpleRecovery", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+        else:
+            cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
 
         return cmd
 

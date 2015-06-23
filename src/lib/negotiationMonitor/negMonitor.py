@@ -178,7 +178,9 @@ while keepConnection:
                         if ast.literal_eval(item.group("packageValue")) != '':
                             # We got set violationTimeStamp from robotClient
                             violationTimeStamp[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
-                            
+                            logging.info('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+                            logging.info('violationTimeStamp:'+ str(violationTimeStamp))
+                            logging.info('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
                         else:
                             # send violationTimeStamp back to the robot
                             x.send(str(violationTimeStamp))

@@ -174,20 +174,27 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
-        #logging.debug([x.name.encode('ascii') for x in self.proj.rfi.regions])
-        region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+
+        if self.proj.compile_options["use_region_bit_encoding"]:
+            region_domain = [strategy.Domain("region", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+        else:
+            region_domain = [x.name for x in self.proj.rfi.regions]
         enabled_sensors = self.proj.enabled_sensors
 
-        if self.proj.compile_options['fastslow']:
-            regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
-            enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+        if self.proj.compile_options['fastslow'] :
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+            else:
+                regionCompleted_domain = []
+                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc')]
+                enabled_sensors.extend([r.name+"_rc" for r in self.proj.rfi.regions])
         else:
             regionCompleted_domain = []
 
-        strat = strategy.createStrategyFromFile(filename,
-                                                enabled_sensors + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
-
+        strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
+                                                enabled_sensors  + regionCompleted_domain,
+                                                self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain)
         return strat
 
     def _getCurrentRegionFromPose(self, rfi=None):
@@ -321,7 +328,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # -----------------------------------------#
         # -------- two_robot_negotiation ----------#
-        self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+        if firstRun:
+            self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
         self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         # -----------------------------------------#        
@@ -447,8 +455,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         if init_state is None: 
             logging.debug('Finding init state failed.')
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
+                if self.proj.compile_options['fastslow'] and "_rc" in prop_name:
+                    continue
                 self.sensor_strategy.setPropValue(prop_name, value)
+
+            if self.proj.compile_options['fastslow']:
+                self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+
             self.postEvent('INFO','Finding init state failed.')
+            # store time stamp of violation
+            if not self.otherRobotStatus:
+                self.violationTimeStamp = time.clock()
+                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                logging.debug('Setting violation timeStamp')
+                time.sleep(1)
+
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
         if init_state is None:
@@ -537,6 +558,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     # reset violtion timestamp
                     self.violationTimeStamp = 0
                     self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                    logging.debug('Resetting violation timeStamp')
                     time.sleep(1)
 
                     self.exchangedSpec = True
@@ -579,6 +601,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # reset violtion timestamp
                         self.violationTimeStamp = 0
                         self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                        logging.debug('Resetting violation timeStamp')
                         time.sleep(1)
 
                     else:
@@ -610,10 +633,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if not env_assumption_hold:
             
                 # ------------ two_robot_negotiation ----------#
-                self.violationTimeStamp = time.clock()
                 # store time stamp of violation            
                 if not self.otherRobotStatus:
+                    self.violationTimeStamp = time.clock()
                     self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                    logging.debug('Setting violation timeStamp')
+                    time.sleep(1)
                 # ---------------------------------------------# 
                 
                 # count the number of next state changes
