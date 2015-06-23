@@ -402,7 +402,7 @@ class LTL_Check:
                                 if 0 not in violated_spec_line_no:                  
                                     treeNo = 0
                                     violated_spec_line_no.append(treeNo)
-
+                        logging.debug(LTLFormula.treeToString(x))
                     else:
                         if debug_true_ltl == True:                        
                             print "-----------------------------------------------"

@@ -260,7 +260,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # ----------------------------- #
         # -- two_robot_negotiation  --- #
         # ----------------------------- #
-        self.robClient.closeConnection()
+        if self.robClient:
+            self.robClient.closeConnection()
         # ----------------------------- #
         
         self.alive.clear()
@@ -475,6 +476,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         
         # resynthesize if cannot find initial state
         if init_state is None: 
+
+            # check if execution is paused
+            if not self.runStrategy.isSet():
+                self.hsub.setVelocity(0,0)
+
+                ###### ENV VIOLATION CHECK ######
+                # pop up the analysis dialog
+                #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+                ################################
+
+                # wait for either the FSA to unpause or for termination
+                while (not self.runStrategy.wait(0.1)) and self.alive.isSet():
+                    pass
+
+
             logging.debug('Finding init state failed.')
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 if self.proj.compile_options['fastslow'] and "_rc" in prop_name:
@@ -522,7 +538,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
 				###### ENV VIOLATION CHECK ######
                 # pop up the analysis dialog                
-                self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)               
+                #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                 ################################
                     
                 # wait for either the FSA to unpause or for termination
