@@ -178,14 +178,34 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         """
 
         if self.proj.compile_options["use_region_bit_encoding"]:
-            region_domain = [strategy.Domain("region", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+            sysRegions = copy.copy(self.proj.rfi.regions)
+            if self.proj.compile_options["recovery"]:
+                # need to add dummy region as recovery allows extra environment bits
+                # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
+                num_props = max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))
+
+                for x in range(2**num_props-len(self.proj.rfi.regions)):
+                    sysRegions.append(None)
+
+            region_domain = [strategy.Domain("region", sysRegions, strategy.Domain.B0_IS_MSB)]
         else:
             region_domain = [x.name for x in self.proj.rfi.regions]
         enabled_sensors = self.proj.enabled_sensors
 
         if self.proj.compile_options['fastslow'] :
             if self.proj.compile_options["use_region_bit_encoding"]:
-                regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
+
+                envRegions = copy.copy(self.proj.rfi.regions)
+                if self.proj.compile_options["recovery"]:
+                    # need to add dummy region as recovery allows extra environment bits
+
+                    # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
+                    num_props = max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))
+
+                    for x in range(2**num_props-len(self.proj.rfi.regions)):
+                        envRegions.append(None)
+
+                regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
                 enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
             else:
                 regionCompleted_domain = []

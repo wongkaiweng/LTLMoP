@@ -24,6 +24,7 @@ import handlerSubsystem
 from asyncProcesses import AsynchronousProcessThread
 
 import strategy
+import copy
 
 # Hack needed to ensure there's only one
 _SLURP_SPEC_GENERATOR = None
@@ -606,6 +607,7 @@ class SpecCompiler(object):
 
         if self.proj.compile_options["recovery"]:
             cmd = [slugs_path, "--sysInitRoboticsSemantics","--simpleRecovery", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            logging.debug('Synthesizing strategy with recovery')
         else:
             cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
 
@@ -650,15 +652,32 @@ class SpecCompiler(object):
             regions = self.proj.rfi.regions
 
         if self.proj.compile_options["use_region_bit_encoding"]:
-            region_domain = [ strategy.Domain("region", regions, strategy.Domain.B0_IS_MSB) ]
+            sysRegions = copy.copy(regions)
+            if self.proj.compile_options["recovery"]:
+                # need to add dummy region as recovery allows extra system bits
+                # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
+                num_props = max(1, int(math.ceil(math.log(len(regions), 2))))
+                for x in range(2**num_props-len(regions)):
+                    sysRegions.append(None)
+
+            region_domain = [strategy.Domain("region", sysRegions, strategy.Domain.B0_IS_MSB)]
         else:
             region_domain = [x.name for x in regions]
         enabled_sensors = self.proj.enabled_sensors
 
         if self.proj.compile_options['fastslow'] :
             if self.proj.compile_options["use_region_bit_encoding"]:
-                regionCompleted_domain = [strategy.Domain("regionCompleted", [x.name+"_rc" for x in regions], strategy.Domain.B0_IS_MSB)]
+                envRegions = copy.copy(regions)
+                if self.proj.compile_options["recovery"]:
+                    # need to add dummy region as recovery allows extra environment bits
+                    # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
+                    num_props = max(1, int(math.ceil(math.log(len(regions), 2))))
+                    for x in range(2**num_props-len(regions)):
+                        envRegions.append(None)
+
+                regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
                 enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+
             else:
                 regionCompleted_domain = []
                 enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc')]
