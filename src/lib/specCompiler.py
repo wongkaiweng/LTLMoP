@@ -1108,7 +1108,7 @@ class SpecCompiler(object):
             self.prepareSlugsInput()
 
             REALIZABLE_MESSAGE = "RESULT: Specification is realizable"
-            REALIZABLE_FS_MESSAGE = None
+            REALIZABLE_FS_MESSAGE = "RESULT: Specification is realizable"
         else:
             raise RuntimeError("Invalid synthesizer: {!r}".format(self.proj.compile_options["synthesizer"]))
 
