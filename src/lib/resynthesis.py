@@ -814,10 +814,11 @@ class ExecutorResynthesisExtensions(object):
         """ Add Env and Sys Init in disjunctive Normal form to LTL
         proj:     our current project
         firstRun: if this is the first time running simGUI
+        **All region_b and regionCompleted_b have been converted to bit and sbit
         """
         ## for sensors
         current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
-        logging.debug("current_env_init_state:" + str(current_env_init_state)) 
+
         ## for actuators and regions
         if firstRun:
             tempY = []
@@ -855,22 +856,34 @@ class ExecutorResynthesisExtensions(object):
         else:
             # find the current inputs and outputs from strategy and replace region_b
             current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
-            current_sys_init_state = current_sys_init_state.replace('region_b','bit')
-        
+
+            # if using fastslow set env init bits to be the same as sys init bits
+            if self.proj.compile_options['fastslow']:
+                # iterate each bit
+                for x in range(max(1, int(math.ceil(math.log(len([1,2,3,4,5]), 2))))):
+                    negate = False
+                    if "!s.bit" + str(x) in current_sys_init_state:
+                        negate = True
+
+                    if "!e.sbit" + str(x) in current_env_init_state:
+                        if not negate:
+                            current_sys_init_state = current_sys_init_state.replace("s.bit" + str(x), "!s.bit" + str(x))
+                    else:
+                        if negate:
+                            current_sys_init_state = current_sys_init_state.replace("!s.bit" + str(x), "s.bit" + str(x))
+
         # try to compare current spec with the new clause so that no duplicates are added
         cur_sys_init = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + "&"+ current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
-        cur_sys_init = cur_sys_init.replace('region_b','bit').replace('regionCompleted_b','sbit')
 
         # connect the original sysInit with the current system init
         #self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
-        self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "").replace('region_b','bit').replace('regionCompleted_b','sbit') + ")"
+        self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
         # adding also other initial mutual exclusions
         self.spec["EnvInit"] += " &\n " + self.spec['InitEnvRegionSanityCheck']
 
-        self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "").replace('region_b','bit').replace('regionCompleted_b','sbit') + ")"
-        #self.postEvent("INFO","new init:" + str(cur_sys_init)) 
-     
+        self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
         rewrite the LTL file with the modified spec

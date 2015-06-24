@@ -376,6 +376,7 @@ class State(object):
             # Rewrite proposition names to make the old bitvector system work
             # with the new one
             prop = re.sub(r'^([se]\.)region_b(\d+)$', r'\1bit\2', prop)
+            prop = re.sub(r'^([se]\.)regionCompleted_b(\d+)$', r'\1sbit\2', prop)
             #################################################################
 
             if use_next:
