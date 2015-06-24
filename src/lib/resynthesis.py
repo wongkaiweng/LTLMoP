@@ -441,6 +441,10 @@ class ExecutorResynthesisExtensions(object):
         """
         spec negotiation in execute.py
         """
+
+        # fist append new environment /and system init state
+        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+
         # reset env characterization
         self.spec['EnvTrans'] = self.oriEnvTrans + '&'
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
@@ -511,7 +515,9 @@ class ExecutorResynthesisExtensions(object):
         if self.robClient.checkNegotiationStatus() == True:
             # we need to use our original spec
             self.spec = copy.deepcopy(self.originalSpec)
-            self.recreateLTLfile(self.proj, spec = self.originalSpec)
+            #convert to the original specification
+            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+            self.recreateLTLfile(self.proj, spec = self.spec)
             realizable, realizableFS, output  = self.compiler._synthesize()
             self.otherRobotStatus = True # env characterization disabled
             self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
@@ -622,16 +628,20 @@ class ExecutorResynthesisExtensions(object):
         return realizable             
 
     def receiveRequestFromEnvRobot(self):
+        """
+        check if a request for negotiation is received.
+        Returns true if negotiation occurs and false otherwise
+        """
         # resynthesis request from the other robot
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
             self.postEvent('NEGO','-- NEGOTIATION STARTED --')
             # synthesize a new controller to incorporate the actions of the other robot.
             ###### ONE STEP ######
-            realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
+            self.realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
             self.postEvent("NEGO",'Adding system guarantees with environment goals.')
 
-            if realizable:
+            if self.realizable:
                 self.robClient.setNegotiationStatus(True)
                 self.otherRobotStatus = False
                 self.postEvent('NEGO','Using exchanged specification.')
@@ -667,12 +677,12 @@ class ExecutorResynthesisExtensions(object):
                     time.sleep(2)
 
                 if self.robClient.checkNegotiationStatus() == True:
-                    #convert to the original specification
-                    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     # remove spec from other robots and resynthesize
                     self.spec = copy.deepcopy(self.originalSpec)
-                    self.recreateLTLfile(self.proj, spec = self.originalSpec)
-                    realizable, realizableFS, output  = self.compiler._synthesize()
+                    #convert to the original specification
+                    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+                    self.recreateLTLfile(self.proj, spec = self.spec)
+                    self.realizable, realizableFS, output  = self.compiler._synthesize()
 
                     self.otherRobotStatus = True # env characterization disabled
                     self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
@@ -692,7 +702,7 @@ class ExecutorResynthesisExtensions(object):
                     self.robClient.setNegotiationStatus(False)
                     sys.exit()
                     #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
-                    return
+
             else: # sent spec before
                 #TODO: spec analysis needed.
                 self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
@@ -700,9 +710,11 @@ class ExecutorResynthesisExtensions(object):
                 self.robClient.setNegotiationStatus(False)
                 sys.exit()
                 #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
-                return
 
             self.exchangedSpec = True
+            return True
+        else:
+            return False
     # ------------------------------# 
     
     ########### ENV Assumption Mining ####################
@@ -761,14 +773,14 @@ class ExecutorResynthesisExtensions(object):
             #logging.debug(self.lastSensorState.getInputs())
             #logging.debug(sensor_state.getInputs())
 
-            self.receiveRequestFromEnvRobot()
-
-            if self.lastSensorState is None  or self.lastSensorState.getInputs() != sensor_state.getInputs() or not self.realizable:
-                # update spec with current state of the other robot
-                self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
-                self.recreateLTLfile(self.proj)
-                self.realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-                self.postEvent('INFO','Recreating automaton based on the new env init state.')
+            # only append new init state if there's no request of negotiation
+            if not self.receiveRequestFromEnvRobot():
+                if self.lastSensorState is None  or self.lastSensorState.getInputs() != sensor_state.getInputs() or not self.realizable:
+                    # update spec with current state of the other robot
+                    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
+                    self.recreateLTLfile(self.proj)
+                    self.realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                    self.postEvent('INFO','Recreating automaton based on the new env init state.')
            
         self.lastSensorState = sensor_state   
         """      

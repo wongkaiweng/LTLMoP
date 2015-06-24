@@ -579,87 +579,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             
             # ---------- two_robot_negotiation ------------- # 
             # resynthesis request from the other robot
-            self.negotiationStatus = self.robClient.checkNegotiationStatus()
-            if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
-                self.postEvent('NEGO','-- NEGOTIATION STARTED --')
-                # synthesize a new controller to incorporate the actions of the other robot. 
-                ###### ONE STEP ######
-                realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
-                self.postEvent("NEGO",'Adding system guarantees with environment goals.')
-                    
-                if realizable:
-                    self.robClient.setNegotiationStatus(True)
-                    self.otherRobotStatus = False
-                    self.postEvent('NEGO','Using exchanged specification.')
-                    self.postEvent('RESOLVED','')
+            if self.receiveRequestFromEnvRobot():
+                continue
 
-                    # reset violtion timestamp
-                    self.violationTimeStamp = 0
-                    self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                    logging.debug('Resetting violation timeStamp')
-                    time.sleep(1)
-
-                    self.exchangedSpec = True
-                    # reinitialize automaton
-                    spec_file = self.proj.getFilenamePrefix() + ".spec"
-                    aut_file = self.proj.getFilenamePrefix() + ".aut"    
-                    self.initialize(spec_file, aut_file, firstRun=False)  
-                    continue
-                    
-                elif not self.sentSpec:
-                    self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
-                    
-                    # send our spec to the other robot
-                    self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
-                    if self.proj.compile_options["fastslow"]:
-                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeBitFromEnvTrans(self.oriEnvTrans)+'&')
-                    else:
-                        self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-                    #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
-                    self.sentSpec = True
-                    self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
-                    
-                    # wait until the other robot resynthesize its controller
-                    while self.robClient.checkNegotiationStatus() != (True or False): 
-                        time.sleep(2)
-                        
-                    if self.robClient.checkNegotiationStatus() == True:
-                        #convert to the original specification
-                        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
-                        # remove spec from other robots and resynthesize
-                        self.spec = copy.deepcopy(self.originalSpec)
-                        self.recreateLTLfile(self.proj, spec = self.originalSpec)
-                        realizable, realizableFS, output  = self.compiler._synthesize()
-
-                        self.otherRobotStatus = True # env characterization disabled
-                        self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
-                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                        self.postEvent('RESOLVED','')
-
-                        # reset violtion timestamp
-                        self.violationTimeStamp = 0
-                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                        logging.debug('Resetting violation timeStamp')
-                        time.sleep(1)
-
-                    else:
-                        #TODO: spec analysis needed.
-                        self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
-                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                        self.robClient.setNegotiationStatus(False)
-                        sys.exit()
-                        #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
-                        return
-                else: # sent spec before
-                    #TODO: spec analysis needed.
-                    self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
-                    self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                    self.robClient.setNegotiationStatus(False)
-                    sys.exit()
-                    #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
-                    return
-
-                self.exchangedSpec = True
             """    
             # if the other robot is requesting spec from us
             self.robClient.checkRequestSpec()
