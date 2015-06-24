@@ -697,7 +697,7 @@ class ExecutorResynthesisExtensions(object):
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)
                     self.realizable, realizableFS, output  = self.compiler._synthesize()
-                    logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
+                    logging.debug("Original spec with new env/sys init realizable?" + str(self.realizable))
                     self.otherRobotStatus = True # env characterization disabled
                     self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
