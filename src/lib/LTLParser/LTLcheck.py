@@ -71,6 +71,7 @@ class LTL_Check:
         self.sensor_state  = None
         self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number 
         self.ltl_tree      = None      
+        self.LTLMoP        = True          # set 'using LTLMoP' as default. To call checkViolation without LTLMoP, use false mode (see checkEnvViolation.py)
 
         # obtain spec from the .spec file
         self.path_spec = path.replace(".ltl",".spec")
@@ -113,12 +114,16 @@ class LTL_Check:
         """       
         self.ltl_tree = LTLFormula.parseLTL(str(ltlFormula))
         
-    def checkViolation(self,cur_state,sensor_state):
+    def checkViolation(self,cur_state,sensor_state, LTLMoP = True):
         """
         this function call the subtree function to check for violation
         cur_state: state object. see strategy.py
         sensor_state: state object. see strategy.py
         """
+
+        # Set if we are using LTLMoP
+        self.LTLMoP = LTLMoP
+
         self.current_state = cur_state
         self.sensor_state  = sensor_state
         self.violated_specStr = []
@@ -292,15 +297,31 @@ class LTL_Check:
             # for system propositions
             elif "s." in tree[0]:
                 key = tree[0].replace("s.","")
+                if not self.LTLMoP:
+                    oldKey = key
                 if "bit" in key:  #HACK: will be fixed with fsa
                     key = key.replace("bit","region_b")
                 if debug_proposition_values == True:
                     print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state[key])
-                return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
-                    
+                if self.LTLMoP:
+                    return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
+                else:
+                    if next == True:
+                        try:
+                            return int(self.sensor_state.getAll(expand_domains=True)[key]), negate, next
+                        except:
+                            return int(self.sensor_state.getAll(expand_domains=True)[oldKey]), negate, next
+                    else:
+                        try:
+                            return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
+                        except:
+                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate, next
+
             # for environement propositions
             elif "e." in tree[0]:                
                 key = tree[0].replace("e.","")
+                if not self.LTLMoP:
+                    oldKey = key
                 if "sbit" in key:
                     key = key.replace("sbit","regionCompleted_b")
                 if debug_proposition_values == True:
@@ -308,11 +329,22 @@ class LTL_Check:
                     print "evaluating env propositions: " + str(key) 
 
                 if next == True:
-                    return int(self.sensor_state.getInputs(expand_domains = True)[key]), negate, False
+                    if self.LTLMoP:
+                        return int(self.sensor_state.getInputs(expand_domains = True)[key]), negate, False
+                    else:
+                        try:
+                            return int(self.sensor_state.getInputs(expand_domains = True)[key]), negate, False
+                        except:
+                            return int(self.sensor_state.getInputs(expand_domains = True)[oldKey]), negate, False
                 else:
-                    return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
-            
- 
+                    if self.LTLMoP:
+                        return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
+                    else:
+                        try:
+                            return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
+                        except:
+                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate,  next
+
             next_in_loop   = next
             node_count = 1
 
@@ -389,8 +421,9 @@ class LTL_Check:
                     
                     if value == False: 
                         try:
-                            #logging.debug("violated line:" + str(x))
-                            #logging.debug(self.ltlTree_to_lineNo)
+                            if not self.LTLMoP:
+                                logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
+                                logging.debug(self.ltlTree_to_lineNo)
                             treeNo = self.ltlTree_to_lineNo[str(x)] 
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
                                 violated_spec_line_no.append(treeNo)
