@@ -489,7 +489,11 @@ class ExecutorResynthesisExtensions(object):
         """
         asked for spec from negotiation monitor and append to our spec.
         """
-        
+        # make resynthesis with recovery
+        self.recovery = True
+        self.proj.compile_options['recovery'] = True
+        self.compiler.proj.compile_options['recovery'] = True
+
         # modify envTrans to remove all characterization. Restart Characterization
         self.spec['EnvTrans'] = self.oriEnvTrans + '&'
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
@@ -555,6 +559,7 @@ class ExecutorResynthesisExtensions(object):
         # reset violtion timestamp
         self.violationTimeStamp = 0
         self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+        logging.debug('Resetting violation timeStamp')
         time.sleep(1)
         """
         # --------------------------------------------- #
@@ -637,6 +642,12 @@ class ExecutorResynthesisExtensions(object):
         # resynthesis request from the other robot
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
+
+            # make resynthesis with recovery
+            self.recovery = True
+            self.proj.compile_options['recovery'] = True
+            self.compiler.proj.compile_options['recovery'] = True
+
             self.postEvent('NEGO','-- NEGOTIATION STARTED --')
             # synthesize a new controller to incorporate the actions of the other robot.
             ###### ONE STEP ######
