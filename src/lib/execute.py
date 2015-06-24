@@ -606,8 +606,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 # ---------------------------------------------# 
                 
                 # count the number of next state changes
-                if last_next_states != current_next_states:
+                if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in self.last_next_states]:
                     self.envViolationCount += 1
+                    logging.debug("No of env violations:"+ str(self.envViolationCount))
                 
                 #self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))    
                 #self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo)) 
