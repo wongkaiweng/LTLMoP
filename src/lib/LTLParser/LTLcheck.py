@@ -23,14 +23,21 @@ debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
 
-def removeBitFromEnvTrans(spec):
+def removeLTLwithKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit removed
-    value, LTLlist = findLTLWithNoBitInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals)
+    value, LTLlist = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)
     return " &\n ".join(LTLlist)
 
-def findLTLWithNoBitInEnvTrans(tree, terminals, level=0):
+def removeLTLwithoutKeyFromEnvTrans(spec, key):
+    # return an LTLFomula with all clauses containing s.bit removed
+    value, LTLlist = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
+    return " &\n ".join(LTLlist)
+
+def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False):
     """
     Return an LTLFomula with formulas involving bits removed
+    mode: False if see key then the clause is not kept
+          True  if see key then the clause is kept
     """
     final_value  = False     #false for no s.bit LTL. True for having s.bit LTL
     LTLlist = []
@@ -38,7 +45,7 @@ def findLTLWithNoBitInEnvTrans(tree, terminals, level=0):
     if not tree[0] in terminals or tree[0] in ('FALSE','TRUE'):
 
         # for system propositions
-        if "s." in tree[0]:
+        if key in tree[0]:
             return True, []
 
         for x in tree[1:]:
@@ -46,12 +53,12 @@ def findLTLWithNoBitInEnvTrans(tree, terminals, level=0):
             if level == 0 :
                 pass
 
-            value, LTLsubList = findLTLWithNoBitInEnvTrans(x, terminals, level+1)
+            value, LTLsubList = findLTLWithNoKeyInEnvTrans(x, terminals, level+1, key, mode)
 
             final_value = final_value or value
 
             if level == 0:
-                if value == False: # no s.bit in this formula
+                if value == mode: # no s.bit in this formula
                     LTLlist.append(LTLFormula.treeToString(x))
 
     return final_value, LTLlist
@@ -435,7 +442,8 @@ class LTL_Check:
                                 if 0 not in violated_spec_line_no:                  
                                     treeNo = 0
                                     violated_spec_line_no.append(treeNo)
-                        logging.debug(LTLFormula.treeToString(x))
+                        if envTransTree:
+                            logging.debug(LTLFormula.treeToString(x))
                     else:
                         if debug_true_ltl == True:                        
                             print "-----------------------------------------------"

@@ -121,7 +121,7 @@ class ExecutorStrategyExtensions(object):
 
         # find current region based on region sensors and remove those sensors from sensor_state
         # finally add the "regionCompleted" sensor with region object
-        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc'))
+        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(self.proj.otherRobot[0]))
         for key, value in sensor_region.iteritems():
             del sensor_state[key]
         sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
@@ -162,6 +162,12 @@ class ExecutorStrategyExtensions(object):
             # find next region
             self.next_region = self.strategy.current_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+
+            # ------------------------------- #
+            # --- two_robot_negotiation ----- #
+            # ------------------------------- #
+            self.robClient.updateHeadingRobotRegion(self.next_region)
+            # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
             self.transition_contains_motion = self.next_region is not None and (self.next_state.getPropValue('regionCompleted') != self.strategy.current_state.getPropValue('regionCompleted'))

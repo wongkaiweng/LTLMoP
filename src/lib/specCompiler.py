@@ -138,20 +138,20 @@ class SpecCompiler(object):
             robotPropList.extend(["bit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
             if self.proj.compile_options['fastslow']:
                 # remove _rc props from sensor_list and add in sbit for region completion
-                sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
                 sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(numRegions))))])
         else:
             if self.proj.compile_options["decompose"]:
                 robotPropList.extend([r.name for r in self.parser.proj.rfi.regions])
                 # added in region_rc with the decomposed region names
                 if self.proj.compile_options['fastslow']:
-                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
                     sensorList.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
             else:
                 robotPropList.extend([r.name for r in self.proj.rfi.regions])
                 # added in region_rc with the original region names
                 if self.proj.compile_options['fastslow']:
-                    sensorList = [x for x in sensorList if not x.endswith('_rc')]
+                    sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
                     sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
         self.propList = sensorList + robotPropList
@@ -320,8 +320,9 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
+            suffix = '_rc'
             spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
-            
+
             for idx in range(len(self.proj.rfi.regions)):
                 # exclude boundary and obstacles
                 if self.proj.rfi.regions[idx].name == 'boundary' or self.proj.rfi.regions[idx].isObstacle:
@@ -332,8 +333,14 @@ class SpecCompiler(object):
                     if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
                         self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
 
+                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.enabled_sensors:
+                        self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
+                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.all_sensors:
+                        self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
+
             # appending initial mutual exclusion to envInit
             spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+            spec['InitEnvRegionSanityCheck'] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
 
             if self.proj.compile_options["fastslow"]:
                 if self.proj.compile_options["decompose"]:
@@ -359,6 +366,7 @@ class SpecCompiler(object):
                     spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
             else:
                 spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+
             # --------------------------------------------#
             LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
             ####################################################
@@ -676,11 +684,11 @@ class SpecCompiler(object):
                         envRegions.append(None)
 
                 regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
-                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
+                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
 
             else:
                 regionCompleted_domain = []
-                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc')]
+                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
                 if self.proj.compile_options["decompose"]:
                     enabled_sensors.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
                 else:

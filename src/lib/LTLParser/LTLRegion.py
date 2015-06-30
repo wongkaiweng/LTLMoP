@@ -72,9 +72,9 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
 
     # return region name string to env 
     if nextTimeStep is True:
-        return 'next(e.' + robotName + '_' + targetRegionOrig + ')'
+        return 'next(e.' + robotName + '_' + targetRegionOrig + '_rc)' if fastslow else 'next(e.' + robotName + '_' + targetRegionOrig + ')'
     else:
-        return 'e.' + robotName + '_' + targetRegionOrig
+        return 'e.' + robotName + '_' + targetRegionOrig + '_rc' if fastslow else 'e.' + robotName + '_' + targetRegionOrig
         
 def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False):
     """
@@ -125,7 +125,9 @@ def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionLis
     
     # remove our robot name from the spec
     if fastslow:
-        ltlFormula = ltlFormula.replace('e.' + robotName + '_', 'e.')
+        for region in regionList:
+            ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region + '_rc', 'e.' + region)
+            ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region, 's.' + region)
     else:
         ltlFormula = ltlFormula.replace('e.' + robotName + '_', 's.')
 

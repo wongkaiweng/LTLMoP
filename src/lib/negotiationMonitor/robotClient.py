@@ -26,9 +26,8 @@ class RobotClient:
         self.robotName = ''
         self.regions    = proj.rfi.regions # contains decomposed names
         if self.fastslow:
-            self.region_domain = strategy.Domain("regionCompleted",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
-        else:
-            self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+            self.regionCompleted_domain = strategy.Domain("regionCompleted",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
+        self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
 
         #find out mapping from new_names to old ones
         self.newRegionNameToOld = {}
@@ -50,6 +49,7 @@ class RobotClient:
         
         #send out initial info
         self.initializeRegionExchange(hsub)
+        self.initializeHeadingRegionExchange()
          
         # track if spec is requested
         self.specRequestFromOther = [] # list of spec requested
@@ -73,7 +73,25 @@ class RobotClient:
         # send current region to negotiation monitor       
         self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
         logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
-        
+
+    def initializeHeadingRegionExchange(self):
+        """
+        This function sends the list of heading region to the negotiation Monitor
+        hsub:         self.hsub from LTLMoP
+        """
+        # send region info to negotiation monitor
+        self.clientObject.send(self.robotName + '_heading' +'-' + 'regionList = ' + str(self.regionList) + '\n')
+        logging.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
+
+    def updateHeadingRobotRegion(self, current_region):
+        """
+        This function update the heading region info in the negotiation monitor if the robot is at a next region
+        current_region: region object in LTLMoP
+        """
+        # send current region to negotiation monitor
+        self.clientObject.send(self.robotName + '_heading' + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
+        logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
+
     def closeConnection(self):
         """
         This function closes the connection with the negotiation monitor.
@@ -92,10 +110,13 @@ class RobotClient:
         
         #spec = spec.replace('\t',"").replace(' ','').replace('\n','')
         spec = spec.replace(' ','').replace('\n','')
-        
+
         # first replace our region bits to original region name with our robot name
-        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, self.fastslow)
-        #logging.debug( specType + ':' + spec)
+        if self.fastslow:
+            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, self.fastslow)
+
+        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
+
         # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
         logging.info('ROBOTCLIENT: send '+ specType +' from ' + str(self.robotName))

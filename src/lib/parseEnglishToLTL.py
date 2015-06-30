@@ -1001,9 +1001,9 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
 
         if fastslow:
             if prop in regionList:
-                tempFormula = tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_rc")
+                tempFormula = tempFormula + '&' + tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_rc")
             elif prop in actuatorList:
-                tempFormula = tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_ac")
+                tempFormula = tempFormula + '&' + tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_ac")
     
     formulaInfo['formula'] = '\t\t\t []<>(' + tempFormula + ') & \n'
 

@@ -489,6 +489,7 @@ class ExecutorResynthesisExtensions(object):
         """
         asked for spec from negotiation monitor and append to our spec.
         """
+
         # make resynthesis with recovery
         self.recovery = True
         self.proj.compile_options['recovery'] = True
@@ -505,7 +506,7 @@ class ExecutorResynthesisExtensions(object):
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         if self.proj.compile_options["fastslow"]:
-            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeBitFromEnvTrans(self.oriEnvTrans)+'&')
+            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0])+'&')
         else:
             self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
@@ -678,7 +679,7 @@ class ExecutorResynthesisExtensions(object):
                 # send our spec to the other robot
                 self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
                 if self.proj.compile_options["fastslow"]:
-                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeBitFromEnvTrans(self.oriEnvTrans)+'&')
+                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0])+'&')
                 else:
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
                 #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
