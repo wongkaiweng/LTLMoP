@@ -686,7 +686,7 @@ class ExecutorResynthesisExtensions(object):
                 self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
 
                 # wait until the other robot resynthesize its controller
-                while self.robClient.checkNegotiationStatus() != (True or False):
+                while not isinstance(self.robClient.checkNegotiationStatus(), bool): #self.robClient.checkNegotiationStatus() != (True or False):
                     time.sleep(2)
 
                 if self.robClient.checkNegotiationStatus() == True:
