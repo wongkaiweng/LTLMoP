@@ -7,13 +7,14 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 
 CompileOptions:
-convexify: True
-parser: structured
-symbolic: False
-use_region_bit_encoding: True
 synthesizer: slugs
 fastslow: True
+convexify: True
+recovery: False
+parser: structured
+symbolic: False
 decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
 bob
@@ -55,16 +56,22 @@ Robot starts in groceryStore
 Env starts with alice_bridge
 
 # Environment Assumptions
-#if you had finished groceryStore then do not alice_square
-#if you had finished square then do not alice_tunnel
-#if you had finished tunnel then do not alice_park
-#if you had finished park then do not alice_postOffice
+if you have finished groceryStore then do not (alice_groceryStore or alice_square)
+if you have finished square then do not (alice_square or alice_tunnel)
+if you have finished tunnel then do not (alice_tunnel or alice_park)
+if you have finished park then do not (alice_park or alice_postOffice)
+if you have finished postOffice then do not alice_postOffice
 
-if you had finished groceryStore or you were activating groceryStore then do not alice_square
-if you had finished square or you were activating square then do not alice_tunnel
-if you had finished tunnel or you were activating tunnel then do not alice_park
-if you had finished park or you were activating park then do not alice_postOffice
-
+######### system guarantees ##########
+# not allowing both robots to be at the same place
+if you are sensing alice_square then do not square
+if you are sensing alice_park then do not park
+if you are sensing alice_postOffice then do not postOffice
+if you are sensing alice_policeStation2 then do not policeStation2
+if you are sensing alice_bridge then do not bridge
+if you are sensing alice_groceryStore then do not groceryStore
+if you are sensing alice_tunnel then do not tunnel
+if you are sensing alice_policeStation1 then do not policeStation1
 
 visit postOffice
 

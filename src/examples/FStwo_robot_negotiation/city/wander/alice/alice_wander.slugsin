@@ -17,6 +17,9 @@ bit1
 bit2
 
 [ENV_TRANS]
+| ! & & sbit0' sbit1' sbit2' ! | bob_bridge' bob_square'
+| ! & & ! sbit0' ! sbit1' ! sbit2' ! | bob_square' bob_groceryStore'
+| ! & & sbit0' sbit1' ! sbit2' ! bob_groceryStore'
 | ! bob_square | | | | bob_square' bob_policeStation2' bob_bridge' bob_groceryStore' bob_tunnel'
 | ! bob_park | | | | bob_park' bob_postOffice' bob_bridge' bob_tunnel' bob_policeStation1'
 | ! bob_postOffice | bob_postOffice' bob_park'
@@ -58,7 +61,7 @@ bit2
 | & ! & & sbit0' ! sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2' & & & sbit0' ! sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
 | & ! & & sbit0' sbit1' ! sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' sbit2' & & & sbit0' sbit1' ! sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' sbit2'
 | & ! & & sbit0' sbit1' sbit2' ! ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & & sbit0' sbit1' sbit2' ! | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2'
-| | | | | | | & & ! sbit0 ! sbit1 ! sbit2 & & ! sbit0 ! sbit1 sbit2 & & ! sbit0 sbit1 ! sbit2 & & ! sbit0 sbit1 sbit2 & & sbit0 ! sbit1 ! sbit2 & & sbit0 ! sbit1 sbit2 & & sbit0 sbit1 ! sbit2 & & sbit0 sbit1 sbit2
+| | | | | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & sbit0' ! sbit1' sbit2' & & sbit0' sbit1' ! sbit2' & & sbit0' sbit1' sbit2'
 
 [ENV_LIVENESS]
 | | | | | | | | | | | | | | | & & & & & ! bit0 ! bit1 ! bit2 ! sbit0' ! sbit1' ! sbit2' & & & ! bit0 ! bit1 ! bit2 ! & & ! bit0' ! bit1' ! bit2' & & & & & ! bit0 ! bit1 bit2 ! sbit0' ! sbit1' sbit2' & & & ! bit0 ! bit1 bit2 ! & & ! bit0' ! bit1' bit2' & & & & & ! bit0 bit1 ! bit2 ! sbit0' sbit1' ! sbit2' & & & ! bit0 bit1 ! bit2 ! & & ! bit0' bit1' ! bit2' & & & & & ! bit0 bit1 bit2 ! sbit0' sbit1' sbit2' & & & ! bit0 bit1 bit2 ! & & ! bit0' bit1' bit2' & & & & & bit0 ! bit1 ! bit2 sbit0' ! sbit1' ! sbit2' & & & bit0 ! bit1 ! bit2 ! & & bit0' ! bit1' ! bit2' & & & & & bit0 ! bit1 bit2 sbit0' ! sbit1' sbit2' & & & bit0 ! bit1 bit2 ! & & bit0' ! bit1' bit2' & & & & & bit0 bit1 ! bit2 sbit0' sbit1' ! sbit2' & & & bit0 bit1 ! bit2 ! & & bit0' bit1' ! bit2' & & & & & bit0 bit1 bit2 sbit0' sbit1' sbit2' & & & bit0 bit1 bit2 ! & & bit0' bit1' bit2'
@@ -72,6 +75,14 @@ bob_groceryStore
 | | | | | | | & & ! sbit0 ! sbit1 ! sbit2 & & ! sbit0 ! sbit1 sbit2 & & ! sbit0 sbit1 ! sbit2 & & ! sbit0 sbit1 sbit2 & & sbit0 ! sbit1 ! sbit2 & & sbit0 ! sbit1 sbit2 & & sbit0 sbit1 ! sbit2 & & sbit0 sbit1 sbit2
 
 [SYS_TRANS]
+| ! bob_square' ! & & ! bit0' ! bit1' ! bit2'
+| ! bob_park' ! & & ! bit0' bit1' bit2'
+| ! bob_postOffice' ! & & bit0' ! bit1' ! bit2'
+| ! bob_policeStation2' ! & & bit0' ! bit1' bit2'
+| ! bob_bridge' ! & & bit0' bit1' bit2'
+| ! bob_groceryStore' ! & & bit0' bit1' ! bit2'
+| ! bob_tunnel' ! & & ! bit0' ! bit1' bit2'
+| ! bob_policeStation1' ! & & ! bit0' bit1' ! bit2'
 | ! bob_bridge' ! & & sbit0' sbit1' sbit2'
 | ! bob_square' ! & & ! sbit0' ! sbit1' ! sbit2'
 | ! bob_policeStation1' ! & & ! sbit0' sbit1' ! sbit2'
