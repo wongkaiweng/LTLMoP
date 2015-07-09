@@ -207,7 +207,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 newRegionGroup = []
                 for formula in RegionGroups[groupName]:
                     for prop in regionList:
-                        formula = re.sub(prop, 'e.'+prop.replace('s.','')+'_rc',formula)
+                        formula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', formula)
                     newRegionGroup.append(formula)
                 RegionGroups[groupName] = newRegionGroup
 
@@ -293,8 +293,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 LTLEnvRegSubformula = LTLRegSubformula
                 if fastslow:
                     for prop in regionList:
-                        LTLEnvRegSubformula = LTLEnvRegSubformula.replace(prop,"e."+prop.replace("s.","")+"_rc")
-
+                        LTLEnvRegSubformula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', LTLEnvRegSubformula)
             if ActInit:
                 if len(robotPropList) == 0:
                     LTLActSubformula = ''
@@ -306,7 +305,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                     LTLEnvActSubformula = LTLActSubformula
                     if fastslow:
                         for prop in actuatorList:
-                            LTLEnvActSubformula = LTLEnvActSubformula.replace(prop,"e."+prop.replace("s.","")+"_ac")
+                            LTLEnvActSubformula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', LTLEnvActSubformula)
 
             if QuantifierFlag == "ANY":
                 LTLRegSubformula = LTLRegSubformula.replace("QUANTIFIER_PLACEHOLDER", quant_or_string['current'])
@@ -315,13 +314,13 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the sys init condition for DNF later #####
-            spec['SysInit']= spec['SysInit'] +  LTLRegSubformula + LTLActSubformula 
+            spec['SysInit']= '& '.join(filter(None,[spec['SysInit'], LTLRegSubformula, LTLActSubformula]))
             ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
             # also add to envInit if we are running instantaneous action
             if fastslow:
-                spec['EnvInit']= spec['EnvInit'] + LTLEnvRegSubformula + LTLEnvActSubformula
+                spec['EnvInit']= '& '.join(filter(None, [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]))
                 linemap['EnvInit'].append(lineInd)
                 LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
 
@@ -1001,9 +1000,10 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
 
         if fastslow:
             if prop in regionList:
-                tempFormula = tempFormula + '&' + tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_rc")
+                tempFormula = tempFormula + '&' + re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+
             elif prop in actuatorList:
-                tempFormula = tempFormula + '&' + tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_ac")
+                tempFormula = tempFormula + '&' + re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
     
     formulaInfo['formula'] = '\t\t\t []<>(' + tempFormula + ') & \n'
 
@@ -1296,9 +1296,9 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                 for prop in props:
                     prop = prop.replace('(','').replace(')','')
                     if prop in regionList:
-                        subTempFormula = subTempFormula.replace(prop,"e." + prop.replace("s.","") + "_rc")
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', subTempFormula)
                     elif prop in actuatorList:
-                        subTempFormula = subTempFormula.replace(prop,"e." + prop.replace("s.","") + "_ac")
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', subTempFormula)
 
             tempFormula = tempFormula + subTempFormula
 
@@ -1434,9 +1434,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
             if fastslow:
                 if "finished" in prop:
                     if propStriped in regionList:
-                        SetEvent = SetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_rc")
+                        SetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', SetEvent)
                     elif propStriped in actuatorList:
-                        SetEvent = SetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_ac")
+                        SetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', SetEvent)
 
     if ResetEvent.upper()=='FALSE':
         ResetEvent = 'FALSE'
@@ -1454,9 +1454,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
                 if fastslow:
                     if "finished" in prop:
                         if propStriped in regionList:
-                            ResetEvent = ResetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_rc")
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', ResetEvent)
                         elif propStriped in actuatorList:
-                            ResetEvent = ResetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_ac")
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', ResetEvent)
 
     # Checking the event proposition
     if EventProp in sensorProp:
