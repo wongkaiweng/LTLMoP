@@ -314,13 +314,13 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the sys init condition for DNF later #####
-            spec['SysInit']= '& '.join(filter(None,[spec['SysInit'], LTLRegSubformula, LTLActSubformula]))
+            spec['SysInit']= '& '.join(filter(None,[spec['SysInit'], LTLRegSubformula])) + LTLActSubformula
             ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
             # also add to envInit if we are running instantaneous action
             if fastslow:
-                spec['EnvInit']= '& '.join(filter(None, [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]))
+                spec['EnvInit']= '& '.join(filter(None, [spec['EnvInit'], LTLEnvRegSubformula])) + LTLEnvActSubformula
                 linemap['EnvInit'].append(lineInd)
                 LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
 

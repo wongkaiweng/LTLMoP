@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createIASysMutualExclusion
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createIASysMutualExclusion, createEnvTopologyFragmentNoHeading
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -320,55 +320,62 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
-            suffix = '_rc'
-            spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
-
-            for idx in range(len(self.proj.rfi.regions)):
-                # exclude boundary and obstacles
-                if self.proj.rfi.regions[idx].name == 'boundary' or self.proj.rfi.regions[idx].isObstacle:
-                    continue
+            InitEnvRegionSanityCheck = ''
+            if self.proj.compile_options['neighbour_robot']:
+                if self.proj.compile_options['include_heading']:
+                    suffix = '_rc'
+                    spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
                 else:
-                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.enabled_sensors:
-                        self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
-                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
-                        self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                    spec["EnvTrans"] += createEnvTopologyFragmentNoHeading(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
 
-                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.enabled_sensors:
-                        self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
-                    if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.all_sensors:
-                        self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
+                for idx in range(len(self.proj.rfi.regions)):
+                    # exclude boundary and obstacles
+                    if self.proj.rfi.regions[idx].name == 'boundary' or self.proj.rfi.regions[idx].isObstacle:
+                        continue
+                    else:
+                        if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.enabled_sensors:
+                            self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                        if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name not in self.proj.all_sensors:
+                            self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name)
+                        if self.proj.compile_options['include_heading']:
+                            if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.enabled_sensors:
+                                self.proj.enabled_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
+                            if self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix not in self.proj.all_sensors:
+                                self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
 
-            # appending initial mutual exclusion to envInit
-            spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
-            spec['InitEnvRegionSanityCheck'] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
+                # appending initial mutual exclusion to envInit
+                InitEnvRegionSanityCheck = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+                if self.proj.compile_options['include_heading']:
+                    InitEnvRegionSanityCheck += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
 
             if self.proj.compile_options["fastslow"]:
                 if self.proj.compile_options["decompose"]:
-                    spec['InitEnvRegionSanityCheck'] += " &\n " + createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [InitEnvRegionSanityCheck, createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
                 else:
-                    spec['InitEnvRegionSanityCheck'] += " &\n " + createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [InitEnvRegionSanityCheck, createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
 
-            spec["EnvInit"] += " &\n " + spec['InitEnvRegionSanityCheck']
-
-            if spec["EnvGoals"]:
-                LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + "\n&\n"  + spec["EnvGoals"]
-            else:
-                LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"]
+                spec["EnvInit"] = '&\n '.join(filter(None, [spec["EnvInit"], spec['InitEnvRegionSanityCheck']]))
 
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
 
-            if self.proj.compile_options['fastslow']:
-                if self.proj.compile_options['decompose']:
-                    # make sure the bits are mapped correctly with the use of self.parser
-                    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+            if self.proj.compile_options['neighbour_robot']:
+                if self.proj.compile_options['fastslow']:
+                    if self.proj.compile_options['decompose']:
+                        # make sure the bits are mapped correctly with the use of self.parser
+                        spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'])
+                    else:
+                        spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'])
                 else:
-                    spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
-            else:
-                spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0]) + "\n&\n"
+                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0])
 
             # --------------------------------------------#
-            LTLspec_sys = spec["SysInit"] + " & \n" + spec["SysTrans"] + spec["SysGoals"] 
+            if self.proj.compile_options['fastslow']:
+                LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
+                LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"], spec["SysGoals"]]))
+            else:
+                LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"]])) + spec["EnvGoals"]
+                LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"]])) + spec["SysGoals"]
             ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))

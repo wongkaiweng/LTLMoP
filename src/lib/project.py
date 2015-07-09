@@ -51,7 +51,9 @@ class Project:
                                 "use_region_bit_encoding": True, # Use a vector of "bitX" propositions to represent regions, for efficiency
                                 "synthesizer": "jtlv", # Name of synthesizer to use ("jtlv" or "slugs")
                                 "parser": "structured",  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
-                                "recovery": False } # adding recovery transitions in synthesis is set to be false
+                                "recovery": False, # adding recovery transitions in synthesis is set to be false
+                                "neighbour_robot": False, #if we will include neighbour robot LTL in the spec
+                                "include_heading": False }#if we include the heading information of the other robot in the specification
 
         self.ltlmop_root = globalConfig.get_ltlmop_root()
 
@@ -134,7 +136,10 @@ class Project:
             logging.warning("Specification text undefined")
 
         # ------ two_robot_negotiation ------#
-        self.otherRobot = spec_data['SPECIFICATION']['OtherRobot']
+        try:
+            self.otherRobot = spec_data['SPECIFICATION']['OtherRobot']
+        except KeyError:
+            logging.warning("other robot undefined")
         # ---------------------------------- #
         
         if 'CompileOptions' in spec_data['SETTINGS']:

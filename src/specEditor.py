@@ -328,7 +328,7 @@ class SpecEditorFrame(wx.Frame):
         # begin wxGlade: SpecEditorFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-
+        
         # Menu Bar
         self.frame_1_menubar = wx.MenuBar()
         global MENU_IMPORT_REGION; MENU_IMPORT_REGION = wx.NewId()
@@ -346,6 +346,9 @@ class SpecEditorFrame(wx.Frame):
         global MENU_SYNTHESIZER_SLUGS; MENU_SYNTHESIZER_SLUGS = wx.NewId()
         global MENU_SYMBOLIC; MENU_SYMBOLIC = wx.NewId()
         global MENU_RECOVERY; MENU_RECOVERY = wx.NewId()
+        global MENU_MULTIROBOT_OPTIONS; MENU_MULTIROBOT_OPTIONS = wx.NewId()
+        global MENU_NEIGHBOUR_ROBOT; MENU_NEIGHBOUR_ROBOT = wx.NewId()
+        global MENU_INCLUDE_OTHER_ROBOT_HEADING; MENU_INCLUDE_OTHER_ROBOT_HEADING = wx.NewId()
         global MENU_SIMULATE; MENU_SIMULATE = wx.NewId()
         global MENU_SIMCONFIG; MENU_SIMCONFIG = wx.NewId()
         global MENU_ANALYZE; MENU_ANALYZE = wx.NewId()
@@ -385,6 +388,10 @@ class SpecEditorFrame(wx.Frame):
         wxglade_tmp_menu_sub.AppendMenu(MENU_SYNTHESIZER, "Synthesizer", wxglade_tmp_menu_sub_sub, "")
         wxglade_tmp_menu_sub.Append(MENU_SYMBOLIC, "Use symbolic strategy", "", wx.ITEM_CHECK)
         wxglade_tmp_menu_sub.Append(MENU_RECOVERY, "Use Recovery", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub_sub = wx.Menu()
+        wxglade_tmp_menu_sub_sub.Append(MENU_NEIGHBOUR_ROBOT, "Neighbour robot", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub_sub.Append(MENU_INCLUDE_OTHER_ROBOT_HEADING, "Include other robot heading", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub.AppendMenu(MENU_MULTIROBOT_OPTIONS, "Multirobot Options", wxglade_tmp_menu_sub_sub, "")
         wxglade_tmp_menu.AppendMenu(MENU_COMPILECONFIG, "Compilation options", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu.AppendSeparator()
         wxglade_tmp_menu.Append(MENU_SIMULATE, "&Simulate\tF6", "", wx.ITEM_NORMAL)
@@ -458,6 +465,8 @@ class SpecEditorFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_SYNTHESIZER_SLUGS)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_SYMBOLIC)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_RECOVERY)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_NEIGHBOUR_ROBOT)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_INCLUDE_OTHER_ROBOT_HEADING)
         self.Bind(wx.EVT_MENU, self.onMenuSimulate, id=MENU_SIMULATE)
         self.Bind(wx.EVT_MENU, self.onMenuConfigSim, id=MENU_SIMCONFIG)
         self.Bind(wx.EVT_MENU, self.onMenuAnalyze, id=MENU_ANALYZE)
@@ -991,6 +1000,8 @@ class SpecEditorFrame(wx.Frame):
         self.frame_1_menubar.Check(MENU_FASTSLOW, self.proj.compile_options["fastslow"])
         self.frame_1_menubar.Check(MENU_SYMBOLIC, self.proj.compile_options["symbolic"])
         self.frame_1_menubar.Check(MENU_RECOVERY, self.proj.compile_options["recovery"])
+        self.frame_1_menubar.Check(MENU_NEIGHBOUR_ROBOT, self.proj.compile_options["neighbour_robot"])
+        self.frame_1_menubar.Check(MENU_INCLUDE_OTHER_ROBOT_HEADING, self.proj.compile_options["include_heading"])
 
         if self.proj.compile_options["parser"] == "slurp":
             self.frame_1_menubar.Check(MENU_PARSERMODE_SLURP, True)
@@ -1789,6 +1800,8 @@ class SpecEditorFrame(wx.Frame):
         self.proj.compile_options["use_region_bit_encoding"] = self.frame_1_menubar.IsChecked(MENU_BITVECTOR)
         self.proj.compile_options["symbolic"] = self.frame_1_menubar.IsChecked(MENU_SYMBOLIC)
         self.proj.compile_options["recovery"] = self.frame_1_menubar.IsChecked(MENU_RECOVERY)
+        self.proj.compile_options["neighbour_robot"] = self.frame_1_menubar.IsChecked(MENU_NEIGHBOUR_ROBOT)
+        self.proj.compile_options["include_heading"] = self.frame_1_menubar.IsChecked(MENU_INCLUDE_OTHER_ROBOT_HEADING)
 
         if self.frame_1_menubar.IsChecked(MENU_PARSERMODE_SLURP):
             self.proj.compile_options["parser"] = "slurp"
