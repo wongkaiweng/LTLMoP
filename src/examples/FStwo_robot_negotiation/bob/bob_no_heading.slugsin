@@ -1,0 +1,91 @@
+[INPUT]
+alice_r1
+alice_r2
+alice_r3
+alice_r4
+alice_r5
+alice_r3_rc
+alice_r5_rc
+alice_r2_rc
+alice_r4_rc
+alice_r1_rc
+sbit0
+sbit1
+sbit2
+
+[OUTPUT]
+bit0
+bit1
+bit2
+
+[ENV_TRANS]
+| ! & & sbit0' ! sbit1' ! sbit2' ! | alice_r2' alice_r1'
+| ! & & ! sbit0' sbit1' sbit2' ! | alice_r2' alice_r4'
+| ! & & ! sbit0' ! sbit1' ! sbit2' ! | alice_r4' alice_r5'
+| ! & & ! sbit0' sbit1' ! sbit2' ! alice_r5'
+| ! alice_r3 | | alice_r3' alice_r5' alice_r2'
+| ! alice_r5 | | alice_r5' alice_r3' alice_r4'
+| ! alice_r2 | | | alice_r2' alice_r3' alice_r4' alice_r1'
+| ! alice_r4 | | alice_r4' alice_r5' alice_r2'
+| ! alice_r1 | alice_r1' alice_r2'
+| | | | & & & & alice_r3' ! alice_r5' ! alice_r2' ! alice_r4' ! alice_r1' & & & & ! alice_r3' alice_r5' ! alice_r2' ! alice_r4' ! alice_r1' & & & & ! alice_r3' ! alice_r5' alice_r2' ! alice_r4' ! alice_r1' & & & & ! alice_r3' ! alice_r5' ! alice_r2' alice_r4' ! alice_r1' & & & & ! alice_r3' ! alice_r5' ! alice_r2' ! alice_r4' alice_r1'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 ! bit0 ! bit1 ! bit2 & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 ! bit1 bit2 & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 ! sbit2 ! bit0 bit1 ! bit2 & & ! sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 bit1 bit2 & & ! sbit0' sbit1' sbit2'
+| ! & & & & & sbit0 ! sbit1 ! sbit2 bit0 ! bit1 ! bit2 & & sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 ! bit0 bit1 ! bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 ! sbit2 ! bit0 bit1 bit2 | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 bit1 ! bit2 | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2'
+| ! & & & & & ! sbit0 ! sbit1 sbit2 ! bit0 bit1 bit2 | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 ! sbit2 ! bit0 ! bit1 ! bit2 | & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 ! sbit2 ! bit0 ! bit1 bit2 | & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 ! bit1 ! bit2 | & & ! sbit0' sbit1' sbit2' & & ! sbit0' ! sbit1' ! sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 ! bit0 ! bit1 bit2 | & & ! sbit0' sbit1' sbit2' & & ! sbit0' ! sbit1' sbit2'
+| ! & & & & & ! sbit0 sbit1 sbit2 bit0 ! bit1 ! bit2 | & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+| ! & & & & & sbit0 ! sbit1 ! sbit2 ! bit0 bit1 bit2 | & & sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2'
+| & ! & & ! sbit0' ! sbit1' ! sbit2' ! ! | | | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & & ! sbit0' ! sbit1' ! sbit2' ! | | | & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+| & ! & & ! sbit0' ! sbit1' sbit2' ! ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & & ! sbit0' ! sbit1' sbit2' ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+| & ! & & ! sbit0' sbit1' ! sbit2' ! ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2' & & & ! sbit0' sbit1' ! sbit2' ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+| & ! & & ! sbit0' sbit1' sbit2' ! ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & sbit0' ! sbit1' ! sbit2' & & & ! sbit0' sbit1' sbit2' ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & sbit0' ! sbit1' ! sbit2'
+| & ! & & sbit0' ! sbit1' ! sbit2' ! ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & & sbit0' ! sbit1' ! sbit2' ! | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2'
+| | | | & & ! sbit0' ! sbit1' ! sbit2' & & ! sbit0' ! sbit1' sbit2' & & ! sbit0' sbit1' ! sbit2' & & ! sbit0' sbit1' sbit2' & & sbit0' ! sbit1' ! sbit2'
+
+[ENV_LIVENESS]
+| | | | | | | | | & & & & & ! bit0 ! bit1 ! bit2 ! sbit0' ! sbit1' ! sbit2' & & & ! bit0 ! bit1 ! bit2 ! & & ! bit0' ! bit1' ! bit2' & & & & & ! bit0 ! bit1 bit2 ! sbit0' ! sbit1' sbit2' & & & ! bit0 ! bit1 bit2 ! & & ! bit0' ! bit1' bit2' & & & & & ! bit0 bit1 ! bit2 ! sbit0' sbit1' ! sbit2' & & & ! bit0 bit1 ! bit2 ! & & ! bit0' bit1' ! bit2' & & & & & ! bit0 bit1 bit2 ! sbit0' sbit1' sbit2' & & & ! bit0 bit1 bit2 ! & & ! bit0' bit1' bit2' & & & & & bit0 ! bit1 ! bit2 sbit0' ! sbit1' ! sbit2' & & & bit0 ! bit1 ! bit2 ! & & bit0' ! bit1' ! bit2'
+
+[ENV_INIT]
+sbit0
+! sbit1
+! sbit2
+alice_r3
+| | | | & & & & alice_r3 ! alice_r5 ! alice_r2 ! alice_r4 ! alice_r1 & & & & ! alice_r3 alice_r5 ! alice_r2 ! alice_r4 ! alice_r1 & & & & ! alice_r3 ! alice_r5 alice_r2 ! alice_r4 ! alice_r1 & & & & ! alice_r3 ! alice_r5 ! alice_r2 alice_r4 ! alice_r1 & & & & ! alice_r3 ! alice_r5 ! alice_r2 ! alice_r4 alice_r1
+| | | | & & ! sbit0 ! sbit1 ! sbit2 & & ! sbit0 ! sbit1 sbit2 & & ! sbit0 sbit1 ! sbit2 & & ! sbit0 sbit1 sbit2 & & sbit0 ! sbit1 ! sbit2
+
+[SYS_TRANS]
+| ! alice_r4' ! & & ! sbit0' ! sbit1' ! sbit2'
+| ! alice_r5' ! & & ! sbit0' sbit1' ! sbit2'
+| ! alice_r1' ! & & sbit0' ! sbit1' ! sbit2'
+| ! alice_r2' ! & & ! sbit0' sbit1' sbit2'
+| ! alice_r3' ! & & ! sbit0' ! sbit1' sbit2'
+| ! & & ! sbit0' ! sbit1' ! sbit2' | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! sbit0' ! sbit1' sbit2' | | & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! sbit0' sbit1' ! sbit2' | | & & ! bit0' bit1' ! bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2'
+| ! & & ! sbit0' sbit1' sbit2' | | | & & ! bit0' bit1' bit2' & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & sbit0' ! sbit1' ! sbit2' | & & bit0' ! bit1' ! bit2' & & ! bit0' bit1' bit2'
+| ! & & ! bit0' ! bit1' ! bit2' ! | | | & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & ! bit0' ! bit1' bit2' ! | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & ! bit0' bit1' ! bit2' ! | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' bit2' & & bit0' ! bit1' ! bit2'
+| ! & & ! bit0' bit1' bit2' ! | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & bit0' ! bit1' ! bit2'
+| ! & & bit0' ! bit1' ! bit2' ! | | | & & ! bit0' ! bit1' ! bit2' & & ! bit0' ! bit1' bit2' & & ! bit0' bit1' ! bit2' & & ! bit0' bit1' bit2'
+| | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
+
+[SYS_LIVENESS]
+& & & & & ! bit0' bit1' ! bit2' ! sbit0' sbit1' ! sbit2'
+
+[SYS_INIT]
+bit0
+! bit1
+! bit2
+| | | | & & ! bit0 ! bit1 ! bit2 & & ! bit0 ! bit1 bit2 & & ! bit0 bit1 ! bit2 & & ! bit0 bit1 bit2 & & bit0 ! bit1 ! bit2
+
