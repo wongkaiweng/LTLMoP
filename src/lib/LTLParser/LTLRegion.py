@@ -87,9 +87,12 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     robotName: name of the robot (optional)
     OUTPUT:
     ltlFormulaReplaced: ltl formula with all regionBits replaced 
-    
+
+    For old format:
     ---> s.bit to e.robotName_regionName <----
-    
+
+    For fastslow:
+    ---> e.sbit to e.robotName_regionName_rc <---
     """
     
     # make a copy of the string
@@ -118,10 +121,14 @@ def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionLis
     
     OUTPUT:
     ltlFormulaReplaced: ltl formula with all robotName+region replaced 
-    
+
+    For old format:
     --> e.robotName_regionName to s.bit <----
-    
-    """ 
+
+    For fastslow:
+    --> e.robotName_regionName_rc to e.sbit <----
+    --> e.robotName_regionName to s.bit <----
+    """
     
     # remove our robot name from the spec
     if fastslow:
