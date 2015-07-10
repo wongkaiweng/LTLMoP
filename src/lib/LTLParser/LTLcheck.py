@@ -25,43 +25,54 @@ debug_tree_terminal      = False # print the entire tree in terminal
 
 def removeLTLwithKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit removed
-    value, LTLlist = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)
+    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)
     return " &\n ".join(LTLlist)
 
 def removeLTLwithoutKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit removed
-    value, LTLlist = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
+    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
     return " &\n ".join(LTLlist)
 
-def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False):
+def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False, use_next = False, next = False):
     """
     Return an LTLFomula with formulas involving bits removed
     mode: False if see key then the clause is not kept
           True  if see key then the clause is kept
+    use_next: use the next mode. look for next(key...)
     """
     final_value  = False     #false for no s.bit LTL. True for having s.bit LTL
     LTLlist = []
+    LTLExcludedList = []
 
     if not tree[0] in terminals or tree[0] in ('FALSE','TRUE'):
 
         # for system propositions
         if key in tree[0]:
-            return True, []
+            if not use_next or (use_next and next):
+                return True, [], [], False
 
+        # change the next flag
+        elif tree[0] == 'NextOperator':
+            next = True
+
+        next_in_loop   = next
         for x in tree[1:]:
             # skip ltl that does not contain a global operator
             if level == 0 :
                 pass
 
-            value, LTLsubList = findLTLWithNoKeyInEnvTrans(x, terminals, level+1, key, mode)
+            value, LTLsubList, LTLExcludedsubList, next_in_loop = findLTLWithNoKeyInEnvTrans(x, terminals, level+1, key, mode, use_next, next_in_loop)
 
             final_value = final_value or value
 
             if level == 0:
                 if value == mode: # no s.bit in this formula
                     LTLlist.append(LTLFormula.treeToString(x))
+                else:
+                    LTLExcludedList.append(LTLFormula.treeToString(x))
 
-    return final_value, LTLlist
+    return final_value, LTLlist, LTLExcludedList, next
+
 
 class LTL_Check:
 
