@@ -6,6 +6,7 @@ import ast                  # for parsing spec dict from negtiation monitor
 import strategy             # for finding regions from region bits
 import numpy                # for generating bit encoding
 import parseEnglishToLTL    # for parsing original region name to region bits
+import re                   # for parsing regionCompleted_b and region_b to sbit and bit
 
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ class RobotClient:
         
         #send out initial info
         self.initializeRegionExchange(hsub)
-        self.initializeHeadingRegionExchange()
+        #self.initializeCompletedRegionExchange()
          
         # track if spec is requested
         self.specRequestFromOther = [] # list of spec requested
@@ -74,22 +75,22 @@ class RobotClient:
         self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
         logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
 
-    def initializeHeadingRegionExchange(self):
+    def initializeCompletedRegionExchange(self):
         """
-        This function sends the list of heading region to the negotiation Monitor
+        This function sends the list of completed region to the negotiation Monitor
         hsub:         self.hsub from LTLMoP
         """
         # send region info to negotiation monitor
-        self.clientObject.send(self.robotName + '_heading' +'-' + 'regionList = ' + str(self.regionList) + '\n')
+        self.clientObject.send(self.robotName +'-' + 'regionList = ' + str([reg+'_rc' for reg in self.regionList]) + '\n')
         logging.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
 
-    def updateHeadingRobotRegion(self, current_region):
+    def updateCompletedRobotRegion(self, current_region):
         """
-        This function update the heading region info in the negotiation monitor if the robot is at a next region
+        This function update the completed region info in the negotiation monitor if the robot is at a next region
         current_region: region object in LTLMoP
         """
         # send current region to negotiation monitor
-        self.clientObject.send(self.robotName + '_heading' + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
+        self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]+'_rc') + '\n')
         logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
 
     def closeConnection(self):
@@ -104,7 +105,7 @@ class RobotClient:
         This function sends the robot's spec to the negotiation monitor according to the specType.
         """
         # check if the specType is valid
-        possibleSpecTypes = ['SysTrans','SysGoals','EnvTrans','EnvGoals']
+        possibleSpecTypes = ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
         
@@ -239,5 +240,74 @@ class RobotClient:
         This function sets the violation time stamp.
         """
         self.clientObject.send(self.robotName + '-' + 'violationTimeStamp = ' + str(timeStamp) + '\n')
-        
-    
+
+    def sendProp(self, propListType, propDict):
+        """
+        This function sends environment propsitions with values
+        propListType: either 'sys' or 'env'
+        propDict    : {propName:propValue}
+        """
+        # send prop
+        def decorate_prop(prop):
+            """
+            replace regionCompleted_b and region_b to sbit and bit
+            """
+            prop = re.sub(r'region_b(\d+)$', r'bit\1', prop)
+            prop = re.sub(r'regionCompleted_b(\d+)$', r'sbit\1', prop)
+            return prop
+
+        #make sure the region names are converted
+        if propListType == 'env':
+            propDictOnlyReg = {prop:value for prop, value in propDict.iteritems() if 'regionCompleted_b' in prop}
+            propDict = {prop:value for prop, value in propDict.iteritems() if not 'regionCompleted_b' in prop}
+
+            # find region in new name
+            targetRegionNew = self.regions[self.regionCompleted_domain.propAssignmentsToNumericValue(propDictOnlyReg)]
+
+            # find reigon in old name
+            targetRegionOrig = self.newRegionNameToOld[targetRegionNew.name]
+
+            # append regions to dictionary
+            for origReg in self.regionList:
+                if origReg == targetRegionOrig:
+                    propDict.update({self.robotName+'_'+origReg+'_rc':True})
+                else:
+                    propDict.update({self.robotName+'_'+origReg+'_rc':False})
+
+            self.clientObject.send(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
+
+        else:
+            propDictOnlyReg = {prop:value for prop, value in propDict.iteritems() if 'region_b' in prop}
+            propDict = {prop:value for prop, value in propDict.iteritems() if not 'region_b' in prop}
+
+            # find region in new name
+            targetRegionNew = self.regions[self.region_domain.propAssignmentsToNumericValue(propDictOnlyReg)]
+
+            # find reigon in old name
+            targetRegionOrig = self.newRegionNameToOld[targetRegionNew.name]
+
+            # append regions to dictionary
+            for origReg in self.regionList:
+                if origReg == targetRegionOrig:
+                    propDict.update({self.robotName+'_'+origReg:True})
+                else:
+                    propDict.update({self.robotName+'_'+origReg:False})
+
+            self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
+        logging.info('ROBOTCLIENT: sent'+propListType+'propositions list with value')
+
+    def setCoordinationStatus(self, patchingStatus):
+        """
+        This function sets the patching status.
+        """
+        self.clientObject.send(self.robotName + '-' + 'patchingStatus = ' + str(patchingStatus) +  '\n')
+        logging.info('ROBOTCLIENT: set coorindation status to ' + str(patchingStatus))
+
+    def checkCoordinationStatus(self):
+        """
+        This function checks if patching is initiated.
+        """
+        self.clientObject.send(self.robotName + '-' + 'patchingStatus = ' + "''" +  '\n')
+        status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+
+        return status

@@ -33,6 +33,25 @@ def removeLTLwithoutKeyFromEnvTrans(spec, key):
     value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
     return " &\n ".join(LTLlist)
 
+def separateLTLwithoutEnvPropFromEnvInit(spec):
+    """
+    Output
+    LTLlist: return an LTLFomula with all clauses containing env prop kept
+    LTLExcludedList: LTL without any env prop
+    """
+    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 'e.', True)
+    return " &\n ".join(['('+x+')' for x in LTLlist]), " &\n ".join(['('+x+')' for x in LTLExcludedList])
+
+def separateLTLwithNextSystemProps(spec):
+    """
+    Output
+    LTLlist: LTL without next system prop
+    LTLExcludedList: LTL with next system prop
+    """
+    # return an LTLFomula with all clauses containing s.bit removed
+    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 's.', False, True, False)
+    return " &\n ".join(LTLlist), " &\n ".join(LTLExcludedList)
+
 def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False, use_next = False, next = False):
     """
     Return an LTLFomula with formulas involving bits removed
