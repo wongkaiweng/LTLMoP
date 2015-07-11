@@ -7,6 +7,7 @@ import ast    #for parsing msg from client
 import sys    #for program exiting
 import signal #for terminating object when keyboard interrupt
 import time   #for temporary pause, timing synthesis time
+import random #for chosing one next states from the list
 
 # Climb the tree to find out where we are
 import os, sys
@@ -129,8 +130,9 @@ class CentralExecutor:
                         for specType, value in self.spec.iteritems():
                             self.spec[specType][item.group("robotName")] = ""
 
-                        # set up propMapping for the robot
-                            self.propMapping[item.group("robotName")] = {}
+                        # set up propMappingNewToOld for the robot
+                            self.propMappingNewToOld[item.group("robotName")] = {}
+                            self.propMappingOldToNew[item.group("robotName")] = {}
 
                     elif item.group('packageType')  ==  "regionName":
                         # update region info of robot
@@ -182,7 +184,17 @@ class CentralExecutor:
 
                         # save proposition mapping
                         for prop in ast.literal_eval(item.group("packageValue")).keys():
-                            self.propMapping[item.group("robotName")].update({prop:prop})
+                            self.propMappingNewToOld[item.group("robotName")].update({prop:prop})
+                            self.propMappingOldToNew[item.group("robotName")].update({prop:prop})
+
+                    elif item.group('packageType') in 'automatonExecution':
+                        # first receive inputs
+                        nextInputs = ast.literal_eval(item.group("packageValue")) # dict
+                        robot = item.group("robotName")
+
+                        # check for outputs
+                        nextOutputs = self.findRobotOutputs(robot, nextInputs)
+                        x.send(str(nextOutputs))
 
                     elif "closeConnection" in data:
                         x.close()
@@ -220,9 +232,12 @@ class CentralExecutor:
                 self.compileCentralizedSpec()
 
                 # TODO: here run the centralized aut. also need to checkData
+                while True:
+                    self.checkData()
 
                 #clean all necessary variables when done
                 self.cleanVariables()
+
                 #self.closeConnection(None,None)
                 pass
         else:
@@ -230,17 +245,20 @@ class CentralExecutor:
 
     def cleanVariables(self):
         #This function clean and initialize all variables when patching is done/ when the instance is first created
+        # TODO: we might not need to clean up all variables when patching ends (still need to exchange region info))
         self.regionList = {}  #tracking region info for each robot
         self.spec       = {'EnvInit':{},'EnvTrans':{},'EnvGoals':{},'SysInit':{},'SysTrans':{},'SysGoals':{}}
         self.coordinatingRobots = [] #track the robots cooridnating
         self.envPropList = {} #tracking env propositions of each robot envPropList[robot]= propList = {prop:value}
         self.sysPropList = {} #tracking sys propositions of each robot sysPropList[robot]= propList = {prop:value}
-        self.propMapping = {} #track mapping from newPropName back to oldPropName propMapping[robot][newPropName] = oldPropName
+        self.propMappingNewToOld = {} #track mapping from newPropName back to oldPropName propMappingNewToOld[robot][newPropName] = oldPropName
+        self.propMappingOldToNew = {} #track mapping from newPropName back to oldPropName propMappingOldToNew[robot][oldPropName] = newPropName
         self.smvSysPropList = [] #store newPropName for system props
         self.smvEnvPropList = [] #store newPropName for environment props
         self.currentState = None #state object. store the combined current state of all robots
         self.currentAssignment = {} # dict. store assignments of all props and all robots
         self.patchingStatus = {} #track if patching is initiated. True if started and false otherwise
+        self.last_next_states = [] #track the last next states in our autonmaton execution
 
     def closeConnection(self, signal, frame):
         """
@@ -336,8 +354,9 @@ class CentralExecutor:
 
                 else:
                     # store and update prop mapping
-                    self.propMapping[robot].pop(eProp)
-                    self.propMapping[robot][robot+'_'+eProp] = eProp
+                    self.propMappingNewToOld[robot].pop(eProp)
+                    self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
+                    self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
                     self.smvEnvPropList.append(robot+'_'+eProp)
                     self.currentAssignment.update({robot+'_'+eProp: eValue})
 
@@ -353,8 +372,9 @@ class CentralExecutor:
                     self.currentAssignment.update({sProp: sValue})
                 else:
                     # store and update prop mapping
-                    self.propMapping[robot].pop(sProp)
-                    self.propMapping[robot][robot+'_'+sProp] = sProp
+                    self.propMappingNewToOld[robot].pop(sProp)
+                    self.propMappingNewToOld[robot][robot+'_'+sProp] = sProp
+                    self.propMappingOldToNew[robot][sProp] = robot+'_'+sProp
                     self.smvSysPropList.append(robot+'_'+sProp)
                     self.currentAssignment.update({robot+'_'+sProp: sValue})
 
@@ -427,9 +447,69 @@ class CentralExecutor:
             self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
             # TODO: need to be finished
             self.strategy.current_state = self.strategy.searchForOneState(self.currentAssignment)
+            logging.info('Starting at State ' + str(self.strategy.current_state.state_id))
         else:
             logging.error('cannot synthesize a centralized patch')
             pass
+
+    def findRobotOutputs(self, robot, nextInputs):
+        """
+        receive latest inputs from one robot and find the next outputs of the robot.
+        Inputs:
+        robot: name of the robot
+        nextInputs: dictionary of inputs with original prop name from the robot
+
+        Outputs:
+        nextOutputs: dictionary of outputs with original prop name from the robot
+        """
+
+        # convert to the new mapping name from received data / update current assignments
+        currentInputs = self.strategy.current_state.getInputs(expand_domains=True)
+
+        # remove any envProps that are sysProps in nextInputs
+        nextInputs = ({k:v for k,v in nextInputs.iteritems() if k in currentInputs.keys()})
+        # update inputs based on the inputs from the other robot
+        currentInputs.update({self.propMappingOldToNew[robot][k]:v for k,v in nextInputs.iteritems()})
+
+        # find if the state is changed
+        next_states = self.strategy.findTransitionableStates(currentInputs, from_state= self.strategy.current_state)
+
+        ## This is from executeStrategy.py
+        # Make sure we have somewhere to go
+        if len(next_states) == 0:
+            # Well darn!
+            logging.error("Could not find a suitable state to transition to!")
+            logging.debug("nextInputs:" + str(nextInputs))
+            logging.debug("currentInputs:" + str(currentInputs))
+            return
+
+        # See if we're beginning a new transition
+        if next_states != self.last_next_states:
+            # NOTE: The last_next_states comparison is also to make sure we don't
+            # choose a different random next-state each time, in the case of multiple choices
+            self.last_next_states = next_states
+
+            # Only allow self-transitions if that is the only option!
+            if len(next_states) > 1 and self.strategy.current_state in next_states:
+                next_states.remove(self.strategy.current_state)
+
+            next_state = random.choice(next_states)
+
+            if next_state != self.strategy.current_state:
+                self.strategy.current_state = next_state
+                self.last_next_states = []  # reset
+                logging.info('Currently at State ' + str(self.strategy.current_state.state_id))
+
+        """
+        send updated outputs to the robot
+        """
+        # convert to original prop names and send back to the robot
+        nextOutputs = {}
+        for prop in self.sysPropList[robot]:
+            nextOutputs[prop] = self.strategy.current_state.getAll(expand_domains=True)[self.propMappingOldToNew[robot][prop]]
+
+        return nextOutputs
+
 
 """
 Constant check if goal is achieved. If so, terminate cooridation.

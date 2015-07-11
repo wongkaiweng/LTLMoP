@@ -25,6 +25,7 @@ class RobotClient:
 
         # initialize our variable
         self.robotName = ''
+        self.proj = proj
         self.regions    = proj.rfi.regions # contains decomposed names
         if self.fastslow:
             self.regionCompleted_domain = strategy.Domain("regionCompleted",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
@@ -247,6 +248,35 @@ class RobotClient:
         propListType: either 'sys' or 'env'
         propDict    : {propName:propValue}
         """
+        propDict = self.convertFromRegionBitsToRegionNameInDict(propListType, propDict)
+        #make sure the region names are converted
+        if propListType == 'env':
+            self.clientObject.send(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
+        else:
+            self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
+        logging.info('ROBOTCLIENT: sent'+propListType+'propositions list with value')
+
+
+    def convertFromRegionBitsToRegionNameInDict(self, propListType, propDict):
+        """
+        Convert regionCompleted_b or region_b in prop dict to real region names.
+        * make sure the dict only contains sys or env prop or you will need to run each type once.
+        propListType: either 'sys' or 'env'
+        propDict    : {propName:propValue}
+        """
+        if propListType not in ['sys','env']:
+            logging.error('Please specify your propListType correctly!')
+            return
+
+        if propListType == 'sys':
+            strategyBitStr = 'region_b'
+            suffix = ''
+            domain = self.region_domain
+        else:
+            strategyBitStr = 'regionCompleted_b'
+            suffix = '_rc'
+            domain = self.regionCompleted_domain
+
         # send prop
         def decorate_prop(prop):
             """
@@ -257,44 +287,48 @@ class RobotClient:
             return prop
 
         #make sure the region names are converted
-        if propListType == 'env':
-            propDictOnlyReg = {prop:value for prop, value in propDict.iteritems() if 'regionCompleted_b' in prop}
-            propDict = {prop:value for prop, value in propDict.iteritems() if not 'regionCompleted_b' in prop}
+        propDictOnlyReg = {prop:value for prop, value in propDict.iteritems() if strategyBitStr in prop}
+        propDict = {prop:value for prop, value in propDict.iteritems() if not strategyBitStr in prop}
 
-            # find region in new name
-            targetRegionNew = self.regions[self.regionCompleted_domain.propAssignmentsToNumericValue(propDictOnlyReg)]
+        # find region in new name
+        targetRegionNew = self.regions[domain.propAssignmentsToNumericValue(propDictOnlyReg)]
 
-            # find reigon in old name
-            targetRegionOrig = self.newRegionNameToOld[targetRegionNew.name]
+        # find reigon in old name
+        targetRegionOrig = self.newRegionNameToOld[targetRegionNew.name]
 
-            # append regions to dictionary
-            for origReg in self.regionList:
-                if origReg == targetRegionOrig:
-                    propDict.update({self.robotName+'_'+origReg+'_rc':True})
-                else:
-                    propDict.update({self.robotName+'_'+origReg+'_rc':False})
+        # append regions to dictionary
+        for origReg in self.regionList:
+            if origReg == targetRegionOrig:
+                propDict.update({self.robotName+'_'+origReg+suffix:True})
+            else:
+                propDict.update({self.robotName+'_'+origReg+suffix:False})
 
-            self.clientObject.send(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
+        return propDict
 
+    def getOutputs(self, envPropDict):
+        """
+        Communicate with the central executor. Send in the next inputs and ask for the next output.
+        envPropDict: dict of env props with values
+        """
+        envPropDict = self.convertFromRegionBitsToRegionNameInDict('env', envPropDict)
+        self.clientObject.send(self.robotName + '-' + 'automatonExecution = ' + str(envPropDict) + '\n')
+
+        # receive outputs
+        outputs = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+
+        # combine all boolean region props into one
+        sys_region = [k.replace(self.robotName+'_','') for k, v in outputs.iteritems() if k.replace(self.robotName+'_','') in self.regionList and v]
+
+        # find all other sysProps and exclude the region ones
+        outputs = {k:v for k, v in outputs.iteritems() if not k.replace(self.robotName+'_','') in self.regionList}
+
+        # append the region object into the outputs dict
+        if len(self.proj.regionMapping[sys_region[0]]) == 1:
+            outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
         else:
-            propDictOnlyReg = {prop:value for prop, value in propDict.iteritems() if 'region_b' in prop}
-            propDict = {prop:value for prop, value in propDict.iteritems() if not 'region_b' in prop}
+            logging.warning('The regions are decomposed. We might want to do this differently')
 
-            # find region in new name
-            targetRegionNew = self.regions[self.region_domain.propAssignmentsToNumericValue(propDictOnlyReg)]
-
-            # find reigon in old name
-            targetRegionOrig = self.newRegionNameToOld[targetRegionNew.name]
-
-            # append regions to dictionary
-            for origReg in self.regionList:
-                if origReg == targetRegionOrig:
-                    propDict.update({self.robotName+'_'+origReg:True})
-                else:
-                    propDict.update({self.robotName+'_'+origReg:False})
-
-            self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
-        logging.info('ROBOTCLIENT: sent'+propListType+'propositions list with value')
+        return outputs
 
     def setCoordinationStatus(self, patchingStatus):
         """

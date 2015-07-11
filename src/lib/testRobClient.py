@@ -5,6 +5,7 @@ import sys
 import specCompiler
 import strategy
 import logging
+import time
 
 def loadRobotClient(specpath, otherRobotName):
     """
@@ -95,5 +96,9 @@ bobClient.sendProp('sys',bobState.getOutputs(expand_domains = True))
 aliceClient.setCoordinationStatus(True)
 bobClient.setCoordinationStatus(True)
 
+time.sleep(5)
+# update next inputs and request outputs
+aliceClient.getOutputs(aliceState.getInputs(expand_domains = True))
+bobClient.getOutputs(bobState.getInputs(expand_domains = True))
 
 
