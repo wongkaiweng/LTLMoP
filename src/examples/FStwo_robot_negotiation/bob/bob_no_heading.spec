@@ -32,11 +32,6 @@ alice_r2, 1
 alice_r3, 1
 alice_r4, 1
 alice_r5, 1
-alice_r3_rc, 1
-alice_r5_rc, 1
-alice_r2_rc, 1
-alice_r4_rc, 1
-alice_r1_rc, 1
 
 
 ======== SPECIFICATION ========
