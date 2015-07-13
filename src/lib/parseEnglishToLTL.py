@@ -314,13 +314,13 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the sys init condition for DNF later #####
-            spec['SysInit']= '& '.join(filter(None,[spec['SysInit'], LTLRegSubformula])) + LTLActSubformula
+            spec['SysInit']= '& '.join(filter(None,[x.strip().rstrip('&') for x in [spec['SysInit'], LTLRegSubformula, LTLActSubformula]]))
             ######################################################################
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
             # also add to envInit if we are running instantaneous action
             if fastslow:
-                spec['EnvInit']= '& '.join(filter(None, [spec['EnvInit'], LTLEnvRegSubformula])) + LTLEnvActSubformula
+                spec['EnvInit']= '& '.join(filter(None, [x.strip().rstrip('&') for x in [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]]))
                 linemap['EnvInit'].append(lineInd)
                 LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
 
@@ -834,10 +834,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     #     print 'The following propositions seem to be unused:'
     #    print unusedProp
     #    print 'They should be removed from the proposition lists\n'
-        
-    #### Rewritten by Catherine for ENV Assumption mining ###############
-    spec['SysInit'] = "(" + spec['SysInit'][0:spec['SysInit'].rfind('&')] + ")"
-    #####################################################################
+
     return spec,linemap,failed,LTL2LineNo,internal_props
 
 
