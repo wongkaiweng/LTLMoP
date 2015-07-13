@@ -126,11 +126,10 @@ class LTL_Check:
             tree = LTLFormula.parseLTL(removed_all)
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
             self.ltlTree_to_lineNo[str(tree)] = value   
-            
-        # trim EnvTrans so that it only includes ltl but not tabs and nextlines
-        read_ltl  = self.spec["EnvTrans"].replace("\t", "").replace("\n", "").replace(" ", "")[:-1]
 
-        self.replaceLTLTree(read_ltl)
+        # save EnvTrans for runtime monitoring
+        self.replaceLTLTree(self.spec["EnvTrans"])
+
         if debug_tree_terminal == True: 
             logging.debug("Here's the ltl of the environment assumptions from spec:")
             logging.debug(LTLFormula.printTree(self.ltl_tree,LTLFormula.p.terminals))
@@ -251,12 +250,7 @@ class LTL_Check:
 
         # choosing modify stage to be added
         new_env_safety = self.env_safety_assumptions_stage[str(self.modify_stage)]
-        new_env_safety  = new_env_safety.replace("\t", "").replace("\n", "").replace(" ", "") #.replace("&[]<>(TRUE)", "") 
-        
-        if 'FALSE' in new_env_safety:
-            new_env_safety  = new_env_safety + "))" 
-        else: 
-            new_env_safety  = new_env_safety + ")"     
+        new_env_safety  = new_env_safety + "))"
 
         self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + new_env_safety))
 
@@ -266,12 +260,10 @@ class LTL_Check:
             del self.violated_spec_line_no[remove_index]           
         except:
             pass
-        
-        if 'FALSE' in new_env_safety:
-            return self.env_safety_assumptions_stage[str(self.modify_stage)] + ")) &\n"
-        else:
-            return self.env_safety_assumptions_stage[str(self.modify_stage)] + ") &\n"
-        
+
+        return self.env_safety_assumptions_stage[str(self.modify_stage)] + "))\n"
+
+
     def read_spec_file(self,f):
         """
         Read spec file from LTLMoP and store the spec in a string.

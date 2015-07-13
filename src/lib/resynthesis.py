@@ -446,12 +446,11 @@ class ExecutorResynthesisExtensions(object):
         self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
 
         # reset env characterization
-        self.spec['EnvTrans'] = self.oriEnvTrans + '&'
+        self.spec['EnvTrans'] = self.oriEnvTrans
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','')[:-2] +'))&\n'
-        self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-        
+        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
+        self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] } # we are striping the last ))
+
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
@@ -466,7 +465,7 @@ class ExecutorResynthesisExtensions(object):
         oldSpecEnvGoals = self.spec['EnvGoals']
 
         # conjunct the spec of the other robots
-        self.spec['SysTrans'] = otherRobotEnvTrans + oldSpecSysTrans
+        self.spec['SysTrans'] = ' &\n'.join(filter(None, [otherRobotEnvTrans, oldSpecSysTrans]))
         #logging.debug('SysTrans:' + self.spec['SysTrans'])
         
         if level:
@@ -496,17 +495,17 @@ class ExecutorResynthesisExtensions(object):
         self.compiler.proj.compile_options['recovery'] = True
 
         # modify envTrans to remove all characterization. Restart Characterization
-        self.spec['EnvTrans'] = self.oriEnvTrans + '&'
+        self.spec['EnvTrans'] = self.oriEnvTrans
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
         #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','')[:-2] +'))&\n'
+        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
         self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         if self.proj.compile_options["fastslow"]:
-            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0])+'&')
+            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
         else:
             self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
@@ -520,7 +519,7 @@ class ExecutorResynthesisExtensions(object):
         if self.robClient.checkNegotiationStatus() == True:
             # we need to use our original spec
             self.spec = copy.deepcopy(self.originalSpec)
-            self.spec['EnvTrans'] = self.oriEnvTrans + '&'
+            self.spec['EnvTrans'] = self.oriEnvTrans
             #convert to the original specification
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
             self.recreateLTLfile(self.proj, spec = self.spec)
@@ -679,7 +678,7 @@ class ExecutorResynthesisExtensions(object):
                 # send our spec to the other robot
                 self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
                 if self.proj.compile_options["fastslow"]:
-                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0])+'&')
+                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
                 else:
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
                 #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
@@ -693,7 +692,7 @@ class ExecutorResynthesisExtensions(object):
                 if self.robClient.checkNegotiationStatus() == True:
                     # remove spec from other robots and resynthesize
                     self.spec = copy.deepcopy(self.originalSpec)
-                    self.spec['EnvTrans'] = self.oriEnvTrans + '&'
+                    self.spec['EnvTrans'] = self.oriEnvTrans
                     #convert to the original specification
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)
@@ -926,22 +925,10 @@ class ExecutorResynthesisExtensions(object):
             ltl_filename = proj.getFilenamePrefix() + ".ltl"       
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        if not spec["EnvInit"] == "":
-            LTLspec_env = "( " + spec["EnvInit"] + ")&\n" + spec["EnvTrans"] + spec["EnvGoals"]
-        else:
-            LTLspec_env = spec["EnvTrans"] + spec["EnvGoals"]
-        LTLspec_sys = "( " + spec["SysInit"] + ")&\n" + spec["SysTrans"] + spec["SysGoals"]
-        LTLspec_sys += "\n&\n" + spec['InitRegionSanityCheck']
-        LTLspec_sys += "\n&\n" + spec['Topo']
+        LTLspec_env = ' &\n'.join(filter(None,[spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
+        LTLspec_sys = ' &\n'.join(filter(None,[spec["SysInit"], spec["SysTrans"], spec["SysGoals"], spec['InitRegionSanityCheck'], spec['Topo']]))
 
         if proj.compile_options["fastslow"]:
-            """
-            if spec["EnvGoals"] == "":
-                LTLspec_env += spec['EnvTopo'] + "&\n"  + spec['SysImplyEnv']
-            else:
-                LTLspec_env += "\n&"+ spec['EnvTopo'] + "&\n"  + spec['SysImplyEnv']
-            """
-
             LTLspec_env += "\n&"+spec['SysImplyEnv']
 
         # Write the file back

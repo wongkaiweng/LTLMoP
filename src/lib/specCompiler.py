@@ -321,12 +321,15 @@ class SpecCompiler(object):
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
             spec['InitEnvRegionSanityCheck'] = ''
+            spec['EnvTrans'] = spec['EnvTrans'].strip().rstrip('&') # all spec snippets has no trailing &
+            spec['SysTrans'] = spec['SysTrans'].strip().rstrip('&') # all spec snippets has no trailing &
+
             if self.proj.compile_options['neighbour_robot']:
                 if self.proj.compile_options['include_heading']:
                     suffix = '_rc'
-                    spec["EnvTrans"] += createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
+                    spec["EnvTrans"] = '&\n '.join(filter(None, [spec['EnvTrans'], createEnvTopologyFragment(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])]))
                 else:
-                    spec["EnvTrans"] += createEnvTopologyFragmentNoHeading(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])
+                    spec["EnvTrans"] = '&\n '.join(filter(None, [spec['EnvTrans'], createEnvTopologyFragmentNoHeading(self.proj.rfi.transitions, self.proj.rfi.regions, False, self.proj.otherRobot[0])]))
 
                 for idx in range(len(self.proj.rfi.regions)):
                     # exclude boundary and obstacles
@@ -346,7 +349,7 @@ class SpecCompiler(object):
                 # appending initial mutual exclusion to envInit
                 spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
                 if self.proj.compile_options['include_heading']:
-                    spec['InitEnvRegionSanityCheck'] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitRegionSanityCheck'], createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)]))
 
                 if self.proj.compile_options["fastslow"]:
                     if self.proj.compile_options["decompose"]:
@@ -362,13 +365,13 @@ class SpecCompiler(object):
             if self.proj.compile_options['neighbour_robot']:
                 if self.proj.compile_options['decompose']:
                     # make sure the bits are mapped correctly with the use of self.parser
-                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])
+                    spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans'], createSysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])]))
                 else:
-                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])
+                    spec["SysTrans"] = '&\n '.join(filter(None,[spec["SysTrans"], createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])]))
 
             # --------------------------------------------#
-            LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"].strip().rstrip('&'), spec["EnvGoals"]]))
-            LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"].strip().rstrip('&'), spec["SysGoals"]]))
+            LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
+            LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"], spec["SysGoals"]]))
             ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
