@@ -12,9 +12,14 @@ say_impossible, 1
 say_spill, 1
 
 CompileOptions:
-convexify: True
-parser: structured
+synthesizer: jtlv
+neighbour_robot: False
 fastslow: False
+include_heading: False
+convexify: True
+recovery: False
+parser: structured
+symbolic: False
 decompose: True
 use_region_bit_encoding: True
 
@@ -36,15 +41,17 @@ head_tapped, 1
 
 ======== SPECIFICATION ========
 
+OtherRobot: # The other robot in the same workspace
+
 RegionMapping: # Mapping between region names and their decomposed counterparts
 r4 = p9
-office = p13
-between$r3$and$r4$ = p14
-r3 = p10
-between$r1$and$r2$ = p15
-r2 = p11
-others = p1, p2, p3, p4, p5
 r1 = p12
+r2 = p11
+r3 = p10
+between$r3$and$r4$ = p14
+office = p13
+between$r1$and$r2$ = p15
+others = p1, p2, p3, p4, p5
 
 Spec: # Specification in structured English
 group Corners is r1, r2, r3, r4

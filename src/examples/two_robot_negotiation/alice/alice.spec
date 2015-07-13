@@ -7,13 +7,16 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 
 CompileOptions:
+synthesizer: jtlv
+neighbour_robot: True
+fastslow: False
+include_heading: False
 convexify: True
+recovery: False
 parser: structured
 symbolic: False
-use_region_bit_encoding: True
-synthesizer: jtlv
-fastslow: False
 decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
 aliceWithBobSensor

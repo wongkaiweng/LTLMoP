@@ -11,13 +11,16 @@ radio, 1
 extinguish, 0
 
 CompileOptions:
+synthesizer: slugs
+neighbour_robot: False
+fastslow: False
+include_heading: False
 convexify: True
+recovery: True
 parser: structured
 symbolic: False
-use_region_bit_encoding: True
-synthesizer: jtlv
-fastslow: False
 decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
 Basic Simulation
@@ -35,6 +38,8 @@ hazardous_item, 1
 
 
 ======== SPECIFICATION ========
+
+OtherRobot: # The other robot in the same workspace
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
 living = p4

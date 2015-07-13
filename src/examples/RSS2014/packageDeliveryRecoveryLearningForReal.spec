@@ -9,13 +9,16 @@ pickup, 1
 deliver, 1
 
 CompileOptions:
+synthesizer: jtlv
+neighbour_robot: False
+fastslow: False
+include_heading: False
 convexify: False
+recovery: False
 parser: structured
 symbolic: False
-use_region_bit_encoding: True
-synthesizer: jtlv
-fastslow: False
 decompose: True
+use_region_bit_encoding: True
 
 CurrentConfigName:
 BasicSim
@@ -34,6 +37,8 @@ betweenClasses, 1
 
 
 ======== SPECIFICATION ========
+
+OtherRobot: # The other robot in the same workspace
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
 classroom = p10
@@ -63,7 +68,7 @@ If you are activating betweenClasses then do not atrium
 
 # pick up package in the postOffice
 If you are sensing packageReady and you are not activating obtainedPackage then visit mailroom
-do pickup if and only if you are in mailroom and you are sensing packageReady and not obtainedPackage
+do pickup if and only if you are in mailroom and you are sensing packageReady and you are not activating obtainedPackage
 
 #if you are sensing packageReady then do not mailroom
 if you were activating obtainedPackage then do not mailroom
