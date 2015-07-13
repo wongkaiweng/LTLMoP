@@ -514,59 +514,6 @@ def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name 
 
     return " & \n".join(adjFormulas)
 
-def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = ''):
-
-    # skip any boundary or obstacles
-    regions_old = regions
-    regions = []
-    for reg in regions_old:
-        if reg.name == 'boundary' or reg.isObstacle:
-            continue
-        else:
-            regions.append(reg)
-
-    if use_bits:
-        numBits = int(math.ceil(math.log(len(regions),2)))
-        # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(regions), numBits)
-        currBitEnc = bitEncode['current']
-        nextBitEnc = bitEncode['next']
-        
-    # The topological relation (adjacency)
-    adjFormulas = []
-    
-    if not other_robot_name:
-        logging.info('robot_name not provided!')
-        return
-        
-    for Origin in range(len(regions)):
-        
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-            
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + "next(e."+ other_robot_name + '_' +regions[Origin].name + ")"
-        adjFormula = adjFormula + ') -> ( !('
-        first = True
-        for subreg in regionMapping[str(regions[Origin].name)]:
-            if first:
-                first  = False
-            else:
-                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
-                
-            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(s."+ subreg +")")
-            adjFormula = adjFormula + ')'
-
-        # closing this region
-        adjFormula = adjFormula + ' ) ) '
-
-        adjFormulas.append(adjFormula)
-
-    return " & \n".join(adjFormulas)
-    
-
 def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, other_robot_name = '', suffix = ''):
     # Setting the system initial formula to allow only valid
     #  region (encoding). This may be redundant if an initial region is
@@ -601,7 +548,7 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
         
     return initreg_formula
 
-def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = '', use_robot_heading = False):
+def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = '', use_robot_heading = False, fastslow = False):
     """
     []( (next(e.other_robot_name_reg)) -> ( !(next(e.reg_rc))))
     """
@@ -657,8 +604,11 @@ def createIASysMutualExclusion(regionMapping, regions, use_bits=True, other_robo
                 first  = False
             else:
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
-                
-            adjFormula = adjFormula + (envNextBitEnc[subRegIdx] if use_bits else "next(e."+ subReg+ "_rc)")
+
+            if fastslow:
+                adjFormula = adjFormula + (envNextBitEnc[subRegIdx] if use_bits else "next(e."+ subReg+ "_rc)")
+            else:
+                adjFormula = adjFormula + (nextBitEnc[subRegIdx] if use_bits else "next(s."+ subReg)
             adjFormula = adjFormula + ')'
 
         # closing this region

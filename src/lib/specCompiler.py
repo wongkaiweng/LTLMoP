@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createIASysMutualExclusion, createEnvTopologyFragmentNoHeading
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createEnvTopologyFragmentNoHeading
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -360,14 +360,11 @@ class SpecCompiler(object):
                 spec["SysInit"] = "(TRUE)"     # not sure
 
             if self.proj.compile_options['neighbour_robot']:
-                if self.proj.compile_options['fastslow']:
-                    if self.proj.compile_options['decompose']:
-                        # make sure the bits are mapped correctly with the use of self.parser
-                        spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'])
-                    else:
-                        spec["SysTrans"] += createIASysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'])
+                if self.proj.compile_options['decompose']:
+                    # make sure the bits are mapped correctly with the use of self.parser
+                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])
                 else:
-                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0])
+                    spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])
 
             # --------------------------------------------#
             if self.proj.compile_options['fastslow']:
