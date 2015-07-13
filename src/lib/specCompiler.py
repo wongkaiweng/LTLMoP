@@ -320,7 +320,7 @@ class SpecCompiler(object):
                 spec["EnvInit"] = "(TRUE)"
             #LTLspec_env = spec["EnvInit"] + " & \n" + spec["EnvTrans"] + spec["EnvGoals"]  
             # ---------- two_robot_negotiation ---------#
-            InitEnvRegionSanityCheck = ''
+            spec['InitEnvRegionSanityCheck'] = ''
             if self.proj.compile_options['neighbour_robot']:
                 if self.proj.compile_options['include_heading']:
                     suffix = '_rc'
@@ -344,15 +344,15 @@ class SpecCompiler(object):
                                 self.proj.all_sensors.append(self.proj.otherRobot[0] + '_' + self.proj.rfi.regions[idx].name + suffix)
 
                 # appending initial mutual exclusion to envInit
-                InitEnvRegionSanityCheck = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
+                spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
                 if self.proj.compile_options['include_heading']:
-                    InitEnvRegionSanityCheck += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
+                    spec['InitEnvRegionSanityCheck'] += " &\n " + createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)
 
-            if self.proj.compile_options["fastslow"]:
-                if self.proj.compile_options["decompose"]:
-                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [InitEnvRegionSanityCheck, createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
-                else:
-                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [InitEnvRegionSanityCheck, createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
+                if self.proj.compile_options["fastslow"]:
+                    if self.proj.compile_options["decompose"]:
+                        spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
+                    else:
+                        spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
 
                 spec["EnvInit"] = '&\n '.join(filter(None, [spec["EnvInit"], spec['InitEnvRegionSanityCheck']]))
 
@@ -367,12 +367,8 @@ class SpecCompiler(object):
                     spec["SysTrans"] += createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], self.proj.otherRobot[0], self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow'])
 
             # --------------------------------------------#
-            if self.proj.compile_options['fastslow']:
-                LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
-                LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"], spec["SysGoals"]]))
-            else:
-                LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"]])) + spec["EnvGoals"]
-                LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"]])) + spec["SysGoals"]
+            LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"].strip().rstrip('&'), spec["EnvGoals"]]))
+            LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"].strip().rstrip('&'), spec["SysGoals"]]))
             ####################################################
         else:
             logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
