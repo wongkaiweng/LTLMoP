@@ -349,7 +349,7 @@ class SpecCompiler(object):
                 # appending initial mutual exclusion to envInit
                 spec['InitEnvRegionSanityCheck'] = createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0])
                 if self.proj.compile_options['include_heading']:
-                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitRegionSanityCheck'], createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)]))
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, self.proj.otherRobot[0], suffix)]))
 
                 if self.proj.compile_options["fastslow"]:
                     if self.proj.compile_options["decompose"]:
