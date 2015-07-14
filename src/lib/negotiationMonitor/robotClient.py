@@ -102,7 +102,7 @@ class RobotClient:
         self.clientObject.close()
         logging.info('ROBOTCLIENT: connection to the negotiation monitor is now closed')
    
-    def sendSpec(self, specType, spec):
+    def sendSpec(self, specType, spec, fastslow=False, include_heading=False):
         """
         This function sends the robot's spec to the negotiation monitor according to the specType.
         """
@@ -115,9 +115,9 @@ class RobotClient:
         spec = spec.replace(' ','').replace('\n','')
 
         # first replace our region bits to original region name with our robot name
-        if self.fastslow:
-            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, self.fastslow, self.proj.compile_options['include_heading'])
-            if self.proj.compile_options['include_heading']:
+        if fastslow:
+            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
+            if include_heading:
                 spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)

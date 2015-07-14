@@ -60,8 +60,8 @@ def loadSpecFile(spec_file):
 ltlSpecA = '../examples/FStwo_robot_negotiation/alice/alice_no_heading.spec'
 ltlSpecB = '../examples/FStwo_robot_negotiation/bob/bob_no_heading.spec'
 # specify initial state
-aliceStateDict = {'bob_r1':1, 'bob_r2':0, 'bob_r3':0, 'bob_r4':0, 'bob_r5':0, 'regionCompleted_b0':0, 'regionCompleted_b1':0, 'regionCompleted_b2':1, 'region_b0':0, 'region_b1':0, 'region_b2':1}
-bobStateDict  = {'alice_r1':0, 'alice_r2':0, 'alice_r3':1, 'alice_r4':0, 'alice_r5':0, 'regionCompleted_b0':1, 'regionCompleted_b1':0, 'regionCompleted_b2':0, 'region_b0':1, 'region_b1':0, 'region_b2':0}
+aliceStateDict = {'bob_r1':1, 'bob_r2':0, 'bob_r3':0, 'bob_r4':0, 'bob_r5':0, 'regionCompleted_b0':0, 'regionCompleted_b1':1, 'regionCompleted_b2':0, 'region_b0':0, 'region_b1':1, 'region_b2':0}
+bobStateDict  = {'alice_r1':0, 'alice_r2':0, 'alice_r3':0, 'alice_r4':0, 'alice_r5':1, 'regionCompleted_b0':1, 'regionCompleted_b1':0, 'regionCompleted_b2':0, 'region_b0':1, 'region_b1':0, 'region_b2':0}
 
 # load spec
 aliceSpec = loadSpecFile(ltlSpecA)
@@ -79,12 +79,12 @@ bobState = bobStrat.searchForOneState(bobStateDict)
 for specType, specStr in aliceSpec.iteritems():
     if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
         continue
-    aliceClient.sendSpec(specType, specStr)
+    aliceClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
 for specType, specStr in bobSpec.iteritems():
     if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
         continue
-    bobClient.sendSpec(specType, specStr)
+    bobClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
 # send prop
 aliceClient.sendProp('env',aliceState.getInputs(expand_domains = True))

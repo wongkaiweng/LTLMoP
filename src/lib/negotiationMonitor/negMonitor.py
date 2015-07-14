@@ -82,24 +82,17 @@ while keepConnection:
 
                 for item in result:
                     if item.group('packageType')  == "regionList":
-                        # save region info and parse list into a dict of the form  regionList[robot][r1] = true
-                        # TODO:need to make sure two robots have the same regions
+                        # save region info and parse list into a dict of the form  regionList[r1][robot] = true
 
                         # convert region list string to list
                         rList = ast.literal_eval(item.group("packageValue"))
                         
                         # store current status of the robot be all false
-                        if not len(regionList): #regionlist is empty. add all regions 
-                            for reg in rList:
+                        for reg in rList:
+                            if not reg in regionList.keys():
                                 regionList[reg] = {}
-                                regionList[reg][item.group("robotName")] = False
-                        else: #regionList already existed
-                            for reg in rList:
-                                try:
-                                    regionList[reg][item.group("robotName")] = False
-                                except:
-                                    logging.error('NEGOTIATION_MONITOR: The region list of robots does not match!')
-                       
+                            regionList[reg][item.group("robotName")] = False
+
                         printRegionInfo()
                         
                         # set up spec for the robot
@@ -116,16 +109,21 @@ while keepConnection:
                         violationTimeStamp[item.group("robotName")] = 0
                         
                     elif item.group('packageType')  ==  "regionName":
+                        # first figure out if it's rc region or not
+                        RCregion = False
+                        if item.group("packageValue").rfind('_rc') > 0:
+                            RCregion = True
+
                         # update region info of robot
                         for region, robots in regionList.iteritems():
-                            if regionList[region][item.group("robotName")] == True:
+                            if regionList[region][item.group("robotName")] and ((region.rfind('_rc')>0) == RCregion):
                                 regionList[region][item.group("robotName")] = False
                             
                             if item.group("packageValue") == region:
                                 regionList[region][item.group("robotName")] =True
                                 
                         printRegionInfo()
-                    
+
                     elif item.group('packageType') in ['SysTrans','SysGoals','EnvTrans','EnvGoals']:
                         if ast.literal_eval(item.group("packageValue")):
                             # We got spec from robotClient, save spec

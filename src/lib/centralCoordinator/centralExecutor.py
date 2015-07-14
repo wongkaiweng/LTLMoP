@@ -135,9 +135,14 @@ class CentralExecutor:
                             self.propMappingOldToNew[item.group("robotName")] = {}
 
                     elif item.group('packageType')  ==  "regionName":
+                        # first figure out if it's rc region or not
+                        RCregion = False
+                        if item.group("packageValue").rfind('_rc') > 0:
+                            RCregion = True
+
                         # update region info of robot
                         for region, robots in self.regionList.iteritems():
-                            if self.regionList[region][item.group("robotName")] == True:
+                            if self.regionList[region][item.group("robotName")] and ((region.rfind('_rc')>0) == RCregion):
                                 self.regionList[region][item.group("robotName")] = False
 
                             if item.group("packageValue") == region:
@@ -432,7 +437,7 @@ class CentralExecutor:
                 else:
                     LTLspec_envList.append(self.spec[specType][robot])
 
-        createLTLfile(self.filePath, " &\n".join(LTLspec_envList), " &\n".join(LTLspec_sysList))
+        createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None,LTLspec_sysList)))
         startTime = time.time()
         realizable, realizableFS, output  = self.compiler._synthesize()
         endTime = time.time()

@@ -503,12 +503,9 @@ class ExecutorResynthesisExtensions(object):
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
         # send SysGoals, EnvTrans and EnvGoals
-        self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
+        self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
         if self.proj.compile_options["fastslow"]:
-            if self.proj.compile_options['include_heading']:
-                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
-            else:
-                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithKeyFromEnvTrans(self.oriEnvTrans, 's.'))
+            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
         else:
             self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
@@ -679,14 +676,12 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
 
                 # send our spec to the other robot
-                self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
+                self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
                 if self.proj.compile_options["fastslow"]:
-                    if self.proj.compile_options['include_heading']:
-                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
-                    else:
-                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithKeyFromEnvTrans(self.oriEnvTrans, 's.'))
+                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
                 else:
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+
                 #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
                 self.sentSpec = True
                 self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
