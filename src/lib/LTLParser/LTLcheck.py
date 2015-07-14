@@ -29,7 +29,7 @@ def removeLTLwithKeyFromEnvTrans(spec, key):
     return " &\n ".join(LTLlist)
 
 def removeLTLwithoutKeyFromEnvTrans(spec, key):
-    # return an LTLFomula with all clauses containing s.bit removed
+    # return an LTLFomula with all clauses containing s.bit kept
     value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
     return " &\n ".join(LTLlist)
 

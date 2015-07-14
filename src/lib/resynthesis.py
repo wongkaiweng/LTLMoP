@@ -505,7 +505,10 @@ class ExecutorResynthesisExtensions(object):
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals']) 
         if self.proj.compile_options["fastslow"]:
-            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
+            if self.proj.compile_options['include_heading']:
+                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
+            else:
+                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithKeyFromEnvTrans(self.oriEnvTrans, 's.'))
         else:
             self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
@@ -678,7 +681,10 @@ class ExecutorResynthesisExtensions(object):
                 # send our spec to the other robot
                 self.robClient.sendSpec('SysGoals',self.spec['SysGoals'])
                 if self.proj.compile_options["fastslow"]:
-                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]))
+                    else:
+                        self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithKeyFromEnvTrans(self.oriEnvTrans, 's.'))
                 else:
                     self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
                 #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])

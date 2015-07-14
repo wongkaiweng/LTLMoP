@@ -23,7 +23,7 @@ def findRegionBits(ltlFormula, fastslow=False):
     
     return regionBitsList
     
-def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False):
+def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False, include_heading=False):
     """
     This function takes in a region bit string and regionList and return the actual region string (with next)
     INPUT:
@@ -72,11 +72,17 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
 
     # return region name string to env 
     if nextTimeStep is True:
-        return 'next(e.' + robotName + '_' + targetRegionOrig + '_rc)' if fastslow else 'next(e.' + robotName + '_' + targetRegionOrig + ')'
+        if fastslow and include_heading:
+            return 'next(e.' + robotName + '_' + targetRegionOrig + '_rc)'
+        else:
+            return 'next(e.' + robotName + '_' + targetRegionOrig + ')'
     else:
-        return 'e.' + robotName + '_' + targetRegionOrig + '_rc' if fastslow else 'e.' + robotName + '_' + targetRegionOrig
+        if fastslow and include_heading:
+            return 'e.' + robotName + '_' + targetRegionOrig + '_rc'
+        else:
+            return 'e.' + robotName + '_' + targetRegionOrig
         
-def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False):
+def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False, include_heading=False):
     """
     This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
     INPUT:
@@ -91,8 +97,11 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     For old format:
     ---> s.bit to e.robotName_regionName <----
 
-    For fastslow:
+    For fastslow (include_heading):
     ---> e.sbit to e.robotName_regionName_rc <---
+
+    For fastslow (only neighbour_robot):
+    ---> e.sbit to e.robotName_regionName <---
     """
     
     # make a copy of the string
@@ -103,14 +112,14 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     
     for regionBitStr in regionBitsList:
         # find original region name 
-        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow)
+        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow, include_heading)
         
         # replace region bits to name
         ltlFormulaReplaced = ltlFormulaReplaced.replace(regionBitStr, regionName)
 
     return ltlFormulaReplaced  
     
-def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionList, fastslow=False):
+def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionList, fastslow=False, include_heading=False):
     """
     This function takes in an ltlFormula, the bitEncode, robotName and the regionList and returns an ltlFormula with the robotName+ region replaced to region bits.
     INPUT:
@@ -125,16 +134,23 @@ def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionLis
     For old format:
     --> e.robotName_regionName to s.bit <----
 
-    For fastslow:
+    For fastslow (include_heading):
     --> e.robotName_regionName_rc to e.sbit <----
     --> e.robotName_regionName to s.bit <----
+
+    For fastslow (only neighbour_robot)
+    --> e.robotName_regionName to e.sbit <----
     """
     
     # remove our robot name from the spec
     if fastslow:
-        for region in regionList:
-            ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region + '_rc', 'e.' + region)
-            ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region, 's.' + region)
+        if include_heading:
+            for region in regionList:
+                ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region + '_rc', 'e.' + region)
+                ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region, 's.' + region)
+        else:
+            for region in regionList:
+                ltlFormula = ltlFormula.replace('e.' + robotName + '_' + region, 'e.' + region)
     else:
         ltlFormula = ltlFormula.replace('e.' + robotName + '_', 's.')
 

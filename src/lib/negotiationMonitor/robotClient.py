@@ -51,7 +51,8 @@ class RobotClient:
         
         #send out initial info
         self.initializeRegionExchange(hsub)
-        #self.initializeCompletedRegionExchange()
+        if proj.compile_options['include_heading']:
+            self.initializeCompletedRegionExchange()
          
         # track if spec is requested
         self.specRequestFromOther = [] # list of spec requested
@@ -115,9 +116,11 @@ class RobotClient:
 
         # first replace our region bits to original region name with our robot name
         if self.fastslow:
-            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, self.fastslow)
-
-        spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
+            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, self.fastslow, self.proj.compile_options['include_heading'])
+            if self.proj.compile_options['include_heading']:
+                spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
+        else:
+            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
 
         # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
@@ -150,7 +153,7 @@ class RobotClient:
                 if self.robotName  != robot:
             
                     # change region props with our name to region bits (parseEnglishToLTL?)              
-                    specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow)
+                    specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow, self.proj.compile_options['include_heading'])
 
         return specToAppend 
         
