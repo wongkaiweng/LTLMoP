@@ -19,7 +19,7 @@ decompose: True
 use_region_bit_encoding: True
 
 CurrentConfigName:
-aliceWithBobSensor
+aliceWithBobSensorR5
 
 Customs: # List of custom propositions
 
@@ -49,7 +49,7 @@ others =
 
 Spec: # Specification in structured English
 ####### initial conditions ##########
-Robot starts in r3
+Robot starts in r5
 Environment starts with bob_r1
 
 ###### environment assumptions ######
@@ -61,11 +61,11 @@ if you have finished r1 then do not ( bob_r1)
 
 ######### system guarantees ##########
 # not allowing both robots in the same region
-#if you are sensing bob_r1 then do not r1
-#if you are sensing bob_r2 then do not r2
-#if you are sensing bob_r3 then do not r3
-#if you are sensing bob_r4 then do not r4
-#if you are sensing bob_r5 then do not r5
+if you are sensing bob_r1 then do not r1
+if you are sensing bob_r2 then do not r2
+if you are sensing bob_r3 then do not r3
+if you are sensing bob_r4 then do not r4
+if you are sensing bob_r5 then do not r5
 
 ######## system goals ###########
 visit r1
