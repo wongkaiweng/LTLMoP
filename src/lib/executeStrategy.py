@@ -104,7 +104,8 @@ class ExecutorStrategyExtensions(object):
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
             # ------------------------------- #
-            self.robClient.updateRobotRegion(self.next_region)
+            if self.proj.compile_options['neighbour_robot']:
+                self.robClient.updateRobotRegion(self.next_region)
             # ------------------------------- #
             
             self.strategy.current_state = self.next_state
@@ -166,7 +167,8 @@ class ExecutorStrategyExtensions(object):
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
             # ------------------------------- #
-            self.robClient.updateHeadingRobotRegion(self.next_region)
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['include_heading']:
+                self.robClient.updateCompletedRobotRegion(self.next_region)
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
@@ -191,7 +193,8 @@ class ExecutorStrategyExtensions(object):
                 # ------------------------------- #
                 # --- two_robot_negotiation ----- #
                 # ------------------------------- #
-                self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                if self.proj.compile_options['neighbour_robot']:
+                    self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
                 # ------------------------------- #
 
             self.strategy.current_state = self.next_state

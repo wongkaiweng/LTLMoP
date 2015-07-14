@@ -351,11 +351,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # -----------------------------------------#
         # -------- two_robot_negotiation ----------#
-        if firstRun:
-            self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
-        self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-        self.robClient.updateHeadingRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-        self.negotiationStatus = self.robClient.checkNegotiationStatus()
+        if self.proj.compile_options['neighbour_robot']:
+            if firstRun:
+                self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
+            self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+            if self.proj.compile_options['include_heading']:
+                self.robClient.updateCompletedRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+            self.negotiationStatus = self.robClient.checkNegotiationStatus()
         # -----------------------------------------#        
         
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
@@ -391,17 +393,18 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         ## inputs
         # ---- two_robot_negotiation ----- # 
-        # Wait until the other robot is ready
-        # Make sure the other robot is loaded
-        logging.info('Waiting for other robots to be ready')
-        otherRobotsReady = False
+        if self.proj.compile_options['neighbour_robot']:
+            # Wait until the other robot is ready
+            # Make sure the other robot is loaded
+            logging.info('Waiting for other robots to be ready')
+            otherRobotsReady = False
 
-        while not otherRobotsReady:
-            for key, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
-                if value is None:
-                    break
-            else:
-                otherRobotsReady = True
+            while not otherRobotsReady:
+                for key, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
+                    if value is None:
+                        break
+                else:
+                    otherRobotsReady = True
         # -------------------------------- #
 
         if self.proj.compile_options['fastslow']:
@@ -438,21 +441,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             self.originalSpec = copy.deepcopy(self.spec)
             if not realizable:
                 # start with always false
-                self.oriEnvTrans = '[](FALSE)&' #added but should never be used for the unrealizable case.
-                self.spec['EnvTrans'] = "\t[](FALSE) &\n"
+                self.oriEnvTrans = '[]((FALSE))' #added but should never be used for the unrealizable case.
+                self.spec['EnvTrans'] = "\t[]((FALSE))\n"
                 self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
             else:
                 # put all clauses in EnvTrans into conjuncts
                 if self.proj.compile_options['fastslow']:
-                    self.oriEnvTrans = (self.spec['EnvTrans']+"&"+self.spec["EnvTopo"])
-                    self.spec['EnvTrans'] = '[]((' + copy.copy(self.oriEnvTrans.replace('[]','')) +'))&\n'
-                else:
-               		#self.oriEnvTrans = self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","")[:-1]
-                	#self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-                	self.oriEnvTrans = self.spec['EnvTrans'][:-2]
-                	self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace(" ","").replace('[]','')[:-2] +'))&\n'
+                    self.spec['EnvTrans'] = self.spec['EnvTrans']+"&"+self.spec["EnvTopo"]
+                self.oriEnvTrans = copy.copy(self.spec['EnvTrans'])
+                self.spec['EnvTrans'] = '[](('+ copy.copy(self.oriEnvTrans).replace('[]','') +'))\n'
                 self.EnvTransRemoved = []
-             
+
             # rewrite ltl file   
             self.recreateLTLfile(self.proj)
             
@@ -579,31 +578,23 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
             
             # ---------- two_robot_negotiation ------------- # 
-            # resynthesis request from the other robot
-            if self.receiveRequestFromEnvRobot():
-                continue
-
-            """    
-            # if the other robot is requesting spec from us
-            self.robClient.checkRequestSpec()
-            for specType in self.robClient.specRequestFromOther:
-                # send SysGoals, EnvTrans and EnvGoals
-                self.robClient.sendSpec(specType,self.spec[specType]) 
-
-            self.robClient.specRequestFromOther = []
-            """
+            if self.proj.compile_options['neighbour_robot']:
+                # resynthesis request from the other robot
+                if self.receiveRequestFromEnvRobot():
+                    continue
             # ------------------------------------------- #
             
             # assumption didn't hold
             if not env_assumption_hold:
             
                 # ------------ two_robot_negotiation ----------#
-                # store time stamp of violation            
-                if not self.otherRobotStatus:
-                    self.violationTimeStamp = time.clock()
-                    self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                    logging.debug('Setting violation timeStamp')
-                    time.sleep(1)
+                if self.proj.compile_options['neighbour_robot']:
+                    # store time stamp of violation
+                    if not self.otherRobotStatus:
+                        self.violationTimeStamp = time.clock()
+                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                        logging.debug('Setting violation timeStamp')
+                        time.sleep(1)
                 # ---------------------------------------------# 
                 
                 # count the number of next state changes

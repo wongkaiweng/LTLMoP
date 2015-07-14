@@ -696,8 +696,9 @@ class HandlerSubsystem:
         """
         
         # ---- two_robot_negotiation -------- #
-        # update region info
-        self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
+        if self.executor.proj.compile_options['neighbour_robot']:
+            # update region info
+            self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
         # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:

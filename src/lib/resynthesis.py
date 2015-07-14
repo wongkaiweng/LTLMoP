@@ -761,25 +761,26 @@ class ExecutorResynthesisExtensions(object):
                         
                         self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
-                    if not realizable:
-                        #realizable = False
-                        # ------ two_robot_negotiation  -------- #
-                        # see if the other robot has violation before us
-                        otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
-                        logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                        logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+                    if self.proj.compile_options['neighbour_robot']:
+                        if not realizable:
+                            #realizable = False
+                            # ------ two_robot_negotiation  -------- #
+                            # see if the other robot has violation before us
+                            otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
+                            logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                            logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
 
-                        # exchange info with the other robot and see if it is realizable.
-                        # later time can exchange spec
-                        if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
-                            # exchange spec
-                            realizable = self.appendSpecFromEnvRobots()
-                            self.exchangedSpec = True
-                        elif self.sentSpec and self.receivedSpec:
-                            pass
-                        else:
-                            return
-                        # -------------------------------------- #
+                            # exchange info with the other robot and see if it is realizable.
+                            # later time can exchange spec
+                            if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                                # exchange spec
+                                realizable = self.appendSpecFromEnvRobots()
+                                self.exchangedSpec = True
+                            elif self.sentSpec and self.receivedSpec:
+                                pass
+                            else:
+                                return
+                            # -------------------------------------- #
 
             self.realizable = realizable
 
@@ -907,7 +908,8 @@ class ExecutorResynthesisExtensions(object):
         self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
         # adding also other initial mutual exclusions
-        self.spec["EnvInit"] += " &\n " + self.spec['InitEnvRegionSanityCheck']
+        if self.proj.compile_options['neighbour_robot']:
+            self.spec["EnvInit"] += " &\n " + self.spec['InitEnvRegionSanityCheck']
 
         self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
