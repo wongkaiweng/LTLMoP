@@ -98,24 +98,18 @@ class LTL_Check:
     """
     Check which ltl statement was violated.
     """
-    def __init__(self,path, LTL2LineNo, spec):
+    def __init__(self,path, LTL2LineNo, spec, specType='EnvTrans'):
         """
         Obtain .ltl of the current specification and trim the string to include only LTL.
+        path is obsoleted. There's no call in the function and can be removed (if all calls to the function are changed)
         """
         self.spec          = spec         # split that got split into different parts
-        self.path_ltl      = path
         self.current_state = None
         self.sensor_state  = None
         self.LTL2LineNo    = LTL2LineNo    # mapping ltl back to structed English line number 
         self.ltl_tree      = None      
         self.LTLMoP        = True          # set 'using LTLMoP' as default. To call checkViolation without LTLMoP, use false mode (see checkEnvViolation.py)
 
-        # obtain spec from the .spec file
-        self.path_spec = path.replace(".ltl",".spec")
-        with open(self.path_spec, 'r') as f:
-            self.read_spec = self.read_spec_file(f)
-        f.closed
-        
         self.ltlTree_to_lineNo = {}
         # correspond line numbers in spec to the structure English and the tree converted 
         for key,value in self.LTL2LineNo.iteritems():
@@ -128,7 +122,7 @@ class LTL_Check:
             self.ltlTree_to_lineNo[str(tree)] = value   
 
         # save EnvTrans for runtime monitoring
-        self.replaceLTLTree(self.spec["EnvTrans"])
+        self.replaceLTLTree(self.spec[specType])
 
         if debug_tree_terminal == True: 
             logging.debug("Here's the ltl of the environment assumptions from spec:")

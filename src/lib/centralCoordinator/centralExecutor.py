@@ -237,8 +237,16 @@ class CentralExecutor:
                 self.compileCentralizedSpec()
 
                 # TODO: here run the centralized aut. also need to checkData
-                while True:
+                while self.keepConnection:
                     self.checkData()
+
+                    #TODO: to remove for real execution
+                    self.testTriggerSysGoalsSatisfaction()
+
+                    # check if goals are satisfied
+                    if self.checkIfGoalsAreSatisfied():
+                        logging.debug('The centralized system goal is satisfied.')
+                        self.keepConnection = False
 
                 #clean all necessary variables when done
                 self.cleanVariables()
@@ -264,6 +272,7 @@ class CentralExecutor:
         self.currentAssignment = {} # dict. store assignments of all props and all robots
         self.patchingStatus = {} #track if patching is initiated. True if started and false otherwise
         self.last_next_states = [] #track the last next states in our autonmaton execution
+        self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
 
     def closeConnection(self, signal, frame):
         """
@@ -432,10 +441,21 @@ class CentralExecutor:
                     LTLspec_sysList.append(currentSysInitState)
 
             for robot in self.coordinatingRobots:
-                if specType in ['SysInit','SysTrans','SysGoals']:
+                # here we will skip the goals and join them together below
+                if specType in ['SysGoals']:
+                    continue
+                elif specType in ['SysInit','SysTrans']:
                     LTLspec_sysList.append(self.spec[specType][robot])
                 else:
                     LTLspec_envList.append(self.spec[specType][robot])
+
+        # join the goals of the robots so that the goals are pursued at the same time
+        specSysGoals = " & ".join(filter(None,[x.strip().lstrip('[]<>') for x in self.spec['SysGoals'].values()]))
+        LTLspec_sysList.append("[]<>(" + specSysGoals + ")" if specSysGoals else specSysGoals)
+
+        # set up violation check object
+        if specSysGoals:
+            self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None,{}, {'sysGoals':specSysGoals}, 'sysGoals')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None,LTLspec_sysList)))
         startTime = time.time()
@@ -515,10 +535,22 @@ class CentralExecutor:
 
         return nextOutputs
 
+    def checkIfGoalsAreSatisfied(self):
+        """
+        Constant check if goal is achieved. If so, terminate cooridation.
+        Return true if goals are satisfied and false otherwise.
+        """
 
-"""
-Constant check if goal is achieved. If so, terminate cooridation.
-"""
+        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, None)
+
+    def testTriggerSysGoalsSatisfaction(self):
+        """
+        testing function only: to trigger goal reaching
+        """
+        # try to trigger goal satisfaction
+        self.strategy.current_state = random.choice([x for x in self.strategy.searchForStates({'bob_r3_rc':0, 'bob_r1_rc':0, 'bob_r2_rc':0, 'bob_r5_rc':1, 'bob_r4_rc':0, 'alice_r5_rc':0, 'alice_r1_rc':1, 'alice_r2_rc':0, 'alice_r3_rc':0, 'alice_r4_rc':0, 'bob_r4':0, 'bob_r5':0, 'bob_r1':0, 'bob_r2':0, 'bob_r3':1, 'alice_r5':0, 'alice_r4':0, 'alice_r1':0, 'alice_r3':0, 'alice_r2':1})])
+
+
 if __name__ == "__main__":
     a = CentralExecutor()
     a.run()

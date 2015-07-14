@@ -98,7 +98,7 @@ bobClient.setCoordinationStatus(True)
 
 time.sleep(5)
 # update next inputs and request outputs
-aliceClient.getOutputs(aliceState.getInputs(expand_domains = True))
-bobClient.getOutputs(bobState.getInputs(expand_domains = True))
-
+print 'alice:' + str(aliceClient.getOutputs(aliceState.getInputs(expand_domains = True)))
+print 'bob:' + str(bobClient.getOutputs(bobState.getInputs(expand_domains = True)))
+print 'alice:' + str(aliceClient.getOutputs(aliceState.getInputs(expand_domains = True)))
 
