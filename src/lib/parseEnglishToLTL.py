@@ -252,7 +252,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
             #### Rewritten by Catherine for ENV Assumption mining ###############
             ### put parentheses around the env init condition for DNF later #####
             LTLsubformula = LTLsubformula[0:LTLsubformula.rfind('&')]
-            spec['EnvInit']= spec['EnvInit'] + "(" + LTLsubformula + ")"
+            spec['EnvInit']= '&\n'.join(filter(None, [spec['EnvInit'], "(" + LTLsubformula + ")"]))
             #####################################################################
             linemap['EnvInit'].append(lineInd)
             
