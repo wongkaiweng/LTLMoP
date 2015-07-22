@@ -64,13 +64,13 @@ class WxAsynchronousProcessThread(AsynchronousProcessThread):
 class AnalysisResultsDialog(wx.Dialog):
     def __init__(self, parent, *args, **kwds):
         # begin wxGlade: AnalysisResultsDialog.__init__
-        kwds["style"] = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.THICK_FRAME
+        kwds["style"] = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, *args, **kwds)
         self.label_3 = wx.StaticText(self, wx.ID_ANY, "Analysis Output:")
         self.text_ctrl_summary = wx.richtext.RichTextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.button_refine = wx.Button(self, wx.ID_ANY, "Refine analysis")
         self.label_traceback = wx.StaticText(self, wx.ID_ANY, "SLURP Traceback:")
-        self.tree_ctrl_traceback = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_HAS_BUTTONS | wx.TR_NO_LINES | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HIDE_ROOT | wx.TR_DEFAULT_STYLE | wx.SUNKEN_BORDER)
+        self.tree_ctrl_traceback = wx.TreeCtrl(self, wx.ID_ANY, style=wx.BORDER_SUNKEN | wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT | wx.TR_NO_LINES)
         self.button_1 = wx.Button(self, wx.ID_CLOSE, "")
 
         self.__set_properties()
@@ -99,7 +99,7 @@ class AnalysisResultsDialog(wx.Dialog):
         sizer_16 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11.Add(self.label_3, 0, wx.ALL, 5)
         sizer_11.Add(self.text_ctrl_summary, 1, wx.ALL | wx.EXPAND, 5)
-        sizer_11.Add(self.button_refine, 0, wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        sizer_11.Add(self.button_refine, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT | wx.ALL, 5)
         sizer_11.Add(self.label_traceback, 0, wx.ALL, 5)
         sizer_11.Add(self.tree_ctrl_traceback, 3, wx.ALL | wx.EXPAND, 5)
         sizer_16.Add((20, 20), 1, wx.EXPAND, 0)
@@ -349,6 +349,9 @@ class SpecEditorFrame(wx.Frame):
         global MENU_MULTIROBOT_OPTIONS; MENU_MULTIROBOT_OPTIONS = wx.NewId()
         global MENU_NEIGHBOUR_ROBOT; MENU_NEIGHBOUR_ROBOT = wx.NewId()
         global MENU_INCLUDE_OTHER_ROBOT_HEADING; MENU_INCLUDE_OTHER_ROBOT_HEADING = wx.NewId()
+        global MENU_MULTIROBOT_OPTIONS_MODE; MENU_MULTIROBOT_OPTIONS_MODE = wx.NewId()
+        global MENU_MULTIROBOTMODE_NEGOTIATION; MENU_MULTIROBOTMODE_NEGOTIATION = wx.NewId()
+        global MENU_MULTIROBOTMODE_PATCHING; MENU_MULTIROBOTMODE_PATCHING = wx.NewId()
         global MENU_SIMULATE; MENU_SIMULATE = wx.NewId()
         global MENU_SIMCONFIG; MENU_SIMCONFIG = wx.NewId()
         global MENU_ANALYZE; MENU_ANALYZE = wx.NewId()
@@ -391,6 +394,10 @@ class SpecEditorFrame(wx.Frame):
         wxglade_tmp_menu_sub_sub = wx.Menu()
         wxglade_tmp_menu_sub_sub.Append(MENU_NEIGHBOUR_ROBOT, "Neighbour robot", "", wx.ITEM_CHECK)
         wxglade_tmp_menu_sub_sub.Append(MENU_INCLUDE_OTHER_ROBOT_HEADING, "Include other robot heading", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub_sub_sub = wx.Menu()
+        wxglade_tmp_menu_sub_sub_sub.Append(MENU_MULTIROBOTMODE_NEGOTIATION, "Negotiation", "", wx.ITEM_RADIO)
+        wxglade_tmp_menu_sub_sub_sub.Append(MENU_MULTIROBOTMODE_PATCHING, "Patching", "", wx.ITEM_RADIO)
+        wxglade_tmp_menu_sub_sub.AppendMenu(MENU_MULTIROBOT_OPTIONS_MODE, "Mode", wxglade_tmp_menu_sub_sub_sub, "")
         wxglade_tmp_menu_sub.AppendMenu(MENU_MULTIROBOT_OPTIONS, "Multirobot Options", wxglade_tmp_menu_sub_sub, "")
         wxglade_tmp_menu.AppendMenu(MENU_COMPILECONFIG, "Compilation options", wxglade_tmp_menu_sub, "")
         wxglade_tmp_menu.AppendSeparator()
@@ -427,7 +434,7 @@ class SpecEditorFrame(wx.Frame):
         self.button_custom_add = wx.Button(self.panel_1, wx.ID_ADD, "")
         self.button_custom_remove = wx.Button(self.panel_1, wx.ID_REMOVE, "")
         self.window_1_pane_2 = wx.Panel(self.window_1, wx.ID_ANY)
-        self.notebook_1 = wx.Notebook(self.window_1_pane_2, wx.ID_ANY, style=0)
+        self.notebook_1 = wx.Notebook(self.window_1_pane_2, wx.ID_ANY)
         self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
         self.text_ctrl_log = wx.richtext.RichTextCtrl(self.notebook_1_pane_1, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.notebook_1_pane_2 = wx.Panel(self.notebook_1, wx.ID_ANY)
@@ -437,7 +444,7 @@ class SpecEditorFrame(wx.Frame):
         self.list_box_locphrases = wx.ListBox(self.notebook_1_pane_3, wx.ID_ANY, choices=[], style=wx.LB_ALWAYS_SB)
         self.checkbox_regionlabel = wx.CheckBox(self.notebook_1_pane_3, wx.ID_ANY, "Show region names")
         self.checkbox_regionlabelbits = wx.CheckBox(self.notebook_1_pane_3, wx.ID_ANY, "Include bit-vector representations")
-        self.panel_locmap = wx.Panel(self.notebook_1_pane_3, wx.ID_ANY, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL | wx.FULL_REPAINT_ON_RESIZE)
+        self.panel_locmap = wx.Panel(self.notebook_1_pane_3, wx.ID_ANY, style=wx.BORDER_SUNKEN | wx.FULL_REPAINT_ON_RESIZE | wx.TAB_TRAVERSAL)
 
         self.__set_properties()
         self.__do_layout()
@@ -467,6 +474,8 @@ class SpecEditorFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_RECOVERY)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_NEIGHBOUR_ROBOT)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_INCLUDE_OTHER_ROBOT_HEADING)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_MULTIROBOTMODE_NEGOTIATION)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_MULTIROBOTMODE_PATCHING)
         self.Bind(wx.EVT_MENU, self.onMenuSimulate, id=MENU_SIMULATE)
         self.Bind(wx.EVT_MENU, self.onMenuConfigSim, id=MENU_SIMCONFIG)
         self.Bind(wx.EVT_MENU, self.onMenuAnalyze, id=MENU_ANALYZE)
@@ -669,30 +678,30 @@ class SpecEditorFrame(wx.Frame):
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_5.Add(self.label_1, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 4)
-        sizer_5.Add(self.list_box_regions, 2, wx.LEFT | wx.EXPAND, 4)
+        sizer_5.Add(self.label_1, 0, wx.BOTTOM | wx.LEFT | wx.TOP, 4)
+        sizer_5.Add(self.list_box_regions, 2, wx.EXPAND | wx.LEFT, 4)
         sizer_7.Add(self.button_map, 0, wx.TOP, 5)
         sizer_7.Add((5, 20), 0, 0, 0)
         sizer_7.Add(self.button_edit_regions, 0, wx.TOP, 5)
-        sizer_5.Add(sizer_7, 0, wx.LEFT | wx.EXPAND, 4)
-        sizer_5.Add(self.label_1_copy, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 4)
-        sizer_5.Add(self.list_box_sensors, 2, wx.LEFT | wx.EXPAND, 4)
+        sizer_5.Add(sizer_7, 0, wx.EXPAND | wx.LEFT, 4)
+        sizer_5.Add(self.label_1_copy, 0, wx.BOTTOM | wx.LEFT | wx.TOP, 4)
+        sizer_5.Add(self.list_box_sensors, 2, wx.EXPAND | wx.LEFT, 4)
         sizer_6.Add(self.button_sensor_add, 0, wx.TOP, 5)
         sizer_6.Add((5, 20), 0, 0, 0)
         sizer_6.Add(self.button_sensor_remove, 0, wx.TOP, 5)
-        sizer_5.Add(sizer_6, 0, wx.LEFT | wx.EXPAND, 4)
-        sizer_5.Add(self.label_1_copy_1, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 4)
-        sizer_5.Add(self.list_box_actions, 2, wx.LEFT | wx.EXPAND, 4)
+        sizer_5.Add(sizer_6, 0, wx.EXPAND | wx.LEFT, 4)
+        sizer_5.Add(self.label_1_copy_1, 0, wx.BOTTOM | wx.LEFT | wx.TOP, 4)
+        sizer_5.Add(self.list_box_actions, 2, wx.EXPAND | wx.LEFT, 4)
         sizer_11.Add(self.button_actuator_add, 0, wx.TOP, 5)
         sizer_11.Add((5, 20), 0, 0, 0)
         sizer_11.Add(self.button_actuator_remove, 0, wx.TOP, 5)
-        sizer_5.Add(sizer_11, 0, wx.LEFT | wx.EXPAND, 6)
-        sizer_5.Add(self.label_1_copy_2, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 4)
-        sizer_5.Add(self.list_box_customs, 2, wx.LEFT | wx.EXPAND, 4)
+        sizer_5.Add(sizer_11, 0, wx.EXPAND | wx.LEFT, 6)
+        sizer_5.Add(self.label_1_copy_2, 0, wx.BOTTOM | wx.LEFT | wx.TOP, 4)
+        sizer_5.Add(self.list_box_customs, 2, wx.EXPAND | wx.LEFT, 4)
         sizer_8.Add(self.button_custom_add, 0, wx.TOP, 5)
         sizer_8.Add((5, 20), 0, 0, 0)
         sizer_8.Add(self.button_custom_remove, 0, wx.TOP, 5)
-        sizer_5.Add(sizer_8, 0, wx.LEFT | wx.EXPAND, 4)
+        sizer_5.Add(sizer_8, 0, wx.EXPAND | wx.LEFT, 4)
         self.panel_1.SetSizer(sizer_5)
         sizer_4.Add(self.panel_1, 1, wx.EXPAND, 0)
         self.window_1_pane_1.SetSizer(sizer_4)
@@ -706,7 +715,7 @@ class SpecEditorFrame(wx.Frame):
         sizer_15.Add(self.list_box_locphrases, 1, wx.EXPAND, 0)
         sizer_15.Add((20, 20), 0, 0, 0)
         sizer_15.Add(self.checkbox_regionlabel, 0, wx.EXPAND, 0)
-        sizer_15.Add(self.checkbox_regionlabelbits, 0, wx.LEFT | wx.EXPAND, 20)
+        sizer_15.Add(self.checkbox_regionlabelbits, 0, wx.EXPAND | wx.LEFT, 20)
         sizer_15.Add((20, 20), 0, 0, 0)
         sizer_14.Add(sizer_15, 1, wx.EXPAND, 0)
         sizer_14.Add((5, 20), 0, 0, 0)
@@ -1014,6 +1023,11 @@ class SpecEditorFrame(wx.Frame):
             self.frame_1_menubar.Check(MENU_SYNTHESIZER_JTLV, True)
         elif self.proj.compile_options["synthesizer"] == "slugs":
             self.frame_1_menubar.Check(MENU_SYNTHESIZER_SLUGS, True)
+
+        if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+            self.frame_1_menubar.Check(MENU_MULTIROBOTMODE_NEGOTIATION, True)
+        elif self.proj.compile_options["multi_robot_mode"] == "patching":
+            self.frame_1_menubar.Check(MENU_MULTIROBOTMODE_PATCHING, True)
 
     def doClose(self, event): # wxGlade: SpecEditorFrame.<event_handler>
         """
@@ -1814,6 +1828,11 @@ class SpecEditorFrame(wx.Frame):
             self.proj.compile_options["synthesizer"] = "jtlv"
         elif self.frame_1_menubar.IsChecked(MENU_SYNTHESIZER_SLUGS):
             self.proj.compile_options["synthesizer"] = "slugs"
+
+        if self.frame_1_menubar.IsChecked(MENU_MULTIROBOTMODE_NEGOTIATION):
+            self.proj.compile_options["multi_robot_mode"] = "negotiation"
+        elif self.frame_1_menubar.IsChecked(MENU_MULTIROBOTMODE_PATCHING):
+            self.proj.compile_options["multi_robot_mode"] = "patching"
 
         self.dirty = True
 

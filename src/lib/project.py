@@ -53,7 +53,8 @@ class Project:
                                 "parser": "structured",  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
                                 "recovery": False, # adding recovery transitions in synthesis is set to be false
                                 "neighbour_robot": False, #if we will include neighbour robot LTL in the spec
-                                "include_heading": False }#if we include the heading information of the other robot in the specification
+                                "include_heading": False, #if we include the heading information of the other robot in the specification
+                                "multi_robot_mode":"negotiation"} # Name of mode ("negotiation" or "patching")
 
         self.ltlmop_root = globalConfig.get_ltlmop_root()
 
@@ -148,7 +149,7 @@ class Project:
                     continue
 
                 k,v = l.split(":", 1)
-                if k.strip().lower() in ("parser", "synthesizer"):
+                if k.strip().lower() in ("parser", "synthesizer", "multi_robot_mode"):
                     self.compile_options[k.strip().lower()] = v.strip().lower()
                 else:
                     # convert to boolean if not a parser type
