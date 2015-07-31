@@ -340,11 +340,21 @@ class RobotClient:
         self.clientObject.send(self.robotName + '-' + 'patchingStatus = ' + str(patchingStatus) +  '\n')
         logging.info('ROBOTCLIENT: set coorindation status to ' + str(patchingStatus))
 
-    def checkCoordinationStatus(self):
+    def checkCoordinationRequest(self):
         """
         This function checks if patching is initiated.
         """
-        self.clientObject.send(self.robotName + '-' + 'patchingStatus = ' + "''" +  '\n')
+        self.clientObject.send(self.robotName + '-' + 'patchingRequest = ' + "''" +  '\n')
+        status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+
+        return status
+
+    def getCentralizedExecutionStatus(self):
+        """
+        This function checks if centralized execution has started.
+        True if started. False is waiting and None has not started/ended.
+        """
+        self.clientObject.send(self.robotName + '-' + 'centralizedExecutionStatus = ' + "''" +  '\n')
         status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
 
         return status

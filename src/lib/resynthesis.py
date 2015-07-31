@@ -21,6 +21,9 @@ import executeStrategy
 import logging
 import copy
 # -----------------------------------#
+# ******** patching ********* #
+import os
+# *************************** #
 
 class ExecutorResynthesisExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
@@ -764,23 +767,38 @@ class ExecutorResynthesisExtensions(object):
                     if self.proj.compile_options['neighbour_robot']:
                         if not realizable:
                             #realizable = False
-                            # ------ two_robot_negotiation  -------- #
-                            # see if the other robot has violation before us
-                            otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
-                            logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                            logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+                            if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                                # ------ two_robot_negotiation  -------- #
+                                # see if the other robot has violation before us
+                                otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
+                                logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                                logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
 
-                            # exchange info with the other robot and see if it is realizable.
-                            # later time can exchange spec
-                            if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
-                                # exchange spec
-                                realizable = self.appendSpecFromEnvRobots()
-                                self.exchangedSpec = True
-                            elif self.sentSpec and self.receivedSpec:
-                                pass
-                            else:
+                                # exchange info with the other robot and see if it is realizable.
+                                # later time can exchange spec
+                                if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                                    # exchange spec
+                                    realizable = self.appendSpecFromEnvRobots()
+                                    self.exchangedSpec = True
+                                elif self.sentSpec and self.receivedSpec:
+                                    pass
+                                else:
+                                    return
+                                # -------------------------------------- #
+
+                            elif self.proj.compile_options["multi_robot_mode"] == "patching":
+                                # ************ patching ****************** #
+                                # Take care of everything to start patching
+                                self.postEvent("RESOLVED","")
+                                self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
+                                self.initiatePatching()
+
+                                # return and continue execution
                                 return
-                            # -------------------------------------- #
+                                # **************************************** #
+
+                            else:
+                                logging.error("Mulit robot mode is incorrect. This is impossible.")
 
             self.realizable = realizable
 
@@ -1059,3 +1077,64 @@ class ExecutorResynthesisExtensions(object):
         return slugsEnvSafetyCNF, normalEnvSafetyCNF
         
     #########################################################################
+
+    # ************** patching **************** #
+    def loadSpecObjectFromFile(self, spec_file = ""):
+        """
+        spec_file: path to specification
+        """
+
+        if not spec_file:
+            spec_file = os.path.join(self.proj.project_root, self.proj.getFilenamePrefix() + ".spec")
+
+        compiler = specCompiler.SpecCompiler(spec_file)
+        compiler._decompose()
+        spec, tracebackTree, response = compiler._writeLTLFile()
+        # replace EnvTrans check to make sure it's not empty
+        spec['EnvTrans'] = '&\n '.join(filter(None, [spec['EnvTrans'], spec["EnvTopo"]]))
+
+        # replace EnvInit and SysInit to just init topology for centralized synthesis
+        spec['EnvInit'] = spec['InitEnvRegionSanityCheck']
+        spec['SysInit'] = spec['InitRegionSanityCheck']
+
+        # replace SysTrans
+        spec['SysTrans'] = '&\n '.join(filter(None, [spec['SysTrans'], spec["Topo"]]))
+
+        # replace EnvGoals
+        spec['EnvGoals'] = '&\n '.join(filter(None, [spec['EnvGoals'], spec["SysImplyEnv"]]))
+
+        return spec
+
+    def prepareForCentralizedStrategy(self):
+        """
+        This function prepares for the synthesis of centralized strategy.
+        (Same as testRobClient.py)
+        """
+
+        # load spec
+        mySpec = self.loadSpecObjectFromFile()
+
+        # send spec
+        for specType, specStr in mySpec.iteritems():
+            if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
+                continue
+            self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
+
+        # send prop
+        self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
+        self.robClient.sendProp('sys', self.strategy.current_state.getOutputs(expand_domains = True))
+
+        # send cooridination status
+        self.robClient.setCoordinationStatus(True)
+
+    def initiatePatching(self):
+        """
+        This function takes care of the procedure for switching from individual strategy to centralized strategy
+        """
+        # first prepare for centralized execution
+        self.prepareForCentralizedStrategy()
+
+        # then wait till all surrounding robots are ready as well
+        while not self.robClient.getCentralizedExecutionStatus():
+            time.sleep(2)
+    # **************************************** #

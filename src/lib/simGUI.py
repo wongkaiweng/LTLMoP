@@ -212,6 +212,10 @@ class SimGUI_Frame(wx.Frame):
                 elif eventType == "NEGO":
                     wx.CallAfter(self.appendLog, eventData + "\n", color= "#9933FF") 
                     # --------------------------------------------------- #
+                    # **************** patching ********************* #
+                elif eventType == "PATCH":
+                    wx.CallAfter(self.appendLog, eventData + "\n", color= "#FF8000")
+                    # *********************************************** #
                     # Detect our current goal index
                 elif eventData.startswith("Currently pursuing goal"):
                     m = re.search(r"#(\d+)", eventData)

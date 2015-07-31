@@ -167,8 +167,10 @@ class ExecutorStrategyExtensions(object):
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
             # ------------------------------- #
+            # without include_heading: updateRobotRegion sends the current location of the robot
+            # with include_heading: updateRobotRegion sends the heading region of the robot
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['include_heading']:
-                self.robClient.updateCompletedRobotRegion(self.next_region)
+                self.robClient.updateRobotRegion(self.next_region)
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
@@ -194,13 +196,104 @@ class ExecutorStrategyExtensions(object):
                 # --- two_robot_negotiation ----- #
                 # ------------------------------- #
                 if self.proj.compile_options['neighbour_robot']:
-                    self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                    else:
+                        self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
                 # ------------------------------- #
 
             self.strategy.current_state = self.next_state
             self.last_next_states = []  # reset
 
             self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+
+    def runStrategyIterationInstanteousActionCentralized(self):
+        """
+        Run, run, run the strategy with instantanous action!  (For one evaluation step)
+        For patching mode
+        """
+        # Take a snapshot of our current sensor readings
+        sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+
+        # find current region based on region sensors and remove those sensors from sensor_state
+        # finally add the "regionCompleted" sensor with region object
+        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(self.proj.otherRobot[0]))
+        for key, value in sensor_region.iteritems():
+            del sensor_state[key]
+        sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
+
+        # check we are inside any region, if not we will use the previous region detected. (timing issue)
+        if sensor_region_names:
+            sensor_region_name = sensor_region_names[0].replace('_rc','')
+            decomposed_region_names = self.proj.regionMapping[sensor_region_name]
+            self.prev_decomposed_region_names = decomposed_region_names
+        else:
+            logging.info('not inside any region!')
+            decomposed_region_names  = self.prev_decomposed_region_names
+
+        sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
+        self.current_region = sensor_state['regionCompleted']
+
+        # temporarily save the centralized state to our strategy
+        self.centralized_strategy_state = self.strategy.states.addNewState()
+        self.centralized_strategy_state.setPropValues(sensor_state)
+
+        # update the environment propositions of centralized strategy
+        # AND return latest system propositions of the robot
+        sysOutputs = self.robClient.getOutputs(self.centralized_strategy_state.getInputs(expand_domains = True))
+
+        # Make sure we have somewhere to go
+        if len(sysOutputs) == 0:
+            # Well darn!
+            logging.error("Could not find a suitable state to transition to in centralized strategy!")
+            return
+
+        # temporarily save the centralized state to our strategy
+        self.centralized_strategy_state.setPropValues(sysOutputs)
+
+        logging.debug("sysOutputs:" + str(sysOutputs))
+        logging.debug("self.strategy.current_state:" + str(self.strategy.current_state.getOutputs()))
+
+        # See if we're beginning a new transition
+        if self.strategy.current_state.getOutputs() != sysOutputs:
+
+            # find next region
+            self.next_region = sysOutputs['region']
+            # ------------------------------- #
+            # --- two_robot_negotiation ----- #
+            # ------------------------------- #
+            # without include_heading: updateRobotRegion sends the current location of the robot
+            # with include_heading: updateRobotRegion sends the heading region of the robot
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['include_heading']:
+                self.robClient.updateRobotRegion(self.next_region)
+            # ------------------------------- #
+
+            # See what we, as the system, need to do to get to this new state
+            self.transition_contains_motion = self.next_region is not None and (self.current_region != self.next_region)
+
+            # Run actuators before motion
+            self.updateOutputs(self.centralized_strategy_state)
+
+            # Check for completion of motion
+            if self.transition_contains_motion:
+                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.current_region.name))
+                self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
+
+                # ------------------------------- #
+                # --- two_robot_negotiation ----- #
+                # ------------------------------- #
+                # ------------------------------- #
+                if self.proj.compile_options['neighbour_robot']:
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                    else:
+                        self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                # ------------------------------- #
+
+            self.strategy.current_state = self.centralized_strategy_state
+
+        # Move one step towards the next region (or stay in the same region)
+        self.hsub.gotoRegion(self.current_region, self.next_region)
 
     def HSubGetSensorValue(self,sensorList):
         """

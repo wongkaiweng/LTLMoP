@@ -127,6 +127,9 @@ class CentralExecutor:
                         # set patching status to false
                         self.patchingStatus[item.group("robotName")] = False
 
+                        # set recevial of patching request to false
+                        self.patchingRequestReceived[item.group("robotName")] = False
+
                         # set up spec for the robot
                         for specType, value in self.spec.iteritems():
                             self.spec[specType][item.group("robotName")] = ""
@@ -173,9 +176,19 @@ class CentralExecutor:
                     elif item.group('packageType')  == "patchingStatus":
                         if isinstance(ast.literal_eval(item.group("packageValue")), bool):
                             self.patchingStatus[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        """
                         else:
                             # send the patching status of the robot
                             x.send(str(self.patchingStatus[item.group("robotName")]))
+                        """
+
+                    elif item.group('packageType')  == "patchingRequest":
+                            # send the receival of patching request of the robot
+                            x.send(str(self.patchingRequestReceived[item.group("robotName")]))
+
+                    elif item.group('packageType')  == "centralizedExecutionStatus":
+                            # send the centralized execution status to the robot
+                            x.send(str(self.centralizedExecutionStatus))
 
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info
@@ -219,11 +232,16 @@ class CentralExecutor:
         while self.keepConnection:
             self.checkData()
 
-            # TODO: probably need to do more to drag the neighbour robot in
+            # check if need to drag neighbour robots in
+            self.updatePatchingRequest(self.allRobotCentralized,[])
 
-            # start patching
-            if self.patchingStatus.values().count(True) >= 2:
+            # start patching (make sure no of patchinStatus is the same as no of receivedPatchingRequest)
+            if self.patchingStatus.values().count(True) >= 2 and self.patchingStatus.values().count(True) == self.patchingRequestReceived.values().count(True):
+
                 logging.info('We will start patching')
+
+                # first update centralized execution status
+                self.centralizedExecutionStatus = False
 
                 # check if we get all the necessary spec and props
                 self.checkIfNecessaryPartsObtained()
@@ -237,17 +255,26 @@ class CentralExecutor:
                 # synthesize new controller
                 self.compileCentralizedSpec()
 
+                # now we will start centralized execution
+                self.centralizedExecutionStatus = True
+
                 # TODO: here run the centralized aut. also need to checkData
                 while self.keepConnection:
+                    logging.debug('Now executing the centralized strategy...')
                     self.checkData()
 
                     #TODO: to remove for real execution
-                    self.testTriggerSysGoalsSatisfaction()
+                    #self.testTriggerSysGoalsSatisfaction()
 
                     # check if goals are satisfied
                     if self.checkIfGoalsAreSatisfied():
                         logging.debug('The centralized system goal is satisfied.')
-                        self.keepConnection = False
+                        # reset status
+                        self.centralizedExecutionStatus = None
+                        # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
+                        self.patchingRequestReceived = {k:False for k in self.patchingRequestReceived.keys()}
+                        self.patchingStatus = {k:False for k in self.patchingStatus.keys()}
+                        #self.keepConnection = False
 
                 #clean all necessary variables when done
                 self.cleanVariables()
@@ -272,8 +299,11 @@ class CentralExecutor:
         self.currentState = None #state object. store the combined current state of all robots
         self.currentAssignment = {} # dict. store assignments of all props and all robots
         self.patchingStatus = {} #track if patching is initiated. True if started and false otherwise
+        self.patchingRequestReceived = {} #track if we are initializing patching. False is not and True otherwise. This is checked by every robot constantly to make sure they enter the mode when necessary
         self.last_next_states = [] #track the last next states in our autonmaton execution
         self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
+
+        self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
 
     def closeConnection(self, signal, frame):
         """
@@ -550,6 +580,33 @@ class CentralExecutor:
         """
         # try to trigger goal satisfaction
         self.strategy.current_state = random.choice([x for x in self.strategy.searchForStates({'bob_r3_rc':0, 'bob_r1_rc':0, 'bob_r2_rc':0, 'bob_r5_rc':1, 'bob_r4_rc':0, 'alice_r5_rc':0, 'alice_r1_rc':1, 'alice_r2_rc':0, 'alice_r3_rc':0, 'alice_r4_rc':0, 'bob_r4':0, 'bob_r5':0, 'bob_r1':0, 'bob_r2':0, 'bob_r3':1, 'alice_r5':0, 'alice_r4':0, 'alice_r1':0, 'alice_r3':0, 'alice_r2':1})])
+
+    def updatePatchingRequest(self, functionName, functionPara):
+        """
+        This function checked if patching request has to be initiated.
+        functionName: name of the function (with no parenteses)
+        functionPara: parameters of the function
+
+        Update:
+        self.patchingRequestReceived object.
+        """
+
+        self.patchingRequestReceived = functionName(functionPara)
+
+    def allRobotCentralized(self, para):
+        """
+        * To be passed to checkChangeinPatchingRequest
+        If any robot toggled patching status to true, this function change every robot's patching receival status to true.
+        para: parameters. Not used here.
+
+        Output:
+        {robot:True} dict if any robot's pathcing status is true and {robot:False} otherwise
+        """
+        if self.patchingStatus.values().count(True):
+            return {robot:True for robot in self.patchingStatus.keys()}
+        else:
+            return {robot:False for robot in self.patchingStatus.keys()}
+
 
 
 if __name__ == "__main__":
