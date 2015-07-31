@@ -7,6 +7,10 @@ import strategy
 import logging
 import time
 
+logging.getLogger().setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+
+
 def loadRobotClient(specpath, otherRobotName):
     """
     specpath: path to specification

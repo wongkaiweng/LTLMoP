@@ -27,7 +27,8 @@ from createJTLVinput import createLTLfile, createSMVfile
 import strategy
 import LTLParser.LTLcheck
 
-logging.basicConfig(level=logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
 ##let's set up some constants
