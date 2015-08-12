@@ -212,10 +212,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         envRegions.append(None)
 
                 regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
-                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
+                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
             else:
                 regionCompleted_domain = []
-                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]
+                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
                 enabled_sensors.extend([r.name+'_rc' for r in self.proj.rfi.regions])
         else:
             regionCompleted_domain = []
@@ -416,7 +416,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -------------------------------- #
 
         if self.proj.compile_options['fastslow']:
-            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(self.proj.otherRobot[0])]))
+            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]))
         else:
         	init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
@@ -501,7 +501,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
             logging.debug('Finding init state failed.')
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
-                if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(self.proj.otherRobot[0]):
+                if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
                     continue
                 self.sensor_strategy.setPropValue(prop_name, value)
 
@@ -591,7 +591,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             # Take a snapshot of our current sensor readings
             sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
             for prop_name, value in sensor_state.iteritems():
-                if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(self.proj.otherRobot[0]):
+                if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
                     continue
 
                 self.sensor_strategy.setPropValue(prop_name, value)

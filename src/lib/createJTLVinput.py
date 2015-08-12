@@ -344,7 +344,10 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True, nextProp=False):
 #---------------------#
 
 # ------ two_robot_negotiation ------------#
-def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_robot_name = ''):
+def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_robot_names_list = ''):
+    """
+    other_robot_names_list: a tuple of names of robots around
+    """
     if use_bits:
         numBits = int(math.ceil(math.log(len(adjData),2)))
         # TODO: only calc bitencoding once
@@ -355,43 +358,47 @@ def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_ro
     # The topological relation (adjacency)
     adjFormulas = []
 
-    if not other_robot_name:
+    if not other_robot_names_list:
         logging.info('robot_name not provided!')
         return
 
-    for Origin in range(len(adjData)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
-        adjFormula = adjFormula + ') -> ( ('
-        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name+")")
-        adjFormula = adjFormula + ')'
-
-        for dest in range(len(adjData)):
+    for other_robot_name in other_robot_names_list:
+        for Origin in range(len(adjData)):
             # skip boundary and obstacles
-            if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
-                # not empty, hence there is a transition
-                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
-                adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name+")")
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
 
-                adjFormula = adjFormula + ') '
+            # from region i we can stay in region i
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
+            adjFormula = adjFormula + ') -> ( ('
+            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name+")")
+            adjFormula = adjFormula + ')'
 
-        # closing this region
-        adjFormula = adjFormula + ' ) ) '
+            for dest in range(len(adjData)):
+                # skip boundary and obstacles
+                if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
+                    # not empty, hence there is a transition
+                    adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
+                    adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name+")")
 
-        adjFormulas.append(adjFormula)
+                    adjFormula = adjFormula + ') '
 
-    # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
+            # closing this region
+            adjFormula = adjFormula + ' ) ) '
+
+            adjFormulas.append(adjFormula)
+
+        # In a BDD strategy, it's best to explicitly exclude these
+        adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
 
     return " & \n".join(adjFormulas)
 
-def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name = ''):
-    if not other_robot_name:
+def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_names_list = ''):
+    """
+    other_robot_names_list: a tuple
+    """
+    if not other_robot_names_list:
         logging.info('robot_name not provided!')
         return
 
@@ -399,118 +406,119 @@ def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_name 
     adjFormulas = []
     suffix = '_rc'
 
-    """
-    Obtain []( (robotName_regionProp1_rc & robotName_regionProp1) -> (next(robotName_regionProp1_rc))) 
-    """
-    for Origin in range(len(adjData)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-
-        # still in the current region
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name + suffix)
-        adjFormula = adjFormula + ' & '
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
-        adjFormula = adjFormula + ') -> ('
-        adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix + ')')
-        adjFormula = adjFormula + ') )'
-        adjFormulas.append(adjFormula)
-
-    """
-    Obtain []( (robotName_regionProp1_rc & robotName_regionProp2)) -> (next(robotName_regionProp1_rc)|next(robotName_regionProp2_rc))
-
-    """
-    for Origin in range(len(adjData)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-
-        for dest in range(len(adjData)):
-            if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
-                # from region i we can head to dest stay in Origin
-                adjFormula = '\t\t\t []( ('
-                adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name + suffix)
-                adjFormula = adjFormula + ' & '
-                adjFormula = adjFormula + (currBitEnc[dest] if use_bits else "e."+ other_robot_name + '_' +regions[dest].name)
-                adjFormula = adjFormula + ') -> ('
-                # still in the current region
-                adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix + ')')
-
-                # not empty, hence there is a transition
-                adjFormula = adjFormula + ' | '
-                adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+ other_robot_name + '_' +regions[dest].name + suffix + ')')
-                adjFormula = adjFormula + ') )'
-                adjFormulas.append(adjFormula)
-
-    """
-    Obtain []( next(robotName_regionProp1_rc) -> (next(robotName_regionProp1)|next(robotName_regionProp2))
-    """
-    for Origin in range(len(adjData)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix+ ")")
-        adjFormula = adjFormula + ') -> ( ('
-        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ")")
-        adjFormula = adjFormula + ')'
-
-        for dest in range(len(adjData)):
+    for other_robot_name in other_robot_names_list:
+        """
+        Obtain []( (robotName_regionProp1_rc & robotName_regionProp1) -> (next(robotName_regionProp1_rc)))
+        """
+        for Origin in range(len(adjData)):
             # skip boundary and obstacles
-            if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
-                # not empty, hence there is a transition
-                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
-                adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name + ")")
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
 
-                adjFormula = adjFormula + ') '
+            # still in the current region
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name + suffix)
+            adjFormula = adjFormula + ' & '
+            adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
+            adjFormula = adjFormula + ') -> ('
+            adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix + ')')
+            adjFormula = adjFormula + ') )'
+            adjFormulas.append(adjFormula)
 
-        # closing this region
-        adjFormula = adjFormula + ' ) ) '
+        """
+        Obtain []( (robotName_regionProp1_rc & robotName_regionProp2)) -> (next(robotName_regionProp1_rc)|next(robotName_regionProp2_rc))
 
-        adjFormulas.append(adjFormula)
-
-    """
-    Obtain [](next(robotName_regionProp1)-> (robotName_regionProp1 | robotName_regionProp2 | robotName_regionProp3))
-    """
-    for Origin in range(len(adjData)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
-
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ')')
-        adjFormula = adjFormula + ') -> ( ('
-        adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ")")
-        adjFormula = adjFormula + ')'
-
-        for dest in range(len(adjData)):
+        """
+        for Origin in range(len(adjData)):
             # skip boundary and obstacles
-            if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
-                # not empty, hence there is a transition
-                adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
-                adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name + ")")
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
 
-                adjFormula = adjFormula + ') '
+            for dest in range(len(adjData)):
+                if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
+                    # from region i we can head to dest stay in Origin
+                    adjFormula = '\t\t\t []( ('
+                    adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name + suffix)
+                    adjFormula = adjFormula + ' & '
+                    adjFormula = adjFormula + (currBitEnc[dest] if use_bits else "e."+ other_robot_name + '_' +regions[dest].name)
+                    adjFormula = adjFormula + ') -> ('
+                    # still in the current region
+                    adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix + ')')
 
-        # closing this region
-        adjFormula = adjFormula + ' ) ) '
-        adjFormulas.append(adjFormula)
+                    # not empty, hence there is a transition
+                    adjFormula = adjFormula + ' | '
+                    adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+ other_robot_name + '_' +regions[dest].name + suffix + ')')
+                    adjFormula = adjFormula + ') )'
+                    adjFormulas.append(adjFormula)
 
-    """
-    Obtain [](next(robotName_regionProp1_rc) & ! next(robotName_regionProp2_rc))|()|()
-    """
-    # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name, suffix))
+        """
+        Obtain []( next(robotName_regionProp1_rc) -> (next(robotName_regionProp1)|next(robotName_regionProp2))
+        """
+        for Origin in range(len(adjData)):
+            # skip boundary and obstacles
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
 
-    """
-    Obtain [](next(robotName_regionProp1) & ! next(robotName_regionProp2))|()|()
-    """
-    # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
+            # from region i we can stay in region i
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + suffix+ ")")
+            adjFormula = adjFormula + ') -> ( ('
+            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ")")
+            adjFormula = adjFormula + ')'
+
+            for dest in range(len(adjData)):
+                # skip boundary and obstacles
+                if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
+                    # not empty, hence there is a transition
+                    adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
+                    adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name + ")")
+
+                    adjFormula = adjFormula + ') '
+
+            # closing this region
+            adjFormula = adjFormula + ' ) ) '
+
+            adjFormulas.append(adjFormula)
+
+        """
+        Obtain [](next(robotName_regionProp1)-> (robotName_regionProp1 | robotName_regionProp2 | robotName_regionProp3))
+        """
+        for Origin in range(len(adjData)):
+            # skip boundary and obstacles
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
+
+            # from region i we can stay in region i
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ')')
+            adjFormula = adjFormula + ') -> ( ('
+            adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(e."+ other_robot_name + '_' +regions[Origin].name + ")")
+            adjFormula = adjFormula + ')'
+
+            for dest in range(len(adjData)):
+                # skip boundary and obstacles
+                if adjData[Origin][dest] and not (regions[dest].name == 'boundary' or regions[dest].isObstacle):
+                    # not empty, hence there is a transition
+                    adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
+                    adjFormula = adjFormula + (nextBitEnc[dest] if use_bits else "next(e."+other_robot_name + '_' + regions[dest].name + ")")
+
+                    adjFormula = adjFormula + ') '
+
+            # closing this region
+            adjFormula = adjFormula + ' ) ) '
+            adjFormulas.append(adjFormula)
+
+        """
+        Obtain [](next(robotName_regionProp1_rc) & ! next(robotName_regionProp2_rc))|()|()
+        """
+        # In a BDD strategy, it's best to explicitly exclude these
+        adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name, suffix))
+
+        """
+        Obtain [](next(robotName_regionProp1) & ! next(robotName_regionProp2))|()|()
+        """
+        # In a BDD strategy, it's best to explicitly exclude these
+        adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
 
     return " & \n".join(adjFormulas)
 

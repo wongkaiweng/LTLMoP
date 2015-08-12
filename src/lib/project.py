@@ -176,7 +176,7 @@ class Project:
             data['SPECIFICATION']['RegionMapping'] = [rname + " = " + ', '.join(rlist) for
                                                       rname, rlist in self.regionMapping.iteritems()]
 
-        data['SETTINGS'] = {"Sensors": [p + ", " + str(int(p in self.enabled_sensors)) for p in self.all_sensors if not (p.endswith('_rc') or p.endswith('_ac')) or p.startswith(self.otherRobot[0])],  #TODO: don't need this later
+        data['SETTINGS'] = {"Sensors": [p + ", " + str(int(p in self.enabled_sensors)) for p in self.all_sensors if not (p.endswith('_rc') or p.endswith('_ac')) or p.startswith(tuple(self.otherRobot))],  #TODO: don't need this later
                             "Actions": [p + ", " + str(int(p in self.enabled_actuators)) for p in self.all_actuators],
                             "Customs": self.all_customs}
 
