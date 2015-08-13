@@ -100,11 +100,26 @@ class CentralExecutor:
                 self.clients.append(csock)
                 #logging.info('CENTRAL_EXECUTOR: ...connected! client list = ' + str(clients))
 
+                # for tempMsg
+                self.tempMsg[csock] = ""
+
             else:
                 # find data pattern
                 data = x.recv(BUFSIZE)
+
+                # retrieve incomplete data if there's any
+                data = self.tempMsg[x]+data
+                self.tempMsg[x] = ""
+
+                # parse msg
                 pattern ="(?P<robotName>\w+)-(?P<packageType>\w+)\s=\s(?P<packageValue>\[?.+\]?)\n"      # MSG FORMAT
                 result = re.finditer(pattern, data)
+
+                # temporarily save incomplete msg
+                if not re.match(pattern, data):
+                    self.tempMsg[x] = data
+                else: # we have some patterns matching but the last one might be incomplete
+                    self.tempMsg[x] = data[data.rfind('\n')+1:]
 
                 for item in result:
                     if item.group('packageType')  == "regionList":
@@ -302,6 +317,7 @@ class CentralExecutor:
         self.patchingRequestReceived = {} #track if we are initializing patching. False is not and True otherwise. This is checked by every robot constantly to make sure they enter the mode when necessary
         self.last_next_states = [] #track the last next states in our autonmaton execution
         self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
+        self.tempMsg = {} # temporarily save incomplete msg from robots. clear when used.
 
         self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
 

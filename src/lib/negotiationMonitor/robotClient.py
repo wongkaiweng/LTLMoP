@@ -257,7 +257,7 @@ class RobotClient:
             self.clientObject.send(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
         else:
             self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
-        logging.info('ROBOTCLIENT: sent'+propListType+'propositions list with value')
+        logging.info('ROBOTCLIENT: sent '+propListType+'propositions list with value')
 
 
     def convertFromRegionBitsToRegionNameInDict(self, propListType, propDict):
