@@ -1118,6 +1118,11 @@ class ExecutorResynthesisExtensions(object):
         for specType, specStr in mySpec.iteritems():
             if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
                 continue
+
+            # only sends the current goal we are pursuing
+            if specType == 'SysGoals':
+                specStr = LTLParser.LTLcheck.sysGoalsStrToList(specStr)[int(self.strategy.current_state.goal_id)]
+
             self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
         # send prop

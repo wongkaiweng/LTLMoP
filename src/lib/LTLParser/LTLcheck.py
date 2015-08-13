@@ -52,6 +52,19 @@ def separateLTLwithNextSystemProps(spec):
     value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 's.', False, True, False)
     return " &\n ".join(LTLlist), " &\n ".join(LTLExcludedList)
 
+def sysGoalsStrToList(sysGoals):
+    """
+    sysGoals: sysGoals LTL
+    Returns LTLList that separates all goals
+    """
+    LTLlist = []
+    tree = LTLFormula.parseLTL(sysGoals)
+
+    for x in tree[1:]:
+        LTLlist.append(LTLFormula.treeToString(x))
+
+    return LTLlist
+
 def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False, use_next = False, next = False):
     """
     Return an LTLFomula with formulas involving bits removed
