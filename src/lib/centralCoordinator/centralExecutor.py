@@ -275,7 +275,7 @@ class CentralExecutor:
 
                 # TODO: here run the centralized aut. also need to checkData
                 while self.keepConnection:
-                    logging.debug('Now executing the centralized strategy...')
+                    #logging.debug('Now executing the centralized strategy...')
                     self.checkData()
 
                     #TODO: to remove for real execution
@@ -571,6 +571,8 @@ class CentralExecutor:
                 self.strategy.current_state = next_state
                 self.last_next_states = []  # reset
                 logging.info('Currently at State ' + str(self.strategy.current_state.state_id))
+                logging.debug(str(self.strategy.current_state.getAll(expand_domains=True)))
+                logging.debug('---------------------------------------------------------')
 
         """
         send updated outputs to the robot

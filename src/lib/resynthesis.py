@@ -1121,13 +1121,24 @@ class ExecutorResynthesisExtensions(object):
 
             # only sends the current goal we are pursuing
             if specType == 'SysGoals':
-                specStr = LTLParser.LTLcheck.sysGoalsStrToList(specStr)[int(self.strategy.current_state.goal_id)]
+                if not specStr.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
+                    specStr = LTLParser.LTLcheck.sysGoalsStrToList(specStr)[int(self.strategy.current_state.goal_id)]
 
             self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
         # send prop
         self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        self.robClient.sendProp('sys', self.strategy.current_state.getOutputs(expand_domains = True))
+
+        # TODO: Here we assume we are using bits
+        # replace sys init with env init for regions
+        sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
+        sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp,sValue in sysProps.iteritems() }
+
+        for eProp, eValue in self.strategy.current_state.getInputs(expand_domains = True).iteritems():
+            if 'regionCompleted_b' in eProp and eValue:
+                sysProps[eProp.replace('regionCompleted_b','region_b')] = eValue
+
+        self.robClient.sendProp('sys', sysProps)
 
         # send cooridination status
         self.robClient.setCoordinationStatus(True)
