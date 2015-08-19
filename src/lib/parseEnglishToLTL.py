@@ -1287,6 +1287,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                     if NextFlag:
                         # replace every occurrence of the proposition with next(proposition)
                         # it is written this way to prevent nesting of 'next' (as with the .replace method)
+                        prop = prop.replace('(','').replace(')','')
                         subTempFormula = re.sub('(next\('+prop+'\)|'+prop+')', 'next('+ prop +')',subTempFormula)
 
             if fastslow and CompletionFlag:

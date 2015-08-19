@@ -455,7 +455,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             else:
                 # put all clauses in EnvTrans into conjuncts
                 if self.proj.compile_options['fastslow']:
-                    self.spec['EnvTrans'] = self.spec['EnvTrans']+"&"+self.spec["EnvTopo"]
+                    self.spec['EnvTrans'] = ' &\n'.join(filter(None, [self.spec['EnvTrans'], self.spec["EnvTopo"]]))
                 self.oriEnvTrans = copy.copy(self.spec['EnvTrans'])
                 self.spec['EnvTrans'] = '[](('+ copy.copy(self.oriEnvTrans).replace('[]','') +'))\n'
                 self.EnvTransRemoved = []
