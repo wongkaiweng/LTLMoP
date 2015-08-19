@@ -1431,9 +1431,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
             if fastslow:
                 if "finished" in prop:
                     if propStriped in regionList:
-                        SetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', SetEvent)
+                        SetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', '('+propStriped.replace('s.','e.')+'_rc)', SetEvent)
                     elif propStriped in actuatorList:
-                        SetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', SetEvent)
+                        SetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', propStriped.replace('s.','e.')+'_ac', SetEvent)
 
     if ResetEvent.upper()=='FALSE':
         ResetEvent = 'FALSE'
@@ -1451,9 +1451,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
                 if fastslow:
                     if "finished" in prop:
                         if propStriped in regionList:
-                            ResetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', ResetEvent)
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', '('+propStriped.replace('s.','e.')+'_rc)', ResetEvent)
                         elif propStriped in actuatorList:
-                            ResetEvent = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', ResetEvent)
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', propStriped.replace('s.','e.')+'_ac', ResetEvent)
 
     # Checking the event proposition
     if EventProp in sensorProp:
