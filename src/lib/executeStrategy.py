@@ -122,7 +122,7 @@ class ExecutorStrategyExtensions(object):
 
         # find current region based on region sensors and remove those sensors from sensor_state
         # finally add the "regionCompleted" sensor with region object
-        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(self.proj.otherRobot[0]))
+        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(tuple(self.proj.otherRobot)))
         for key, value in sensor_region.iteritems():
             del sensor_state[key]
         sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
@@ -217,7 +217,7 @@ class ExecutorStrategyExtensions(object):
 
         # find current region based on region sensors and remove those sensors from sensor_state
         # finally add the "regionCompleted" sensor with region object
-        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(self.proj.otherRobot[0]))
+        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(tuple(self.proj.otherRobot)))
         for key, value in sensor_region.iteritems():
             del sensor_state[key]
         sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
