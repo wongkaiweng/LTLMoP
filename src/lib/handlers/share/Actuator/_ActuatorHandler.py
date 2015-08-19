@@ -44,7 +44,7 @@ class ActuatorDisplayFrame(wx.Frame):
 
         # Let everyone know we're ready
         host = 'localhost'
-        port = 23559
+        port = int(sys.argv[1])        #port = 23559
         buf = 1024
         addr = (host,port)
         UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)

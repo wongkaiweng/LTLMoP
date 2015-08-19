@@ -9,6 +9,7 @@ Does nothing more than print the actuator name and state; for testing purposes.
 
 import subprocess, os, time, socket
 import sys
+import random
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -38,7 +39,7 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
             if self.p_gui is None:
                 # Prepare to receive initialization signal
                 host = 'localhost'
-                port = 23559
+                port = random.randint(10000, 65535)  #port = 23559
                 buf = 1024
                 addr = (host,port)
 
@@ -52,7 +53,7 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
 
                 # Create a subprocess
                 print "(ACT) Starting actuatorHandler window..."
-                self.p_gui = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Actuator","_ActuatorHandler.py")], stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                self.p_gui = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Actuator","_ActuatorHandler.py"),str(port)], stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
                 data = ''
                 while "Hello!" not in data:

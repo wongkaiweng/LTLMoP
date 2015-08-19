@@ -12,7 +12,8 @@ import numpy, math
 import sys
 
 # ---- two_robot_negotiation  --- #
-import logging 
+import logging
+import random
 # ------------------------------- #
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -33,6 +34,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.sensorListenInitialized = False
         self._running = True
         self.p_sensorHandler = None
+        self.port = random.randint(10000, 65535)         #port = 23459
         
         # --- two_robot_negotiation --- #
         self.robClient = None # fetch negMonitor from executor 
@@ -57,7 +59,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
     def _createSubwindow(self):
             # Create a subprocess
             self.executor.postEvent("INFO", "(SENS) Starting sensorHandler window and listen thread...")
-            self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Sensor","_SensorHandler.py")], stdin=subprocess.PIPE)
+            self.p_sensorHandler = subprocess.Popen([sys.executable, "-u", os.path.join(self.proj.ltlmop_root,"lib","handlers","share","Sensor","_SensorHandler.py"), str(self.port)], stdin=subprocess.PIPE)
 
             # Create new thread to communicate with subwindow
             self.sensorListenThread = threading.Thread(target = self._sensorListen)
@@ -130,9 +132,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         Processes messages from the sensor handler subwindow, and updates our cache appropriately
         """
         host = 'localhost'
-        port = 23459
         buf = 1024
-        addr = (host,port)
+        addr = (host, self.port)
 
         UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         UDPSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

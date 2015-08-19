@@ -39,7 +39,7 @@ class SensorEditorFrame(wx.Frame):
         self.Bind(wx.EVT_IDLE, self.onIdle)
         
         self.host = 'localhost'
-        self.port = 23459
+        self.port = int(sys.argv[1]) # self.port = 23459
         self.buf = 1024
         self.addr = (self.host,self.port)
         self.UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
