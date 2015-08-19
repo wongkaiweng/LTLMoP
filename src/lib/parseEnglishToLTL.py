@@ -109,8 +109,8 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     CommentRE = re.compile('^\s*#',re.IGNORECASE)
     LivenessRE = re.compile('^\s*(go to|visit|infinitely often do|infinitely often sense|infinitely often)',re.IGNORECASE)
     if fastslow:
-        SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished)',re.IGNORECASE)
-        SafetyCompletionRE = re.compile('^\s*(finished)',re.IGNORECASE)
+        SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
+        SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
     else:
         SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense)',re.IGNORECASE)
     StayRE = re.compile('(stay there|stay)',re.IGNORECASE)
@@ -706,15 +706,17 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
         # A safety requirement
         elif SafetyRE.search(line):
+
+            # remove the first words
+            SafetyReq = SafetyRE.sub('',line)
+
             if fastslow:
                 #check if we are using the 'finished' keyword
-                if SafetyCompletionRE.search(Requirement):
+                if SafetyCompletionRE.search(SafetyReq):
                     CompletionFlag = True
+                    SafetyReq = SafetyRE.sub('',SafetyReq)
                 else:
                     CompletionFlag = False
-
-            # remove the first words     
-            SafetyReq = SafetyRE.sub('',line)
 
             # parse the safety requirement
             if fastslow:
@@ -907,7 +909,11 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
     tempFormula = replaceLogicOp(tempFormula)
 
     # checking that all propositions are 'legal' (in the list of propositions)
-    for prop in re.findall('([\w\.]+)',tempFormula):
+    for prop in re.findall('((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)',tempFormula):
+        originalProp = prop
+        if CompletionFlag:
+            prop = re.search('((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop')
+
         if not prop in PropList:
             print 'ERROR(2): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
             formulaInfo['type'] = 'EnvTrans' # arbitrary
@@ -921,6 +927,7 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             formulaInfo['type'] = 'EnvTrans' # arbitrary
             return formulaInfo
 
+        originalPropPattern = originalProp.replace('(','\(').replace(')','\)')
         if prop in sensorList and formulaInfo['type'] == '':
             formulaInfo['type'] = 'EnvTrans'
             # replace every occurrence of the proposition with next(proposition)
@@ -933,19 +940,17 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
             if CompletionFlag:
                 if prop in regionList:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
                 elif prop in actuatorList:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
                 else:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
             else:
-                tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
+                tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
         else:
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
-            tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
-    
-    
+            tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
     formulaInfo['formula'] = '\t\t\t [](' + tempFormula + ') & \n'
 
     return formulaInfo
