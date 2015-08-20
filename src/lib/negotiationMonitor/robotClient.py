@@ -120,15 +120,25 @@ class RobotClient:
 
         # first replace our region bits to original region name with our robot name
         if fastslow:
+            # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
             if include_heading:
+                # convert s.bit to e.robotName_region
                 spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
 
+            ########################
+            ## PATCHING SPECIFICS ##
+            ########################
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                 # only sends the current goal we are pursuing
                 if specType == 'SysGoals':
                     if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
                         spec = LTLParser.LTLcheck.sysGoalsStrToList(spec)[current_goal_id]
+
+                # replace e.g. alice_r1 to alice_r1_rc as the meaning changes in the central strategy
+                for region in self.regionList:
+                    for otherRobot in self.proj.otherRobot:
+                        spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])','e.'+otherRobot+'_'+region+'_rc',spec)
 
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
