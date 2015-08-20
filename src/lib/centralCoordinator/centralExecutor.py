@@ -508,13 +508,13 @@ class CentralExecutor:
         startTime = time.time()
         realizable, realizableFS, output  = self.compiler._synthesize()
         endTime = time.time()
-        logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
-
+        logging.info(output)
 
         """
         If realizable, load AUT and return status to each robot. The execution of each robot resumes.
         """
         if realizable:
+            logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
             # load strategy and initial state
             self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
             # TODO: need to be finished
