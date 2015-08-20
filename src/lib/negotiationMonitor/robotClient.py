@@ -2,6 +2,7 @@
 import socket               # for communication with negotiation monitor
 import logging
 import LTLParser.LTLRegion  # from replace region names in ltl
+import LTLParser.LTLcheck   # for retrieve one goal from the group of sysGoals
 import ast                  # for parsing spec dict from negtiation monitor
 import strategy             # for finding regions from region bits
 import numpy                # for generating bit encoding
@@ -102,9 +103,12 @@ class RobotClient:
         self.clientObject.close()
         logging.info('ROBOTCLIENT: connection to the negotiation monitor is now closed')
    
-    def sendSpec(self, specType, spec, fastslow=False, include_heading=False):
+    def sendSpec(self, specType, spec, fastslow=False, include_heading=False, current_goal_id=0):
         """
         This function sends the robot's spec to the negotiation monitor according to the specType.
+        fastslow: whether we are using completion props
+        include_heading: if true then bob_r1 means s.r1, bob_r1 = e.r1 else bob_r1 means e.r1 (fastslow mode)
+        current_goal_id: current goal the robot is pursuing (for patching)
         """
         # check if the specType is valid
         possibleSpecTypes = ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']
@@ -119,6 +123,13 @@ class RobotClient:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
             if include_heading:
                 spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
+
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                # only sends the current goal we are pursuing
+                if specType == 'SysGoals':
+                    if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
+                        spec = LTLParser.LTLcheck.sysGoalsStrToList(spec)[current_goal_id]
+
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
 

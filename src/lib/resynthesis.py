@@ -1119,12 +1119,11 @@ class ExecutorResynthesisExtensions(object):
             if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
                 continue
 
-            # only sends the current goal we are pursuing
+            # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                if not specStr.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
-                    specStr = LTLParser.LTLcheck.sysGoalsStrToList(specStr)[int(self.strategy.current_state.goal_id)]
-
-            self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
+                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+            else:
+                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
         # send prop
         self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
