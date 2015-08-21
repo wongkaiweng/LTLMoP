@@ -1,0 +1,239 @@
+import sys
+import re
+import logging
+import ast
+
+import os
+p = os.path.abspath(__file__)
+print os.path.join(os.path.dirname(p),"../")
+sys.path.append(os.path.join(os.path.dirname(p),"../"))
+
+import LTLParser.LTLFormula
+
+import LTLParser.LTLcheck
+import fsa
+import strategy
+
+logging.basicConfig(level=logging.INFO)
+
+def getTruePropsInStates(autFile,stateList):
+    truePropsOption = True # only returns true proposition if true
+
+    # should feed in a list in ascending order
+    try:
+        stateCombination = ast.literal_eval(str(stateList))
+        stateCombination.reverse()
+        listProvided = True
+
+        # pop first element in the list
+        state = stateCombination.pop()
+    except:
+        logging.info('no file given. We will do this for all states.')
+        listProvided = False
+        stateCombination = []
+        state = 0
+
+    f_aut = open(autFile,'r')
+    f_output = open('output.txt','w')
+    outputDict = {}
+
+    # pattern for detecting propositions
+    patternTrueProps = '(?P<propName>\w+):(?P<propValue>[01]),?'
+
+    logging.info('Looking for combination')
+
+    for line in f_aut:
+        if 'State '+ str(state) + ' ' in line:
+            if truePropsOption:
+
+                trueProps = []
+                result = re.finditer(patternTrueProps, line)
+                for item in result:
+                    #logging.info(item.group('propName') + ":" + item.group('propValue'))
+                    if ast.literal_eval(item.group('propValue')):
+                        trueProps.append(item.group('propName'))
+
+                patternRank = '(with rank (?P<rankValue>\d+) ->)'
+                resultRank = re.finditer(patternRank, line)
+                for item in resultRank:
+                    #logging.info(item.group('rankValue'))
+                    rankValue = item.group('rankValue')
+                f_output.write('State '+ str(state) + ' with rank '+ rankValue +': ' + str(trueProps) +'\n')
+                outputDict.update({state:trueProps})
+
+            else:
+                f_output.write(line+'\n')
+            if len(stateCombination):
+                state = stateCombination.pop()
+            elif not listProvided:
+                state = state + 1
+            else:
+                break
+
+    logging.info('Output done!')
+    f_aut.close()
+    f_output.close()
+    return outputDict
+
+def checkSuccessors(autFile):
+    f_aut = open(autFile,'r')
+    state = ''
+
+    noSuccessorsStateList = []
+    logging.info('Start checking successors')
+
+    for line in f_aut:
+        if 'State' in line:
+            state = line
+            continue
+        else:
+            "check successor"
+            line = line.replace('With successors :','')
+            if re.search('\w+', line) is None:
+                logging.info(state)
+                state = state.split('->')[0]
+                stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\srank\s(?P<rankNo>\d+)\s',state)
+                #stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\srank\s(?P<rankNo>\d+)\s->\s<(?P<propsList>)>',state)
+                noSuccessorsStateList.append(int(stateMatch.group('stateNo')))
+
+    logging.info('Checking done!')
+    f_aut.close()
+
+    return noSuccessorsStateList
+
+def getSpecDict(ltlFile):
+    assumptions, guarantees = LTLParser.LTLFormula.LTLFormula.fromLTLFile(ltlFile)
+
+    LTLDict = {}
+    assumptionsPair = {'EnvInit':LTLParser.LTLFormula.LTLFormulaType.INITIAL,'EnvTrans':LTLParser.LTLFormula.LTLFormulaType.SAFETY,'EnvGoals': LTLParser.LTLFormula.LTLFormulaType.LIVENESS}
+    guaranteesPair = {'SysInit':LTLParser.LTLFormula.LTLFormulaType.INITIAL,'SysTrans':LTLParser.LTLFormula.LTLFormulaType.SAFETY,'SysGoals': LTLParser.LTLFormula.LTLFormulaType.LIVENESS}
+
+    for key, formulaType in assumptionsPair.iteritems():
+        LTLlist = []
+        for x in assumptions.getConjunctsByType(LTLParser.LTLFormula.LTLFormulaType.SAFETY):
+            LTLlist.append(LTLParser.LTLFormula.treeToString(x.tree))
+
+        LTLDict[key]="&".join(LTLlist)
+
+    for key, formulaType in guaranteesPair.iteritems():
+        LTLlist = []
+        for x in guarantees.getConjunctsByType(LTLParser.LTLFormula.LTLFormulaType.SAFETY):
+            LTLlist.append(LTLParser.LTLFormula.treeToString(x.tree))
+
+        LTLDict[key]="&".join(LTLlist)
+
+    return LTLDict
+
+def getInputsOutputs(smvFile):
+    # Read SMV file
+    smvFileStream = open(smvFile,"r")
+    mode = 0
+    inputBits = []
+    outputBits = []
+    for line in smvFileStream.readlines():
+        line = line.strip()
+        if (line.startswith("MODULE env")):
+            mode = 1
+        elif (line.startswith("MODULE sys")):
+            mode = 2
+        else:
+            if line.find(" : ")>0:
+                if mode == 1:
+                    inputBits.append(line.split(" : ")[0])
+                elif mode == 2:
+                    outputBits.append(line.split(" : ")[0])
+    smvFileStream.close()
+
+    return inputBits, outputBits
+
+def checkViolationWithGivenPropsDict(fileName, propDict):
+    """
+    This function instead takes in a dict and check if any EnvTrans is violated
+    """
+    logging.info("Given file name:" + str(fileName))
+    logging.info("Given prop dict:" +str(propDict))
+
+    # Then extract assumptions from the LTL file
+    spec = getSpecDict(fileName+'.ltl')
+
+    #extract inputs and outputs
+    inputs, outputs = getInputsOutputs(fileName+'.smv')
+
+    # create strategy
+    strat = strategy.createStrategyFromFile(fileName+'.aut', inputs, outputs)
+
+    # set current state
+    currentStateObject = strat.states.addNewState()
+    for prop_name, value in propDict.iteritems():
+        currentStateObject.setPropValue(prop_name, value)
+
+    # check violation
+    LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
+    logging.info('-------------------------')
+    logging.info('Printing violations')
+    logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
+    logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
+    logging.info('=========================')
+
+
+if __name__ == '__main__':
+    """
+    Example: python extractStates.py '../../examples/firefighting/firefighting'
+    This function needs .aut, .ltl and .smv file to work
+    look at what is violated for no successor states
+
+    # argv[1] = fileName
+    # argv[2] = list of states wanted
+    """
+    try:
+        fileName = sys.argv[1]
+    except:
+        fileName = '../../examples/firefighting/firefighting'
+    logging.info("Given file name:" + str(fileName))
+
+    noSuccessorsStateList = None
+    propDict = None
+
+    if len(sys.argv)>2:
+        if isinstance(ast.literal_eval(sys.argv[2]),list):
+            noSuccessorsStateList = sys.argv[2]
+        elif isinstance(ast.literal_eval(sys.argv[2]),dict):
+            propDict = sys.argv[2]
+        else:
+            logging.error("You have provided a second argument but it's not recognizable!")
+            sys.exit()
+    else:
+        # Find states with no successors and return a list
+        noSuccessorsStateList = checkSuccessors(fileName+'.aut')
+
+    if noSuccessorsStateList:
+        # extract props from states with no successor
+        noSuccessorsStateDict = getTruePropsInStates(fileName+'.aut',noSuccessorsStateList)
+        logging.info("with only true props:" + str(noSuccessorsStateDict))
+
+        # Then extract assumptions from the LTL file
+        spec = getSpecDict(fileName+'.ltl')
+
+        #extract inputs and outputs
+        inputs, outputs = getInputsOutputs(fileName+'.smv')
+
+        # create strategy
+        strat = strategy.createStrategyFromFile(fileName+'.aut', inputs, outputs)
+
+        for stateNo in noSuccessorsStateList:
+            # find current violated state
+            for stateObject in strat.states:
+                if stateObject.state_id == str(stateNo):
+                    currentStateObject = stateObject
+
+                    # check violation
+                    LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
+                    logging.info('-------------------------')
+                    logging.info('Printing violations of State ' + str(stateNo))
+                    logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
+                    logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
+                    logging.info('=========================')
+                    break
+
+    elif propDict:
+        checkViolationWithGivenPropsDict(fileName, currentStateObject.getAll(expand_domains=True))

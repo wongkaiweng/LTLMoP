@@ -85,19 +85,25 @@ class FSAStrategy(strategy.Strategy):
                 # appropriate boolean values
                 prop_name, prop_value = prop_setting.groups()
 
-                #### TEMPORARY HACK: REMOVE ME AFTER OTHER COMPONENTS ARE UPDATED!!!
-                # Rewrite proposition names to make the old bitvector system work
-                # with the new one
-                prop_name = re.sub(r'^bit(\d+)$', r'region_b\1', prop_name)
-                prop_name = re.sub(r'^sbit(\d+)$', r'regionCompleted_b\1', prop_name)
-                #################################################################
+                try:
+                    if prop_value == "0":
+                        new_state.setPropValue(prop_name, False)
+                    elif prop_value == "1":
+                        new_state.setPropValue(prop_name, True)
+                except:
+                    #### TEMPORARY HACK: REMOVE ME AFTER OTHER COMPONENTS ARE UPDATED!!!
+                    # Rewrite proposition names to make the old bitvector system work
+                    # with the new one
+                    prop_name = re.sub(r'^bit(\d+)$', r'region_b\1', prop_name)
+                    prop_name = re.sub(r'^sbit(\d+)$', r'regionCompleted_b\1', prop_name)
+                    #################################################################
 
-                if prop_value == "0":
-                    new_state.setPropValue(prop_name, False)
-                elif prop_value == "1":
-                    new_state.setPropValue(prop_name, True)
-                else:
-                    raise ValueError("Proposition '{}' value of {!r} in state {} is invalid.".format(prop_name, prop_value, new_state.state_id))
+                    if prop_value == "0":
+                        new_state.setPropValue(prop_name, False)
+                    elif prop_value == "1":
+                        new_state.setPropValue(prop_name, True)
+                    else:
+                        raise ValueError("Proposition '{}' value of {!r} in state {} is invalid.".format(prop_name, prop_value, new_state.state_id))
 
             # Update mapping
             state_by_id[new_state.state_id] = new_state
