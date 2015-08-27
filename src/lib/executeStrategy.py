@@ -287,13 +287,13 @@ class ExecutorStrategyExtensions(object):
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
                     else:
-                        self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                        self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
                 # ------------------------------- #
 
             self.strategy.current_state = self.centralized_strategy_state
 
         # Move one step towards the next region (or stay in the same region)
-        self.hsub.gotoRegion(self.current_region, self.next_region)
+        self.hsub.gotoRegion(self.current_region, sysOutputs['region'])
 
     def HSubGetSensorValue(self,sensorList):
         """
