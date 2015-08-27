@@ -452,7 +452,7 @@ class CentralExecutor:
         for robot, spec in self.spec['EnvTrans'].iteritems():
             newEnvTrans, extraSysTrans = LTLParser.LTLcheck.separateLTLwithNextSystemProps(spec)
             self.spec['EnvTrans'][robot] = newEnvTrans
-            self.spec['SysTrans'][robot] = '&\n'.join(filter(None,[self.spec['SysTrans'][robot],extraSysTrans]))
+            self.spec['SysTrans'][robot] = '&\n'.join(filter(None,LTLParser.LTLcheck.ltlStrToList(self.spec['SysTrans'][robot])+[extraSysTrans]))
 
         for robot, spec in self.spec['EnvInit'].iteritems():
             newEnvInit, extraSysInit = LTLParser.LTLcheck.separateLTLwithoutEnvPropFromEnvInit(spec)

@@ -52,13 +52,13 @@ def separateLTLwithNextSystemProps(spec):
     value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 's.', False, True, False)
     return " &\n ".join(LTLlist), " &\n ".join(LTLExcludedList)
 
-def sysGoalsStrToList(sysGoals):
+def ltlStrToList(ltlFormula):
     """
-    sysGoals: sysGoals LTL
+    ltlFormula: any LTL formula
     Returns LTLList that separates all goals
     """
     LTLlist = []
-    tree = LTLFormula.parseLTL(sysGoals)
+    tree = LTLFormula.parseLTL(ltlFormula)
 
     for x in tree[1:]:
         LTLlist.append(LTLFormula.treeToString(x))
