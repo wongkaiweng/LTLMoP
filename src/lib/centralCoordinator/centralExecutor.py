@@ -267,6 +267,7 @@ class CentralExecutor:
                 self.centralizedExecutionStatus = True
 
                 # TODO: here run the centralized aut. also need to checkData
+                tic = time.time()
                 while self.centralizedExecutionStatus is not None:
                     #logging.debug('Now executing the centralized strategy...')
                     self.checkData()
@@ -274,15 +275,19 @@ class CentralExecutor:
                     #TODO: to remove for real execution
                     #self.testTriggerSysGoalsSatisfaction()
 
-                    # check if goals are satisfied
-                    if self.checkIfGoalsAreSatisfied():
-                        logging.debug('The centralized system goal is satisfied.')
-                        # reset status
-                        self.centralizedExecutionStatus = None
-                        # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
-                        self.patchingRequestReceived = {k:False for k in self.patchingRequestReceived.keys()}
-                        self.patchingStatus = {k:False for k in self.patchingStatus.keys()}
-                        #self.keepConnection = False
+                    # set time to check if sysGoals is satisfied
+                    toc = time.time()
+                    if (toc-tic) > 5:
+                        tic = time.time()
+                        # check if goals are satisfied
+                        if self.checkIfGoalsAreSatisfied():
+                            logging.debug('The centralized system goal is satisfied.')
+                            # reset status
+                            self.centralizedExecutionStatus = None
+                            # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
+                            self.patchingRequestReceived = {k:False for k in self.patchingRequestReceived.keys()}
+                            self.patchingStatus = {k:False for k in self.patchingStatus.keys()}
+                            #self.keepConnection = False
 
                 #clean all necessary variables when done
                 self.cleanVariables(first_time=False)
