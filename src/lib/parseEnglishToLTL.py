@@ -907,12 +907,17 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
     
     # Replace logic operations with TLV convention
     tempFormula = replaceLogicOp(tempFormula)
-
     # checking that all propositions are 'legal' (in the list of propositions)
-    for prop in re.findall('((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)',tempFormula):
+    if CompletionFlag:
+        MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
+        MatchPropStr ='((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+    else:
+        MatchStr = '([\w\.]+)'
+
+    for prop in re.findall(MatchStr,tempFormula):
         originalProp = prop
         if CompletionFlag:
-            prop = re.search('((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop')
+            prop = re.search(MatchPropStr,prop).group('prop')
 
         if not prop in PropList:
             print 'ERROR(2): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
