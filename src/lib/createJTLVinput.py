@@ -324,15 +324,27 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True, nextProp=False):
         envNextBitEnc = bitEncode['envNext']
 
         if nextProp:
-            initreg_formula = '( ' + envNextBitEnc[0] + ' \n'
-            for regionInd in range(1,len(envNextBitEnc)):
-                initreg_formula = initreg_formula + '\t\t\t\t | ' + envNextBitEnc[regionInd] + '\n'
-            initreg_formula = initreg_formula + '\t\t\t) \n'
+            initreg_formula_list = []
+            for regionInd in range(0,len(envNextBitEnc)):
+                initreg_formula = '( ' + envNextBitEnc[regionInd] #+ ' \n'
+                for notRegionInd in range(0,len(envNextBitEnc)):
+                    if notRegionInd != regionInd:
+                        initreg_formula = initreg_formula + '& !' + envNextBitEnc[notRegionInd] #+ '\n'
+                initreg_formula = initreg_formula + ')'
+                initreg_formula_list.append(initreg_formula)
+
+            initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
         else:
-            initreg_formula = '( ' + envBitEnc[0] + ' \n'
-            for regionInd in range(1,len(envBitEnc)):
-                initreg_formula = initreg_formula + '\t\t\t\t | ' + envBitEnc[regionInd] + '\n'
-            initreg_formula = initreg_formula + '\t\t\t) \n'
+            initreg_formula_list = []
+            for regionInd in range(0,len(envBitEnc)):
+                initreg_formula = '( ' + envBitEnc[regionInd] #+ ' \n'
+                for notRegionInd in range(0,len(envBitEnc)):
+                    if notRegionInd != regionInd:
+                        initreg_formula = initreg_formula + '& !' + envBitEnc[notRegionInd] #+ '\n'
+                initreg_formula = initreg_formula + ')'
+                initreg_formula_list.append(initreg_formula)
+
+            initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
         if nextProp:
             initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+r2.name+"_rc)" if r is r2 else "!next(e."+r2.name+"_rc)" for r2 in regions])) for r in regions]))
@@ -368,6 +380,9 @@ def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_ro
             if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
                 continue
 
+            """
+            Obtain []( (robotName_regionProp1_rc & robotName_regionProp2)) -> (next(robotName_regionProp1_rc)|next(robotName_regionProp2_rc))
+            """
             # from region i we can stay in region i
             adjFormula = '\t\t\t []( ('
             adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "e."+ other_robot_name + '_' +regions[Origin].name)
@@ -389,6 +404,9 @@ def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_ro
 
             adjFormulas.append(adjFormula)
 
+        """
+        Obtain [](next(robotName_regionProp1) & ! next(robotName_regionProp2))|()|()
+        """
         # In a BDD strategy, it's best to explicitly exclude these
         adjFormulas.append("[]"+createInitialEnvRegionFragment(regions, use_bits, True, other_robot_name))
 
@@ -544,10 +562,16 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
         currBitEnc = bitEncode['current']
         nextBitEnc = bitEncode['next']
 
-        initreg_formula = '\t\t\t( ' + currBitEnc[0] + ' \n'
-        for regionInd in range(1,len(currBitEnc)):
-            initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
-        initreg_formula = initreg_formula + '\t\t\t) \n'
+        initreg_formula_list = []
+        for regionInd in range(0,len(currBitEnc)):
+            initreg_formula = '( ' + currBitEnc[regionInd] #+ ' \n'
+            for notRegionInd in range(0,len(currBitEnc)):
+                if notRegionInd != regionInd:
+                    initreg_formula = initreg_formula + ' & !' + currBitEnc[notRegionInd] #+ '\n'
+            initreg_formula = initreg_formula + ')'
+            initreg_formula_list.append(initreg_formula)
+
+        initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
         if nextProp:
             initreg_formula = "\n\t({})".format(" |\n ".join(["({})".format(" & ".join(["next(e."+other_robot_name + '_' +r2.name + suffix + ')' if r is r2 else "!next(e."+other_robot_name + '_' +r2.name + suffix +")" for r2 in regions])) for r in regions]))
@@ -675,10 +699,16 @@ def createInitialRegionFragment(regions, use_bits=True):
         currBitEnc = bitEncode['current']
         nextBitEnc = bitEncode['next']
 
-        initreg_formula = '\t\t\t( ' + currBitEnc[0] + ' \n'
-        for regionInd in range(1,len(currBitEnc)):
-            initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
-        initreg_formula = initreg_formula + '\t\t\t) \n'
+        initreg_formula_list = []
+        for regionInd in range(0,len(currBitEnc)):
+            initreg_formula = '( ' + currBitEnc[regionInd] #+ ' \n'
+            for notRegionInd in range(0,len(currBitEnc)):
+                if notRegionInd != regionInd:
+                    initreg_formula = initreg_formula + ' & !' + currBitEnc[notRegionInd] #+ '\n'
+            initreg_formula = initreg_formula + ')'
+            initreg_formula_list.append(initreg_formula)
+
+        initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
         initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["s."+r2.name if r is r2 else "!s."+r2.name for r2 in regions])) for r in regions]))
         
