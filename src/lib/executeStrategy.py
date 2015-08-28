@@ -163,6 +163,14 @@ class ExecutorStrategyExtensions(object):
             # find next region
             self.next_region = self.strategy.current_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+            logging.info("Currently at state %s." % self.next_state.state_id)
+
+            # *********** patching *********** #
+            # first find all next possible states
+            possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
+            # update current next states sent to the other robot
+            self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
+            # ******************************** #
 
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
