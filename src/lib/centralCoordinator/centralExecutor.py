@@ -221,6 +221,12 @@ class CentralExecutor:
                             self.propMappingNewToOld[item.group("robotName")].update({prop:prop})
                             self.propMappingOldToNew[item.group("robotName")].update({prop:prop})
 
+                    elif item.group('packageType') in 'nextPossibleStates':
+                        if ast.literal_eval(item.group("packageValue")):
+                            self.nextPossibleStatesArray[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        else:
+                            x.send(str(self.nextPossibleStatesArray))
+
                     elif item.group('packageType') in 'automatonExecution':
                         # first receive inputs
                         nextInputs = ast.literal_eval(item.group("packageValue")) # dict
@@ -317,7 +323,7 @@ class CentralExecutor:
         self.patchingRequestReceived = {} #track if we are initializing patching. False is not and True otherwise. This is checked by every robot constantly to make sure they enter the mode when necessary
         self.last_next_states = [] #track the last next states in our autonmaton execution
         self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
-        self.tempMsg = {} # temporarily save incomplete msg from robots. clear when used.
+        self.nextPossibleStatesArray = {} # store array of next possible states dict of robots. To be request by the other robots
 
         self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
 

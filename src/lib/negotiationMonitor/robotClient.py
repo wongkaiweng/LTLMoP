@@ -8,6 +8,7 @@ import strategy             # for finding regions from region bits
 import numpy                # for generating bit encoding
 import parseEnglishToLTL    # for parsing original region name to region bits
 import re                   # for parsing regionCompleted_b and region_b to sbit and bit
+import copy                 # for making deepcopy of propDict to check envTrans violations for next possible states
 
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
@@ -285,6 +286,43 @@ class RobotClient:
         else:
             self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
         logging.info('ROBOTCLIENT: sent '+propListType+'propositions list with value')
+
+    def sendNextPossibleEnvStatesToOtherRobot(self, nextStatesArray):
+        """
+        This function converts possible next states to dict. To be sent to the other robots.
+        """
+        stateArray = []
+        logging.debug('00000000000000')
+        for nextState in nextStatesArray:
+            logging.debug("next state includes " + str(nextState.state_id))
+            propDict = {}
+            propDict.update(self.convertFromRegionBitsToRegionNameInDict('env', nextState.getInputs(expand_domains=True)))
+            # we are not sending sysProps anymore
+            #propDict.update(self.convertFromRegionBitsToRegionNameInDict('sys', nextState.getOutputs(expand_domains=True)))
+
+            # rename region_completed props to without _rc
+            for propKey, propValue in propDict.iteritems():
+                if '_rc'in propKey:
+                    propDict[propKey.replace('_rc','')] = propDict.pop(propKey)
+
+            # append robot name to all props
+            stateArray.append(copy.deepcopy(propDict))
+
+        logging.debug("stateArray:" + str(stateArray))
+        self.clientObject.send(self.robotName + '-' + 'nextPossibleStates = ' + str(stateArray) + '\n')
+        #logging.info('ROBOTCLIENT: sent next possible states prop dict')
+
+    def requestNextPossibleEnvStatesFromOtherRobot(self):
+        """
+        This function requests next possible states from the other robots
+        """
+        self.clientObject.send(self.robotName + '-' + 'nextPossibleStates = ' + "''" + '\n')
+        #logging.info('ROBOTCLIENT: requested next possible states prop dict')
+
+        #receive info
+        nextPossibleStates = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        #logging.debug("nextPossibleStates:" + str(nextPossibleStates))
+        return nextPossibleStates
 
 
     def convertFromRegionBitsToRegionNameInDict(self, propListType, propDict):

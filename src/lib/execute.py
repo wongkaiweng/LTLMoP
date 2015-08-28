@@ -62,6 +62,10 @@ import LTLParser.LTLFormula
 import negotiationMonitor.robotClient
 # -----------------------------------------#
 
+# ********* patching ************** #
+import itertools #for iterating props combination
+# ********************************* #
+
 ####################
 # HELPER FUNCTIONS #
 ####################
@@ -587,139 +591,156 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     # *********************************** #
                     self.runStrategyIterationInstanteousAction()
 
-            current_next_states = self.last_next_states
+            if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
+                current_next_states = self.last_next_states
 
-            # Take a snapshot of our current sensor readings
-            sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-            for prop_name, value in sensor_state.iteritems():
-                if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
-                    continue
-
-                self.sensor_strategy.setPropValue(prop_name, value)
-
-            if self.proj.compile_options['fastslow']:
-                self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-
-            # Check for environment violation - change the env_assumption_hold to int again 
-            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
-            
-            if self.proj.compile_options['neighbour_robot']:
-                if self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                    # ---------- two_robot_negotiation ------------- #
-                    # resynthesis request from the other robot
-                    if self.receiveRequestFromEnvRobot():
+                # Take a snapshot of our current sensor readings
+                sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+                for prop_name, value in sensor_state.iteritems():
+                    if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
                         continue
-                    # ---------------------------------------------- #
 
-                elif self.proj.compile_options["multi_robot_mode"] == "patching":
-                    # ************ patching ****************** #
-                    # check if centralized strategy is initialized for the current robot (also make sure the spec is only sent until centralized execution starts)
-                    if self.robClient.checkCoordinationRequest() and not self.robClient.getCentralizedExecutionStatus():
-                        self.postEvent("PATCH","We are asked to join a centralized strategy")
-                        self.initiatePatching()
+                    self.sensor_strategy.setPropValue(prop_name, value)
 
-                        # jump to top of while loop
-                        continue
+                if self.proj.compile_options['fastslow']:
+                    self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+
+                # ************ patching ****************** #
+                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                    env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
                     # **************************************** #
                 else:
-                    logging.error("Mulit robot mode is incorrect. This is impossible.")
-            
-            # assumption didn't hold
-            if not env_assumption_hold and not self.runCentralizedStrategy:
+                    # Check for environment violation - change the env_assumption_hold to int again
+                    env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+
                 if self.proj.compile_options['neighbour_robot']:
                     if self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                        # ------------ two_robot_negotiation ----------#
-                        # store time stamp of violation
-                        if not self.otherRobotStatus:
-                            self.violationTimeStamp = time.clock()
-                            self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                            logging.debug('Setting violation timeStamp')
-                            time.sleep(1)
+                        # ---------- two_robot_negotiation ------------- #
+                        # resynthesis request from the other robot
+                        if self.receiveRequestFromEnvRobot():
+                            continue
                         # ---------------------------------------------- #
 
                     elif self.proj.compile_options["multi_robot_mode"] == "patching":
                         # ************ patching ****************** #
-                        # PATCHING CODE NEEDED
-                        pass
-                        # **************************************** #
+                        # check if centralized strategy is initialized for the current robot (also make sure the spec is only sent until centralized execution starts)
+                        if self.robClient.checkCoordinationRequest() and not self.robClient.getCentralizedExecutionStatus():
+                            self.postEvent("PATCH","We are asked to join a centralized strategy")
+                            self.initiatePatching()
 
+                            # jump to top of while loop
+                            continue
+                        # **************************************** #
                     else:
                         logging.error("Mulit robot mode is incorrect. This is impossible.")
                 
-                # count the number of next state changes
-                if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in self.last_next_states]:
-                    self.envViolationCount += 1
-                    logging.debug("No of env violations:"+ str(self.envViolationCount))
-                
-                #self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))    
-                #self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo)) 
-                # print out the violated specs
-                for x in self.LTLViolationCheck.violated_spec_line_no:
-                    if x not in self.currentViolationLineNo:
-                        if x == 0 :
-                            if len(self.LTLViolationCheck.violated_spec_line_no) == 1 and len(self.currentViolationLineNo) == 0:
-                                self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
-                        else:                 
-                            self.postEvent("VIOLATION","Detected the following env safety violation:" )
-                            self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
-                
-                for x in self.LTLViolationCheck.violated_specStr:
-                    if x not in self.old_violated_specStr:
-                        self.postEvent("VIOLATION", x)
-                
-                # save a copy     
-                self.old_violated_specStr = self.LTLViolationCheck.violated_specStr
-                
-                if self.ENVcharacterization:    
-                    if self.recovery:
-                        ########################################
-                        #### FOR BOTH LEANRING AND RECOVERY  ###
-                        ########################################
-                        if str(self.strategy.current_state.state_id) in [x.state_id for x in self.last_next_states] \
-                        or self.envViolationCount == self.envViolationThres:
-                            
-                            # reset next state difference count
-                            self.envViolationCount = 0
-                            
-                            # print out assumptions violated
-                            for x in self.LTLViolationCheck.violated_spec_line_no:
-                                if x != 0:
-                                    if x not in self.EnvTransRemoved:
-                                        self.EnvTransRemoved.append(x)
-                                
-                               
-                            # stop the robot from moving ## needs testing again
-                            self.hsub.setVelocity(0,0)
-                            
-                            # Modify the ltl file based on the enviornment change   
-                            self.addStatetoEnvSafety(self.sensor_strategy)
-                            
-                            # remove line numbers denoted as violated
-                            for x in self.EnvTransRemoved:
-                                if x in self.LTLViolationCheck.violated_spec_line_no:
-                                    self.LTLViolationCheck.violated_spec_line_no.remove(x)
-                            
-                    else:
-                        ###################################
-                        ####### FOR ONLY LEANRING #########
-                        ###################################
-                        # stop the robot from moving 
-                        self.hsub.setVelocity(0,0)
-                           
-                        # Modify the ltl file based on the enviornment change   
-                        self.addStatetoEnvSafety(self.sensor_strategy)
-            
-            else:
-                # assumption not violated but sensor state changes. we add in this new state
-                self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
+                # assumption didn't hold
+                if not env_assumption_hold and not self.runCentralizedStrategy:
+                    if self.proj.compile_options['neighbour_robot']:
+                        if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                            # ------------ two_robot_negotiation ----------#
+                            # store time stamp of violation
+                            if not self.otherRobotStatus:
+                                self.violationTimeStamp = time.clock()
+                                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                                logging.debug('Setting violation timeStamp')
+                                time.sleep(1)
+                            # ---------------------------------------------- #
 
-                if env_assumption_hold == False:
-                    logging.debug("Value should be True: " + str(env_assumption_hold))
-            
-                # For print violated safety in the log (update lines violated in every iteration)  
-                if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and (self.recovery or self.otherRobotStatus): 
-                    self.postEvent("RESOLVED", "The specification violation is resolved.")     
-            self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:] 
+                        elif self.proj.compile_options["multi_robot_mode"] == "patching":
+                            # ************ patching ****************** #
+                            # PATCHING CODE NEEDED
+                            pass
+                            # **************************************** #
+
+                        else:
+                            logging.error("Mulit robot mode is incorrect. This is impossible.")
+
+                    # count the number of next state changes
+                    if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in self.last_next_states]:
+                        self.envViolationCount += 1
+                        logging.debug("No of env violations:"+ str(self.envViolationCount))
+
+                    #self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))
+                    #self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo))
+                    # print out the violated specs
+                    for x in self.LTLViolationCheck.violated_spec_line_no:
+                        if x not in self.currentViolationLineNo:
+                            if x == 0 :
+                                if len(self.LTLViolationCheck.violated_spec_line_no) == 1 and len(self.currentViolationLineNo) == 0:
+                                    self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
+                            else:
+                                self.postEvent("VIOLATION","Detected the following env safety violation:" )
+                                self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
+
+                    for x in self.LTLViolationCheck.violated_specStr:
+                        if x not in self.old_violated_specStr:
+                            self.postEvent("VIOLATION", x)
+
+                    # save a copy
+                    self.old_violated_specStr = self.LTLViolationCheck.violated_specStr
+
+                    if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                        # ******* patching ********** #
+                        # stop the robot from moving
+                        self.hsub.setVelocity(0,0)
+
+                        # Take care of everything to start patching
+                        self.postEvent("RESOLVED","")
+                        self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
+                        self.initiatePatching()
+                        # *************************** #
+                    else:
+                        if self.ENVcharacterization:
+                            if self.recovery:
+                                ########################################
+                                #### FOR BOTH LEANRING AND RECOVERY  ###
+                                ########################################
+                                if str(self.strategy.current_state.state_id) in [x.state_id for x in self.last_next_states] \
+                                or self.envViolationCount == self.envViolationThres:
+
+                                    # reset next state difference count
+                                    self.envViolationCount = 0
+
+                                    # print out assumptions violated
+                                    for x in self.LTLViolationCheck.violated_spec_line_no:
+                                        if x != 0:
+                                            if x not in self.EnvTransRemoved:
+                                                self.EnvTransRemoved.append(x)
+
+
+                                    # stop the robot from moving ## needs testing again
+                                    self.hsub.setVelocity(0,0)
+
+                                    # Modify the ltl file based on the enviornment change
+                                    self.addStatetoEnvSafety(self.sensor_strategy)
+
+                                    # remove line numbers denoted as violated
+                                    for x in self.EnvTransRemoved:
+                                        if x in self.LTLViolationCheck.violated_spec_line_no:
+                                            self.LTLViolationCheck.violated_spec_line_no.remove(x)
+
+                            else:
+                                ###################################
+                                ####### FOR ONLY LEANRING #########
+                                ###################################
+                                # stop the robot from moving
+                                self.hsub.setVelocity(0,0)
+
+                                # Modify the ltl file based on the enviornment change
+                                self.addStatetoEnvSafety(self.sensor_strategy)
+
+                else:
+                    # assumption not violated but sensor state changes. we add in this new state
+                    self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
+
+                    if env_assumption_hold == False:
+                        logging.debug("Value should be True: " + str(env_assumption_hold))
+
+                    # For print violated safety in the log (update lines violated in every iteration)
+                    if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and (self.recovery or self.otherRobotStatus):
+                        self.postEvent("RESOLVED", "The specification violation is resolved.")
+                self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
 
             #################################
             

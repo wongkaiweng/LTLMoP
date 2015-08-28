@@ -789,10 +789,10 @@ class ExecutorResynthesisExtensions(object):
                             elif self.proj.compile_options["multi_robot_mode"] == "patching":
                                 # ************ patching ****************** #
                                 # Take care of everything to start patching
-                                self.postEvent("RESOLVED","")
-                                self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
-                                self.initiatePatching()
-
+                                #self.postEvent("RESOLVED","")
+                                #self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
+                                #self.initiatePatching()
+                                logging.error("Patching is now done in excute.py. We should not have got here!")
                                 # return and continue execution
                                 return
                                 # **************************************** #
