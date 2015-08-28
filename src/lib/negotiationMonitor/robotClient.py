@@ -26,8 +26,26 @@ class RobotClient:
 
         # initialize our variable
         self.robotName = ''
+        self.loadProjectAndRegions(proj)
+
+        #connect to the server
+        self.clientObject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clientObject.connect((ADDR))
+
+        #send out initial info
+        self.initializeRegionExchange(hsub)
+        if proj.compile_options['include_heading']:
+            self.initializeCompletedRegionExchange()
+
+        # track if spec is requested
+        self.specRequestFromOther = [] # list of spec requested
+
+    def loadProjectAndRegions(self,proj):
+        """
+        This function is used to (re)initialize region objects and proj object.
+        """
         self.proj = proj
-        self.regions    = proj.rfi.regions # contains decomposed names
+        self.regions    = self.proj.rfi.regions # contains decomposed names
         if self.fastslow:
             self.regionCompleted_domain = strategy.Domain("regionCompleted",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         self.region_domain = strategy.Domain("region",  proj.rfi.regions, strategy.Domain.B0_IS_MSB)
@@ -37,26 +55,14 @@ class RobotClient:
         for rname, subregs in proj.regionMapping.iteritems():
             for newReg in subregs:
                 self.newRegionNameToOld[newReg] = rname
-                
+
         # form regionList with original names
         self.regionList = []
         for region in self.regions:
             self.regionList.append(self.newRegionNameToOld[region.name])
-        
+
         # for mapping original region name to bit encoding
-        self.bitEncode = parseEnglishToLTL.bitEncoding(len(self.regionList), int(numpy.ceil(numpy.log2(len(self.regionList)))))       
-        
-        #connect to the server
-        self.clientObject = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientObject.connect((ADDR))
-        
-        #send out initial info
-        self.initializeRegionExchange(hsub)
-        if proj.compile_options['include_heading']:
-            self.initializeCompletedRegionExchange()
-         
-        # track if spec is requested
-        self.specRequestFromOther = [] # list of spec requested
+        self.bitEncode = parseEnglishToLTL.bitEncoding(len(self.regionList), int(numpy.ceil(numpy.log2(len(self.regionList)))))
 
     def initializeRegionExchange(self, hsub):
         """

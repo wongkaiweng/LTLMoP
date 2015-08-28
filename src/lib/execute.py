@@ -567,7 +567,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if not self.proj.compile_options['fastslow']:
                 self.runStrategyIteration()
             else:
-                if self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus():
+                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus():
                     # *********** patching ************** #
                     if not self.runCentralizedStrategy:
                         self.runCentralizedStrategy = True
@@ -582,6 +582,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         spec_file = self.proj.getFilenamePrefix() + ".spec"
                         aut_file = self.proj.getFilenamePrefix() + ".aut"
                         self.initialize(spec_file, aut_file, firstRun=False)
+                        self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
                         self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
                     # *********************************** #
                     self.runStrategyIterationInstanteousAction()
