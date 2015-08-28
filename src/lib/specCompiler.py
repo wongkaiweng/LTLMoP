@@ -37,6 +37,10 @@ class SpecCompiler(object):
         if spec_filename is not None:
             self.loadSpec(spec_filename)
 
+        # **** patching ***** #
+        self.cooperativeGR1Strategy = False
+        # ******************* #
+
     def loadSpec(self,spec_filename):
         """
         Load the project object
@@ -620,8 +624,14 @@ class SpecCompiler(object):
         if self.proj.compile_options["recovery"]:
             cmd = [slugs_path, "--sysInitRoboticsSemantics","--simpleRecovery", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
             logging.debug('Synthesizing strategy with recovery')
+        elif self.cooperativeGR1Strategy:
+            cmd = [slugs_path, "--sysInitRoboticsSemantics","--cooperativeGR1Strategy", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            logging.debug('Synthesizing strategy with cooperative strategy')
         else:
-            cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            else:
+                cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
 
         return cmd
 

@@ -531,7 +531,10 @@ class CentralExecutor:
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None,LTLspec_sysList)))
         startTime = time.time()
-        realizable, realizableFS, output  = self.compiler._synthesize()
+        #HACK: Make it to recovery mode to try it out
+        #self.compiler.proj.compile_options['recovery']=True
+        self.compiler.cooperativeGR1Strategy=True
+        realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
         logging.info(output)
 
