@@ -1079,6 +1079,29 @@ class ExecutorResynthesisExtensions(object):
     #########################################################################
 
     # ************** patching **************** #
+    def checkEnvTransViolationWithNextPossibleStates(self):
+        """
+        This function obtains all possible next states and check if they will violate the environment assumptions.
+        """
+        otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
+        for propCombination in itertools.product(*[v for k,v in otherEnvPropDict.iteritems() if k != self.robClient.robotName]):
+            #logging.debug("propCombination:" + str(propCombination))
+            # assignments to sensor_strategy for each combination
+            for propDict in propCombination:
+                for propKey, propValue in propDict.iteritems():
+                    # check if key exist in sensor strategy?
+                    if propKey in self.sensor_strategy.getInputs(expand_domains=True).keys():
+                        self.sensor_strategy.setPropValue(propKey, propValue)
+
+                # the current state stays the same but checks with differnt next possible states
+                env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+                if not env_assumption_hold:
+                    logging.debug("asssumptions violated!")
+                    logging.debug("self.strategy.current_state:" + str(self.strategy.current_state.getAll(expand_domains=True)))
+                    logging.debug("self.sensor_strategy" + str(self.sensor_strategy.getInputs(expand_domains=True)))
+                    return False
+        return True
+
     def loadSpecObjectFromFile(self, spec_file = ""):
         """
         spec_file: path to specification
