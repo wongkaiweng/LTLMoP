@@ -339,20 +339,24 @@ class RobotClient:
 
         # receive outputs
         outputs = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-
-        # combine all boolean region props into one
-        sys_region = [k.replace(self.robotName+'_','') for k, v in outputs.iteritems() if k.replace(self.robotName+'_','') in self.regionList and v]
-
-        # find all other sysProps and exclude the region ones
-        outputs = {k:v for k, v in outputs.iteritems() if not k.replace(self.robotName+'_','') in self.regionList}
-
-        # append the region object into the outputs dict
-        if len(self.proj.regionMapping[sys_region[0]]) == 1:
-            outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
+        if outputs is None:
+            # cannot find a suitable state to transition to!
+            return []
         else:
-            logging.warning('The regions are decomposed. We might want to do this differently')
+            # combine all boolean region props into one
+            sys_region = [k.replace(self.robotName+'_','') for k, v in outputs.iteritems() if k.replace(self.robotName+'_','') in self.regionList and v]
 
-        return outputs
+
+            # find all other sysProps and exclude the region ones
+            outputs = {k:v for k, v in outputs.iteritems() if not k.replace(self.robotName+'_','') in self.regionList}
+
+            # append the region object into the outputs dict
+            if len(self.proj.regionMapping[sys_region[0]]) == 1:
+                outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
+            else:
+                logging.warning('The regions are decomposed. We might want to do this differently')
+
+            return outputs
 
     def setCoordinationStatus(self, patchingStatus):
         """
