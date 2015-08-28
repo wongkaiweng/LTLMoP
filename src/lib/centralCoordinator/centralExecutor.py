@@ -69,7 +69,8 @@ class CentralExecutor:
     """
     def __init__(self):
 
-        self.cleanVariables() #initialize all necessary variables
+        self.initializeVariables() #initialize permanent variables
+        self.cleanVariables(first_time=True) #initialize variables that are cleaned after patching
 
         self.strategy = None # for the loaded new centralized strategy
 
@@ -136,22 +137,8 @@ class CentralExecutor:
 
                         printRegionInfo(self.regionList)
 
-                        # append robotName to the list of coorindating robots
-                        #self.coordinatingRobots.append(item.group("robotName"))
-
-                        # set patching status to false
-                        self.patchingStatus[item.group("robotName")] = False
-
-                        # set recevial of patching request to false
-                        self.patchingRequestReceived[item.group("robotName")] = False
-
-                        # set up spec for the robot
-                        for specType, value in self.spec.iteritems():
-                            self.spec[specType][item.group("robotName")] = ""
-
-                        # set up propMappingNewToOld for the robot
-                            self.propMappingNewToOld[item.group("robotName")] = {}
-                            self.propMappingOldToNew[item.group("robotName")] = {}
+                        # initailize dict with new robot
+                        self.dictKeyFiller(item.group("robotName"))
 
                     elif item.group('packageType')  ==  "regionName":
                         # first figure out if it's rc region or not
@@ -280,7 +267,7 @@ class CentralExecutor:
                 self.centralizedExecutionStatus = True
 
                 # TODO: here run the centralized aut. also need to checkData
-                while self.keepConnection:
+                while self.centralizedExecutionStatus is not None:
                     #logging.debug('Now executing the centralized strategy...')
                     self.checkData()
 
@@ -298,17 +285,43 @@ class CentralExecutor:
                         #self.keepConnection = False
 
                 #clean all necessary variables when done
-                self.cleanVariables()
+                self.cleanVariables(first_time=False)
 
                 #self.closeConnection(None,None)
                 pass
         else:
             self.closeConnection(None, None)
 
-    def cleanVariables(self):
+    def dictKeyFiller(self, robot_name):
+        """ This function add a dict key with the robot_name """
+        # append robotName to the list of coorindating robots
+        #self.coordinatingRobots.append(item.group("robotName"))
+
+        # set patching status to false
+        self.patchingStatus[robot_name] = False
+
+        # set recevial of patching request to false
+        self.patchingRequestReceived[robot_name] = False
+
+        # set up spec for the robot
+        for specType, value in self.spec.iteritems():
+            self.spec[specType][robot_name] = ""
+
+        # set up propMappingNewToOld for the robot
+        self.propMappingNewToOld[robot_name] = {}
+        self.propMappingOldToNew[robot_name] = {}
+
+        # set up nextPossibleStatesArray
+        self.nextPossibleStatesArray[robot_name] = []
+
+    def initializeVariables(self):
+        # This function initialize variables that will not be reset after central patching.
+        self.regionList = {}  #tracking region info for each robot
+        self.tempMsg = {} # temporarily save incomplete msg from robots. clear when used.
+
+    def cleanVariables(self, first_time=True):
         #This function clean and initialize all variables when patching is done/ when the instance is first created
         # TODO: we might not need to clean up all variables when patching ends (still need to exchange region info))
-        self.regionList = {}  #tracking region info for each robot
         self.spec       = {'EnvInit':{},'EnvTrans':{},'EnvGoals':{},'SysInit':{},'SysTrans':{},'SysGoals':{}}
         self.coordinatingRobots = [] #track the robots cooridnating
         self.envPropList = {} #tracking env propositions of each robot envPropList[robot]= propList = {prop:value}
@@ -326,6 +339,11 @@ class CentralExecutor:
         self.nextPossibleStatesArray = {} # store array of next possible states dict of robots. To be request by the other robots
 
         self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
+
+        if not first_time:
+            for robot_name in self.regionList.values()[0].keys():
+                self.dictKeyFiller(robot_name)
+
 
     def closeConnection(self, signal, frame):
         """
