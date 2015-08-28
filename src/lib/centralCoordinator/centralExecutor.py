@@ -332,6 +332,7 @@ class CentralExecutor:
         self.smvEnvPropList = [] #store newPropName for environment props
         self.currentState = None #state object. store the combined current state of all robots
         self.currentAssignment = {} # dict. store assignments of all props and all robots
+        self.sensor_state = None # tracking next inputs for runtime monitoring
         self.patchingStatus = {} #track if patching is initiated. True if started and false otherwise
         self.patchingRequestReceived = {} #track if we are initializing patching. False is not and True otherwise. This is checked by every robot constantly to make sure they enter the mode when necessary
         self.last_next_states = [] #track the last next states in our autonmaton execution
@@ -521,7 +522,7 @@ class CentralExecutor:
                     LTLspec_envList.append(self.spec[specType][robot])
 
         # join the goals of the robots so that the goals are pursued at the same time
-        specSysGoals = " & ".join(filter(None,[x.strip().lstrip('[]<>') for x in self.spec['SysGoals'].values()]))
+        specSysGoals = " &\n ".join(filter(None,[x.strip().lstrip('[]<>') for x in self.spec['SysGoals'].values()]))
         LTLspec_sysList.append("[]<>(" + specSysGoals + ")" if specSysGoals else specSysGoals)
 
         # set up violation check object
@@ -548,6 +549,10 @@ class CentralExecutor:
             logging.error('cannot synthesize a centralized patch')
             pass
 
+        # set up sensor_strategy for runtime monitoring the liveness condition
+        self.sensor_state = self.strategy.states.addNewState()
+        self.sensor_state.setPropValues(self.currentState.getInputs(expand_domains=True))
+
     def findRobotOutputs(self, robot, nextInputs):
         """
         receive latest inputs from one robot and find the next outputs of the robot.
@@ -566,6 +571,9 @@ class CentralExecutor:
         nextInputs = ({k:v for k,v in nextInputs.iteritems() if k in currentInputs.keys()})
         # update inputs based on the inputs from the other robot
         currentInputs.update({self.propMappingOldToNew[robot][k]:v for k,v in nextInputs.iteritems()})
+
+        # update sensor_state with the latest information
+        self.sensor_state.setPropValues(nextInputs)
 
         # find if the state is changed
         next_states = self.strategy.findTransitionableStates(currentInputs, from_state= self.strategy.current_state)
@@ -614,7 +622,7 @@ class CentralExecutor:
         Return true if goals are satisfied and false otherwise.
         """
 
-        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, None)
+        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.sensor_state)
 
     def testTriggerSysGoalsSatisfaction(self):
         """

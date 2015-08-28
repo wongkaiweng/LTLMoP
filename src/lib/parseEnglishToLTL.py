@@ -1002,10 +1002,15 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
 
         if fastslow:
             if prop in regionList:
-                tempFormula = tempFormula + '&' + re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
-
+                #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+                newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
             elif prop in actuatorList:
-                tempFormula = tempFormula + '&' + re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
+            else:
+                #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                newProp = 'next('+prop+')'
+
+            tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', newProp, tempFormula)
     
     formulaInfo['formula'] = '\t\t\t []<>(' + tempFormula + ') & \n'
 

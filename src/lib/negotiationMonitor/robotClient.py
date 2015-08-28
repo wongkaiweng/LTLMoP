@@ -138,9 +138,9 @@ class RobotClient:
             ########################
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                 # only sends the current goal we are pursuing
-                if specType == 'SysGoals':
-                    if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
-                        spec = LTLParser.LTLcheck.ltlStrToList(spec)[current_goal_id]
+                #if specType == 'SysGoals':
+                #    if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
+                #        spec = LTLParser.LTLcheck.ltlStrToList(spec)[current_goal_id]
 
                 # replace e.g. alice_r1 to alice_r1_rc as the meaning changes in the central strategy
                 for region in self.regionList:

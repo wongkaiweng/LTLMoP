@@ -23,6 +23,8 @@ import copy
 # -----------------------------------#
 # ******** patching ********* #
 import os
+import LTLParser.translateFromSlugsLTLFormatToLTLFormat
+import sets # make sure there's no duplicates of elements
 # *************************** #
 
 class ExecutorResynthesisExtensions(object):
@@ -1144,7 +1146,9 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+                specStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
+                #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
             else:
                 self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
 
@@ -1175,4 +1179,110 @@ class ExecutorResynthesisExtensions(object):
         # then wait till all surrounding robots are ready as well
         while not self.robClient.getCentralizedExecutionStatus():
             time.sleep(2)
+
+    def extractCurrentLivenessWithWinningPositions(self,sysGoalsId):
+        """
+        This function obtains the conjunction of the current liveness with winning positions.
+        sysGoalsId: current system goal number
+        """
+
+        # first read sysGoals LTL with winning positions preComputed.
+        with open(self.proj.getFilenamePrefix()+".autliveness"+ str(sysGoalsId), 'r') as f:
+            slugsStr = f.read()
+        f.closed
+
+        # modify sensor list to parse region props properly
+        sensorList = self.proj.enabled_sensors
+        if self.proj.compile_options['fastslow']:
+            # remove _rc props from sensor_list
+            sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                #add in sbit for region completion
+                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(len(self.proj.rfi.regions)))))])
+            else:
+                # added in region_rc with the decomposed region names
+                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
+
+        logging.debug("sensorList:" + str(sensorList))
+        # convert formula from slugs to our format
+        sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
+        logging.debug(sysGoalsLTLList)
+
+        # replace with normal region bits (like actual regions)
+        sysGoalsLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
+        logging.debug(sysGoalsLTL)
+
+        return "[]<>("+sysGoalsLTL+")"
+
+    def replaceIndividualSbitsToGroupSbits(self, LTLList):
+        """
+        This function takes in an LTL list, extract sbits and put in the right bits afterwards
+        """
+        numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))
+        # TODO: only calc bitencoding once
+        bitEncode = parseEnglishToLTL.bitEncoding(len(self.proj.rfi.regions), numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+        envBitEnc = bitEncode['env']
+        envNextBitEnc = bitEncode['envNext']
+
+        logging.debug('self.proj.rfi.regions:' + str(self.proj.rfi.regions))
+        logging.debug('currBitEnc:' + str(currBitEnc))
+
+        newLTLList = sets.Set([])
+        #newLTLList = []
+
+        for LTLStr in LTLList: # LTLStr are of the form  a | b | c
+            propList = sets.Set(LTLStr.split(' | '))
+
+            # run four times
+            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits,'!?next\(s.bit(?P<bitNo>\d+)\)',nextBitEnc,propList)
+            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits,'!?s.bit(?P<bitNo>\d+)',currBitEnc,propList)
+            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits,'!?next\(e.sbit(?P<bitNo>\d+)\)',envNextBitEnc,propList)
+            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits,'!?e.sbit(?P<bitNo>\d+)',envBitEnc,propList)
+
+            #newLTLList.append(' | '.join(propList))
+            newLTLList.add(propList)
+
+        #return '&\n'.join(['('+x+')' for x in newLTLList])
+        return '&\n'.join(['('+' | '.join(x)+')' for x in newLTLList])
+
+
+    def replaceIndividualSbitsToGroupSbitsForTypeOfBits(self, numBits, strPattern, bitsList, propList):
+        """
+        This function is one iteration to replace bits
+        numBits: no. of bits in consideration
+        strPattern: pattern to match
+        bitsList: one of the lists in the bitEncoding
+        propList = set of props
+        """
+        regionPropList = []
+        validRegionPropList = sets.Set([])
+        # first extract all ebits
+        for prop in propList:
+            if re.match(strPattern, prop) is not None:
+                regionPropList.append(prop)
+
+        for regionProp in regionPropList:
+            bitInConsideration = int(re.match(strPattern,regionProp).group('bitNo'))
+            numBitsToEnumerate = numBits-1
+            bitStrList = []
+            # if we have three bits, then only enumerate 2
+            for x in range(2**numBitsToEnumerate):
+                # also reverse bit so that we have bits 0 1 2 ...
+                tempBitStr = "{0:0{width}b}".format(x, width=numBitsToEnumerate)
+                # add the missing bit at the right position
+                bitStrList.append(tempBitStr[:bitInConsideration] + ('0' if '!' in regionProp else'1') + tempBitStr[bitInConsideration:])
+
+            # find all region bit str now
+            for regionIdx in [int(x,2) for x in bitStrList]:
+                if regionIdx < len(self.proj.rfi.regions):
+                    validRegionPropList.add(bitsList[regionIdx])
+
+            # remove regionProp from propList and append validRegionPropList to propList
+            propList.remove(regionProp)
+            propList.update(validRegionPropList)
+
+        return propList
     # **************************************** #
+

@@ -34,10 +34,26 @@ def parseSLUGSCNFtoLTL(slugsStr,enabled_sensors):
 
 			individualLtlPropList.append(prop)
 
-		ltlStrList.append("(" + " | ".join(individualLtlPropList) + ")")
+		if " | ".join(individualLtlPropList):
+			ltlStrList.append(" | ".join(individualLtlPropList))
 
 	# return the list with all the clauses
-	return " &\n".join(ltlStrList)
+	return ltlStrList
+
+def parseSLUGSCNFtoLTLStr(slugsStr,enabled_sensors):
+	"""
+	This function returns an LTL str at the end.
+	"""
+
+	ltlStrList = parseSLUGSCNFtoLTL(slugsStr,enabled_sensors)
+	return " &\n".join(['('+x+')' for x in ltlStrList])
+
+
+def parseSLUGSCNFtoLTLList(slugsStr,enabled_sensors):
+	"""
+	This function returns an LTL list at the end.
+	"""
+	return parseSLUGSCNFtoLTL(slugsStr,enabled_sensors)
 
 
 if __name__ == "__main__":
