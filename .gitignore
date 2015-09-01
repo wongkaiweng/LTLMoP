@@ -24,3 +24,5 @@ src/lib/cores/picosat*
 .settings
 .ropeproject
 .idea
+*.slugsin
+*.autliveness*
