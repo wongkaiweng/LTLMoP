@@ -11,16 +11,17 @@ radio, 1
 extinguish, 0
 
 CompileOptions:
-synthesizer: slugs
 neighbour_robot: False
-fastslow: False
-include_heading: False
 convexify: True
-recovery: True
 parser: structured
 symbolic: False
-decompose: True
 use_region_bit_encoding: True
+multi_robot_mode: negotiation
+fastslow: False
+recovery: True
+include_heading: False
+synthesizer: slugs
+decompose: True
 
 CurrentConfigName:
 Basic Simulation

@@ -7,16 +7,17 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 
 CompileOptions:
-synthesizer: slugs
 neighbour_robot: True
-fastslow: True
-include_heading: True
 convexify: True
-recovery: False
 parser: structured
 symbolic: False
-decompose: True
 use_region_bit_encoding: True
+multi_robot_mode: negotiation
+fastslow: True
+recovery: False
+include_heading: True
+synthesizer: slugs
+decompose: True
 
 CurrentConfigName:
 aliceWithBobSensor

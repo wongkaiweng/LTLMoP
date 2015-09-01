@@ -9,12 +9,16 @@ camera, 1
 gripper, 1
 
 CompileOptions:
+neighbour_robot: False
 convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: slugs
+multi_robot_mode: negotiation
 fastslow: True
+recovery: False
+include_heading: False
+synthesizer: slugs
 decompose: True
 
 CurrentConfigName:
@@ -34,6 +38,8 @@ ball, 1
 
 
 ======== SPECIFICATION ========
+
+OtherRobot: # The other robot in the same workspace
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
 others = 
