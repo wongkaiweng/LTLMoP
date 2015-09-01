@@ -55,10 +55,10 @@ Environment starts with alice_r5
 
 ###### environment assumptions ######
 if you have finished r1 then do not (alice_r2 or alice_r1)
-if you have finished r2 then do not (alice_r2 or alice_r4)
-if you have finished r4 then do not (alice_r4 or alice_r5)
+if you have finished r2 then do not (alice_r2 or alice_r4 or alice_r1)
+if you have finished r4 then do not (alice_r4 or alice_r5 or alice_r2)
 #if you have finished r3 then do not (alice_r3)
-if you have finished r5 then do not (alice_r5)
+if you have finished r5 then do not (alice_r5 or alice_r4)
 
 ######### system guarantees ##########
 # not allowing both robots to be at the same place
@@ -70,4 +70,5 @@ if you are sensing alice_r5 then do not r5
 
 ######## system goals ###########
 visit r5
+visit r1
 

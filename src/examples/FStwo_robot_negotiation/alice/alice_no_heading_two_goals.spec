@@ -55,18 +55,13 @@ Environment starts with bob_r1
 
 ###### environment assumptions ######
 if you have finished r5 then do not (bob_r5 or bob_r4)
-if you have finished r4 then do not (bob_r4 or bob_r2)
+if you have finished r4 then do not (bob_r4 or bob_r2 or bob_r5)
+if you have finished r2 then do not (bob_r1 or bob_r2 or bob_r4)
 
 #if you have finished r5 then do not (bob_r5 or bob_r3)
-#if you have finished r3 then do not (bob_r2 or bob_r3)
-
-if you have finished r2 then do not (bob_r1 or bob_r2)
-if you have finished r1 then do not ( bob_r1)
-#infinitely often not bob_r1
-#infinitely often not bob_r2
-#infinitely often not bob_r3
-#infinitely often not bob_r4
-#infinitely often not bob_r5
+#if you have finished r3 then do not (bob_r2 or bob_r3 or bob_r5)
+#if you have finished r2 then do not (bob_r1 or bob_r2 or bob_r3)
+if you have finished r1 then do not (bob_r1 or bob_r2)
 
 ######### system guarantees ##########
 # not allowing both robots in the same region
@@ -78,6 +73,7 @@ if you are sensing bob_r5 then do not r5
 
 ######## system goals ###########
 visit r1
+visit r5
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
 #$$ Tried Enviornment assumptions $$#

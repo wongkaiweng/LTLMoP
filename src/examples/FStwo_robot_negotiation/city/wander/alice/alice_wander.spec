@@ -7,12 +7,16 @@
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
 
 CompileOptions:
+neighbour_robot: True
 convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: slugs
+multi_robot_mode: negotiation
 fastslow: True
+recovery: False
+include_heading: False
+synthesizer: slugs
 decompose: True
 
 CurrentConfigName:

@@ -1,0 +1,370 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "commonArea", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                118.0, 
+                0.0
+            ], 
+            [
+                118.0, 
+                123.0
+            ], 
+            [
+                118.0, 
+                196.0
+            ], 
+            [
+                0.0, 
+                196.0
+            ]
+        ], 
+        "position": [
+            478.0, 
+            171.0
+        ], 
+        "type": "poly", 
+        "size": [
+            118.0, 
+            196.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                387.0, 
+                196.0
+            ], 
+            [
+                505.0, 
+                196.0
+            ], 
+            [
+                636.0, 
+                196.0
+            ], 
+            [
+                636.0, 
+                123.0
+            ], 
+            [
+                636.0, 
+                2.0
+            ], 
+            [
+                524.0, 
+                2.0
+            ], 
+            [
+                524.0, 
+                123.0
+            ], 
+            [
+                505.0, 
+                123.0
+            ], 
+            [
+                505.0, 
+                0.0
+            ], 
+            [
+                506.0, 
+                0.0
+            ], 
+            [
+                505.0, 
+                0.0
+            ], 
+            [
+                387.0, 
+                0.0
+            ], 
+            [
+                269.0, 
+                0.0
+            ], 
+            [
+                136.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                197.0
+            ], 
+            [
+                136.0, 
+                197.0
+            ], 
+            [
+                269.0, 
+                197.0
+            ], 
+            [
+                387.0, 
+                197.0
+            ]
+        ], 
+        "position": [
+            91.0, 
+            171.0
+        ], 
+        "type": "poly", 
+        "size": [
+            636.0, 
+            197.0
+        ]
+    }, 
+    {
+        "name": "prepArea", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            615.0, 
+            173.0
+        ], 
+        "type": "rect", 
+        "size": [
+            112.0, 
+            121.0
+        ]
+    }, 
+    {
+        "name": "kitchen", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                19.0, 
+                0.0
+            ], 
+            [
+                131.0, 
+                0.0
+            ], 
+            [
+                131.0, 
+                73.0
+            ], 
+            [
+                0.0, 
+                73.0
+            ]
+        ], 
+        "position": [
+            596.0, 
+            294.0
+        ], 
+        "type": "poly", 
+        "size": [
+            131.0, 
+            73.0
+        ]
+    }, 
+    {
+        "name": "order", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                118.0, 
+                0.0
+            ], 
+            [
+                118.0, 
+                68.0
+            ], 
+            [
+                118.0, 
+                69.0
+            ], 
+            [
+                0.0, 
+                69.0
+            ]
+        ], 
+        "position": [
+            360.0, 
+            299.0
+        ], 
+        "type": "poly", 
+        "size": [
+            118.0, 
+            69.0
+        ]
+    }, 
+    {
+        "name": "counter", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            360.0, 
+            171.0
+        ], 
+        "type": "rect", 
+        "size": [
+            118.0, 
+            128.0
+        ]
+    }, 
+    {
+        "name": "hallway", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                133.0, 
+                0.0
+            ], 
+            [
+                133.0, 
+                128.0
+            ], 
+            [
+                133.0, 
+                197.0
+            ], 
+            [
+                0.0, 
+                197.0
+            ]
+        ], 
+        "position": [
+            227.0, 
+            171.0
+        ], 
+        "type": "poly", 
+        "size": [
+            133.0, 
+            197.0
+        ]
+    }, 
+    {
+        "name": "customer", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                136.0, 
+                0.0
+            ], 
+            [
+                136.0, 
+                197.0
+            ], 
+            [
+                0.0, 
+                197.0
+            ]
+        ], 
+        "position": [
+            91.0, 
+            171.0
+        ], 
+        "type": "poly", 
+        "size": [
+            136.0, 
+            197.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+commonArea	boundary	596.0	294.0	596.0	171.0	596.0	367.0	478.0	367.0	478.0	171.0	596.0	171.0
+commonArea	kitchen	596.0	367.0	596.0	294.0
+commonArea	order	478.0	299.0	478.0	367.0
+commonArea	counter	478.0	299.0	478.0	171.0
+boundary	prepArea	727.0	173.0	615.0	173.0	615.0	294.0	615.0	173.0	727.0	294.0	727.0	173.0
+boundary	kitchen	727.0	294.0	727.0	367.0	596.0	367.0	727.0	367.0	615.0	294.0	596.0	294.0
+boundary	order	478.0	367.0	478.0	368.0	360.0	368.0	478.0	368.0
+boundary	counter	478.0	171.0	360.0	171.0
+boundary	hallway	360.0	171.0	227.0	171.0	227.0	368.0	360.0	368.0
+boundary	customer	227.0	171.0	91.0	171.0	91.0	368.0	91.0	171.0	91.0	368.0	227.0	368.0
+prepArea	kitchen	727.0	294.0	615.0	294.0
+order	counter	478.0	299.0	360.0	299.0
+order	hallway	360.0	299.0	360.0	368.0
+counter	hallway	360.0	299.0	360.0	171.0
+hallway	customer	227.0	368.0	227.0	171.0
+

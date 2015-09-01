@@ -12,7 +12,7 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-multi_robot_mode: negotiation
+multi_robot_mode: patching
 fastslow: True
 recovery: False
 include_heading: False

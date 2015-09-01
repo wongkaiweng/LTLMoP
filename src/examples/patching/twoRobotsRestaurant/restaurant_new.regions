@@ -1,0 +1,403 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+fountain
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "waitingArea", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                31.0, 
+                0.0
+            ], 
+            [
+                56.0, 
+                0.0
+            ], 
+            [
+                56.0, 
+                50.0
+            ], 
+            [
+                0.0, 
+                50.0
+            ]
+        ], 
+        "position": [
+            317.0, 
+            274.0
+        ], 
+        "type": "poly", 
+        "size": [
+            56.0, 
+            50.0
+        ]
+    }, 
+    {
+        "name": "counter", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            373.0, 
+            274.0
+        ], 
+        "type": "rect", 
+        "size": [
+            54.0, 
+            50.0
+        ]
+    }, 
+    {
+        "name": "entrance", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            269.0, 
+            274.0
+        ], 
+        "type": "rect", 
+        "size": [
+            48.0, 
+            50.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                454.0, 
+                0.0
+            ], 
+            [
+                376.0, 
+                0.0
+            ], 
+            [
+                294.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                215.0, 
+                0.0
+            ], 
+            [
+                184.0, 
+                0.0
+            ], 
+            [
+                136.0, 
+                0.0
+            ], 
+            [
+                64.0, 
+                0.0
+            ], 
+            [
+                63.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                63.0, 
+                120.0
+            ], 
+            [
+                136.0, 
+                121.0
+            ], 
+            [
+                294.0, 
+                121.0
+            ], 
+            [
+                376.0, 
+                121.0
+            ], 
+            [
+                454.0, 
+                121.0
+            ]
+        ], 
+        "position": [
+            133.0, 
+            274.0
+        ], 
+        "type": "poly", 
+        "size": [
+            454.0, 
+            121.0
+        ]
+    }, 
+    {
+        "name": "customer", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            133.0, 
+            274.0
+        ], 
+        "type": "rect", 
+        "size": [
+            63.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "kitchen", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            509.0, 
+            274.0
+        ], 
+        "type": "rect", 
+        "size": [
+            78.0, 
+            121.0
+        ]
+    }, 
+    {
+        "name": "fountain", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                48.0, 
+                0.0
+            ], 
+            [
+                104.0, 
+                0.0
+            ], 
+            [
+                158.0, 
+                0.0
+            ], 
+            [
+                158.0, 
+                30.0
+            ], 
+            [
+                158.0, 
+                36.0
+            ], 
+            [
+                0.0, 
+                36.0
+            ]
+        ], 
+        "position": [
+            269.0, 
+            324.0
+        ], 
+        "type": "poly", 
+        "size": [
+            158.0, 
+            36.0
+        ]
+    }, 
+    {
+        "name": "order", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            269.0, 
+            360.0
+        ], 
+        "type": "rect", 
+        "size": [
+            158.0, 
+            35.0
+        ]
+    }, 
+    {
+        "name": "hallway", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                1.0, 
+                0.0
+            ], 
+            [
+                73.0, 
+                0.0
+            ], 
+            [
+                73.0, 
+                50.0
+            ], 
+            [
+                73.0, 
+                86.0
+            ], 
+            [
+                73.0, 
+                121.0
+            ], 
+            [
+                0.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            196.0, 
+            274.0
+        ], 
+        "type": "poly", 
+        "size": [
+            73.0, 
+            121.0
+        ]
+    }, 
+    {
+        "name": "commonArea", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                50.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                82.0, 
+                0.0
+            ], 
+            [
+                82.0, 
+                121.0
+            ], 
+            [
+                0.0, 
+                121.0
+            ], 
+            [
+                0.0, 
+                86.0
+            ], 
+            [
+                0.0, 
+                80.0
+            ]
+        ], 
+        "position": [
+            427.0, 
+            274.0
+        ], 
+        "type": "poly", 
+        "size": [
+            82.0, 
+            121.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+waitingArea	counter	373.0	324.0	373.0	274.0
+waitingArea	entrance	317.0	324.0	317.0	274.0
+waitingArea	boundary	348.0	274.0	373.0	274.0	348.0	274.0	317.0	274.0
+waitingArea	fountain	373.0	324.0	317.0	324.0
+counter	boundary	427.0	274.0	373.0	274.0
+counter	fountain	373.0	324.0	427.0	324.0
+counter	commonArea	427.0	274.0	427.0	324.0
+entrance	boundary	317.0	274.0	269.0	274.0
+entrance	fountain	317.0	324.0	269.0	324.0
+entrance	hallway	269.0	324.0	269.0	274.0
+boundary	customer	133.0	394.0	133.0	274.0	196.0	274.0	133.0	274.0	196.0	394.0	133.0	394.0
+boundary	kitchen	587.0	395.0	509.0	395.0	587.0	274.0	587.0	395.0	587.0	274.0	509.0	274.0
+boundary	order	427.0	395.0	269.0	395.0
+boundary	hallway	196.0	394.0	269.0	395.0	196.0	274.0	197.0	274.0	197.0	274.0	269.0	274.0
+boundary	commonArea	427.0	395.0	509.0	395.0	427.0	274.0	509.0	274.0
+customer	hallway	196.0	274.0	196.0	394.0
+kitchen	commonArea	509.0	274.0	509.0	395.0
+fountain	order	427.0	360.0	269.0	360.0
+fountain	hallway	269.0	324.0	269.0	360.0
+fountain	commonArea	427.0	354.0	427.0	324.0	427.0	360.0	427.0	354.0
+order	hallway	269.0	360.0	269.0	395.0
+order	commonArea	427.0	360.0	427.0	395.0
+
