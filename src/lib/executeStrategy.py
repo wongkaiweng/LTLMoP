@@ -166,10 +166,11 @@ class ExecutorStrategyExtensions(object):
             logging.info("Currently at state %s." % self.next_state.state_id)
 
             # *********** patching *********** #
-            # first find all next possible states
-            possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
-            # update current next states sent to the other robot
-            self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                # first find all next possible states
+                possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
+                # update current next states sent to the other robot
+                self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
             # ******************************** #
 
             # ------------------------------- #
@@ -258,9 +259,6 @@ class ExecutorStrategyExtensions(object):
 
         # temporarily save the centralized state to our strategy
         self.centralized_strategy_state.setPropValues(sysOutputs)
-
-        logging.debug("sysOutputs:" + str(sysOutputs))
-        logging.debug("self.strategy.current_state:" + str(self.strategy.current_state.getOutputs()))
 
         # See if we're beginning a new transition
         if self.strategy.current_state.getOutputs() != sysOutputs:
