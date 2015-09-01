@@ -58,7 +58,7 @@ def getTruePropsInStates(autFile,stateList):
                 for item in resultRank:
                     #logging.info(item.group('rankValue'))
                     rankValue = item.group('rankValue')
-                f_output.write('State '+ str(state) + ' with rank '+ rankValue +': ' + str(trueProps) +'\n')
+                    f_output.write('State '+ str(state) + ' with rank '+ rankValue +': ' + str(trueProps) +'\n')
                 outputDict.update({state:trueProps})
 
             else:
@@ -89,10 +89,11 @@ def checkSuccessors(autFile):
         else:
             "check successor"
             line = line.replace('With successors :','')
-            if re.search('\w+', line) is None:
+            if re.search('\w+', line) is None or "With no successors." in line:
                 logging.info(state)
-                state = state.split('->')[0]
-                stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\srank\s(?P<rankNo>\d+)\s',state)
+                state = state.split('rank')[0]
+                stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\s',state)
+                #stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\srank\s(?P<rankNo>\d+\s',state)
                 #stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\srank\s(?P<rankNo>\d+)\s->\s<(?P<propsList>)>',state)
                 noSuccessorsStateList.append(int(stateMatch.group('stateNo')))
 
@@ -196,7 +197,7 @@ if __name__ == '__main__':
 
     if len(sys.argv)>2:
         if isinstance(ast.literal_eval(sys.argv[2]),list):
-            noSuccessorsStateList = sys.argv[2]
+            noSuccessorsStateList = ast.literal_eval(sys.argv[2])
         elif isinstance(ast.literal_eval(sys.argv[2]),dict):
             propDict = sys.argv[2]
         else:
@@ -209,7 +210,9 @@ if __name__ == '__main__':
     if noSuccessorsStateList:
         # extract props from states with no successor
         noSuccessorsStateDict = getTruePropsInStates(fileName+'.aut',noSuccessorsStateList)
-        logging.info("with only true props:" + str(noSuccessorsStateDict))
+
+        for key in noSuccessorsStateDict.keys():
+            logging.info(str(key)+':'+str(noSuccessorsStateDict[key]))
 
         # Then extract assumptions from the LTL file
         spec = getSpecDict(fileName+'.ltl')
@@ -219,19 +222,26 @@ if __name__ == '__main__':
 
         # create strategy
         strat = strategy.createStrategyFromFile(fileName+'.aut', inputs, outputs)
-
         for stateNo in noSuccessorsStateList:
             # find current violated state
             for stateObject in strat.states:
                 if stateObject.state_id == str(stateNo):
                     currentStateObject = stateObject
 
+                    # set prop to true if value is not given (In the case of counterstrategy)
+                    for prop_name, value in currentStateObject.getAll(expand_domains=True).iteritems():
+                        if value is None:
+                            currentStateObject.setPropValue(prop_name, False)
+
                     # check violation
                     LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
+                    LTLViolationCheckSysTrans = LTLParser.LTLcheck.LTL_Check("",{},spec,specType='SysTrans')
                     logging.info('-------------------------')
                     logging.info('Printing violations of State ' + str(stateNo))
                     logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
+                    logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
+                    logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
                     logging.info('=========================')
                     break
 
