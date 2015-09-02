@@ -424,7 +424,7 @@ class CentralExecutor:
                     #ignore any region related props
                     if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
                         continue
-                    self.spec[specType][robot] = re.sub('(?<=[! &(])'+'e.'+eProp+'(?=[ &)])', 'e.'+robot+'_'+eProp, self.spec[specType][robot])
+                    self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, self.spec[specType][robot])
 
 
             ## actuator props
@@ -434,7 +434,7 @@ class CentralExecutor:
                     #ignore any region related props
                     if sProp in [otherRobot+'_'+reg for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots]:
                         continue
-                    self.spec[specType][robot] = re.sub('(?<=[! &(])'+'s.'+sProp+'(?=[ &)])', 's.'+robot+'_'+sProp, self.spec[specType][robot])
+                    self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, self.spec[specType][robot])
 
         """
         Store mapping
