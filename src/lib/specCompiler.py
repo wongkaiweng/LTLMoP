@@ -620,18 +620,25 @@ class SpecCompiler(object):
         if not os.path.exists(slugs_path):
             # TODO: automatically compile for the user
             raise RuntimeError("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
+        cmd  = [slugs_path, "--sysInitRoboticsSemantics"]
 
         if self.proj.compile_options["recovery"]:
-            cmd = [slugs_path, "--sysInitRoboticsSemantics","--simpleRecovery", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            cmd.append("--simpleRecovery")
             logging.debug('Synthesizing strategy with recovery')
-        elif self.cooperativeGR1Strategy:
-            cmd = [slugs_path, "--sysInitRoboticsSemantics","--cooperativeGR1Strategy", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+
+        if self.cooperativeGR1Strategy:
+            cmd.append("--cooperativeGR1Strategy")
             logging.debug('Synthesizing strategy with cooperative strategy')
+
+        if self.proj.compile_options["symbolic"]:
+            cmd.append("--symbolicStrategy")
+            logging.debug('Synthesizing strategy with bdd')
+
+        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.cooperativeGR1Strategy and not self.proj.compile_options["recovery"]:
+            cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            logging.debug('Synthesizing strategy which also outputs livenesses')
         else:
-            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
-                cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
-            else:
-                cmd = [slugs_path, "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"])
 
         return cmd
 
@@ -1122,8 +1129,8 @@ class SpecCompiler(object):
             cmd = self._getSlugsCommand()
 
             # Make sure flags are compatible
-            if self.proj.compile_options["symbolic"]:
-                raise RuntimeError("Slugs does not currently support symbolic compilation options.")
+            #if self.proj.compile_options["symbolic"]:
+            #    raise RuntimeError("Slugs does not currently support symbolic compilation options.")
 
             # Create proper input for Slugs
             logging.info("Preparing Slugs input...")
