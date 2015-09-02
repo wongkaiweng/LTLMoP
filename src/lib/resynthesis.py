@@ -1146,11 +1146,19 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                specStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
-                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
+                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                self.robClient.sendSpec(specType, specNewStr, fastslow=True, include_heading=True)
                 #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+
+                # print current goal pursuing
+                #currentGoalLTL = (str(LTLParser.LTLcheck.ltlStrToList(specStr)[int(self.strategy.current_state.goal_id)]) if not specStr.count('[]<>') == 1 else specStr)
+                self.postEvent("PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.strategy.current_state.goal_id)]-1])
+
             else:
                 self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
+
+        # send also the old sysGoals
+        self.robClient.sendSpec('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True,current_goal_id=int(self.strategy.current_state.goal_id))
 
         # send prop
         self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))

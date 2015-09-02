@@ -118,7 +118,7 @@ class RobotClient:
         current_goal_id: current goal the robot is pursuing (for patching)
         """
         # check if the specType is valid
-        possibleSpecTypes = ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']
+        possibleSpecTypes = ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals','SysGoalsOld']
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
         
@@ -130,17 +130,17 @@ class RobotClient:
             # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
             if include_heading:
-                # convert s.bit to e.robotName_region
-                spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
+                # convert s.bit to e.robotName_region or s.bit to s.robotName_region if patching
+                spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False, False, self.proj.compile_options["multi_robot_mode"] == "patching")
 
             ########################
             ## PATCHING SPECIFICS ##
             ########################
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                 # only sends the current goal we are pursuing
-                #if specType == 'SysGoals':
-                #    if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
-                #        spec = LTLParser.LTLcheck.ltlStrToList(spec)[current_goal_id]
+                if specType == 'SysGoalsOld':
+                    if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
+                        spec = LTLParser.LTLcheck.ltlStrToList(spec)[current_goal_id]
 
                 # replace e.g. alice_r1 to alice_r1_rc as the meaning changes in the central strategy
                 for region in self.regionList:

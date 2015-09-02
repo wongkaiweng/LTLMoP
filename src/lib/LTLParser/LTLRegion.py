@@ -23,7 +23,7 @@ def findRegionBits(ltlFormula, fastslow=False):
     
     return regionBitsList
     
-def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False, include_heading=False):
+def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False, include_heading=False, patching=False):
     """
     This function takes in a region bit string and regionList and return the actual region string (with next)
     INPUT:
@@ -74,15 +74,19 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
     if nextTimeStep is True:
         if fastslow and include_heading:
             return 'next(e.' + robotName + '_' + targetRegionOrig + '_rc)'
+        elif not fastslow and patching and not include_heading:
+            return 'next(s.' + robotName + '_' + targetRegionOrig + ')'
         else:
             return 'next(e.' + robotName + '_' + targetRegionOrig + ')'
     else:
         if fastslow and include_heading:
             return 'e.' + robotName + '_' + targetRegionOrig + '_rc'
+        elif not fastslow and patching and not include_heading:
+            return 's.' + robotName + '_' + targetRegionOrig
         else:
             return 'e.' + robotName + '_' + targetRegionOrig
         
-def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False, include_heading=False):
+def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False, include_heading=False, patching=False):
     """
     This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
     INPUT:
@@ -102,6 +106,9 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
 
     For fastslow (only neighbour_robot):
     ---> e.sbit to e.robotName_regionName <---
+
+    For not fastslow, patching and no heading:
+    ---> s.bit to s.robotName_regionName <----
     """
     
     # make a copy of the string
@@ -112,7 +119,7 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     
     for regionBitStr in regionBitsList:
         # find original region name 
-        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow, include_heading)
+        regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow, include_heading, patching)
         
         # replace region bits to name
         ltlFormulaReplaced = ltlFormulaReplaced.replace(regionBitStr, regionName)

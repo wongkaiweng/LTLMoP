@@ -31,6 +31,10 @@ logging.getLogger().setLevel(logging.DEBUG)
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
+# recursionlimits
+logging.debug("recursion limits:" + str(sys.getrecursionlimit()))
+sys.setrecursionlimit(1500)
+
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
@@ -174,6 +178,12 @@ class CentralExecutor:
                             # send spec back to the robot
                             x.send(str(self.spec[item.group('packageType')]))
                         """
+
+                    elif item.group('packageType') == 'SysGoalsOld':
+                        if ast.literal_eval(item.group("packageValue")):
+                            # We got spec from robotClient, save spec
+                            self.sysGoalsOld[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                            printSpec(item.group('packageType'), self.sysGoalsOld[item.group("robotName")], item.group("robotName"))
 
                     elif item.group('packageType')  == "patchingStatus":
                         if isinstance(ast.literal_eval(item.group("packageValue")), bool):
@@ -319,6 +329,9 @@ class CentralExecutor:
         # set up nextPossibleStatesArray
         self.nextPossibleStatesArray[robot_name] = []
 
+        # add robot key in sysGoalsOld
+        self.sysGoalsOld[robot_name] = ""
+
     def initializeVariables(self):
         # This function initialize variables that will not be reset after central patching.
         self.regionList = {}  #tracking region info for each robot
@@ -328,6 +341,7 @@ class CentralExecutor:
         #This function clean and initialize all variables when patching is done/ when the instance is first created
         # TODO: we might not need to clean up all variables when patching ends (still need to exchange region info))
         self.spec       = {'EnvInit':{},'EnvTrans':{},'EnvGoals':{},'SysInit':{},'SysTrans':{},'SysGoals':{}}
+        self.sysGoalsOld = {} # for checking if goals are reached in patching
         self.coordinatingRobots = [] #track the robots cooridnating
         self.envPropList = {} #tracking env propositions of each robot envPropList[robot]= propList = {prop:value}
         self.sysPropList = {} #tracking sys propositions of each robot sysPropList[robot]= propList = {prop:value}
@@ -337,7 +351,7 @@ class CentralExecutor:
         self.smvEnvPropList = [] #store newPropName for environment props
         self.currentState = None #state object. store the combined current state of all robots
         self.currentAssignment = {} # dict. store assignments of all props and all robots
-        self.sensor_state = None # tracking next inputs for runtime monitoring
+        #self.sensor_state = None # tracking next inputs for runtime monitoring
         self.patchingStatus = {} #track if patching is initiated. True if started and false otherwise
         self.patchingRequestReceived = {} #track if we are initializing patching. False is not and True otherwise. This is checked by every robot constantly to make sure they enter the mode when necessary
         self.last_next_states = [] #track the last next states in our autonmaton execution
@@ -531,8 +545,10 @@ class CentralExecutor:
         LTLspec_sysList.append("[]<>(" + specSysGoals + ")" if specSysGoals else specSysGoals)
 
         # set up violation check object
-        if specSysGoals:
-            self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None,{}, {'sysGoals':specSysGoals}, 'sysGoals')
+        specSysGoalsOld = " &\n ".join(filter(None,[x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
+        logging.debug("specSysGoalsOld:" + str(specSysGoalsOld))
+        if specSysGoalsOld:
+            self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None,{}, {'sysGoals':specSysGoalsOld}, 'sysGoals')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None,LTLspec_sysList)))
         startTime = time.time()
@@ -558,8 +574,8 @@ class CentralExecutor:
             pass
 
         # set up sensor_strategy for runtime monitoring the liveness condition
-        self.sensor_state = self.strategy.states.addNewState()
-        self.sensor_state.setPropValues(self.currentState.getInputs(expand_domains=True))
+        #self.sensor_state = self.strategy.states.addNewState()
+        #self.sensor_state.setPropValues(self.currentState.getInputs(expand_domains=True))
 
     def findRobotOutputs(self, robot, nextInputs):
         """
@@ -577,11 +593,12 @@ class CentralExecutor:
 
         # remove any envProps that are sysProps in nextInputs
         nextInputs = ({k:v for k,v in nextInputs.iteritems() if k in currentInputs.keys()})
+
         # update inputs based on the inputs from the other robot
         currentInputs.update({self.propMappingOldToNew[robot][k]:v for k,v in nextInputs.iteritems()})
 
         # update sensor_state with the latest information
-        self.sensor_state.setPropValues(nextInputs)
+        #self.sensor_state.setPropValues(nextInputs)
 
         # find if the state is changed
         next_states = self.strategy.findTransitionableStates(currentInputs, from_state= self.strategy.current_state)
@@ -630,7 +647,7 @@ class CentralExecutor:
         Return true if goals are satisfied and false otherwise.
         """
 
-        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.sensor_state)
+        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
 
     def testTriggerSysGoalsSatisfaction(self):
         """
