@@ -39,6 +39,7 @@ class SpecCompiler(object):
 
         # **** patching ***** #
         self.cooperativeGR1Strategy = False
+        self.onlyRealizability = False
         # ******************* #
 
     def loadSpec(self,spec_filename):
@@ -634,9 +635,15 @@ class SpecCompiler(object):
             cmd.append("--symbolicStrategy")
             logging.debug('Synthesizing strategy with bdd')
 
+        if self.onlyRealizability:
+            cmd.append("--onlyRealizability")
+            logging.debug('Only checking realizability')
+
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.cooperativeGR1Strategy and not self.proj.compile_options["recovery"]:
             cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
             logging.debug('Synthesizing strategy which also outputs livenesses')
+        elif self.onlyRealizability:
+            cmd.extend([self.proj.getFilenamePrefix() + ".slugsin"])
         else:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"])
 

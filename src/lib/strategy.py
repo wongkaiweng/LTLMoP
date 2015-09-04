@@ -37,6 +37,10 @@ def createStrategyFromFile(filename, input_propositions, output_propositions):
     elif filename.endswith(".bdd"):
         import bdd
         new_strategy = bdd.BDDStrategy()
+    elif filename.endswith(".slugsin"):
+        import interactiveExecution
+        logging.debug("using interactiveStrategy")
+        new_strategy = interactiveExecution.SLUGSInteractiveStrategy()
     else:
         raise ValueError("Unsupported strategy file type.  Filename must end with either '.aut' or '.bdd'.")
 

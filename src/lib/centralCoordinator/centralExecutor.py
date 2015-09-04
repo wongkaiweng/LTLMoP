@@ -230,7 +230,12 @@ class CentralExecutor:
                         robot = item.group("robotName")
 
                         # check for outputs
-                        nextOutputs = self.findRobotOutputs(robot, nextInputs)
+                        # HACK: we should correctly check that all robots resumes normal operation before cleaning variables
+                        try:
+                            nextOutputs = self.findRobotOutputs(robot, nextInputs)
+                        except:
+                            logging.error("This should be fixed by cleaning variables correctly!")
+                            nextOutputs = None
                         x.send(str(nextOutputs))
 
                     elif "closeConnection" in data:
@@ -410,7 +415,7 @@ class CentralExecutor:
         Rename specs
         """
         for specType in self.spec.keys():
-            # e.region to s.region (region heading)
+            # e.region to s.region (region heading) # TODO: duplicates with robClient?
             for robot in self.coordinatingRobots:
                 for reg in self.regionList.keys():
                     for otherRobot in self.coordinatingRobots:
@@ -435,6 +440,34 @@ class CentralExecutor:
                     if sProp in [otherRobot+'_'+reg for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots]:
                         continue
                     self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, self.spec[specType][robot])
+
+        # also just for sysGoalsOld # TODO: combine with the one above
+        for specStr in self.sysGoalsOld.keys():
+            # e.region to s.region (region heading)
+            for robot in self.coordinatingRobots:
+                for reg in self.regionList.keys():
+                    for otherRobot in self.coordinatingRobots:
+                        self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, self.sysGoalsOld[robot])
+
+            # append robot name in front of actuators and sensors props, but not regions
+            ## sensor props
+            ## e.g: sensorProp  -> robotName_sensorProp
+            for robot, ePropList in self.envPropList.iteritems():
+                for eProp, eValue in ePropList.iteritems():
+                    #ignore any region related props
+                    if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                        continue
+                    self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, self.sysGoalsOld[robot])
+
+
+            ## actuator props
+            ## e.g: actuatorProp  -> robotName_actuatorProp
+            for robot, sPropList in self.sysPropList.iteritems():
+                for sProp, sValue in sPropList.iteritems():
+                    #ignore any region related props
+                    if sProp in [otherRobot+'_'+reg for reg in self.regionList.keys() for otherRobot in self.coordinatingRobots]:
+                        continue
+                    self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, self.sysGoalsOld[robot])
 
         """
         Store mapping
@@ -553,8 +586,9 @@ class CentralExecutor:
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None,LTLspec_sysList)))
         startTime = time.time()
         #HACK: Make it to recovery mode to try it out
-        #self.compiler.proj.compile_options['recovery']=True
+        #self.compiler.proj.compile_options['recovery']=True # interactive strategy auto synthesizes with recovery option
         self.compiler.cooperativeGR1Strategy=True
+        self.compiler.onlyRealizability = True
         realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
         logging.info(output)
@@ -565,7 +599,8 @@ class CentralExecutor:
         if realizable:
             logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
             # load strategy and initial state
-            self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
+            #self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
+            self.strategy = strategy.createStrategyFromFile(self.filePath + '.slugsin', self.smvEnvPropList, self.smvSysPropList)
             # TODO: need to be finished
             self.strategy.current_state = self.strategy.searchForOneState(self.currentAssignment)
             logging.info('Starting at State ' + str(self.strategy.current_state.state_id))
@@ -591,11 +626,14 @@ class CentralExecutor:
         # convert to the new mapping name from received data / update current assignments
         currentInputs = self.strategy.current_state.getInputs(expand_domains=True)
 
+        # convert local props to global props
+        nextInputs = {self.propMappingOldToNew[robot][k]:v for k,v in nextInputs.iteritems()}
+
         # remove any envProps that are sysProps in nextInputs
         nextInputs = ({k:v for k,v in nextInputs.iteritems() if k in currentInputs.keys()})
 
         # update inputs based on the inputs from the other robot
-        currentInputs.update({self.propMappingOldToNew[robot][k]:v for k,v in nextInputs.iteritems()})
+        currentInputs.update(nextInputs)
 
         # update sensor_state with the latest information
         #self.sensor_state.setPropValues(nextInputs)
