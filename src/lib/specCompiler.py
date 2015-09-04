@@ -640,10 +640,14 @@ class SpecCompiler(object):
             logging.debug('Only checking realizability')
 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.cooperativeGR1Strategy and not self.proj.compile_options["recovery"]:
-            cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+            cmd.append("--withWinningLiveness")
             logging.debug('Synthesizing strategy which also outputs livenesses')
-        elif self.onlyRealizability:
+
+        if self.onlyRealizability:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin"])
+        elif self.proj.compile_options["symbolic"]:
+            cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".bdd"])
         else:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"])
 
@@ -727,6 +731,10 @@ class SpecCompiler(object):
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 enabled_sensors  + regionCompleted_domain,
                                                 self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain)
+
+        if self.proj.compile_options["symbolic"]:
+            logging.info("We will not check if the strategy is trivial with symbolic strategy.")
+            return True
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 

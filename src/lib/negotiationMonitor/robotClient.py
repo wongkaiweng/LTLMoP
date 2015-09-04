@@ -320,7 +320,15 @@ class RobotClient:
         #logging.info('ROBOTCLIENT: requested next possible states prop dict')
 
         #receive info
-        nextPossibleStates = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        msg = ""
+        nextPossibleStates = None
+
+        while nextPossibleStates is None:
+            try:
+                msg += self.clientObject.recv(self.BUFSIZE)
+                nextPossibleStates = ast.literal_eval(msg)
+            except:
+                pass
         #logging.debug("nextPossibleStates:" + str(nextPossibleStates))
         return nextPossibleStates
 

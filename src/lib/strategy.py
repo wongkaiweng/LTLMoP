@@ -34,9 +34,12 @@ def createStrategyFromFile(filename, input_propositions, output_propositions):
     if filename.endswith(".aut"):
         import fsa
         new_strategy = fsa.FSAStrategy()
-    elif filename.endswith(".bdd"):
+    elif filename.endswith(".bdd") or filename.endswith(".add"):
         import bdd
-        new_strategy = bdd.BDDStrategy()
+        if filename.endswith(".bdd"):
+            new_strategy = bdd.BDDStrategy(add = False)
+        else:
+            new_strategy = bdd.BDDStrategy(add = True)
     elif filename.endswith(".slugsin"):
         import interactiveExecution
         logging.debug("using interactiveStrategy")
