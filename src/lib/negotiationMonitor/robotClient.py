@@ -292,9 +292,9 @@ class RobotClient:
         This function converts possible next states to dict. To be sent to the other robots.
         """
         stateArray = []
-        logging.debug('00000000000000')
+        #logging.debug('00000000000000')
         for nextState in nextStatesArray:
-            logging.debug("next state includes " + str(nextState.state_id))
+            #logging.debug("next state includes " + str(nextState.state_id))
             propDict = {}
             propDict.update(self.convertFromRegionBitsToRegionNameInDict('env', nextState.getInputs(expand_domains=True)))
             # we are not sending sysProps anymore
@@ -308,7 +308,7 @@ class RobotClient:
             # append robot name to all props
             stateArray.append(copy.deepcopy(propDict))
 
-        logging.debug("stateArray:" + str(stateArray))
+        #logging.debug("stateArray:" + str(stateArray))
         self.clientObject.send(self.robotName + '-' + 'nextPossibleStates = ' + str(stateArray) + '\n')
         #logging.info('ROBOTCLIENT: sent next possible states prop dict')
 

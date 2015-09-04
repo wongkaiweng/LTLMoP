@@ -1162,7 +1162,8 @@ class ExecutorResynthesisExtensions(object):
 
         # send prop
         self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-
+        logging.debug("This should be consistent with the violation one")
+        logging.debug(self.strategy.current_state.getInputs(expand_domains = True))
         # TODO: Here we assume we are using bits
         # replace sys init with env init for regions
         sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
@@ -1211,14 +1212,14 @@ class ExecutorResynthesisExtensions(object):
                 # added in region_rc with the decomposed region names
                 sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
-        logging.debug("sensorList:" + str(sensorList))
+        #logging.debug("sensorList:" + str(sensorList))
         # convert formula from slugs to our format
         sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
-        logging.debug(sysGoalsLTLList)
+        #logging.debug(sysGoalsLTLList)
 
         # replace with normal region bits (like actual regions)
         sysGoalsLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
-        logging.debug(sysGoalsLTL)
+        #logging.debug(sysGoalsLTL)
 
         return "[]<>("+sysGoalsLTL+")"
 

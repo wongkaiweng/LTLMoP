@@ -16,6 +16,10 @@ import strategy
 
 logging.basicConfig(level=logging.INFO)
 
+# recursionlimits
+logging.debug("recursion limits:" + str(sys.getrecursionlimit()))
+sys.setrecursionlimit(1500)
+
 def getTruePropsInStates(autFile,stateList):
     truePropsOption = True # only returns true proposition if true
 
