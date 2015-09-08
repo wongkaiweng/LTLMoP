@@ -199,7 +199,7 @@ class ExecutorStrategyExtensions(object):
         if self.next_state != self.strategy.current_state:
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.next_state.getPropValue('regionCompleted').name))
-                self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
+                self.postEvent("INFO", "Heading to region %s..." % self.next_state.getPropValue('region').name)
 
                 # ------------------------------- #
                 # --- two_robot_negotiation ----- #
@@ -264,7 +264,8 @@ class ExecutorStrategyExtensions(object):
         self.centralized_strategy_state.setPropValues(sysOutputs)
 
         # See if we're beginning a new transition
-        if self.strategy.current_state.getOutputs() != sysOutputs:
+        #if self.strategy.current_state.getOutputs() != sysOutputs:
+        if self.strategy.current_state.getAll(expand_domains=True) != self.centralized_strategy_state.getAll(expand_domains=True):
 
             # find next region
             self.next_region = sysOutputs['region']
@@ -285,7 +286,7 @@ class ExecutorStrategyExtensions(object):
 
             # Check for completion of motion
             if self.transition_contains_motion:
-                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.current_region.name))
+                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.centralized_strategy_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
                 # ------------------------------- #
@@ -302,7 +303,7 @@ class ExecutorStrategyExtensions(object):
             self.strategy.current_state = self.centralized_strategy_state
 
         # Move one step towards the next region (or stay in the same region)
-        self.hsub.gotoRegion(self.current_region, sysOutputs['region'])
+        self.hsub.gotoRegion(self.strategy.current_state.getPropValue('regionCompleted'), self.strategy.current_state.getPropValue('region'))
 
     def HSubGetSensorValue(self,sensorList):
         """
