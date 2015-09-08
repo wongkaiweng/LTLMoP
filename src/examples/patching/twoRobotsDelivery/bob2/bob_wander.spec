@@ -51,19 +51,19 @@ roadWest = p2
 roadNorth = p4
 
 Spec: # Specification in structured English
-Robot starts in roadEast
+Robot starts in storage
 Environment starts with alice_office
 
-#############
-## Patrol ###
-#############
-visit roadEast
-visit roadSouth
+###########
+## Goals ##
+###########
+#visit office2
+visit office
 
 #####################################
 # ASSUMPTIONS ABOUT THE OTHER ROBOT #
 #####################################
-if you have finished office then do not (alice_office or alice_roadNorth or alice_roadWest)
+if you have finished office then do not (alice_office or alice_office or alice_roadNorth or alice_roadWest)
 if you have finished roadNorth then do not (alice_roadNorth or alice_roadEast or alice_office)
 if you have finished roadWest then do not (alice_roadWest or alice_roadSouth or alice_office)
 if you have finished roadEast then do not (alice_roadEast or alice_roadNorth or alice_storage)

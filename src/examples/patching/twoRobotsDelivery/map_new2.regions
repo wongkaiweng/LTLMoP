@@ -74,7 +74,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "gov", 
+        "name": "storage",
         "color": [
             255, 
             0, 
@@ -119,7 +119,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "roadBR", 
+        "name": "roadSouth",
         "color": [
             255, 
             255, 
@@ -137,7 +137,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "roadTR", 
+        "name": "roadEast",
         "color": [
             0, 
             255, 
@@ -155,7 +155,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "roadBL", 
+        "name": "roadWest",
         "color": [
             255, 
             0, 
@@ -173,7 +173,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "roadTL", 
+        "name": "roadNorth",
         "color": [
             255, 
             128, 
@@ -236,7 +236,7 @@ Regions: # Stored as JSON string
         ]
     }, 
     {
-        "name": "office1", 
+        "name": "office",
         "color": [
             255, 
             0, 
@@ -283,22 +283,22 @@ Regions: # Stored as JSON string
 ]
 
 Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
-boundary	gov	816.0	54.0	816.0	301.0	816.0	54.0	691.0	50.0	816.0	301.0	691.0	300.0
-boundary	roadBR	691.0	300.0	529.0	300.0
-boundary	roadTR	529.0	50.0	691.0	50.0
-boundary	roadBL	364.0	300.0	529.0	300.0
-boundary	roadTL	529.0	50.0	364.0	50.0
-boundary	office1	217.0	50.0	364.0	50.0	364.0	300.0	217.0	300.0	217.0	50.0	217.0	300.0
-gov	roadBR	691.0	300.0	691.0	181.0
-gov	roadTR	691.0	143.0	691.0	50.0
-gov	park	691.0	143.0	691.0	181.0
-roadBR	roadBL	529.0	181.0	529.0	300.0
-roadBR	park	529.0	181.0	691.0	181.0
-roadTR	roadTL	529.0	50.0	529.0	143.0
-roadTR	park	691.0	143.0	529.0	143.0
-roadBL	park	364.0	181.0	529.0	181.0
-roadBL	office1	364.0	181.0	364.0	300.0
-roadTL	park	364.0	143.0	529.0	143.0
-roadTL	office1	364.0	50.0	364.0	143.0
-park	office1	364.0	181.0	364.0	143.0
+boundary	storage	816.0	54.0	816.0	301.0	816.0	54.0	691.0	50.0	816.0	301.0	691.0	300.0
+boundary	roadSouth	691.0	300.0	529.0	300.0
+boundary	roadEast	529.0	50.0	691.0	50.0
+boundary	roadWest	364.0	300.0	529.0	300.0
+boundary	roadNorth	529.0	50.0	364.0	50.0
+boundary	office	217.0	50.0	364.0	50.0	364.0	300.0	217.0	300.0	217.0	50.0	217.0	300.0
+storage	roadSouth	691.0	300.0	691.0	181.0
+storage	roadEast	691.0	143.0	691.0	50.0
+storage	park	691.0	143.0	691.0	181.0
+roadSouth	roadWest	529.0	181.0	529.0	300.0
+roadSouth	park	529.0	181.0	691.0	181.0
+roadEast	roadNorth	529.0	50.0	529.0	143.0
+roadEast	park	691.0	143.0	529.0	143.0
+roadWest	park	364.0	181.0	529.0	181.0
+roadWest	office	364.0	181.0	364.0	300.0
+roadNorth	park	364.0	143.0	529.0	143.0
+roadNorth	office	364.0	50.0	364.0	143.0
+park	office	364.0	181.0	364.0	143.0
 
