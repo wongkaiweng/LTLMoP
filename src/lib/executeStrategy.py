@@ -247,6 +247,9 @@ class ExecutorStrategyExtensions(object):
         self.centralized_strategy_state = self.strategy.states.addNewState()
         self.centralized_strategy_state.setPropValues(sensor_state)
 
+        # also set current goal to be the same as before
+        self.centralized_strategy_state.goal_id = self.strategy.current_state.goal_id
+
         # update the environment propositions of centralized strategy
         # AND return latest system propositions of the robot
         sysOutputs = self.robClient.getOutputs(self.centralized_strategy_state.getInputs(expand_domains = True))

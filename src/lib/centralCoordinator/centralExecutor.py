@@ -224,6 +224,12 @@ class CentralExecutor:
                         else:
                             x.send(str(self.nextPossibleStatesArray))
 
+                    elif item.group('packageType') in 'restartStatus':
+                        if ast.literal_eval(item.group("packageValue")):
+                            self.readyToRestart[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        else:
+                            x.send(str(self.readyToRestart))
+
                     elif item.group('packageType') in 'automatonExecution':
                         # first receive inputs
                         nextInputs = ast.literal_eval(item.group("packageValue")) # dict
@@ -304,11 +310,16 @@ class CentralExecutor:
                             self.patchingStatus = {k:False for k in self.patchingStatus.keys()}
                             #self.keepConnection = False
 
-                #clean all necessary variables when done
-                self.cleanVariables(first_time=False)
+                            # To do: make sure both robots are ready first, before we go back to local execution.
+                            for robot in self.coordinatingRobots:
+                                self.readyToRestart[robot] = False
 
                 #self.closeConnection(None,None)
                 pass
+
+            if self.readyToRestart and not False in self.readyToRestart.values():
+                #clean all necessary variables when done
+                self.cleanVariables(first_time=False)
         else:
             self.closeConnection(None, None)
 
@@ -362,6 +373,7 @@ class CentralExecutor:
         self.last_next_states = [] #track the last next states in our autonmaton execution
         self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
         self.nextPossibleStatesArray = {} # store array of next possible states dict of robots. To be request by the other robots
+        self.readyToRestart = {} # track if the two robots are ready to restart execution
 
         self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
 

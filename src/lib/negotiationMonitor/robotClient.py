@@ -426,6 +426,22 @@ class RobotClient:
 
         return status
 
+    def setRestartStatus(self):
+        """
+        This function sets the restart status.
+        """
+        self.clientObject.send(self.robotName + '-' + 'restartStatus = ' + str(True) +  '\n')
+        logging.info('ROBOTCLIENT: set restart status to ' + str(True))
+
+    def checkRestartStatus(self):
+        """
+        This function checks if all robots are ready to restart.
+        """
+        self.clientObject.send(self.robotName + '-' + 'restartStatus = ' + "''" +  '\n')
+        status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+
+        return (False if False in status.values() else True)
+
     def getCentralizedExecutionStatus(self):
         """
         This function checks if centralized execution has started.

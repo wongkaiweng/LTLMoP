@@ -428,7 +428,18 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         if firstRun:
             init_state = new_strategy.searchForOneState(init_prop_assignments)
         else:
-            init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = self.prev_z)
+            # ------- patching ----------#
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                if not self.spec['SysGoals'].count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
+                    specLen = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
+                    current_goal_id = str((int(self.prev_z) + 1) % (specLen))
+                    logging.debug("Current goal number is:" + current_goal_id)
+                else:
+                    current_goal_id = str(0)
+                # ---------------------------- #
+            else:
+                current_goal_id = self.prev_z
+            init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = current_goal_id)
         
         ######## ENV Assumption Learning ###########                  
         if firstRun:
@@ -588,6 +599,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         self.initialize(spec_file, aut_file, firstRun=False)
                         self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
                         self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
+                        self.robClient.setRestartStatus()
+                        while not self.robClient.checkRestartStatus():
+                            logging.debug('Waiting for the other robot to restart')
+                            time.sleep(1) #wait for the other robot to get ready
                     # *********************************** #
                     self.runStrategyIterationInstanteousAction()
 
