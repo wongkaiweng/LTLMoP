@@ -747,60 +747,69 @@ class ExecutorResynthesisExtensions(object):
             # Add the current state in init state of the LTL spec
             self.postEvent("VIOLATION","Adding the current state to our initial conditions")
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
-            
-            if not firstRun:
-                self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
-            
-            self.recreateLTLfile(self.proj)
-            realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+
+            # ------ patching ---------#
+            # just update initial condition
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                self.recreateLTLfile(self.proj)
+                realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                self.postEvent("VIOLATION", "The specification is " + ("realizable." if realizable else "unrealizable."))
+            # -------------------------#
+
+            if not( self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching") or realizable is False:
+                if not firstRun:
+                    self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
+
+                self.recreateLTLfile(self.proj)
+                realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
              
-            if not firstRun:
-                self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
-                if not realizable:
-                    while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
+                if not firstRun:
+                    self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+                    if not realizable:
+                        while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
 
-                        self.LTLViolationCheck.modify_stage += 1 
-                        self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")  
-                        self.recreateLTLfile(self.proj)
-                        realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
-                        
-                        self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+                            self.LTLViolationCheck.modify_stage += 1
+                            self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
+                            self.recreateLTLfile(self.proj)
+                            realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
 
-                    if self.proj.compile_options['neighbour_robot']:
-                        if not realizable:
-                            #realizable = False
-                            if self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                                # ------ two_robot_negotiation  -------- #
-                                # see if the other robot has violation before us
-                                otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
-                                logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                                logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+                            self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
-                                # exchange info with the other robot and see if it is realizable.
-                                # later time can exchange spec
-                                if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
-                                    # exchange spec
-                                    realizable = self.appendSpecFromEnvRobots()
-                                    self.exchangedSpec = True
-                                elif self.sentSpec and self.receivedSpec:
-                                    pass
-                                else:
+                        if self.proj.compile_options['neighbour_robot']:
+                            if not realizable:
+                                #realizable = False
+                                if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                                    # ------ two_robot_negotiation  -------- #
+                                    # see if the other robot has violation before us
+                                    otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
+                                    logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                                    logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+
+                                    # exchange info with the other robot and see if it is realizable.
+                                    # later time can exchange spec
+                                    if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                                        # exchange spec
+                                        realizable = self.appendSpecFromEnvRobots()
+                                        self.exchangedSpec = True
+                                    elif self.sentSpec and self.receivedSpec:
+                                        pass
+                                    else:
+                                        return
+                                    # -------------------------------------- #
+
+                                elif self.proj.compile_options["multi_robot_mode"] == "patching":
+                                    # ************ patching ****************** #
+                                    # Take care of everything to start patching
+                                    #self.postEvent("RESOLVED","")
+                                    #self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
+                                    #self.initiatePatching()
+                                    logging.error("Patching is now done in excute.py. We should not have got here!")
+                                    # return and continue execution
                                     return
-                                # -------------------------------------- #
+                                    # **************************************** #
 
-                            elif self.proj.compile_options["multi_robot_mode"] == "patching":
-                                # ************ patching ****************** #
-                                # Take care of everything to start patching
-                                #self.postEvent("RESOLVED","")
-                                #self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
-                                #self.initiatePatching()
-                                logging.error("Patching is now done in excute.py. We should not have got here!")
-                                # return and continue execution
-                                return
-                                # **************************************** #
-
-                            else:
-                                logging.error("Mulit robot mode is incorrect. This is impossible.")
+                                else:
+                                    logging.error("Mulit robot mode is incorrect. This is impossible.")
 
             self.realizable = realizable
 
@@ -1161,9 +1170,9 @@ class ExecutorResynthesisExtensions(object):
         self.robClient.sendSpec('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True,current_goal_id=int(self.strategy.current_state.goal_id))
 
         # send prop
-        self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        logging.debug("This should be consistent with the violation one")
-        logging.debug(self.strategy.current_state.getInputs(expand_domains = True))
+        self.robClient.sendProp('env', self.sensor_strategy.getInputs(expand_domains = True))
+        #self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
+        logging.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
         # TODO: Here we assume we are using bits
         # replace sys init with env init for regions
         sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
