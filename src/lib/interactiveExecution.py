@@ -44,10 +44,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         logging.debug(slugs_path)
         """
 
-        logging.debug("slugs" + " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics " + filename)
+        command = " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics "
+        #command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics "
+        logging.debug("slugs" + command + filename)
 
         # Open Slugs
-        self.slugsProcess = subprocess.Popen("slugs" + " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics " + filename, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.slugsProcess = subprocess.Popen("slugs" + command + filename, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Get input APs
         self.slugsProcess.stdin.write("XPRINTINPUTS\n")
@@ -131,5 +133,8 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
                 prop_assignments[self.inputAPs[idx]] = value
 
         curStateObject = strategy.State(self.states,prop_assignments)
+
+        # set current state id
+        curStateObject.goal_id = currentState.partition(",")[2] # it's a string
 
         return [curStateObject]
