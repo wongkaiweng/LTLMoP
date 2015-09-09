@@ -352,6 +352,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # TODO: maybe an option for BDD here later
         # Load automaton file
+        self.strategy = None
         new_strategy = self.loadAutFile(strategy_file)
 
         if firstRun:
@@ -603,6 +604,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         while not self.robClient.checkRestartStatus():
                             logging.debug('Waiting for the other robot to restart')
                             time.sleep(1) #wait for the other robot to get ready
+                        logging.debug('Running again ...')
                     # *********************************** #
                     self.runStrategyIterationInstanteousAction()
 

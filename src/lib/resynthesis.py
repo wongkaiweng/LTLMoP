@@ -1205,8 +1205,12 @@ class ExecutorResynthesisExtensions(object):
         """
 
         # first read sysGoals LTL with winning positions preComputed.
-        with open(self.proj.getFilenamePrefix()+".autliveness"+ str(sysGoalsId), 'r') as f:
-            slugsStr = f.read()
+        if self.proj.compile_options['symbolic']:
+            with open(self.proj.getFilenamePrefix()+".bddliveness"+ str(sysGoalsId), 'r') as f:
+                slugsStr = f.read()
+        else:
+            with open(self.proj.getFilenamePrefix()+".autliveness"+ str(sysGoalsId), 'r') as f:
+                slugsStr = f.read()
         f.closed
 
         # modify sensor list to parse region props properly
