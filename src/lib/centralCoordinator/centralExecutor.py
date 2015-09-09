@@ -228,7 +228,7 @@ class CentralExecutor:
                         if ast.literal_eval(item.group("packageValue")):
                             self.readyToRestart[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
                         else:
-                            x.send(str(self.readyToRestart))
+                            x.send(str(self.checkedRestartStatus))
 
                     elif item.group('packageType') in 'automatonExecution':
                         # first receive inputs
@@ -313,12 +313,15 @@ class CentralExecutor:
                             # To do: make sure both robots are ready first, before we go back to local execution.
                             for robot in self.coordinatingRobots:
                                 self.readyToRestart[robot] = False
+                                self.checkedRestartStatus = False
 
                 #self.closeConnection(None,None)
                 pass
 
-            if self.readyToRestart and not False in self.readyToRestart.values():
+            if self.readyToRestart and (not False in self.readyToRestart.values()):
+                logging.debug("We are now cleaning variables.")
                 #clean all necessary variables when done
+                self.checkedRestartStatus=True
                 self.cleanVariables(first_time=False)
         else:
             self.closeConnection(None, None)
@@ -352,6 +355,7 @@ class CentralExecutor:
         # This function initialize variables that will not be reset after central patching.
         self.regionList = {}  #tracking region info for each robot
         self.tempMsg = {} # temporarily save incomplete msg from robots. clear when used.
+        self.checkedRestartStatus = False # track if all robots has checked restart status
 
     def cleanVariables(self, first_time=True):
         #This function clean and initialize all variables when patching is done/ when the instance is first created

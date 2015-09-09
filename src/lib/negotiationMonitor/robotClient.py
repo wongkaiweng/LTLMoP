@@ -440,7 +440,7 @@ class RobotClient:
         self.clientObject.send(self.robotName + '-' + 'restartStatus = ' + "''" +  '\n')
         status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
 
-        return (False if False in status.values() else True)
+        return status
 
     def getCentralizedExecutionStatus(self):
         """
