@@ -10,7 +10,7 @@ CompileOptions:
 neighbour_robot: True
 convexify: True
 parser: structured
-symbolic: False
+symbolic: True
 use_region_bit_encoding: True
 multi_robot_mode: patching
 fastslow: True
@@ -29,10 +29,10 @@ RegionFile: # Relative path of region description file
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 bob_storage, 1
-bob_roadSouth, 1
-bob_roadEast, 1
-bob_roadWest, 1
-bob_roadNorth, 1
+bob_roadD, 1
+bob_roadB, 1
+bob_roadC, 1
+bob_roadA, 1
 bob_office, 1
 
 
@@ -42,13 +42,13 @@ OtherRobot: # The other robot in the same workspace
 bob
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-roadEast = p5
 office = p7
-roadSouth = p3
+roadC = p3
+roadB = p4
+roadA = p5
 storage = p1
+roadD = p2
 others = 
-roadWest = p2
-roadNorth = p4
 
 Spec: # Specification in structured English
 Robot starts in office
@@ -62,10 +62,10 @@ visit storage
 #####################################
 # ASSUMPTIONS ABOUT THE OTHER ROBOT #
 #####################################
-if you have finished office then do not (bob_office or bob_roadNorth or bob_roadWest)
-if you have finished roadNorth then do not (bob_roadNorth or bob_roadEast or bob_office)
-if you have finished roadWest then do not (bob_roadWest or bob_roadSouth or bob_office)
-if you have finished roadEast then do not (bob_roadEast or bob_roadNorth or bob_storage)
-if you have finished roadSouth then do not (bob_roadSouth or bob_roadWest or bob_storage)
-if you have finished storage then do not (bob_storage or bob_roadEast or bob_roadWest)
+if you have finished office then do not (bob_office or bob_roadA or bob_roadC)
+if you have finished roadA then do not (bob_roadA or bob_roadB or bob_office)
+if you have finished roadC then do not (bob_roadC or bob_roadD or bob_office)
+if you have finished roadB then do not (bob_roadB or bob_roadA or bob_storage)
+if you have finished roadD then do not (bob_roadD or bob_roadC or bob_storage)
+if you have finished storage then do not (bob_storage or bob_roadB or bob_roadC)
 

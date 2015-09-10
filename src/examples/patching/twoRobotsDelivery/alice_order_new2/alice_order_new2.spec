@@ -12,7 +12,7 @@ CompileOptions:
 neighbour_robot: True
 convexify: True
 parser: structured
-symbolic: False
+symbolic: True
 use_region_bit_encoding: True
 multi_robot_mode: patching
 fastslow: True
@@ -33,10 +33,10 @@ RegionFile: # Relative path of region description file
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 order, 1
 bob_storage, 1
-bob_roadSouth, 1
-bob_roadEast, 1
-bob_roadWest, 1
-bob_roadNorth, 1
+bob_roadD, 1
+bob_roadB, 1
+bob_roadC, 1
+bob_roadA, 1
 bob_office, 1
 
 
@@ -46,17 +46,17 @@ OtherRobot: # The other robot in the same workspace
 bob
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-roadEast = p5
+roadB = p5
 office = p7
-roadSouth = p3
+roadD = p3
 storage = p1
 others = 
-roadWest = p2
-roadNorth = p4
+roadC = p2
+roadA = p4
 
 Spec: # Specification in structured English
 Robot starts in office
-Environment starts with bob_roadEast
+Environment starts with bob_roadB
 
 ############
 ## ORDER  ##
@@ -68,7 +68,7 @@ orderPickedUp is set on finished pickup and finished office and reset on finishe
 ## pickup #
 ###########
 if you are activating orderPickedUp then go to storage
-if you are sensing order and you have finished office then do pickup
+do pickup if and only if you are sensing order and you have finished office and you are not activating orderPickedUp
 
 # stay in place to pickup
 if you are activating pickup and you have not finished pickup and you have finished office then finished office
@@ -77,11 +77,7 @@ if you are activating pickup and you have not finished pickup and you have finis
 # deliver #
 ###########
 # go to storage and deliver order
-#if you are activating foodCooked then go to commonArea
 do deliver if and only if you are activating orderPickedUp and you have finished storage
-# make sure the robot don't randomly deliver
-#if you are not activating orderPickedUp and you have not finished storage then do not deliver
-
 # stay in place to pickup
 if you are activating deliver and you have not finished deliver and you have finished storage then finished storage
 
@@ -93,10 +89,10 @@ if you are not activating orderPickedUp then visit office
 #####################################
 # ASSUMPTIONS ABOUT THE OTHER ROBOT #
 #####################################
-if you have finished office then do not (bob_office or bob_roadNorth or bob_roadWest)
-if you have finished roadNorth then do not (bob_roadNorth or bob_roadEast or bob_office)
-if you have finished roadWest then do not (bob_roadWest or bob_roadSouth or bob_office)
-if you have finished roadEast then do not (bob_roadEast or bob_roadNorth or bob_storage)
-if you have finished roadSouth then do not (bob_roadSouth or bob_roadWest or bob_storage)
-if you have finished storage then do not (bob_storage or bob_roadSouth or bob_roadEast)
+if you have finished office then do not (bob_office or bob_roadA or bob_roadC)
+if you have finished roadA then do not (bob_roadA or bob_roadB or bob_office)
+if you have finished roadC then do not (bob_roadC or bob_roadD or bob_office)
+if you have finished roadB then do not (bob_roadB or bob_roadA or bob_storage)
+if you have finished roadD then do not (bob_roadD or bob_roadC or bob_storage)
+if you have finished storage then do not (bob_storage or bob_roadD or bob_roadB)
 

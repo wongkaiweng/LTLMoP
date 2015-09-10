@@ -10,7 +10,7 @@ CompileOptions:
 neighbour_robot: True
 convexify: True
 parser: structured
-symbolic: False
+symbolic: True
 use_region_bit_encoding: True
 multi_robot_mode: patching
 fastslow: True
@@ -29,10 +29,10 @@ RegionFile: # Relative path of region description file
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 alice_storage, 1
-alice_roadSouth, 1
-alice_roadEast, 1
-alice_roadWest, 1
-alice_roadNorth, 1
+alice_roadD, 1
+alice_roadB, 1
+alice_roadC, 1
+alice_roadA, 1
 alice_office, 1
 
 
@@ -42,13 +42,13 @@ OtherRobot: # The other robot in the same workspace
 alice
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-roadEast = p5
 office = p7
-roadSouth = p3
+roadC = p3
+roadB = p4
+roadA = p5
 storage = p1
+roadD = p2
 others = 
-roadWest = p2
-roadNorth = p4
 
 Spec: # Specification in structured English
 Robot starts in storage
@@ -63,10 +63,10 @@ visit office
 #####################################
 # ASSUMPTIONS ABOUT THE OTHER ROBOT #
 #####################################
-if you have finished office then do not (alice_office or alice_office or alice_roadNorth or alice_roadWest)
-if you have finished roadNorth then do not (alice_roadNorth or alice_roadEast or alice_office)
-if you have finished roadWest then do not (alice_roadWest or alice_roadSouth or alice_office)
-if you have finished roadEast then do not (alice_roadEast or alice_roadNorth or alice_storage)
-if you have finished roadSouth then do not (alice_roadSouth or alice_roadWest or alice_storage)
-if you have finished storage then do not (alice_storage or alice_roadSouth or alice_roadEast)
+if you have finished office then do not (alice_office or alice_office or alice_roadA or alice_roadC)
+if you have finished roadA then do not (alice_roadA or alice_roadB or alice_office)
+if you have finished roadC then do not (alice_roadC or alice_roadD or alice_office)
+if you have finished roadB then do not (alice_roadB or alice_roadA or alice_storage)
+if you have finished roadD then do not (alice_roadD or alice_roadC or alice_storage)
+if you have finished storage then do not (alice_storage or alice_roadD or alice_roadB)
 
