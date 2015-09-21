@@ -151,6 +151,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # ********** patching ******************** #
         self.centralized_strategy_state = None # to save centralized strategy state during patching
         self.runCentralizedStrategy = False # track if we are running patching
+        self.envTransCheck = None # for symbolic strategy checking
+        self.sysTransCheck = None # for symbolic strategy checking
         # **************************************** #
 
         
@@ -352,7 +354,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # TODO: maybe an option for BDD here later
         # Load automaton file
-        self.strategy = None
+        if self.proj.compile_options['symbolic']:
+            self.strategy = None
         new_strategy = self.loadAutFile(strategy_file)
 
         if firstRun:
@@ -541,10 +544,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.info("Starting from state %s." % init_state.state_id)
             if self.strategy is None or init_state.state_id != self.strategy.current_state.state_id:
                 self.postEvent('INFO', "Starting from state %s." % init_state.state_id)
-        
+
         self.strategy = new_strategy
         self.strategy.current_state = init_state
         self.last_sensor_state = self.strategy.current_state.getInputs()
+
+        if self.proj.compile_options['symbolic']:
+            self.envTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'EnvTrans')
+            self.sysTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'SysTrans')
+            logging.debug('We came here')
+            self.strategy.envTransBDD, term1, term2 = self.strategy.evaluateBDD(self.envTransCheck.ltl_tree, LTLParser.LTLFormula.p.terminals)
+            logging.debug('We finished')
 
         return  init_state, self.strategy
 

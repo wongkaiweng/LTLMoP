@@ -165,14 +165,6 @@ class ExecutorStrategyExtensions(object):
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
             logging.info("Currently at state %s." % self.next_state.state_id)
 
-            # *********** patching *********** #
-            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
-                # first find all next possible states
-                possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
-                # update current next states sent to the other robot
-                self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
-            # ******************************** #
-
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
             # ------------------------------- #
@@ -191,12 +183,36 @@ class ExecutorStrategyExtensions(object):
             # save current sensor state for next iteration
             self.last_sensor_state = sensor_state
 
-        if self.strategy.current_state == self.next_state:
+        if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
             # Move one step towards the next region (or stay in the same region)
             self.hsub.gotoRegion(self.current_region, self.next_region)
 
         # Check for completion of motion
-        if self.next_state != self.strategy.current_state:
+        if self.next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
+            # *********** patching *********** #
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+
+                # first find all next possible states
+                if self.proj.compile_options['symbolic']:
+                    possible_next_states = self.strategy.findTransitionableNextStates({}, from_state=self.next_state)
+                    """
+                    statesToConsider = self.strategy.findTransitionableNextStates({}, from_state=self.next_state)
+                    #logging.debug('statesToConsider:' + str(statesToConsider))
+                    possible_next_states = []
+                    for state in statesToConsider:
+                        # also checks if states satisfy phi_e^t and phi_s^t
+                        envTrans_hold = self.envTransCheck.checkViolation(self.next_state, state)
+                        sysTrans_hold = self.sysTransCheck.checkViolation(self.next_state, state)
+                        if envTrans_hold and sysTrans_hold:
+                            possible_next_states.append(state)
+                    """
+                else:
+                    possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
+                logging.debug('possible_next_states:' + str(possible_next_states))
+                # update current next states sent tothe other robot
+                self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
+            # ******************************** #
+
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.next_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_state.getPropValue('region').name)
