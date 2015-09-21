@@ -630,7 +630,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     self.sensor_strategy.setPropValue(prop_name, value)
 
                 if self.proj.compile_options['fastslow']:
-                    self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                    curRegionIdx = self._getCurrentRegionFromPose()
+                    if curRegionIdx is None:
+                        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+                    self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
 
                 # ************ patching ****************** #
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":

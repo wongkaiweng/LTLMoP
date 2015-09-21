@@ -41,6 +41,9 @@ class RobotClient:
         # track if spec is requested
         self.specRequestFromOther = [] # list of spec requested
 
+        # storing aut execution
+        self.prev_outputs = None
+
     def loadProjectAndRegions(self,proj):
         """
         This function is used to (re)initialize region objects and proj object.
@@ -403,11 +406,16 @@ class RobotClient:
             outputs = {k:v for k, v in outputs.iteritems() if not k.replace(self.robotName+'_','') in self.regionList}
 
             # append the region object into the outputs dict
-            if len(self.proj.regionMapping[sys_region[0]]) == 1:
+            if not sys_region:
+                #temporarily use the old one
+                logging.warning('sys_region outputs are not correct.Using old one:' + str(sys_region))
+                outputs['region'] = self.prev_outputs['region']
+            elif len(self.proj.regionMapping[sys_region[0]]) == 1:
                 outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
             else:
                 logging.warning('The regions are decomposed. We might want to do this differently')
 
+            self.prev_outputs = copy.deepcopy(outputs)
             return outputs
 
     def setCoordinationStatus(self, patchingStatus):
