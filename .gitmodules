@@ -1,11 +1,10 @@
 [submodule "src/etc/slugs"]
 	path = src/etc/slugs
-	url = git://github.com/LTLMoP/slugs.git
+	url = git://github.com/VerifiableRobotics/slugs.git
+        ignore = dirty
 
 [submodule "src/etc/SLURP"]
 	path = src/etc/SLURP
 	url = https://github.com/PennNLP/SLURP.git
+        ignore = dirty
 
-[submodule "src/etc/slugs"]
-	path = src/etc/slugs
-	url = git://github.com/LTLMoP/slugs.git
