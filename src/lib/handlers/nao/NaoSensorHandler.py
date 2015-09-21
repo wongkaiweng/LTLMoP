@@ -20,7 +20,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.sttProxy = None
         self.ldmProxy = None
         self.soundProxy = None
-        self.proj = proj
+        self.proj = executor.proj
 
     ###################################
     ### Available sensor functions: ###
