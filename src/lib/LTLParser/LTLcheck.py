@@ -344,9 +344,9 @@ class LTL_Check:
                 else:
                     if next == True:
                         try:
-                            return int(self.sensor_state.getAll(expand_domains=True)[key]), negate, next
+                            return int(self.sensor_state.getAll(expand_domains=True)[key]), negate, False
                         except:
-                            return int(self.sensor_state.getAll(expand_domains=True)[oldKey]), negate, next
+                            return int(self.sensor_state.getAll(expand_domains=True)[oldKey]), negate, False
                     else:
                         try:
                             return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
