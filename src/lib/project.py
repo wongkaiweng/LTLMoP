@@ -226,7 +226,7 @@ class Project:
         ## creates lists of regions and actuators completed if we are using fastslow
         if self.compile_options['fastslow']:
             # for region completion sensors
-            self.rfi.regionsCompleted = self.populateCompletedPropositions([str(x.name) for x in self.rfi.regions if not "boundary" in x.name])
+            self.rfi.regionsCompleted = self.populateCompletedPropositions([str(x.name) for x in self.rfi.regions if not "boundary" in x.name and not x.isObstacle])
             self.all_sensors.extend(self.rfi.regionsCompleted)
             self.enabled_sensors.extend(self.rfi.regionsCompleted)
             
