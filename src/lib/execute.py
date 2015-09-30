@@ -66,6 +66,10 @@ import negotiationMonitor.robotClient
 import itertools #for iterating props combination
 # ********************************* #
 
+# %%%%%%%%% d-patching %%%%%%%%%%% #
+import centralCoordinator.decentralizedPatchingExecutor
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+
 ####################
 # HELPER FUNCTIONS #
 ####################
@@ -155,7 +159,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.sysTransCheck = None # for symbolic strategy checking
         # **************************************** #
 
-        
+        # %%%%%%%%%% d-patching %%%%%%%%%%%%%%%%% #
+        self.dPatchingExecutor = None #executor of decentralized patching
+        self.globalEnvTransCheck = None # violation check for global spec
+        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+
 
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
@@ -275,7 +283,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         if self.robClient:
             self.robClient.closeConnection()
         # ----------------------------- #
-        
+
+        #%%%%%%%%%% d-patching %%%%%%%%%#
+        if self.dPatchingExecutor:
+            self.dPatchingExecutor.closeConnection(None,None)
+        #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
         self.alive.clear()
 
     def pause(self):
@@ -363,19 +375,32 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             logging.info("Ready.  Press [Start] to begin...")
             self.runStrategy.wait()
 
-        # -----------------------------------------#
-        # -------- two_robot_negotiation ----------#
         if self.proj.compile_options['neighbour_robot']:
-            if firstRun:
-                self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub,self.proj)
-            self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-            if self.proj.compile_options['include_heading']:
-                self.robClient.updateCompletedRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-            # check negotiation statue only for two robot nego
-            if self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                self.negotiationStatus = self.robClient.checkNegotiationStatus()
-        # -----------------------------------------#        
-        
+            if self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                # -------- two_robot_negotiation ----------#
+                if firstRun:
+                    self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub, self.proj)
+                self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                if self.proj.compile_options['include_heading']:
+                    self.robClient.updateCompletedRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                # check negotiation statue only for two robot nego
+                if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    self.negotiationStatus = self.robClient.checkNegotiationStatus()
+                # -----------------------------------------#
+            elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                # %%%%%%%% d-patching %%%%%%%%% #
+                if firstRun:
+                    if self.proj.compile_options['include_heading']:
+                        self.dPatchingExecutor = centralCoordinator.decentralizedPatchingExecutor.PatchingExecutor(self.hsub, self.proj, \
+                            self.proj.rfi.regions[self._getCurrentRegionFromPose()], self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                    else:
+                        self.dPatchingExecutor = centralCoordinator.decentralizedPatchingExecutor.PatchingExecutor(self.hsub, self.proj, \
+                            self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                # %%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+            else:
+                logging.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
+                sys.exit(3)
+
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
         ### pass in sensor values, current actuator and custom proposition values, and current region object
 
@@ -408,7 +433,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         init_prop_assignments.update(self.current_outputs)
 
         ## inputs
-        # ---- two_robot_negotiation ----- # 
+        # ---- two_robot_negotiation ----- #
         if self.proj.compile_options['neighbour_robot']:
             # Wait until the other robot is ready
             # Make sure the other robot is loaded
@@ -421,6 +446,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         break
                 else:
                     otherRobotsReady = True
+
+            time.sleep(2)
         # -------------------------------- #
 
         if self.proj.compile_options['fastslow']:
@@ -433,7 +460,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             init_state = new_strategy.searchForOneState(init_prop_assignments)
         else:
             # ------- patching ----------#
-            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+            if self.proj.compile_options['neighbour_robot'] and \
+                (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
                 if not self.spec['SysGoals'].count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
                     specLen = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
                     current_goal_id = str((int(self.prev_z) + 1) % (specLen))
@@ -529,11 +557,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
             self.postEvent('INFO','Finding init state failed.')
             # store time stamp of violation
-            if not self.otherRobotStatus:
-                self.violationTimeStamp = time.clock()
-                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                logging.debug('Setting violation timeStamp')
-                time.sleep(1)
+            if self.proj.compile_options["neighbour_robot"]:
+                if self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    if not self.otherRobotStatus:
+                        self.violationTimeStamp = time.clock()
+                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                        logging.debug('Setting violation timeStamp')
+                        time.sleep(1)
 
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
@@ -570,7 +600,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             if not self.runStrategy.isSet():
                 self.hsub.setVelocity(0,0)
 
-				###### ENV VIOLATION CHECK ######
+                ###### ENV VIOLATION CHECK ######
                 # pop up the analysis dialog                
                 #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
                 ################################
@@ -595,27 +625,70 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             else:
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus():
                     # *********** patching ************** #
+                    # running centralized strategy
                     if not self.runCentralizedStrategy:
                         self.runCentralizedStrategy = True
                         self.postEvent("PATCH","Start running centralized strategy ...")
                     self.runStrategyIterationInstanteousActionCentralized()
                     # *********************************** #
+
+                elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching" \
+                    and self.dPatchingExecutor.getCentralizedExecutionStatus():
+                    #%%%%%%%% d-patching %%%%%%%%%%%#
+                    # running centralized strategy
+                    if not self.runCentralizedStrategy:
+                        self.runCentralizedStrategy = True
+                        self.postEvent("D-PATCH","Start running centralized strategy ...")
+
+                    # update info from other robots
+                    self.dPatchingExecutor.runIterationCentralExecution()
+
+                    self.runStrategyIterationInstanteousActionCentralized()
+                    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+
                 else:
-                    # *********** patching ************** #
-                    # once switched back to local strategy need to find init state again
                     if self.runCentralizedStrategy:
-                        self.runCentralizedStrategy = False
-                        spec_file = self.proj.getFilenamePrefix() + ".spec"
-                        aut_file = self.proj.getFilenamePrefix() + ".aut"
-                        self.initialize(spec_file, aut_file, firstRun=False)
-                        self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
-                        self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
-                        self.robClient.setRestartStatus()
-                        while not self.robClient.checkRestartStatus():
-                            logging.debug('Waiting for the other robot to restart')
-                            time.sleep(1) #wait for the other robot to get ready
-                        logging.debug('Running again ...')
-                    # *********************************** #
+                        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                            # *********** patching ************** #
+                            # once switched back to local strategy need to find init state again
+                            self.runCentralizedStrategy = False
+                            spec_file = self.proj.getFilenamePrefix() + ".spec"
+                            aut_file = self.proj.getFilenamePrefix() + ".aut"
+                            self.initialize(spec_file, aut_file, firstRun=False)
+                            self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
+                            self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
+                            self.robClient.setRestartStatus()
+                            while not self.robClient.checkRestartStatus():
+                                logging.debug('Waiting for the other robot to restart')
+                                time.sleep(1) #wait for the other robot to get ready
+                            logging.debug('Running again ...')
+                            # *********************************** #
+                        elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                            # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
+                            # once switched back to local strategy need to find init state again
+                            self.runCentralizedStrategy = False
+                            self.postEvent("RESOLVED","This is a hack currently. should resynthesize with violations")
+                            spec_file = self.proj.getFilenamePrefix() + ".spec"
+                            aut_file = self.proj.getFilenamePrefix() + ".aut"
+                            self.initialize(spec_file, aut_file, firstRun=False)
+                            #self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
+                            self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
+                            self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
+                            while not self.dPatchingExecutor.checkRestartStatus():
+                                logging.debug('Waiting for the other robot to restart')
+                                self.dPatchingExecutor.runIterationNotCentralExecution()
+                                time.sleep(1) #wait for the other robot to get ready
+                            logging.debug('Running again ...')
+                            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+                        else:
+                            logging.warning('runCentralizedStrategy should not be true!')
+
+                    # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
+                    # get latest info from the other robots.
+                    if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                        self.dPatchingExecutor.runIterationNotCentralExecution()
+                    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+
                     self.runStrategyIterationInstanteousAction()
 
             if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
@@ -635,10 +708,23 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
                     self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
 
-                # ************ patching ****************** #
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                    # ************ patching ****************** #
                     env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
                     # **************************************** #
+
+                elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%% #
+                    if self.runCentralizedStrategy:
+                        for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
+                            self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
+
+                        logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
+                        env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
+                        logging.debug("env_assumption_hold:" + str(env_assumption_hold))
+                    else:
+                        env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
+                    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                 else:
                     # Check for environment violation - change the env_assumption_hold to int again
                     env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
@@ -661,9 +747,27 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # jump to top of while loop
                             continue
                         # **************************************** #
+                    elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                        # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%%% #
+                        #TODO: !!!! REcheck.  if any other robots asked for coorindation
+                        if not self.dPatchingExecutor.checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy() and self.dPatchingExecutor.checkIfCoordinationRequestIsRecevied():
+                            self.postEvent("D-PATCH","We are asked to join a centralized strategy")
+                            self.initiateDPatching()
+                            #TODO: need to take care of cases where mulptiple requests are received
+                            logging.error('Decentralized Patching is not completed yet!')
+                            continue
+                        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
                         logging.error("Mulit robot mode is incorrect. This is impossible.")
-                
+
+                if self.proj.compile_options["neighbour_robot"] and self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.runCentralizedStrategy:
+                    # centralized. show violated spec
+                    # TODO: also remove and resynthesize
+                    for x in self.globalEnvTransCheck.violated_specStr:
+                        if x not in self.old_violated_specStr:
+                            self.postEvent("VIOLATION", x)
+                    self.old_violated_specStr = self.globalEnvTransCheck.violated_specStr
+
                 # assumption didn't hold
                 if not env_assumption_hold and not self.runCentralizedStrategy:
                     if self.proj.compile_options['neighbour_robot']:
@@ -682,6 +786,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # PATCHING CODE NEEDED
                             pass
                             # **************************************** #
+
+                        elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                            # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%%% #
+                            logging.error('Decentralized Patching is not completed yet!')
+                            pass
+                            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
                         else:
                             logging.error("Mulit robot mode is incorrect. This is impossible.")
@@ -720,6 +830,16 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
                         self.initiatePatching()
                         # *************************** #
+                    elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                        # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
+                                                # stop the robot from moving
+                        self.hsub.setVelocity(0,0)
+
+                        # Take care of everything to start patching
+                        self.postEvent("RESOLVED","")
+                        self.postEvent("D-PATCH","We will now ask for a centralized strategy to be executed.")
+                        self.initiateDPatching()
+                        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
                         if self.ENVcharacterization:
                             if self.recovery:

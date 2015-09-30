@@ -694,11 +694,15 @@ class HandlerSubsystem:
         given a list of proposition names, return dictionary with {prop_name:sensor_value},
         where sensor_value is a boolean value returned by sensor handler
         """
-        
+
         # ---- two_robot_negotiation -------- #
         if self.executor.proj.compile_options['neighbour_robot']:
-            # update region info
-            self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
+            if (self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation"):
+                # update region info
+                self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
+            elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
+                # get the latest update from the other robots
+                self.executor.dPatchingExecutor.checkData()
         # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:

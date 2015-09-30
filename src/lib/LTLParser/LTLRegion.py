@@ -20,7 +20,7 @@ def findRegionBits(ltlFormula, fastslow=False):
     else:
         pattern = "\(((!?next\(s.bit[0-9]\)&?)|(!?s.bit[0-9]&?))+\)"
     regionBitsList = [x.group() for x in re.finditer(pattern,ltlFormula)]
-    
+
     return regionBitsList
     
 def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName = '', fastslow=False, include_heading=False, patching=False):
@@ -85,7 +85,39 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
             return 's.' + robotName + '_' + targetRegionOrig
         else:
             return 'e.' + robotName + '_' + targetRegionOrig
-        
+
+def replaceSYSbitToENVRobotNameAndRegionName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = ''):
+    """
+    This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
+    ---> s.bit to e.robotName_regionName <----
+    """
+    ltlFormulaReplaced = replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName)
+    return ltlFormulaReplaced
+
+def replaceENVsbitToENVRobotNameAndRegionNameRC(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = ''):
+    """
+    This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
+    ---> e.sbit to e.robotName_regionName_rc <---
+    """
+    ltlFormulaReplaced = replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName, fastslow = True, include_heading=True)
+    return ltlFormulaReplaced
+
+def replaceENVsbitToENVRobotNameAndRegionName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = ''):
+    """
+    This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
+    ---> e.sbit to e.robotName_regionName <---
+    """
+    ltlFormulaReplaced = replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName, fastslow = True)
+    return ltlFormulaReplaced
+
+def replaceSYSbitToSYSRobotNameAndRegionName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = ''):
+    """
+    This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones
+    ---> s.bit to s.robotName_regionName <----
+    """
+    ltlFormulaReplaced = replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName, fastslow = False, include_heading=False, patching=True)
+    return ltlFormulaReplaced
+
 def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRegionNameToOld, robotName = '', fastslow = False, include_heading=False, patching=False):
     """
     This function takes in an ltlFormula with region bits, regionList and newRegionNameToOld, and replace all names to the original ones

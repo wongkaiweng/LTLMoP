@@ -23,6 +23,79 @@ debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
 
+def filterSpecList(ltlList, keyList, keyListMatch = []):
+    """
+    This function checks if keys in keyList are in each ltl formula
+    .If keys found matches keyListMatch, then the formula is excluded. Otherwise, it is kept.
+    This function also automatically ignores matches of one key
+
+    keyList: cannot be empty. Should be list of robots coordinating (including myself)
+    """
+    ltlKept = []
+    for ltl in ltlList:
+        keyFound = []
+        for key in keyList:
+            if checkIfKeyInFormula(ltl, key):
+                keyFound.append(key)
+        logging.debug("keyFound:" + str(keyFound))
+        if len(keyFound) == 1: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
+            logging.debug(str(ltl) + " is ignored with only one robot involved")
+            continue
+        elif not len(keyListMatch): # don't care. just match everything except spec of one robot
+            ltlKept.append(ltl)
+        elif set(keyListMatch) == set(keyList): # if list is provided, and matches, then ignore this ltl
+            logging.debug(str(ltl) + " is ignored with keyMatch")
+            continue
+        else:
+            ltlKept.append(ltl)
+
+    return ltlKept
+
+
+def checkIfKeyInFormula(ltlFormula, key):
+    """
+    **This is only for single formula with no LTL conjunction like []() & []()
+    return true if key is found in ltlFormula and false otherwise.
+    """
+    value, __, __, __ = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(ltlFormula), LTLFormula.p.terminals, 0, key, True)
+
+    return value
+
+def excludeSpecFromFormula(specFormula, toExcludeSpecList):
+    """
+    return a copy of specFromula with spec from toExcludeSpecList removed.
+    """
+    # first convert formula from formula to list
+    specList = ltlStrToList(specFormula)
+
+    # now exclude spec in toExcludeSpecList
+    specListExcluded = excludeSpecFromList(specList, toExcludeSpecList)
+
+    return " &\n ".join(specListExcluded)
+
+def excludeSpecFromList(specList, toExcludeSpecList):
+    """
+    returns a copy of specList with spec in toExcludeSpecList removed.
+    """
+    # first find out matches in the list
+    toRemoveSpec = []
+    for toExcludeSpec in toExcludeSpecList:
+        toExcludeSpecTree = LTLFormula.parseLTL(toExcludeSpec)
+        for spec in specList:
+            tree = LTLFormula.parseLTL(spec)
+            if tree == toExcludeSpecTree:
+                toRemoveSpec.append(spec)
+                break
+        else:
+            logging.error("This spec is not found in the specList:" + str(toExcludeSpec))
+
+    # remove spec from list
+    for x in toRemoveSpec:
+        specList.remove(x)
+
+    return specList
+
+
 def removeLTLwithKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit removed
     value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)

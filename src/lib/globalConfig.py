@@ -26,6 +26,7 @@ def setupLogging(loggerLevel=None):
         def __init__(self, *args, **kwds):
             super(ColorLogFormatter, self).__init__(*args, **kwds)
             self.plain_formatter = logging.Formatter(" [ %(module)s ] %(message)s")
+            self.debug_formatter = logging.Formatter(" --> [%(levelname)s] (%(processName)s) (%(filename)s, line %(lineno)s): %(message)s")
             self.detailed_formatter = logging.Formatter(" --> [%(levelname)s] (%(pathname)s, line %(lineno)s): %(message)s")
 
         def colorize(self, level, string):
@@ -42,6 +43,8 @@ def setupLogging(loggerLevel=None):
         def format(self, record):
             if record.levelname == "INFO":
                 precolor = self.plain_formatter.format(record)
+            elif record.levelname == "DEBUG":
+                precolor = self.debug_formatter.format(record)
             else:
                 precolor = self.detailed_formatter.format(record)
 

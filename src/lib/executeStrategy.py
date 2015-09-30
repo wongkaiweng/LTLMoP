@@ -171,7 +171,11 @@ class ExecutorStrategyExtensions(object):
             # without include_heading: updateRobotRegion sends the current location of the robot
             # with include_heading: updateRobotRegion sends the heading region of the robot
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['include_heading']:
-                self.robClient.updateRobotRegion(self.next_region)
+                if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    # update region info for all connected robots.
+                    self.dPatchingExecutor.updateRobotRegionWithAllClients(self.next_region)
+                else:
+                    self.robClient.updateRobotRegion(self.next_region)
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
@@ -190,7 +194,8 @@ class ExecutorStrategyExtensions(object):
         # Check for completion of motion
         if self.next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
             # *********** patching *********** #
-            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+            if self.proj.compile_options['neighbour_robot'] and \
+               (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
 
                 # first find all next possible states
                 if self.proj.compile_options['symbolic']:
@@ -209,8 +214,13 @@ class ExecutorStrategyExtensions(object):
                 else:
                     possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
                 logging.debug('possible_next_states:' + str(possible_next_states))
+
                 # update current next states sent tothe other robot
-                self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
+                if self.proj.compile_options["multi_robot_mode"] == "patching":
+                    self.robClient.sendNextPossibleEnvStatesToOtherRobot(possible_next_states)
+                else: #d-patching
+                    self.dPatchingExecutor.sendNextPossibleEnvStatesToOtherRobotToAllClients(possible_next_states)
+
             # ******************************** #
 
             if self.transition_contains_motion:
@@ -221,10 +231,16 @@ class ExecutorStrategyExtensions(object):
                 # --- two_robot_negotiation ----- #
                 # ------------------------------- #
                 if self.proj.compile_options['neighbour_robot']:
-                    if self.proj.compile_options['include_heading']:
-                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                    if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                        if self.proj.compile_options['include_heading']:
+                            self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(self.next_state.getPropValue('regionCompleted'))
+                        else:
+                            self.dPatchingExecutor.updateRobotRegionWithAllClients(self.next_state.getPropValue('regionCompleted'))
                     else:
-                        self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                        if self.proj.compile_options['include_heading']:
+                            self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                        else:
+                            self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
                 # ------------------------------- #
 
             self.strategy.current_state = self.next_state
@@ -268,12 +284,30 @@ class ExecutorStrategyExtensions(object):
 
         # update the environment propositions of centralized strategy
         # AND return latest system propositions of the robot
-        sysOutputs = self.robClient.getOutputs(self.centralized_strategy_state.getInputs(expand_domains = True))
+        if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+            sysOutputs = self.dPatchingExecutor.getOutputs(self.centralized_strategy_state.getInputs(expand_domains=True))
+        elif self.proj.compile_options["multi_robot_mode"] == "patching":
+            sysOutputs = self.robClient.getOutputs(self.centralized_strategy_state.getInputs(expand_domains=True))
 
         # Make sure we have somewhere to go
         if len(sysOutputs) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to in centralized strategy!")
+
+            # %%%%%%%%%%%%  d-patching %%%%%%%%%%% #
+            # update current region even though no next state is found.
+            if self.proj.compile_options['neighbour_robot']:
+                if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    if self.proj.compile_options['include_heading']:
+                        self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(sensor_state('regionCompleted'))
+                    else:
+                        self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
+                else:
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
+                    else:
+                        self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
+            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
             return
 
         # temporarily save the centralized state to our strategy
@@ -290,12 +324,25 @@ class ExecutorStrategyExtensions(object):
             # ------------------------------- #
             # without include_heading: updateRobotRegion sends the current location of the robot
             # with include_heading: updateRobotRegion sends the heading region of the robot
-            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['include_heading']:
-                self.robClient.updateRobotRegion(self.next_region)
+            if self.proj.compile_options['neighbour_robot']:
+                if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    if self.proj.compile_options['include_heading']:
+                        # update region info for all connected robots.
+                        self.dPatchingExecutor.updateRobotRegionWithAllClients(self.next_region)
+                        self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(self.next_state.getPropValue('regionCompleted'))
+                    else:
+                        self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
+
+                else:
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.updateRobotRegion(self.next_region)
+                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                    else:
+                        self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
-            self.transition_contains_motion = self.next_region is not None and (self.current_region != self.next_region)
+            self.transition_contains_motion = self.next_region is not None and (self.strategy.current_state.getPropValue('regionCompleted')!= self.centralized_strategy_state.getPropValue('regionCompleted'))
 
             # Run actuators before motion
             self.updateOutputs(self.centralized_strategy_state)
@@ -304,17 +351,6 @@ class ExecutorStrategyExtensions(object):
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.centralized_strategy_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
-
-                # ------------------------------- #
-                # --- two_robot_negotiation ----- #
-                # ------------------------------- #
-                # ------------------------------- #
-                if self.proj.compile_options['neighbour_robot']:
-                    if self.proj.compile_options['include_heading']:
-                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
-                    else:
-                        self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
-                # ------------------------------- #
 
             self.strategy.current_state = self.centralized_strategy_state
 

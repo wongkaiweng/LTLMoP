@@ -214,12 +214,16 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         robot_name (string): name of the robot
         region (string): region name
         """
-        try:   
-            #logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
-            return self.robotRegionStatus[region][robot_name]
+        try:
+            if self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation":
+                #logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
+                return self.robotRegionStatus[region][robot_name]
+            elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
+                return self.executor.dPatchingExecutor.robotLocations[region][robot_name]
+            else:
+                logging.warning('not matching any mode in dummy. returning None.')
+                return None
         except:
             #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
-        
-        
-    
+
