@@ -1345,15 +1345,9 @@ class ExecutorResynthesisExtensions(object):
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
                 violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.LTLViolationCheck.violated_specStr)
-                logging.debug("violatedList:" + str(violatedList))
-
-                # filter lines under conditions in violated List
-                # (if its only about one robot, then remove from list)
-                violatedListFiltered = LTLParser.LTLcheck.filterSpecList(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
-                logging.debug("violatedListFiltered:" + str(violatedListFiltered))
-
-                specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
+                specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 logging.debug("specNewStr:" + str(specNewStr))
+
                 for csock in csockList:
                     self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
 
@@ -1564,6 +1558,30 @@ class ExecutorResynthesisExtensions(object):
         # now only send requests to robots violating the spec
         robotsInConflict = self.checkRobotsInConflict(self.globalEnvTransCheck.violated_specStr)
         if robotsInConflict: # list not empty. Some robots is in conflict with us
+            ################################
+            ########## PREPARATION #########
+            ################################
+            # save old copy of coordinating robots
+            self.dPatchingExecutor.old_coordinatingRobots = copy.deepcopy(self.dPatchingExecutor.coordinatingRobots)
+
+            # remove violated envTrans from list.
+            for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
+                logging.debug("Robot Under consideration:" + str(robot))
+                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.globalEnvTransCheck.violated_specStr, self.dPatchingExecutor.spec['EnvTrans'][robot])
+                logging.debug("-------------------------------------------")
+
+            # add violations of local spec to LTL violated_str list
+            for specStr in self.globalEnvTransCheck.violated_specStr:
+                # replace e.g. alice_r1_rc to alice_r1 as the meaning changes in the central strategy
+                for region in self.dPatchingExecutor.regionList:
+                    for otherRobot in list(set(self.dPatchingExecutor.coordinationRequestSent) | set([robot for robot in self.dPatchingExecutor.coordinationRequest.keys()])):
+                        specStr = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'_rc'+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+region, specStr)
+                self.LTLViolationCheck.violated_specStr.append(specStr)
+            logging.debug("self.LTLViolationCheck.violated_specStr:" + str(self.LTLViolationCheck.violated_specStr))
+
+            #################################################
+            #### CHECK IF NEW ROBOTS ARE INVOLVED #########
+            #################################################
             # first checks if we are already coorindating with the robots in conflict
             if set(robotsInConflict).issubset(self.dPatchingExecutor.coordinatingRobots):
                 # reset coordination status
@@ -1571,22 +1589,22 @@ class ExecutorResynthesisExtensions(object):
 
                 # all the robots in conflicts are already coorindating. Just remove violated line and resynthesize.
                 logging.warning("in conflict robots are the same. just remove envTrans and resynthesize")
-                for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
-                    logging.debug("Robot Under consideration:" + str(robot))
-                    self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.globalEnvTransCheck.violated_specStr, self.dPatchingExecutor.spec['EnvTrans'][robot])
-                    logging.debug("-------------------------------------------")
-                # save old copy of coordinating robots
-                self.dPatchingExecutor.old_coordinatingRobots = copy.deepcopy(self.dPatchingExecutor.coordinatingRobots)
-
                 self.postEvent("RESOLVED","Current coordinating robots only. Removing violated environment assumptions and resynthesize.")
 
             else:
                 # some new robots are joining, we should ask them to join centralized strategy.
                 logging.warning("invite other robots to join the centralized execution")
-                #TODO: remember to send the centralized spec instead
 
+                # send spec to request received and also violated robots
+                csockNewRobotsToCoordinate = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict if not robot in self.dPatchingExecutor.old_coordinatingRobots]
 
+                #only send local spec here.(Assuming the other robot coordinating find out the same problem and send its own)
+                self.prepareForCentralizedStrategySnippetToOtherRobots(csockNewRobotsToCoordinate)
+
+                #update coordination sent
                 self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+
+
         else:
             logging.warning("we need to trigger env characterization instead. It is not done here!")
             pass
