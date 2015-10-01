@@ -708,8 +708,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         self.smvSysPropList.append(robot+'_'+sProp)
                         self.currentAssignment.update({robot+'_'+sProp: sValue})
             else: # robot in centralized mode.
-                # update assignments only
-                self.currentAssignment.update({k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k})
+                # update assignments only. make reg_rc and reg the same
+                sysProps = {k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k}
+                for eProp, eValue in {k:v for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
+                    for reg in self.robotLocations.keys():
+                        if reg in eProp:
+                            sysProps[eProp.replace('_rc', '')] = eValue
+                self.currentAssignment.update(sysProps)
 
         # add input props to states collection
         states.addOutputPropositions(self.smvSysPropList)
