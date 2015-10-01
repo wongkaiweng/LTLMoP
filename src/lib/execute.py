@@ -719,9 +719,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
                             self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
-                        logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
                         env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
-                        logging.debug("env_assumption_hold:" + str(env_assumption_hold))
+                        if not env_assumption_hold:
+                            logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
+                            logging.debug("env_assumption_hold:" + str(env_assumption_hold))
+                            logging.debug("======== envTrans violations detected ============")
                     else:
                         env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
                     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #

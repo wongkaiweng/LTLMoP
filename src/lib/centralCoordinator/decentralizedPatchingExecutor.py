@@ -458,7 +458,6 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.toc = time.time()
         if (self.toc-self.tic) > 1:
             self.tic = time.time()
-            logging.warning("Did we ever come here?")
             # check if goals are satisfied
             if self.checkIfGoalsAreSatisfied():
                 logging.debug('The centralized system goal is satisfied.')
@@ -826,7 +825,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             return
 
         # See if we're beginning a new transition
-        if next_states != self.last_next_states:
+        if [next_state.getAll(expand_domains=True) for next_state in next_states] != [last_next_state.getAll(expand_domains=True) for last_next_state in self.last_next_states]:
             # NOTE: The last_next_states comparison is also to make sure we don't
             # choose a different random next-state each time, in the case of multiple choices
             self.last_next_states = next_states
@@ -837,7 +836,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
             next_state = random.choice(next_states)
 
-            if next_state != self.strategy.current_state:
+            if next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
                 self.strategy.current_state = next_state
                 self.last_next_states = []  # reset
                 logging.info('Currently at State ' + str(self.strategy.current_state.state_id))
@@ -859,7 +858,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         Constant check if goal is achieved. If so, terminate cooridation.
         Return true if goals are satisfied and false otherwise.
         """
-        logging.debug("self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state):" + str(self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)))
+        logging.debug("Is sysGoals satisfied? " + str(self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)))
         return self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
 
     def testTriggerSysGoalsSatisfaction(self):
