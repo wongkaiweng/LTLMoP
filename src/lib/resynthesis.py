@@ -1413,14 +1413,7 @@ class ExecutorResynthesisExtensions(object):
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
                 violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.LTLViolationCheck.violated_specStr)
-                logging.debug("violatedList:" + str(violatedList))
-
-                # filter lines under conditions in violated List
-                # (if its only about one robot, then remove from list)
-                violatedListFiltered = LTLParser.LTLcheck.filterSpecList(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
-                logging.debug("violatedListFiltered:" + str(violatedListFiltered))
-
-                specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
+                specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
 
                 self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
                     self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
@@ -1462,7 +1455,37 @@ class ExecutorResynthesisExtensions(object):
         """
         This function prepares for dencentralized global strategy with the other robots.
         """
+        # update the other robots with the latest location of us
+        self.updateLatestRegionInfoWithAllRobots()
 
+        # then send spec and props to the robot requesting cooridination
+        # now only send requests to robots violating the spec
+        robotsInConflict = self.checkRobotsInConflict(self.LTLViolationCheck.violated_specStr)
+        if robotsInConflict: # list not empty. Some robots is in conflict with us
+            self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+        else:
+            logging.warning("we need to trigger env characterization instead. It is not done here!")
+            pass
+
+        # first put together our spec
+        self.prepareForCentralizedStrategySnippetToSelf()
+
+        # send spec to request received and also violated robots
+        csockRequestReceived = [self.dPatchingExecutor.clients[x] for x in [robot for robot, status in self.dPatchingExecutor.coordinationRequest.iteritems() if status]]
+        csockRobotsInConflict = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict]
+        self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(csockRobotsInConflict) | set(csockRequestReceived)))
+        #self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(self.dPatchingExecutor.clients.values()) - set([self.dPatchingExecutor.serv])))
+
+        # taking care all the synthesis and wait till everyone is ready.
+        self.synthesizeGlobalStrategyAndWaitForOthersToResume()
+
+        # set up global envTrans check
+        self.setupGlobalEnvTransCheck()
+
+    def updateLatestRegionInfoWithAllRobots(self):
+        """
+        This function updates all region info (including heading if necessary to all robots)
+        """
         # update the other robots with the latest location of us
         if self.proj.compile_options['include_heading']:
             # update region info for all connected robots.
@@ -1471,35 +1494,56 @@ class ExecutorResynthesisExtensions(object):
         else:
             self.dPatchingExecutor.updateRobotRegionWithAllClients(self.sensor_strategy.getPropValue('regionCompleted'))
 
-        # then send spec and props to the robot requesting cooridination
-        # now only send requests to robots violating the spec
-        # first of all figure out what lines are violated
-        robotsCoordinating = []
+    def setupGlobalEnvTransCheck(self):
+        """
+        This function setup the checkviolation object with the global envTrans used in the global strategy
+        """
+        # set up global envTrans check
+        globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.spec['EnvTrans'][robot] for robot in self.dPatchingExecutor.coordinatingRobots]))
+        self.globalEnvTransCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'EnvTrans': globalEnvTrans}, 'EnvTrans')
+        self.globalEnvTransCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(globalEnvTrans)
+
+    def checkRobotsInConflict(self, violatedEnvTransList):
+        """
+        This function checks the robots involved in the conflict.
+        There could be no robots but just abnormal sensors.
+        return list of robots in conflict, not including myself.
+        """
         robotNameCoordinating = []
-        for ltlSpec in self.LTLViolationCheck.violated_specStr: # list
+        for ltlSpec in violatedEnvTransList: # list
             for robot in self.dPatchingExecutor.robotInRange:
                 robotInFormula = LTLParser.LTLcheck.checkIfKeyInFormula(ltlSpec, robot)
 
-                if robotInFormula and self.dPatchingExecutor.clients[robot] not in robotsCoordinating:
-                    robotsCoordinating.append(self.dPatchingExecutor.clients[robot])
+                if robotInFormula and robot not in robotNameCoordinating:
                     robotNameCoordinating.append(robot)
 
-        self.dPatchingExecutor.coordinationRequestSent = robotNameCoordinating
+        return robotNameCoordinating
 
-        # first put together our spec
-        self.prepareForCentralizedStrategySnippetToSelf()
+    def filterAndExcludeSpec(self, violatedList, specStr):
+        """
+        This function takes in the violated envTrans, first filter those with only one robot, then remove in from specStr if the specStr contains it.
+        violatedList: violated EnvTrans list
+        specStr: EnvTrans spec string
+        """
+        logging.debug("violatedList:" + str(violatedList))
+        violatedListFiltered = LTLParser.LTLcheck.filterSpecList(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
+        logging.debug("violatedListFiltered:" + str(violatedListFiltered))
 
-        # send spec to request received and also violated robots
-        csockRequestReceived = [self.dPatchingExecutor.clients[x] for x in [robot for robot, status in self.dPatchingExecutor.coordinationRequest.iteritems() if status]]
-        self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(robotsCoordinating) | set(csockRequestReceived)))
-        #self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(self.dPatchingExecutor.clients.values()) - set([self.dPatchingExecutor.serv])))
+        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
 
+        return specNewStr
+
+    def synthesizeGlobalStrategyAndWaitForOthersToResume(self):
+        """
+        This function asks the dPatchingExecutor to synthesize global strategy.
+        After that it waits till all coorindating robots are ready to restart.
+        """
         # then wait till all surrounding robots are ready as well
         while not self.dPatchingExecutor.prepareForCentralizedExecution():
             logging.warning('we are still waiting parts from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
-            time.sleep(2)
+            time.sleep(1)
 
         # now wait till the other robot has synthesized an automaton
         # TODO: what if it's unrealizable? We should know that as well.
@@ -1507,9 +1551,50 @@ class ExecutorResynthesisExtensions(object):
             logging.warning('we are still waiting completion of synthesis from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
-            time.sleep(2)
+            time.sleep(1)
+
+    def initiateDPatchingCentralizedMode(self):
+        """
+        This function is to trigger coordination when we are already coordinating.
+        """
+        # update the other robots with the latest location of us
+        self.updateLatestRegionInfoWithAllRobots()
+
+        # then send spec and props to the robot requesting cooridination
+        # now only send requests to robots violating the spec
+        robotsInConflict = self.checkRobotsInConflict(self.globalEnvTransCheck.violated_specStr)
+        if robotsInConflict: # list not empty. Some robots is in conflict with us
+            # first checks if we are already coorindating with the robots in conflict
+            if set(robotsInConflict).issubset(self.dPatchingExecutor.coordinatingRobots):
+                # reset coordination status
+                self.dPatchingExecutor.resetRobotStatusOnCentralizedStrategyExecution()
+
+                # all the robots in conflicts are already coorindating. Just remove violated line and resynthesize.
+                logging.warning("in conflict robots are the same. just remove envTrans and resynthesize")
+                for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
+                    logging.debug("Robot Under consideration:" + str(robot))
+                    self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.globalEnvTransCheck.violated_specStr, self.dPatchingExecutor.spec['EnvTrans'][robot])
+                    logging.debug("-------------------------------------------")
+                # save old copy of coordinating robots
+                self.dPatchingExecutor.old_coordinatingRobots = copy.deepcopy(self.dPatchingExecutor.coordinatingRobots)
+
+                self.postEvent("RESOLVED","Current coordinating robots only. Removing violated environment assumptions and resynthesize.")
+
+            else:
+                # some new robots are joining, we should ask them to join centralized strategy.
+                logging.warning("invite other robots to join the centralized execution")
+                #TODO: remember to send the centralized spec instead
+
+
+                self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+        else:
+            logging.warning("we need to trigger env characterization instead. It is not done here!")
+            pass
+
+
+        # taking care all the synthesis and wait till everyone is ready.
+        self.synthesizeGlobalStrategyAndWaitForOthersToResume()
 
         # set up global envTrans check
-        self.globalEnvTransCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'EnvTrans': self.dPatchingExecutor.spec['EnvTrans'][self.dPatchingExecutor.robotName]}, 'EnvTrans')
-        self.globalEnvTransCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(self.dPatchingExecutor.spec['EnvTrans'][self.dPatchingExecutor.robotName])
+        self.setupGlobalEnvTransCheck()
     # %%%%%%%%%%%%%%%%%%%%%%%%%%% #

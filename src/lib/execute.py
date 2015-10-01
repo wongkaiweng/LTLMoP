@@ -620,6 +620,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             ###### ENV VIOLATION CHECK ######  
             last_next_states = self.last_next_states
 
+            ####################################
+            ###### RUN STRATEGY ITERATION ######
+            ####################################
+
             if not self.proj.compile_options['fastslow']:
                 self.runStrategyIteration()
             else:
@@ -667,7 +671,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
                             # once switched back to local strategy need to find init state again
                             self.runCentralizedStrategy = False
-                            self.postEvent("RESOLVED","This is a hack currently. should resynthesize with violations")
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
@@ -692,6 +695,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     self.runStrategyIterationInstanteousAction()
 
             if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
+                #############################################
+                ######### CHECK ENVTRANS VIOLATION ##########
+                #############################################
                 current_next_states = self.last_next_states
 
                 # Take a snapshot of our current sensor readings
@@ -731,6 +737,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     # Check for environment violation - change the env_assumption_hold to int again
                     env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
 
+                ###############################################################
+                ####### CHECK IF REQUEST FROM OTHER ROBOTS IS RECEVIED ########
+                ###############################################################
                 if self.proj.compile_options['neighbour_robot']:
                     if self.proj.compile_options["multi_robot_mode"] == "negotiation":
                         # ---------- two_robot_negotiation ------------- #
@@ -743,6 +752,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # ************ patching ****************** #
                         # check if centralized strategy is initialized for the current robot (also make sure the spec is only sent until centralized execution starts)
                         if self.robClient.checkCoordinationRequest() and not self.robClient.getCentralizedExecutionStatus():
+                            # stop the robot from moving
+                            self.hsub.setVelocity(0,0)
                             self.postEvent("PATCH","We are asked to join a centralized strategy")
                             self.initiatePatching()
 
@@ -753,8 +764,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%%% #
                         #TODO: !!!! REcheck.  if any other robots asked for coorindation
                         if not self.dPatchingExecutor.checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy() and self.dPatchingExecutor.checkIfCoordinationRequestIsRecevied():
+                            # stop the robot from moving
+                            self.hsub.setVelocity(0,0)
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
-                            self.initiateDPatching()
+                            if self.runCentralizedStrategy:
+                                self.initiateDPatchingCentralizedMode()
+                            else:
+                                self.initiateDPatching()
                             #TODO: need to take care of cases where mulptiple requests are received
                             logging.error('Decentralized Patching is not completed yet!')
                             continue
@@ -762,16 +778,37 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     else:
                         logging.error("Mulit robot mode is incorrect. This is impossible.")
 
-                if self.proj.compile_options["neighbour_robot"] and self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.runCentralizedStrategy:
-                    # centralized. show violated spec
-                    # TODO: also remove and resynthesize
-                    for x in self.globalEnvTransCheck.violated_specStr:
-                        if x not in self.old_violated_specStr:
-                            self.postEvent("VIOLATION", x)
-                    self.old_violated_specStr = self.globalEnvTransCheck.violated_specStr
+                #######################################################
+                ######### ASSUMPTIONS DIDN'T HOLD ACTIONS #############
+                #######################################################
+                if not env_assumption_hold and self.runCentralizedStrategy:
+                    if self.proj.compile_options["neighbour_robot"]:
+                        if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                            # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
+                            # centralized. show violated spec
+                            for x in self.globalEnvTransCheck.violated_specStr:
+                                if x not in self.old_violated_specStr:
+                                    self.postEvent("VIOLATION", x)
+                            self.old_violated_specStr = self.globalEnvTransCheck.violated_specStr
 
-                # assumption didn't hold
-                if not env_assumption_hold and not self.runCentralizedStrategy:
+                            # stop the robot from moving
+                            self.hsub.setVelocity(0, 0)
+
+                            # Take care of everything to start patching
+                            #self.postEvent("RESOLVED", "")
+                            self.postEvent("D-PATCH", "We will modify the spec or ask other robots for help.")
+                            self.initiateDPatchingCentralizedMode()
+                            self.postEvent("D-PATCH","Resuming centralized strategy ...")
+                            logging.warning("centralized repatch done... restarting")
+                            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
+
+                        elif self.proj.compile_options["multi_robot_mode"] == "patching":
+                            # ************ patching ****************** #
+                            # PATCHING CODE NEEDED
+                            pass
+                            # **************************************** #
+
+                elif not env_assumption_hold and not self.runCentralizedStrategy:
                     if self.proj.compile_options['neighbour_robot']:
                         if self.proj.compile_options["multi_robot_mode"] == "negotiation":
                             # ------------ two_robot_negotiation ----------#

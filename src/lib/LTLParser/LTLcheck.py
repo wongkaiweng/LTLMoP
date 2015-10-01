@@ -23,7 +23,7 @@ debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
 
-def filterSpecList(ltlList, keyList, keyListMatch = []):
+def filterSpecList(ltlList, keyList, keyListMatch=[]):
     """
     This function checks if keys in keyList are in each ltl formula
     .If keys found matches keyListMatch, then the formula is excluded. Otherwise, it is kept.

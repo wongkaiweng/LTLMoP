@@ -397,6 +397,13 @@ class MsgHandlerExtensions(object):
         This function checks if all robots coorindating are ready to work together.
         """
         if self.robotStatusOnCentralizedStrategyExecution:
+            #first update latest info from temp
+            for robot, v in self.tempRobotStatusOnCentralizedStrategyExecution.iteritems():
+                self.robotStatusOnCentralizedStrategyExecution[robot] = v
+
+            # reset self.tempRobotStatusOnCentralizedStrategyExecution
+            self.tempRobotStatusOnCentralizedStrategyExecution = {}
+
             return not (False in self.robotStatusOnCentralizedStrategyExecution.values())
         else: # dict is empty. no centralized execution going on
             return False

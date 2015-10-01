@@ -169,6 +169,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.checkedRestartStatus = False # track if all robots has checked restart status
         self.robotInRange = [] # list of robots that are in range (We are communicating with).
         self.robotStatusOnCentralizedStrategyExecution = {} # dict of robots ready to execute. False stands for not ready. True stands for ready.
+        self.tempRobotStatusOnCentralizedStrategyExecution = {} # temporarily store robotStatusOnCentralizedStrategyExecution of other robots and update in checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy. (Prevents incorrect removal of status)
 
     def cleanVariables(self, first_time=True):
         """
@@ -177,6 +178,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.spec = {'EnvInit' : {}, 'EnvTrans' : {}, 'EnvGoals' : {}, 'SysInit' : {}, 'SysTrans' : {}, 'SysGoals' : {}}
         self.sysGoalsOld = {} # for checking if goals are reached in patching
         self.coordinatingRobots = [] #track the robots cooridnating
+        self.old_coordinatingRobots = [] # store previous copy of coordinatingRobots
         self.envPropList = {} #tracking env propositions of each robot envPropList[robot]= propList = {prop:value}
         self.sysPropList = {} #tracking sys propositions of each robot sysPropList[robot]= propList = {prop:value}
         self.propMappingNewToOld = {} #track mapping from newPropName back to oldPropName propMappingNewToOld[robot][newPropName] = oldPropName
@@ -341,8 +343,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                             self.coordinationRequest[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
 
                     elif item.group('packageType') == "centralizedExecutionStatus":
-                        # receive the centralized execution status of the other robots
-                        self.robotStatusOnCentralizedStrategyExecution[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        if self.centralizedExecutionStatus: # centralized mode. The other robot is restarting.. we should be soon?
+                            self.tempRobotStatusOnCentralizedStrategyExecution[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        else:
+                            # receive the centralized execution status of the other robots
+                            self.robotStatusOnCentralizedStrategyExecution[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
 
                     elif item.group('packageType') in ['envPropList', 'sysPropList']:
                         # store propositions list
@@ -404,7 +409,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.checkData()
 
         # check if need to drag neighbour robots in
-        self.updateCoorindatingRobots(self.otherRobotsWithSelf, [])
+        self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
         if self.readyToRestart and (not False in self.readyToRestart.values()):
             logging.debug("We are now cleaning variables.")
@@ -454,6 +459,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #logging.debug('Now executing the centralized strategy...')
         self.checkData()
 
+        # check if need to drag neighbour robots in
+        self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
+
         # set time to check if sysGoals is satisfied
         self.toc = time.time()
         if (self.toc-self.tic) > 1:
@@ -482,7 +490,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     #         self.checkData()
 
     #         # check if need to drag neighbour robots in
-    #         self.updateCoorindatingRobots(self.otherRobotsWithSelf, [])
+    #         self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
     #         # start patching (check if we get all the necessary spec and props)
     #         if self.coordinationRequest.values().count(True) and self.checkIfNecessaryPartsObtained():
@@ -644,51 +652,64 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         states = strategy.StateCollection()
 
+        logging.debug("self.old_coordinatingRobots:" + str(self.old_coordinatingRobots))
+
         # store env props
         for robot, ePropList in self.envPropList.iteritems():
-            for eProp, eValue in ePropList.iteritems():
-                if eProp in [robot+'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
-                    # keep original name
-                    self.smvEnvPropList.append(eProp)
-                    self.currentAssignment.update({eProp: eValue})
+            # check if those robots are in centralized mode already.
+            if not robot in self.old_coordinatingRobots: # not in centralized mode
+                for eProp, eValue in ePropList.iteritems():
+                    if eProp in [robot+'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
+                        # keep original name
+                        self.smvEnvPropList.append(eProp)
+                        self.currentAssignment.update({eProp: eValue})
 
-                # e.g: remove alice_r4 in bob's sensors. However, for robot not coorindating, we might have alice_charlie_r1 and bob_charlie_r1 in our smv file
-                elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
-                    # store and update prop mapping
-                    self.propMappingNewToOld[robot].pop(eProp)
-                    self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
-                    self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
-                    #continue
+                    # e.g: remove alice_r4 in bob's sensors. However, for robot not coorindating, we might have alice_charlie_r1 and bob_charlie_r1 in our smv file
+                    elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                        # store and update prop mapping
+                        self.propMappingNewToOld[robot].pop(eProp)
+                        self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
+                        self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
+                        #continue
 
-                # the similar case of _rc
-                elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
-                    continue
+                    # the similar case of _rc
+                    elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                        continue
 
-                else:
-                    # store and update prop mapping
-                    self.propMappingNewToOld[robot].pop(eProp)
-                    self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
-                    self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
-                    self.smvEnvPropList.append(robot+'_'+eProp)
-                    self.currentAssignment.update({robot+'_'+eProp: eValue})
+                    else:
+                        # store and update prop mapping
+                        self.propMappingNewToOld[robot].pop(eProp)
+                        self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
+                        self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
+                        self.smvEnvPropList.append(robot+'_'+eProp)
+                        self.currentAssignment.update({robot+'_'+eProp: eValue})
+
+            else: # robot in centralized mode.
+                # update assignments only
+                self.currentAssignment.update({k:v for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if robot in k})
 
         # add input props to states collection
         states.addInputPropositions(self.smvEnvPropList)
 
         # stroe sys props
         for robot, sPropList in self.sysPropList.iteritems():
-            for sProp, sValue in sPropList.iteritems():
-                if sProp in [robot+'_'+reg for reg in self.robotLocations.keys()]:
-                    # keep original name
-                    self.smvSysPropList.append(sProp)
-                    self.currentAssignment.update({sProp: sValue})
-                else:
-                    # store and update prop mapping
-                    self.propMappingNewToOld[robot].pop(sProp)
-                    self.propMappingNewToOld[robot][robot+'_'+sProp] = sProp
-                    self.propMappingOldToNew[robot][sProp] = robot+'_'+sProp
-                    self.smvSysPropList.append(robot+'_'+sProp)
-                    self.currentAssignment.update({robot+'_'+sProp: sValue})
+            # check if those robots are in centralized mode already.
+            if not robot in self.old_coordinatingRobots: # not in centralized mode
+                for sProp, sValue in sPropList.iteritems():
+                    if sProp in [robot+'_'+reg for reg in self.robotLocations.keys()]:
+                        # keep original name
+                        self.smvSysPropList.append(sProp)
+                        self.currentAssignment.update({sProp: sValue})
+                    else:
+                        # store and update prop mapping
+                        self.propMappingNewToOld[robot].pop(sProp)
+                        self.propMappingNewToOld[robot][robot+'_'+sProp] = sProp
+                        self.propMappingOldToNew[robot][sProp] = robot+'_'+sProp
+                        self.smvSysPropList.append(robot+'_'+sProp)
+                        self.currentAssignment.update({robot+'_'+sProp: sValue})
+            else: # robot in centralized mode.
+                # update assignments only
+                self.currentAssignment.update({k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k})
 
         # add input props to states collection
         states.addOutputPropositions(self.smvSysPropList)
@@ -868,7 +889,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # try to trigger goal satisfaction
         self.strategy.current_state = random.choice([x for x in self.strategy.searchForStates({'bob_r3_rc':0, 'bob_r1_rc':0, 'bob_r2_rc':0, 'bob_r5_rc':1, 'bob_r4_rc':0, 'alice_r5_rc':0, 'alice_r1_rc':1, 'alice_r2_rc':0, 'alice_r3_rc':0, 'alice_r4_rc':0, 'bob_r4':0, 'bob_r5':0, 'bob_r1':0, 'bob_r2':0, 'bob_r3':1, 'alice_r5':0, 'alice_r4':0, 'alice_r1':0, 'alice_r3':0, 'alice_r2':1})])
 
-    def updateCoorindatingRobots(self, functionName, functionPara):
+    def updateCoordinatingRobots(self, functionName, functionPara):
         """
         This function checked if coorindation request is received.
         functionName: name of the function (with no parenteses)
@@ -878,20 +899,28 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.coordinatingRobots object.
         """
 
-        oldcoordinatingRobots = copy.deepcopy(self.coordinatingRobots)
+        oldCoordinatingRobots = copy.deepcopy(self.coordinatingRobots)
         self.coordinatingRobots = functionName(functionPara)
 
         # coorindating robots has changed. everything should be redone.
-        if oldcoordinatingRobots != self.coordinatingRobots:
-            for robot in self.coordinatingRobots:
-                if robot != self.robotName:
-                    self.robotStatusOnCentralizedStrategyExecution[robot] = False
+        if oldCoordinatingRobots != self.coordinatingRobots:
+            self.old_coordinatingRobots = oldCoordinatingRobots
+            self.resetRobotStatusOnCentralizedStrategyExecution()
 
         #TODO: need to track if coorindating robots has changed.
 
+    def resetRobotStatusOnCentralizedStrategyExecution(self):
+        """
+        This function resets self.robotStatusOnCentralizedStrategyExecution based on coordinatingRobots.
+        (In the case where global EnvTrans is violated and spec is resynthesized as well.)
+        """
+        for robot in self.coordinatingRobots:
+            if robot != self.robotName:
+                self.robotStatusOnCentralizedStrategyExecution[robot] = False
+
     def otherRobotsWithSelf(self, para):
         """
-        * To be passed to checkChangeinPatchingRequest
+        * To be passed to updateCoordinatingRobots
         If any robot toggled patching status to true, this function change that robot's patching receival status to true.
         Also include ourself in the list.
         para: parameters. Not used here.
@@ -901,7 +930,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         if self.coordinationRequest.values().count(True):
             # also make sure there are no duplicates
-            logging.debug('robots coordinating:' + str(list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))))
+            #logging.debug('robots coordinating:' + str(list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))))
             return list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))
         else:
             return []
