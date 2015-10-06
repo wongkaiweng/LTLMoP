@@ -38,7 +38,6 @@ class SpecCompiler(object):
             self.loadSpec(spec_filename)
 
         # **** patching ***** #
-        self.cooperativeGR1Strategy = False
         self.onlyRealizability = False
         # ******************* #
 
@@ -627,7 +626,7 @@ class SpecCompiler(object):
             cmd.append("--simpleRecovery")
             logging.debug('Synthesizing strategy with recovery')
 
-        if self.cooperativeGR1Strategy:
+        if self.proj.compile_options["cooperative_gr1"]:
             cmd.append("--cooperativeGR1Strategy")
             logging.debug('Synthesizing strategy with cooperative strategy')
 
@@ -639,7 +638,7 @@ class SpecCompiler(object):
             cmd.append("--onlyRealizability")
             logging.debug('Only checking realizability')
 
-        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.cooperativeGR1Strategy and not self.proj.compile_options["recovery"]:
+        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.proj.compile_options["cooperative_gr1"] and not self.proj.compile_options["recovery"]:
             #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
             cmd.append("--withWinningLiveness")
             logging.debug('Synthesizing strategy which also outputs livenesses')

@@ -52,6 +52,7 @@ class Project:
                                 "synthesizer": "jtlv", # Name of synthesizer to use ("jtlv" or "slugs")
                                 "parser": "structured",  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
                                 "recovery": False, # adding recovery transitions in synthesis is set to be false
+                                "cooperative_gr1": False, # synthesizing aut that phi_e is always satisfied.
                                 "neighbour_robot": False, #if we will include neighbour robot LTL in the spec
                                 "include_heading": False, #if we include the heading information of the other robot in the specification
                                 "multi_robot_mode":"negotiation"} # Name of mode ("negotiation" or "patching")
