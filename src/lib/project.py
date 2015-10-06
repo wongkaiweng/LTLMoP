@@ -47,6 +47,8 @@ class Project:
         self.compile_options = {"convexify": True,  # Decompose workspace into convex regions
                                 "fastslow": False,  # Enable "fast-slow" synthesis algorithm
                                 "symbolic": False,  # Use BDDs instead of explicit-state strategies
+                                "interactive": False, # Use interactive Strategy in SLUGS
+                                "only_realizability": False, # only check if the spec is realizable or not
                                 "decompose": True,  # Create regions for free space and region overlaps (required for Locative Preposition support)
                                 "use_region_bit_encoding": True, # Use a vector of "bitX" propositions to represent regions, for efficiency
                                 "synthesizer": "jtlv", # Name of synthesizer to use ("jtlv" or "slugs")
@@ -284,7 +286,14 @@ class Project:
         """ Returns the full path of the file that should contain the strategy
             for this specification. """
 
-        return self.getFilenamePrefix() + ('.add' if (self.compile_options["symbolic"] and self.compile_options["synthesizer"].lower() == 'jtlv') else '.bdd' if (self.compile_options["symbolic"] and self.compile_options["synthesizer"].lower() == 'slugs') else '.aut')
+        if (self.compile_options["symbolic"] and self.compile_options["synthesizer"].lower() == 'jtlv'):
+            return self.getFilenamePrefix() + '.add'
+        elif (self.compile_options["symbolic"] and self.compile_options["synthesizer"].lower() == 'slugs'):
+            return self.getFilenamePrefix() + '.bdd'
+        elif (self.compile_options["interactive"] and self.compile_options["synthesizer"].lower() == 'slugs'):
+            return self.getFilenamePrefix() + '.slugsin'
+        else:
+            return self.getFilenamePrefix() +'.aut'
 
 
 

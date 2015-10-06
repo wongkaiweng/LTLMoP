@@ -60,6 +60,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         while (lastLine!=""):
             lastLine = self.slugsProcess.stdout.readline().strip()
             if lastLine!="" and lastLine != ">":
+                lastLine = re.sub(r'^sbit(\d+)$', r'regionCompleted_b\1', lastLine)
                 self.inputAPs.append(lastLine)
         logging.debug( "inputAPs:" + str(self.inputAPs))
 

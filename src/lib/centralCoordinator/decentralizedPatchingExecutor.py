@@ -788,7 +788,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #HACK: Make it to recovery mode to try it out
         #self.compiler.proj.compile_options['recovery']=True # interactive strategy auto synthesizes with recovery option
         self.compiler.proj.compile_options["cooperative_gr1"] = True
-        self.compiler.onlyRealizability = True
+        self.compiler.proj.compile_options["only_realizability"] = True
         realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
         logging.info(output)

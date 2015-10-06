@@ -37,10 +37,6 @@ class SpecCompiler(object):
         if spec_filename is not None:
             self.loadSpec(spec_filename)
 
-        # **** patching ***** #
-        self.onlyRealizability = False
-        # ******************* #
-
     def loadSpec(self,spec_filename):
         """
         Load the project object
@@ -634,7 +630,7 @@ class SpecCompiler(object):
             cmd.append("--symbolicStrategy")
             logging.debug('Synthesizing strategy with bdd')
 
-        if self.onlyRealizability:
+        if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive']:
             cmd.append("--onlyRealizability")
             logging.debug('Only checking realizability')
 
@@ -643,7 +639,7 @@ class SpecCompiler(object):
             cmd.append("--withWinningLiveness")
             logging.debug('Synthesizing strategy which also outputs livenesses')
 
-        if self.onlyRealizability:
+        if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive']:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin"])
         elif self.proj.compile_options["symbolic"]:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".bdd"])
@@ -733,6 +729,10 @@ class SpecCompiler(object):
 
         if self.proj.compile_options["symbolic"]:
             logging.info("We will not check if the strategy is trivial with symbolic strategy.")
+            return True
+
+        if self.proj.compile_options['interactive']:
+            logging.info("We will not check if the strategy is trivial with interactive strategy.")
             return True
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
