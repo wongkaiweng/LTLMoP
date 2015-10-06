@@ -130,11 +130,18 @@ class RobotClient:
 
         # first replace our region bits to original region name with our robot name
         if fastslow:
-            # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
-            spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
-            if include_heading:
-                # convert s.bit to e.robotName_region or s.bit to s.robotName_region if patching
-                spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False, False, self.proj.compile_options["multi_robot_mode"] == "patching")
+            if specType == 'SysGoals':
+                spec = LTLParser.LTLRegion.replaceSYSbitToENVRobotNameAndRegionName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
+                if include_heading:
+                    spec = LTLParser.LTLRegion.replaceENVsbitToENVRobotNameAndRegionNameRC(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName)
+                else:
+                    spec = LTLParser.LTLRegion.replaceENVsbitToENVRobotNameAndRegionName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName)
+            else:
+                # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
+                spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
+                if include_heading:
+                    # convert s.bit to e.robotName_region or s.bit to s.robotName_region if patching
+                    spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False, False, self.proj.compile_options["multi_robot_mode"] == "patching")
 
             ########################
             ## PATCHING SPECIFICS ##
@@ -178,14 +185,12 @@ class RobotClient:
 
             #receive info
             SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-
             for robot, spec in SpecDict.iteritems():
                 #self.robotName = 'alice' #TODO: remove this later
                 if self.robotName  != robot:
             
                     # change region props with our name to region bits (parseEnglishToLTL?)              
                     specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow, self.proj.compile_options['include_heading'])
-
         return specToAppend 
         
     def requestRegionInfo(self):
