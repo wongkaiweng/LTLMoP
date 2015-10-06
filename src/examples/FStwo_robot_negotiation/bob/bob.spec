@@ -19,7 +19,7 @@ decompose: True
 use_region_bit_encoding: True
 
 CurrentConfigName:
-bobWithAliceSensor
+bobWithAliceSensorR1
 
 Customs: # List of custom propositions
 

@@ -20,7 +20,7 @@ synthesizer: slugs
 decompose: True
 
 CurrentConfigName:
-bobWithAliceSensorR5
+bobWithAliceSensorR1
 
 Customs: # List of custom propositions
 
@@ -33,6 +33,7 @@ alice_r2, 1
 alice_r3, 1
 alice_r4, 1
 alice_r5, 1
+alice_r6, 1
 
 
 ======== SPECIFICATION ========
@@ -41,11 +42,12 @@ OtherRobot: # The other robot in the same workspace
 alice
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r4 = p2
-r5 = p1
-r1 = p5
-r2 = p4
-r3 = p3
+r4 = p3
+r5 = p2
+r6 = p1
+r1 = p6
+r2 = p5
+r3 = p4
 others = 
 
 Spec: # Specification in structured English
@@ -62,11 +64,12 @@ if you have finished r5 then do not (alice_r5)
 
 ######### system guarantees ##########
 # not allowing both robots to be at the same place
-if you are sensing alice_r1 then do not r1
-if you are sensing alice_r2 then do not r2
-if you are sensing alice_r3 then do not r3
-if you are sensing alice_r4 then do not r4
-if you are sensing alice_r5 then do not r5
+#if you are sensing alice_r1 then do not r1
+#if you are sensing alice_r2 then do not r2
+#if you are sensing alice_r3 then do not r3
+#if you are sensing alice_r4 then do not r4
+#if you are sensing alice_r5 then do not r5
+#if you are sensing alice_r6 then do not r6
 
 ######## system goals ###########
 visit r5
