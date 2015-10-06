@@ -79,7 +79,7 @@ def getTruePropsInStates(autFile,stateList):
     f_output.close()
     return outputDict
 
-def checkSuccessors(autFile):
+def checkSuccessors(autFile, allStates=False):
     f_aut = open(autFile,'r')
     state = ''
 
@@ -93,7 +93,7 @@ def checkSuccessors(autFile):
         else:
             "check successor"
             line = line.replace('With successors :','')
-            if re.search('\w+', line) is None or "With no successors." in line:
+            if re.search('\w+', line) is None or "With no successors." in line or allStates:
                 logging.info(state)
                 state = state.split('rank')[0]
                 stateMatch = re.match(r'State\s(?P<stateNo>\d+)\swith\s',state)
@@ -201,7 +201,10 @@ if __name__ == '__main__':
 
     if len(sys.argv)>2:
         if isinstance(ast.literal_eval(sys.argv[2]),list):
-            noSuccessorsStateList = ast.literal_eval(sys.argv[2])
+            if not ast.literal_eval(sys.argv[2]): #the list is empty. then check all states.
+                noSuccessorsStateList = checkSuccessors(fileName+'.aut', True)
+            else:
+                noSuccessorsStateList = ast.literal_eval(sys.argv[2])
         elif isinstance(ast.literal_eval(sys.argv[2]),dict):
             propDict = sys.argv[2]
         else:
