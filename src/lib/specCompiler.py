@@ -634,7 +634,7 @@ class SpecCompiler(object):
             cmd.append("--onlyRealizability")
             logging.debug('Only checking realizability')
 
-        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and not self.proj.compile_options["cooperative_gr1"] and not self.proj.compile_options["recovery"]:
+        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["winning_livenesses"]:
             #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
             cmd.append("--withWinningLiveness")
             logging.debug('Synthesizing strategy which also outputs livenesses')

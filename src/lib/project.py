@@ -54,6 +54,7 @@ class Project:
                                 "synthesizer": "jtlv", # Name of synthesizer to use ("jtlv" or "slugs")
                                 "parser": "structured",  # Spec parser: SLURP ("slurp"), structured English ("structured"), or LTL ("ltl")
                                 "recovery": False, # adding recovery transitions in synthesis is set to be false
+                                "winning_livenesses": False, # outputs each sysGoal conjuncted with the set of winning positions
                                 "cooperative_gr1": False, # synthesizing aut that phi_e is always satisfied.
                                 "neighbour_robot": False, #if we will include neighbour robot LTL in the spec
                                 "include_heading": False, #if we include the heading information of the other robot in the specification
