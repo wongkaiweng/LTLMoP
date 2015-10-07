@@ -1261,12 +1261,11 @@ class ExecutorResynthesisExtensions(object):
 
         for LTLStr in LTLList: # LTLStr are of the form  a | b | c
             propList = sets.Set(LTLStr.split(' | '))
-
             # run four times
             propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?next\(s.bit(?P<bitNo>\d+)\)', nextBitEnc, propList)
             propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?s.bit(?P<bitNo>\d+)', currBitEnc, propList)
             propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?next\(e.sbit(?P<bitNo>\d+)\)', envNextBitEnc, propList)
-            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits,' !?e.sbit(?P<bitNo>\d+)', envBitEnc, propList)
+            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?e.sbit(?P<bitNo>\d+)', envBitEnc, propList)
 
             #newLTLList.append(' | '.join(propList))
             newLTLList.add(propList)
