@@ -217,6 +217,8 @@ class MsgHandlerExtensions(object):
         """
         This function converts possible next states to dict. To be sent to the other robots.
         csock: client socket object
+
+        *Currently we send robotName_region_rc (in the form of robotName_region) to the other robots
         """
         stateArray = []
         #logging.debug('00000000000000')
@@ -227,13 +229,19 @@ class MsgHandlerExtensions(object):
             # we are not sending sysProps anymore
             #propDict.update(self.convertFromRegionBitsToRegionNameInDict('sys', nextState.getOutputs(expand_domains=True)))
 
-            # rename region_completed props to without _rc
             for propKey, propValue in propDict.iteritems():
+                # rename region_completed props to without _rc
                 if '_rc'in propKey:
                     propDict[propKey.replace('_rc', '')] = propDict.pop(propKey)
 
+            # remove sensor props of other robots
+            propDict = {k:v for k, v in propDict.iteritems() if self.robotName in k}
+
             # append robot name to all props
-            stateArray.append(copy.deepcopy(propDict))
+            if propDict not in stateArray:
+                stateArray.append(copy.deepcopy(propDict))
+
+        #logging.debug("stateArray:" + str(stateArray))
 
         #logging.debug("stateArray:" + str(stateArray))
         self.message_queues[csock].put(self.robotName + '-' + 'nextPossibleStates = ' + str(stateArray) + '\n')
@@ -246,6 +254,29 @@ class MsgHandlerExtensions(object):
         for csock in self.clients.values():
             if csock != self.serv:
                 self.sendNextPossibleEnvStatesToOtherRobot(csock, nextStatesArray)
+
+    def sendNextPossibleEnvStatesPreparedToOtherRobotToAllClients(self, nextStatesArray):
+        """
+        The array to send to the other robots are preprocessed. Just send pretty much.
+        In each dict we only have the env props.
+
+        *Currently we send robotName_region_rc (in the form of robotName_region) to the other robots
+        """
+        # remove unrelated props. (not including sysProps. only have our robot's _rc props now)
+        possible_next_states_dict_array = []
+        for state in nextStatesArray:
+            # sending only our _rc props
+            ourProps = {k.replace('_rc',''):v for k, v in state.getInputs(expand_domains=True).iteritems() if self.robotName in k}
+
+            if ourProps not in possible_next_states_dict_array:
+                possible_next_states_dict_array.append(copy.deepcopy(ourProps))
+
+        #logging.debug("nextStatesArray:" + str(nextStatesArray))
+        logging.debug("possible_next_states_dict_array:" + str(possible_next_states_dict_array))
+
+        for csock in self.clients.values():
+            if csock != self.serv:
+                self.message_queues[csock].put(self.robotName + '-' + 'nextPossibleStates = ' + str(possible_next_states_dict_array) + '\n')
 
     def getNextPossibleEnvStatesFromOtherRobots(self):
         """
@@ -363,10 +394,9 @@ class MsgHandlerExtensions(object):
         """
         This function sends restart status to all robots coordinating.
         """
-        for robot in self.coordinatingRobots:
-            if robot != self.robotName:
-                logging.debug("self.clients[robot]:" + " robot:" + str(robot) + ' csock:' + str(self.clients[robot]))
-                self.setRestartStatusToTrue(self.clients[robot])
+        for robot in self.readyToRestart.keys(): #keys of readyToRestart are robots in the cooridination
+            logging.debug("self.clients[robot]:" + " robot:" + str(robot) + ' csock:' + str(self.clients[robot]))
+            self.setRestartStatusToTrue(self.clients[robot])
 
     def setRestartStatusToTrue(self, csock):
         """
