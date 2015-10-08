@@ -44,6 +44,9 @@ class BDDStrategy(strategy.Strategy):
 
         self.envTransBDD = None # for saving BDD of envTrans
 
+        #self.mgr.SetMaxMemory(-4000) #<4096
+        #print "maxMemory:" + str(self.mgr.ReadMaxMemory())
+
     def _loadFromFile(self, filename):
         """
         Load in a strategy BDD from a file produced by a synthesizer,
@@ -283,7 +286,7 @@ class BDDStrategy(strategy.Strategy):
         # If we've gotten here, something's terribly wrong
         raise RuntimeError("No next state could be found.")
 
-    def findTransitionableNextStates(self, prop_assignments, from_state=None):
+    def findTransitionableNextStates(self, from_state=None):
         """ Return a list of states that can be reached from `from_state`
             and satisfy `prop_assignments`.  If `from_state` is omitted,
             the strategy's current state will be used. """
