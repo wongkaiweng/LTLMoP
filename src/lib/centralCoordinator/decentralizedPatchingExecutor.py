@@ -375,6 +375,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         del self.clients[self.robotAddresses.keys()[self.robotAddresses.values().index(x.getsockname())]]
                         logging.info('PATCHING_EXECUTOR: client ' + str(x) + 'is removed.')
 
+                        # stop the checkData thread from running
+                        self.keepConnection = False
+
                     else:
                         pass
 
@@ -400,16 +403,25 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             x.close()
             del self.message_queues[x] # Remove message queue
 
+    def runCheckData(self):
+        """
+        This function is created to run checkData with threading
+        """
+        while self.keepConnection:
+            self.checkData()
+
+            # check if need to drag neighbour robots in
+            self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
     def runIterationNotCentralExecution(self):
         """
         This function runs one iteration of the execution when no centralized strategy is executing
         when self.centralizedExecutionStatus is False or None
         """
-        self.checkData()
+        #self.checkData()
 
         # check if need to drag neighbour robots in
-        self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
+        #self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
         if self.readyToRestart and (not False in self.readyToRestart.values()):
             logging.debug("We are now cleaning variables.")
@@ -457,10 +469,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         when self.centralizedExecutionStatus is True
         """
         #logging.debug('Now executing the centralized strategy...')
-        self.checkData()
+        #self.checkData()
 
         # check if need to drag neighbour robots in
-        self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
+        #self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
         # set time to check if sysGoals is satisfied
         self.toc = time.time()

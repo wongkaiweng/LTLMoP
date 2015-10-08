@@ -396,6 +396,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     else:
                         self.dPatchingExecutor = centralCoordinator.decentralizedPatchingExecutor.PatchingExecutor(self.hsub, self.proj, \
                             self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+
+                    self.checkDataThread = threading.Thread(target=self.dPatchingExecutor.runCheckData, args=())
+                    self.checkDataThread.daemon = True  # Daemonize thread
+                    self.checkDataThread.start()
                 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
             else:
                 logging.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
