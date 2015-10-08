@@ -139,3 +139,50 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         curStateObject.goal_id = currentState.partition(",")[2] # it's a string
 
         return [curStateObject]
+
+
+    def findTransitionableNextStates(self, from_state=None, current_goal_id=0):
+        """ Return a list of states that can be reached from `from_state`
+            and satisfy `prop_assignments`.  If `from_state` is omitted,
+            the strategy's current state will be used. """
+
+        self.slugsProcess.stdin.write("XGETPOSSIBLETRANS\n")
+        self.slugsProcess.stdout.flush() # Skip the prompt
+        self.slugsProcess.stdin.write(str(current_goal_id)+'\n')
+        self.slugsProcess.stdin.flush()
+        nextLine = self.slugsProcess.stdout.readline().strip()
+        if "ERROR" in nextLine:
+            logging.debug("nextLine:" + str(nextLine))
+            logging.error("No next states!")
+            return []
+
+        nextPossibleStates = nextLine.split(':')[1].strip()
+        #logging.debug("nextPossibleStates:" + str(nextPossibleStates))
+        stateList = []
+
+        # create state with the current state prop assignments
+        for x in nextPossibleStates.split(',')[:-1]:
+            prop_assignments = {}
+            for idx, element in enumerate(x):
+                value = True if element == '1' else False
+
+                if idx > len(self.inputAPs) - 1:
+                    prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
+                else:
+                    prop_assignments[self.inputAPs[idx]] = value
+
+            curStateObject = strategy.State(self.states, prop_assignments)
+
+            # set current state id
+            curStateObject.goal_id = str(current_goal_id) # it's a string
+
+            stateList.append(curStateObject)
+
+        return stateList
+
+
+if __name__ == '__main__':
+    a = SLUGSInteractiveStrategy()
+    a._loadFromFile('../examples/firefighting/firefighting.slugsin')
+    a.searchForStates({})
+    a.findTransitionableNextStates({}, 0)

@@ -198,10 +198,10 @@ class ExecutorStrategyExtensions(object):
                (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
 
                 # first find all next possible states
-                if self.proj.compile_options['symbolic']:
-                    possible_next_states = self.strategy.findTransitionableNextStates({}, from_state=self.next_state)
+                if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive']:
+                    possible_next_states = self.strategy.findTransitionableNextStates(from_state=self.next_state)
                     """
-                    statesToConsider = self.strategy.findTransitionableNextStates({}, from_state=self.next_state)
+                    statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
                     #logging.debug('statesToConsider:' + str(statesToConsider))
                     possible_next_states = []
                     for state in statesToConsider:
@@ -213,7 +213,6 @@ class ExecutorStrategyExtensions(object):
                     """
                 else:
                     possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
-                logging.debug('possible_next_states:' + str(possible_next_states))
 
                 # update current next states sent tothe other robot
                 if self.proj.compile_options["multi_robot_mode"] == "patching":
@@ -340,6 +339,31 @@ class ExecutorStrategyExtensions(object):
                     else:
                         self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
             # ------------------------------- #
+
+            # *********** patching *********** #
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+
+                # first find all next possible states
+                if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive'] or True: #HACK: now will never run the else statement
+                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableNextStates(from_state=self.next_state)
+                    """
+                    statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
+                    #logging.debug('statesToConsider:' + str(statesToConsider))
+                    possible_next_states = []
+                    for state in statesToConsider:
+                        # also checks if states satisfy phi_e^t and phi_s^t
+                        envTrans_hold = self.envTransCheck.checkViolation(self.next_state, state)
+                        sysTrans_hold = self.sysTransCheck.checkViolation(self.next_state, state)
+                        if envTrans_hold and sysTrans_hold:
+                            possible_next_states.append(state)
+                    """
+                else:
+                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableStates({}, from_state=self.next_state)
+
+                # update current next states sent tothe other robot
+                self.dPatchingExecutor.sendNextPossibleEnvStatesPreparedToOtherRobotToAllClients(possible_next_states)
+
+            # ******************************** #
 
             # See what we, as the system, need to do to get to this new state
             self.transition_contains_motion = self.next_region is not None and (self.strategy.current_state.getPropValue('regionCompleted')!= self.centralized_strategy_state.getPropValue('regionCompleted'))
