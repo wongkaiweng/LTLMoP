@@ -1536,7 +1536,7 @@ class ExecutorResynthesisExtensions(object):
             logging.warning('we are still waiting parts from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
-            time.sleep(1)
+            time.sleep(0.2)
 
         # now wait till the other robot has synthesized an automaton
         # TODO: what if it's unrealizable? We should know that as well.
@@ -1544,7 +1544,7 @@ class ExecutorResynthesisExtensions(object):
             logging.warning('we are still waiting completion of synthesis from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
-            time.sleep(1)
+            time.sleep(0.2)
 
     def initiateDPatchingCentralizedMode(self):
         """
@@ -1608,6 +1608,9 @@ class ExecutorResynthesisExtensions(object):
             logging.warning("we need to trigger env characterization instead. It is not done here!")
             pass
 
+        # make sure all sensors are the latest
+        for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
+            self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
         # taking care all the synthesis and wait till everyone is ready.
         self.synthesizeGlobalStrategyAndWaitForOthersToResume()

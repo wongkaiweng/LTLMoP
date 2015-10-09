@@ -44,8 +44,8 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         logging.debug(slugs_path)
         """
 
-        command = " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics "
-        #command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics "
+        #command = " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics "
+        command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics "
         logging.debug("slugs" + command + filename)
 
         # Open Slugs
@@ -96,7 +96,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
                 prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
                 prop_assignments[self.inputAPs[idx]] = value
-        logging.debug(prop_assignments)
+        logging.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
         curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
 
         return (x for x in [curStateObject])
@@ -110,6 +110,8 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         nextInput = ""
         for prop in self.inputAPs:
             nextInput += "1" if (prop_assignments[prop] is True) else "0"
+
+        logging.debug("next inputs:" + str([k for k, v in prop_assignments.iteritems() if v]))
         # Make the transition
         self.slugsProcess.stdin.write("XMAKETRANS\n"+nextInput)
         self.slugsProcess.stdin.flush()

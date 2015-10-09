@@ -698,7 +698,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
             else: # robot in centralized mode.
                 # update assignments only
-                self.currentAssignment.update({k:v for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if robot in k})
+                self.currentAssignment.update({k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k})
 
         # add input props to states collection
         states.addInputPropositions(self.smvEnvPropList)
@@ -722,7 +722,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             else: # robot in centralized mode.
                 # update assignments only. make reg_rc and reg the same
                 sysProps = {k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k}
-                for eProp, eValue in {k:v for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
+                for eProp, eValue in {k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
                     for reg in self.robotLocations.keys():
                         if reg in eProp:
                             sysProps[eProp.replace('_rc', '')] = eValue
@@ -858,8 +858,8 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         if len(next_states) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
-            logging.debug("nextInputs:" + str(nextInputs))
-            logging.debug("currentInputs:" + str(currentInputs))
+            logging.debug("nextInputs:" + str([k for k, v in nextInputs.iteritems() if v]))
+            logging.debug("currentInputs:" + str([k for k, v in currentInputs.iteritems() if v]))
             return
 
         # See if we're beginning a new transition
