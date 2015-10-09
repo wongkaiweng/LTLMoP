@@ -684,7 +684,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             while not self.dPatchingExecutor.checkRestartStatus():
                                 logging.debug('Waiting for the other robot to restart')
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
-                                time.sleep(1) #wait for the other robot to get ready
+                                time.sleep(0.2) #wait for the other robot to get ready
                             logging.debug('Running again ...')
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
                         else:
@@ -734,6 +734,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
                             logging.debug("env_assumption_hold:" + str(env_assumption_hold))
                             logging.debug("======== envTrans violations detected ============")
+
+                            # now checks if it's only about one coordinating robot
+                            for x in self.globalEnvTransCheck.violated_specStr:
+                                if LTLParser.LTLcheck.filterSpecList([x], self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName]):
+                                    break
+                            else:
+                                env_assumption_hold = True
+                                logging.debug("no violations as it's only about one robot (later should change to only topology)")
                     else:
                         env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
                     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
