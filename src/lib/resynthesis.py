@@ -458,6 +458,7 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.resetEnvCharacterization()
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
         self.old_violated_specStr = []
+        self.old_violated_specStr_with_no_specText_match = []
 
 
         # obtain SysGoals, EnvTrans of the other robot 
@@ -512,6 +513,7 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.resetEnvCharacterization()
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
         self.old_violated_specStr = []
+        self.old_violated_specStr_with_no_specText_match = []
 
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
@@ -712,6 +714,7 @@ class ExecutorResynthesisExtensions(object):
                     self.LTLViolationCheck.resetEnvCharacterization()
                     self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
                     self.old_violated_specStr = []
+                    self.old_violated_specStr_with_no_specText_match = []
 
                     #convert to the original specification
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)

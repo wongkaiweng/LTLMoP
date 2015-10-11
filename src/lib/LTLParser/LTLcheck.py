@@ -214,9 +214,10 @@ class LTL_Check:
             logging.debug("Here's the ltl of the environment assumptions from spec:")
             logging.debug(LTLFormula.printTree(self.ltl_tree,LTLFormula.p.terminals))
 
-        self.violated_spec_line_no = []
-        self.violated_specStr = []
-        
+        self.violated_spec_line_no = [] # storing lineNo found in the violations
+        self.violated_specStr = [] # storing all violations LTL
+        self.violated_specStr_with_no_specText_match = []   # for storing specStr with no specText match
+
         self.modify_stage        = 1       # to be used in modify_LTL_file
 
         # initialize self.env_safety_assumption_stage
@@ -300,6 +301,8 @@ class LTL_Check:
         # Environment Violations are removed
         if value == True and len(self.violated_spec_line_no) != 0:
             self.violated_spec_line_no = []
+            self.violated_specStr_with_no_specText_match = []
+            self.violated_specStr = []
         
         # return whether the environment assumptions are being violated
         return value
@@ -314,6 +317,8 @@ class LTL_Check:
 
         #also reset violated list
         self.violated_spec_line_no = []
+        self.violated_specStr_with_no_specText_match = []
+        self.violated_specStr = []
 
     def append_state_to_LTL_List(self, cur_state=None, sensor_state=None):
         """
@@ -574,14 +579,16 @@ class LTL_Check:
                                 violated_spec_line_no.append(treeNo)
                         except:  
                             #TODO: could be spec from autogeneration but not env characterization 
-                            if envTransTree:  
-                                self.violated_specStr.append(LTLFormula.treeToString(x))
+                            if envTransTree:
+                                self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
                             else:
                                 if 0 not in violated_spec_line_no:                  
                                     treeNo = 0
                                     violated_spec_line_no.append(treeNo)
                         if envTransTree:
                             logging.debug(LTLFormula.treeToString(x))
+                            self.violated_specStr.append(LTLFormula.treeToString(x))
+
                     else:
                         if debug_true_ltl == True:                        
                             print "-----------------------------------------------"

@@ -149,6 +149,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # -----------------------------------------#
         self.robClient = None
         self.old_violated_specStr = []
+        self.old_violated_specStr_with_no_specText_match = [] # for spec with no specText match
         self.prev_z  = 0
         # -----------------------------------------#
 
@@ -799,6 +800,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         if self.proj.compile_options["multi_robot_mode"] == "d-patching":
                             # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
                             # centralized. show violated spec
+                            self.postEvent("VIOLATION", "Detected the following env safety violation of global spec:")
                             for x in self.globalEnvTransCheck.violated_specStr:
                                 if x not in self.old_violated_specStr:
                                     self.postEvent("VIOLATION", x)
@@ -865,12 +867,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                                 self.postEvent("VIOLATION","Detected the following env safety violation:" )
                                 self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
 
-                    for x in self.LTLViolationCheck.violated_specStr:
-                        if x not in self.old_violated_specStr:
+                    for x in self.LTLViolationCheck.violated_specStr_with_no_specText_match:
+                        if x not in self.old_violated_specStr_with_no_specText_match:
                             self.postEvent("VIOLATION", x)
 
                     # save a copy
                     self.old_violated_specStr = self.LTLViolationCheck.violated_specStr
+                    self.old_violated_specStr_with_no_specText_match = self.LTLViolationCheck.violated_specStr_with_no_specText_match
 
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         # ******* patching ********** #
