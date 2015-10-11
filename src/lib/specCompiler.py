@@ -404,6 +404,7 @@ class SpecCompiler(object):
             if self.LTL2SpecLineNumber is not None:
                 for k in self.LTL2SpecLineNumber.keys():
                     new_k = replaceRegionName(k, bitEncode, regionList)
+                    new_k = replaceRegionName(new_k, bitEncode, regionListCompleted)
                     if new_k != k:
                         self.LTL2SpecLineNumber[new_k] = self.LTL2SpecLineNumber[k]
                         del self.LTL2SpecLineNumber[k]

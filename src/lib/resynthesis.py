@@ -457,6 +457,7 @@ class ExecutorResynthesisExtensions(object):
         #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] } # we are striping the last ))
         self.LTLViolationCheck.resetEnvCharacterization()
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
+        self.old_violated_specStr = []
 
 
         # obtain SysGoals, EnvTrans of the other robot 
@@ -510,6 +511,7 @@ class ExecutorResynthesisExtensions(object):
         #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
         self.LTLViolationCheck.resetEnvCharacterization()
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
+        self.old_violated_specStr = []
 
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
@@ -705,6 +707,12 @@ class ExecutorResynthesisExtensions(object):
                     # remove spec from other robots and resynthesize
                     self.spec = copy.deepcopy(self.originalSpec)
                     self.spec['EnvTrans'] = self.oriEnvTrans
+
+                    # also reset env characterization
+                    self.LTLViolationCheck.resetEnvCharacterization()
+                    self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
+                    self.old_violated_specStr = []
+
                     #convert to the original specification
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)

@@ -205,7 +205,7 @@ class LTL_Check:
                 removed_all = removed_all[:-1]
             tree = LTLFormula.parseLTL(removed_all)
             # value given is line number. when retrieving structured English, do self.read_spec[value-1]
-            self.ltlTree_to_lineNo[str(tree)] = value   
+            self.ltlTree_to_lineNo[LTLFormula.treeToString(tree)] = value
 
         # save EnvTrans for runtime monitoring
         self.replaceLTLTree(self.spec[specType])
@@ -311,6 +311,9 @@ class LTL_Check:
         """
         self.add_ltl_current_list = [] #storing current inputs LTLs
         self.add_ltl_current_next_list = [] # storing current and next inputs LTLs
+
+        #also reset violated list
+        self.violated_spec_line_no = []
 
     def append_state_to_LTL_List(self, cur_state=None, sensor_state=None):
         """
@@ -566,7 +569,7 @@ class LTL_Check:
                             if not self.LTLMoP:
                                 logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
                                 logging.debug(self.ltlTree_to_lineNo)
-                            treeNo = self.ltlTree_to_lineNo[str(x)] 
+                            treeNo = self.ltlTree_to_lineNo[LTLFormula.treeToString(x)]
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
                                 violated_spec_line_no.append(treeNo)
                         except:  
