@@ -13,11 +13,15 @@ parser: structured
 symbolic: False
 use_region_bit_encoding: True
 multi_robot_mode: negotiation
+cooperative_gr1: True
 fastslow: True
+only_realizability: False
 recovery: False
 include_heading: False
+winning_livenesses: False
 synthesizer: slugs
 decompose: True
+interactive: False
 
 CurrentConfigName:
 bobWithAliceSensorR1
@@ -64,12 +68,12 @@ if you have finished r5 then do not (alice_r5)
 
 ######### system guarantees ##########
 # not allowing both robots to be at the same place
-#if you are sensing alice_r1 then do not r1
-#if you are sensing alice_r2 then do not r2
-#if you are sensing alice_r3 then do not r3
-#if you are sensing alice_r4 then do not r4
-#if you are sensing alice_r5 then do not r5
-#if you are sensing alice_r6 then do not r6
+if you are sensing alice_r1 then do not r1
+if you are sensing alice_r2 then do not r2
+if you are sensing alice_r3 then do not r3
+if you are sensing alice_r4 then do not r4
+if you are sensing alice_r5 then do not r5
+if you are sensing alice_r6 then do not r6
 
 ######## system goals ###########
 visit r5
