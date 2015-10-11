@@ -945,6 +945,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                     # For print violated safety in the log (update lines violated in every iteration)
                     if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and (self.recovery or self.otherRobotStatus):
                         self.postEvent("RESOLVED", "The specification violation is resolved.")
+
+                        # ------------ two_robot_negotiation ----------#
+                        # store time stamp of violation
+                        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                            self.violationTimeStamp = 0
+                            self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                            logging.debug('Resetting violation timeStamp')
+                        # ---------------------------------------------- #
+
                 self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
 
             #################################

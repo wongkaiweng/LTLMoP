@@ -364,16 +364,26 @@ class LTL_Check:
         # now update the env_safety_assumptions_stage
         self.updateEnvSafetyAssumptionsStages()
 
+    def updateEnvTransTree(self, originalEnvTrans):
+        """
+        This function updates the EnvTrans Tree
+        """
+        # choosing modify stage to be added
+        self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + self.env_safety_assumptions_stage[str(self.modify_stage)]))
+
+
     def modify_LTL_file(self, originalEnvTrans):
         """
         Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
         originalEnvTrans: original env safety from user (from structured English to LTL)
+
+        * remember to update the self.ltl_tree with updateEnvTransTree
         """
 
         self.append_state_to_LTL()
 
         # choosing modify stage to be added
-        self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + self.env_safety_assumptions_stage[str(self.modify_stage)]))
+        #self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + self.env_safety_assumptions_stage[str(self.modify_stage)]))
 
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
         try:

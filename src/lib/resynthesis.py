@@ -828,6 +828,10 @@ class ExecutorResynthesisExtensions(object):
                                 else:
                                     logging.error("Mulit robot mode is incorrect. This is impossible.")
 
+            # only update ltl_tree in LTLcheck if the spec is realizable
+            if realizable:
+                self.LTLViolationCheck.updateEnvTransTree("")
+
             self.realizable = realizable
 
         else:
@@ -864,6 +868,14 @@ class ExecutorResynthesisExtensions(object):
         if self.realizable or self.otherRobotStatus:
             if not self.otherRobotStatus:
                 self.postEvent("RESOLVED", "The specification violation is resolved.")
+
+                # ------------ two_robot_negotiation ----------#
+                # store time stamp of violation
+                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    self.violationTimeStamp = 0
+                    self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                    logging.debug('Resetting violation timeStamp')
+                # ---------------------------------------------- #
                 #######################
                 # Load automaton file #
                 #######################
