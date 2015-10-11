@@ -453,8 +453,11 @@ class ExecutorResynthesisExtensions(object):
         # reset env characterization
         self.spec['EnvTrans'] = self.oriEnvTrans
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
-        self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] } # we are striping the last ))
+        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
+        #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] } # we are striping the last ))
+        self.LTLViolationCheck.resetEnvCharacterization()
+        self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
+
 
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
@@ -503,8 +506,11 @@ class ExecutorResynthesisExtensions(object):
         self.spec['EnvTrans'] = self.oriEnvTrans
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
         #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-        self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
-        self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
+        #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+        self.LTLViolationCheck.resetEnvCharacterization()
+        self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
+
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
         # send SysGoals, EnvTrans and EnvGoals

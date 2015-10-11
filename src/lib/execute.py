@@ -525,10 +525,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             # pass in current env assumptions if we have some
             if realizable:
                 self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))       
-                self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+                #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
 
             else:
                 self.LTLViolationCheck.ltl_treeEnvTrans = None
+                self.LTLViolationCheck.setOriginalEnvTrans('FALSE')
         
         #for using get LTLRepresentation of current sensors
         self.sensor_strategy = new_strategy.states.addNewState() 

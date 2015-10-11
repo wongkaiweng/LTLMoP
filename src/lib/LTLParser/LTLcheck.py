@@ -218,12 +218,49 @@ class LTL_Check:
         self.violated_specStr = []
         
         self.modify_stage        = 1       # to be used in modify_LTL_file
-        
+
+        # initialize self.env_safety_assumption_stage
+        self.env_safety_assumptions_stage = {"1": '', "3": '', "2": ''}
+
+        # initialize lists to store new behaviors observed.
+        self.resetEnvCharacterization()
+
         # for storage of LTL assumptions at the three stages
-        self.env_safety_assumptions_stage = {"1": "\t\t\t[]((FALSE", "3": "\t\t\t[]((FALSE", "2": "\t\t\t[](FALSE | ("}
+        self.setOriginalEnvTrans(self.spec[specType].replace('[]', ''))
+        #self.env_safety_assumptions_stage = {"1": "\t\t\t[]((FALSE", "3": "\t\t\t[]((FALSE", "2": "\t\t\t[](FALSE | ("}
         
-        self.ltl_treeEnvTrans = None    # modify in execute.py
-    
+        # if it's not None, the checkViolations will be carried out twice.
+        # modify in execute.py so that single envTrans formula can be displayed.
+        self.ltl_treeEnvTrans = None
+
+    def setOriginalEnvTrans(self, ltlFormula):
+        """
+        This function sets the original envtrans to characterize on
+        ltlFormula should be without the always '[]' operators
+        """
+        # first save thte new ltlFormula
+        self.env_safety_assumptions = ltlFormula
+
+        # then update the env_safety_assumption_stages as well
+        self.updateEnvSafetyAssumptionsStages()
+
+    def updateEnvSafetyAssumptionsStages(self):
+        """
+        This function updates self.env_safety_assumptions_stage based on self.env_safety_assumptions, self.add_ltl_current_list and self.add_ltl_current_next_list
+        """
+        # now update the env_safety_assumptions_stage
+        if self.add_ltl_current_list: # check if list is empty
+            self.env_safety_assumptions_stage["1"] = '[]((' + self.env_safety_assumptions + ')|\n(' + '|\n'.join(filter(None, self.add_ltl_current_list))+ '))\n'
+        else:
+            self.env_safety_assumptions_stage["1"] = '[](' + self.env_safety_assumptions + ')\n'
+
+        if self.add_ltl_current_next_list:
+            self.env_safety_assumptions_stage["3"] = '[]((' + self.env_safety_assumptions + ')|\n(' + '|\n'.join(filter(None, self.add_ltl_current_next_list))+ '))\n'
+        else:
+            self.env_safety_assumptions_stage["3"] = '[](' + self.env_safety_assumptions + ')\n'
+
+        self.env_safety_assumptions_stage["2"] = self.env_safety_assumptions_stage["3"]
+
     def replaceLTLTree(self, ltlFormula):
         """
         This function takes in an LTLFormula, parse it into a tree, and replace the existing one.
@@ -266,16 +303,45 @@ class LTL_Check:
         
         # return whether the environment assumptions are being violated
         return value
-    
-    def append_state_to_LTL(self, cur_state = None, sensor_state = None):
+
+    def resetEnvCharacterization(self):
         """
-        append the current state to the dictionary -- env_safety_assumptions_stage
-        """    
+        This function resets the env characterization clauses stored so that
+        the currently the envTrans is just the original one.
+        """
+        self.add_ltl_current_list = [] #storing current inputs LTLs
+        self.add_ltl_current_next_list = [] # storing current and next inputs LTLs
+
+    def append_state_to_LTL_List(self, cur_state=None, sensor_state=None):
+        """
+        This function stores each new state in the modified envTrans as list instead.
+        (To replace append_state_to_LTL in the future)
+        """
         if not cur_state == None:    # None: use the stored current_state in the object
             self.current_state = cur_state
 
         if not sensor_state == None: # None: use the stored sensor_state in the object
-            self.sensor_state  = sensor_state
+            self.sensor_state = sensor_state
+
+        # for current inputs only
+        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
+        if not '(' + curInputs + ')' in self.add_ltl_current_list:
+            self.add_ltl_current_list.append('(' + curInputs + ')')
+
+        # for current and next inputs
+        nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
+        if not '(' + curInputs + ' & ' + nextInputs + ')' in self.add_ltl_current_next_list:
+            self.add_ltl_current_next_list.append('(' + curInputs + ' & ' + nextInputs + ')')
+
+    def append_state_to_LTL(self, cur_state=None, sensor_state=None):
+        """
+        append the current state to the dictionary -- env_safety_assumptions_stage
+        """
+        if not cur_state == None:    # None: use the stored current_state in the object
+            self.current_state = cur_state
+
+        if not sensor_state == None: # None: use the stored sensor_state in the object
+            self.sensor_state = sensor_state
 
         ########### MODIFICATION STAGE ###############
         # 1 : to add only current inputs
@@ -283,43 +349,13 @@ class LTL_Check:
         # 3 : to add current inputs, next inputs, and current outputs
         # This is reset when liveness assumptions are added
         ##############################################
-                  
-        
-        add_ltl = "\t | ("                
-                        
-        # for the first stage 
-        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False).replace('regionCompleted_b','sbit')
-        add_ltl += curInputs          
-        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["1"]
-        if self.env_safety_assumptions_stage["1"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["1"] += add_ltl + ")"   
 
-        # for the second stage       
-        nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False).replace('regionCompleted_b','sbit')
-        add_ltl += " & " + nextInputs         
-        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["2"]
-        if self.env_safety_assumptions_stage["3"].find(add_ltl) == -1 : 
-            self.env_safety_assumptions_stage["3"] += add_ltl  + ")"     
+        # first add the state to our ltl list
+        self.append_state_to_LTL_List(cur_state, sensor_state)
 
-        self.env_safety_assumptions_stage["2"] = self.env_safety_assumptions_stage["3"]  
-         
-        """
-        # for the third stage   
-        if self.env_safety_assumptions_stage["2"] == "\t\t\t[](FALSE | (":
-            add_ltl3 = "\n\t (" 
-        else:
-            add_ltl3 = "\n\t | ("       
-             
-        curOutputs =   fsa.stateToLTL(self.current_state)              
-        add_ltl = " ((" + nextInputs +  ") | !(" + curOutputs +  ")) & (" + curInputs    + ")"
-        # check if the clause of add_ltl already exists in self.env_safety_assumptions_stage["3"]
-        if self.env_safety_assumptions_stage["2"].find(add_ltl) == -1 :                   
-            self.env_safety_assumptions_stage["2"] +=  add_ltl3 + add_ltl + ")" 
-            #self.env_safety_assumptions_stage["2"] =  self.env_safety_assumptions_stage["3"]  
-            #self.env_safety_assumptions_stage["1"] =  self.env_safety_assumptions_stage["3"] 
-       """
-        
-            
+        # now update the env_safety_assumptions_stage
+        self.updateEnvSafetyAssumptionsStages()
+
     def modify_LTL_file(self, originalEnvTrans):
         """
         Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
@@ -329,10 +365,7 @@ class LTL_Check:
         self.append_state_to_LTL()
 
         # choosing modify stage to be added
-        new_env_safety = self.env_safety_assumptions_stage[str(self.modify_stage)]
-        new_env_safety  = new_env_safety + "))"
-
-        self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + new_env_safety))
+        self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + self.env_safety_assumptions_stage[str(self.modify_stage)]))
 
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
         try:
@@ -341,7 +374,7 @@ class LTL_Check:
         except:
             pass
 
-        return self.env_safety_assumptions_stage[str(self.modify_stage)] + "))\n"
+        return self.env_safety_assumptions_stage[str(self.modify_stage)]
 
 
     def read_spec_file(self,f):
