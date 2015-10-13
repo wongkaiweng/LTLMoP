@@ -980,11 +980,26 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
     allRobotProp = regionList + robotPropList
     PropList = sensorList + allRobotProp
 
+    SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
+    SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
+    MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
+    MatchPropStr = '((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+
     # Replace logic operations with TLV convention
     tempFormula = replaceLogicOp(tempFormula)
 
-    # checking that all propositions are 'legal' (in the list of propositions)
-    for prop in re.findall('([\w\.]+)',tempFormula):
+
+    for prop in re.findall(MatchStr,tempFormula):
+        originalProp = prop
+
+        #check if we are using the 'finished' keyword
+        if SafetyCompletionRE.search(prop):
+            CompletionFlag = True
+        else:
+            CompletionFlag = False
+
+        prop = re.search(MatchPropStr,prop).group('prop')
+
         if not prop in PropList:
             print 'ERROR(4): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
             formulaInfo['type'] = 'EnvGoals' # arbitrary
@@ -999,24 +1014,36 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
             #return formulaInfo
             pass
 
-        if prop in sensorList and formulaInfo['type'] == '':
+        if prop in sensorList and formulaInfo['type'] == '' or CompletionFlag:
             formulaInfo['type'] = 'EnvGoals'
 
         elif prop in allRobotProp and formulaInfo['type'] == '':
             formulaInfo['type'] = 'SysGoals'
 
+        originalPropPattern = originalProp.replace('(','\(').replace(')','\)')
         if fastslow:
-            if prop in regionList:
-                #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
-                newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
-            elif prop in actuatorList:
-                newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
+            if CompletionFlag:
+                if prop in regionList:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+                    newProp = 'next(e.'+prop.replace('s.','')+'_rc)'
+                elif prop in actuatorList:
+                    newProp = 'next(e.'+prop.replace('s.','')+'_ac)'
+                else:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                    newProp = 'next('+prop+')'
             else:
-                #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
-                newProp = 'next('+prop+')'
+                if prop in regionList:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+                    newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
+                elif prop in actuatorList:
+                    newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_ac)'
+                else:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                    newProp = 'next('+prop+')'
 
-            tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', newProp, tempFormula)
-    
+            tempFormula = re.sub('(?<=[! &|(\t\n])'+originalPropPattern+'(?=[ &|)\t\n])|(?<=[! &|(\t\n])'+originalPropPattern +\
+                                  '|'+originalPropPattern + '(?<=[! &|(\t\n])', newProp, tempFormula)
+
     formulaInfo['formula'] = '\t\t\t []<>(' + tempFormula + ') & \n'
 
     return formulaInfo
