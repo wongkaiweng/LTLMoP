@@ -352,13 +352,13 @@ class SpecCompiler(object):
                 if self.proj.compile_options['include_heading']:
                     spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck']]+[createInitialEnvRegionFragment(self.proj.rfi.regions, False, False, robot, suffix) for robot in self.proj.otherRobot]))
 
-                if self.proj.compile_options["fastslow"]:
-                    if self.proj.compile_options["decompose"]:
-                        spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
-                    else:
-                        spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
+            if self.proj.compile_options["fastslow"]:
+                if self.proj.compile_options["decompose"]:
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.parser.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
+                else:
+                    spec['InitEnvRegionSanityCheck'] = '&\n '.join(filter(None, [spec['InitEnvRegionSanityCheck'], createIAInitialEnvRegionFragment(self.proj.rfi.regions, use_bits=self.proj.compile_options["use_region_bit_encoding"])]))
 
-                spec["EnvInit"] = '&\n '.join(filter(None, [spec["EnvInit"], spec['InitEnvRegionSanityCheck']]))
+            spec["EnvInit"] = '&\n '.join(filter(None, [spec["EnvInit"], spec['InitEnvRegionSanityCheck']]))
 
             if spec["SysInit"] == "()":
                 spec["SysInit"] = "(TRUE)"     # not sure
