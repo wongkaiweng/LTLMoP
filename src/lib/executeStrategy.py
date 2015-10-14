@@ -187,12 +187,8 @@ class ExecutorStrategyExtensions(object):
             # save current sensor state for next iteration
             self.last_sensor_state = sensor_state
 
-        if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
-            # Move one step towards the next region (or stay in the same region)
-            self.hsub.gotoRegion(self.current_region, self.next_region)
-
-        # Check for completion of motion
-        if self.next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
+            # Check for completion of motion
+            #if self.next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
             # *********** patching *********** #
             if self.proj.compile_options['neighbour_robot'] and \
                (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
@@ -246,6 +242,11 @@ class ExecutorStrategyExtensions(object):
             self.last_next_states = []  # reset
 
             self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+
+        if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
+            # Move one step towards the next region (or stay in the same region)
+            self.hsub.gotoRegion(self.current_region, self.next_region)
+
 
     def runStrategyIterationInstanteousActionCentralized(self):
         """
