@@ -143,6 +143,8 @@ class MsgHandlerExtensions(object):
 
         # first replace our region bits to original region name with our robot name
         if fastslow:
+            # first replace stay there instances
+            spec = LTLParser.LTLRegion.replaceBiimplicationBits(spec, self.regions, self.newRegionNameToOld, self.robotName, fastslow)
             # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
             spec = LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
             if include_heading:
@@ -163,6 +165,9 @@ class MsgHandlerExtensions(object):
                     spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+region+'_rc', spec)
 
         else:
+            # first replace stay there instances
+            spec = LTLParser.LTLRegion.replaceBiimplicationBits(spec, self.regions, self.newRegionNameToOld, self.robotName, fastslow, removeSystemProps=True)
+
             spec = LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
 
         return spec

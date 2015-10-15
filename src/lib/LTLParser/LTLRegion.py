@@ -197,6 +197,25 @@ def replaceRobotNameWithRegionToBits(ltlFormula, bitEncode, robotName, regionLis
     ltlFormulaReplaced  = parseEnglishToLTL.replaceRegionName(ltlFormula, bitEncode, regionList)
 
     return ltlFormulaReplaced
-                
-    
-    
+
+def replaceBiimplicationBits(ltlFormula, regionList, newRegionNameToOld, robotName, fastslow=True, removeSystemProps=False):
+    """
+    This function replaces any biimplications of single bits
+    removeSystemProps: used in negotiation. Modified to e.region <-> next(e.region)
+    """
+    if fastslow:
+        pattern = "(\(next\(e.sbit[0-9]\)<->next\(s.bit[0-9]\)\)&?)+"
+    else:
+        pattern = "(\(next\(e.sbit[0-9]\)<->s.bit[0-9]\)&?)+"
+
+    # first make the string to replace
+    regionBiimplicationList = []
+    for region in [newRegionNameToOld[x.name] for x in regionList]:
+        if removeSystemProps:
+            regionBiimplicationList.append('(e.'+ robotName + '_' + region +'<->next(e.'+ robotName + '_' + region +'))')
+        else:
+            regionBiimplicationList.append('(next(e.'+ robotName + '_' + region +'_rc)<->next(s.'+ robotName + '_' + region +'))')
+
+    ltlFormula = re.sub(pattern, "&".join(filter(None, regionBiimplicationList)), ltlFormula)
+
+    return ltlFormula
