@@ -161,7 +161,7 @@ class ExecutorStrategyExtensions(object):
 
             self.next_state = random.choice(next_states)
             # find next region
-            self.next_region = self.strategy.current_state.getPropValue('region')
+            self.next_region = self.next_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
             logging.info("Currently at state %s." % self.next_state.state_id)
 
@@ -239,7 +239,7 @@ class ExecutorStrategyExtensions(object):
                 # ------------------------------- #
 
             self.strategy.current_state = self.next_state
-            self.last_next_states = []  # reset
+            #self.last_next_states = []  # reset
 
             self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
 
