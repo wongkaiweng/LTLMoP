@@ -800,7 +800,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #HACK: Make it to recovery mode to try it out
         #self.compiler.proj.compile_options['recovery']=True # interactive strategy auto synthesizes with recovery option
         self.compiler.proj.compile_options["cooperative_gr1"] = True
-        self.compiler.proj.compile_options["only_realizability"] = True
+        self.compiler.proj.compile_options["symbolic"] = False
+        #self.compiler.proj.compile_options["interactive"] = True
+        #self.compiler.proj.compile_options["only_realizability"] = True
         realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
         logging.info(output)
@@ -811,8 +813,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         if realizable:
             logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
             # load strategy and initial state
-            #self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
-            self.strategy = strategy.createStrategyFromFile(self.filePath + '.slugsin', self.smvEnvPropList, self.smvSysPropList)
+            if not self.compiler.proj.compile_options["symbolic"]: # explicit strategy
+                self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
+            elif self.compiler.proj.compile_options["interactive"]:
+                self.strategy = strategy.createStrategyFromFile(self.filePath + '.slugsin', self.smvEnvPropList, self.smvSysPropList)
+            else:
+                logging.warning("Please note that bdd is not tested yet.")
+                self.strategy = strategy.createStrategyFromFile(self.filePath + '.bdd', self.smvEnvPropList, self.smvSysPropList)
 
             # search for init state.
             self.strategy.current_state = self.strategy.searchForOneState(self.currentAssignment)

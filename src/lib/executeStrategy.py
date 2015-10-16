@@ -345,7 +345,7 @@ class ExecutorStrategyExtensions(object):
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
 
                 # first find all next possible states
-                if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive'] or True: #HACK: now will never run the else statement
+                if self.dPatchingExecutor.compiler.proj.compile_options['symbolic'] or self.dPatchingExecutor.compiler.proj.compile_options['interactive']:
                     possible_next_states = self.dPatchingExecutor.strategy.findTransitionableNextStates(from_state=self.next_state)
                     """
                     statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
