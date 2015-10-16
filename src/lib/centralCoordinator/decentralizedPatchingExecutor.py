@@ -866,7 +866,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
             logging.debug("nextInputs:" + str([k for k, v in nextInputs.iteritems() if v]))
-            logging.debug("currentInputs:" + str([k for k, v in currentInputs.iteritems() if v]))
+            logging.debug("currentInputs:" + str([k for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if v]))
             return
 
         # See if we're beginning a new transition

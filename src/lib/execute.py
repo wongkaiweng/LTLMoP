@@ -45,6 +45,7 @@ import math
 import traceback
 from resynthesis import ExecutorResynthesisExtensions
 from executeStrategy import ExecutorStrategyExtensions
+from executeModes import ExecutorModesExtensions
 import globalConfig, logging
 
 ###### ENV VIOLATION CHECK ######
@@ -91,7 +92,7 @@ def usage(script_name):
                               -s FILE, --spec-file FILE:
                                   Load experiment configuration from FILE """ % script_name)
 
-class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, object):
+class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, ExecutorModesExtensions, object):
     """
     This is the main execution object, which combines the synthesized discrete automaton
     with a set of handlers (as specified in a .config file) to create and run a hybrid controller
@@ -116,6 +117,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.externalEventTargetRegistered = threading.Event()
         self.postEventLock = threading.Lock()
         self.runStrategy = threading.Event()  # Start out paused
+        self.runRuntimeMonitoring = threading.Event() # track if runtime monitoring should be run
         self.alive = threading.Event()
         self.alive.set()
 
@@ -131,7 +133,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.userAddedEnvLivenessEnglish = []          # keep track of liveness added by the user in English
         self.userAddedEnvLivenessLTL = []          # keep track of liveness added by the user in LTL
         self.originalLTLSpec      = {}          # save the original Spec for exporting
-        self.currentViolationLineNo = []
         self.LTLSpec  = {}
         self.sensor_strategy = None
         
@@ -150,6 +151,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.robClient = None
         self.old_violated_specStr = []
         self.old_violated_specStr_with_no_specText_match = [] # for spec with no specText match
+        self.old_violated_spec_line_no = []
         self.prev_z  = 0
         # -----------------------------------------#
 
@@ -163,6 +165,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # %%%%%%%%%% d-patching %%%%%%%%%%%%%%%%% #
         self.dPatchingExecutor = None #executor of decentralized patching
         self.globalEnvTransCheck = None # violation check for global spec
+        self.checkDataThread = None # main loop of dPatchingExecutor
+        self.checkEnvTransViolationThread = None # for checking violations
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
 
@@ -321,6 +325,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         Prepare for execution, by loading and initializing all the relevant files (specification, map, handlers, strategy)
         If `firstRun` is true, all handlers will be imported; otherwise, only the motion control handler will be reloaded.
         """
+        self.runRuntimeMonitoring.clear() # pause runtime monitoring
 
         # load project only first time; otherwise self.proj is modified in-place
         # TODO: make this less hacky
@@ -592,6 +597,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
             self.strategy.envTransBDD, term1, term2 = self.strategy.evaluateBDD(self.envTransCheck.ltl_tree, LTLParser.LTLFormula.p.terminals)
             logging.debug('We finished')
 
+        # start checkViolation thread
+        self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+        self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
+        self.checkEnvTransViolationThread.start()
+        self.runRuntimeMonitoring.set() # start checking violations
+
         return  init_state, self.strategy
 
     def run(self):
@@ -706,50 +717,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                 #############################################
                 current_next_states = self.last_next_states
 
-                # Take a snapshot of our current sensor readings
-                sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-                for prop_name, value in sensor_state.iteritems():
-                    if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
-                        continue
-
-                    self.sensor_strategy.setPropValue(prop_name, value)
-
-                if self.proj.compile_options['fastslow']:
-                    curRegionIdx = self._getCurrentRegionFromPose()
-                    if curRegionIdx is None:
-                        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
-                    self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
-
-                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
-                    # ************ patching ****************** #
-                    env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
-                    # **************************************** #
-
-                elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
-                    # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%% #
-                    if self.runCentralizedStrategy:
-                        for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
-                            self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
-
-                        env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
-                        if not env_assumption_hold:
-                            logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
-                            logging.debug("env_assumption_hold:" + str(env_assumption_hold))
-                            logging.debug("======== envTrans violations detected ============")
-
-                            # now checks if it's only about one coordinating robot
-                            for x in self.globalEnvTransCheck.violated_specStr:
-                                if LTLParser.LTLcheck.filterSpecList([x], self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName]):
-                                    break
-                            else:
-                                env_assumption_hold = True
-                                logging.debug("no violations as it's only about one robot (later should change to only topology)")
-                    else:
-                        env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
-                    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
-                else:
-                    # Check for environment violation - change the env_assumption_hold to int again
-                    env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+                env_assumption_hold = self.env_assumption_hold #self.check_envTrans_violations()
 
                 ###############################################################
                 ####### CHECK IF REQUEST FROM OTHER ROBOTS IS RECEVIED ########
@@ -769,7 +737,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # stop the robot from moving
                             self.hsub.setVelocity(0,0)
                             self.postEvent("PATCH","We are asked to join a centralized strategy")
+                            self.runRuntimeMonitoring.clear()
                             self.initiatePatching()
+                            self.resumeRuntimeMonitoring()
 
                             # jump to top of while loop
                             continue
@@ -781,12 +751,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # stop the robot from moving
                             self.hsub.setVelocity(0,0)
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
+                            self.runRuntimeMonitoring.clear()
                             if self.runCentralizedStrategy:
                                 self.initiateDPatchingCentralizedMode()
                             else:
                                 self.initiateDPatching()
+                            self.resumeRuntimeMonitoring()
                             #TODO: need to take care of cases where mulptiple requests are received
                             logging.error('Decentralized Patching is not completed yet!')
+                            logging.info("Start executing centralized strategy")
                             continue
                         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
@@ -801,10 +774,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
                             # centralized. show violated spec
                             self.postEvent("VIOLATION", "Detected the following env safety violation of global spec:")
-                            for x in self.globalEnvTransCheck.violated_specStr:
+                            for x in self.violated_spec_list:
                                 if x not in self.old_violated_specStr:
                                     self.postEvent("VIOLATION", x)
-                            self.old_violated_specStr = self.globalEnvTransCheck.violated_specStr
+                            self.old_violated_specStr = self.violated_spec_list
 
                             # stop the robot from moving
                             self.hsub.setVelocity(0, 0)
@@ -812,7 +785,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             # Take care of everything to start patching
                             #self.postEvent("RESOLVED", "")
                             self.postEvent("D-PATCH", "We will modify the spec or ask other robots for help.")
+                            self.runRuntimeMonitoring.clear()
                             self.initiateDPatchingCentralizedMode()
+                            self.resumeRuntimeMonitoring()
                             self.postEvent("D-PATCH","Resuming centralized strategy ...")
                             logging.warning("centralized repatch done... restarting")
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
@@ -855,25 +830,24 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         self.envViolationCount += 1
                         logging.debug("No of env violations:"+ str(self.envViolationCount))
 
-                    #self.postEvent("VIOLATION", "self.LTLViolationCheck.violated_spec_line_no:" + str(self.LTLViolationCheck.violated_spec_line_no))
-                    #self.postEvent("VIOLATION", "self.currentViolationLineNo:" + str(self.currentViolationLineNo))
                     # print out the violated specs
-                    for x in self.LTLViolationCheck.violated_spec_line_no:
-                        if x not in self.currentViolationLineNo:
+                    for x in self.violated_spec_line_no:
+                        if x not in self.old_violated_spec_line_no:
                             if x == 0 :
-                                if len(self.LTLViolationCheck.violated_spec_line_no) == 1 and len(self.currentViolationLineNo) == 0:
+                                if len(self.violated_spec_line_no) == 1 and len(self.old_violated_spec_line_no) == 0:
                                     self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                             else:
                                 self.postEvent("VIOLATION","Detected the following env safety violation:" )
                                 self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
 
-                    for x in self.LTLViolationCheck.violated_specStr_with_no_specText_match:
+                    for x in self.violated_spec_list_with_no_specText_match:
                         if x not in self.old_violated_specStr_with_no_specText_match:
                             self.postEvent("VIOLATION", x)
 
                     # save a copy
-                    self.old_violated_specStr = self.LTLViolationCheck.violated_specStr
-                    self.old_violated_specStr_with_no_specText_match = self.LTLViolationCheck.violated_specStr_with_no_specText_match
+                    self.old_violated_specStr = self.violated_spec_list
+                    self.old_violated_specStr_with_no_specText_match = self.violated_spec_list_with_no_specText_match
+                    self.old_violated_spec_line_no = self.violated_spec_line_no
 
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         # ******* patching ********** #
@@ -883,7 +857,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
                         self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
+                        self.runRuntimeMonitoring.clear()
                         self.initiatePatching()
+                        self.resumeRuntimeMonitoring()
+                        continue
                         # *************************** #
                     elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
                         # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
@@ -893,7 +870,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
                         self.postEvent("D-PATCH","We will now ask for a centralized strategy to be executed.")
+                        self.runRuntimeMonitoring.clear()
                         self.initiateDPatching()
+                        self.resumeRuntimeMonitoring()
+                        continue
                         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
                         if self.ENVcharacterization:
@@ -937,13 +917,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
                 else:
                     # assumption not violated but sensor state changes. we add in this new state
-                    self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
+                    #self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
 
                     if env_assumption_hold == False:
                         logging.debug("Value should be True: " + str(env_assumption_hold))
 
                     # For print violated safety in the log (update lines violated in every iteration)
-                    if len(self.LTLViolationCheck.violated_spec_line_no[:]) == 0 and self.currentViolationLineNo !=self.LTLViolationCheck.violated_spec_line_no[:] and (self.recovery or self.otherRobotStatus):
+                    if len(self.violated_spec_line_no) == 0 and self.old_violated_spec_line_no !=self.violated_spec_line_no and (self.recovery or self.otherRobotStatus):
                         self.postEvent("RESOLVED", "The specification violation is resolved.")
 
                         # ------------ two_robot_negotiation ----------#
@@ -954,7 +934,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
                             logging.debug('Resetting violation timeStamp')
                         # ---------------------------------------------- #
 
-                self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
+                #self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
 
             #################################
             

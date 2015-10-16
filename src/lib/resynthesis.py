@@ -1372,9 +1372,9 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.LTLViolationCheck.violated_specStr)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
                 specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
-                logging.debug("specNewStr:" + str(specNewStr))
+                #logging.debug("specNewStr:" + str(specNewStr))
 
                 for csock in csockList:
                     self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
@@ -1434,7 +1434,7 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.LTLViolationCheck.violated_specStr)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
                 specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
 
                 self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
@@ -1482,7 +1482,7 @@ class ExecutorResynthesisExtensions(object):
 
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(self.LTLViolationCheck.violated_specStr)
+        robotsInConflict = self.checkRobotsInConflict(self.violated_spec_list)
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
@@ -1567,6 +1567,7 @@ class ExecutorResynthesisExtensions(object):
             logging.warning('we are still waiting parts from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
+            logging.debug("self.dPatchingExecutor.coordinatingRobots:" + str(self.dPatchingExecutor.coordinatingRobots))
             time.sleep(0.2)
 
         # now wait till the other robot has synthesized an automaton
@@ -1586,7 +1587,7 @@ class ExecutorResynthesisExtensions(object):
 
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(self.globalEnvTransCheck.violated_specStr)
+        robotsInConflict = self.checkRobotsInConflict(self.violated_spec_list)
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             ################################
             ########## PREPARATION #########
@@ -1597,11 +1598,11 @@ class ExecutorResynthesisExtensions(object):
             # remove violated envTrans from list.
             for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
                 logging.debug("Robot Under consideration:" + str(robot))
-                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.globalEnvTransCheck.violated_specStr, self.dPatchingExecutor.spec['EnvTrans'][robot])
+                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.violated_spec_list, self.dPatchingExecutor.spec['EnvTrans'][robot])
                 logging.debug("-------------------------------------------")
 
             # add violations of local spec to LTL violated_str list
-            for specStr in self.globalEnvTransCheck.violated_specStr:
+            for specStr in self.violated_spec_list:
                 # replace e.g. alice_r1_rc to alice_r1 as the meaning changes in the central strategy
                 for region in self.dPatchingExecutor.regionList:
                     for otherRobot in list(set(self.dPatchingExecutor.coordinationRequestSent) | set([robot for robot in self.dPatchingExecutor.coordinationRequest.keys()])):
