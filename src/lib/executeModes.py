@@ -21,7 +21,7 @@ class ExecutorModesExtensions(object):
         """
         This function checks violations of different modes.
         """
-           # first stops the robot
+       # first stops the robot
         #self.hsub.setTempZeroVelocity()
         #startTime = time.time()
 
@@ -70,30 +70,19 @@ class ExecutorModesExtensions(object):
             # Check for environment violation - change the env_assumption_hold to int again
             env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
 
-        #################################################
-        #### STOP THE ROBOT IF ASSUMPTTIONS VIOLATED ####
-        #################################################
-        #if not env_assumption_hold:
-        #    # first stops the robot
-        #   self.hsub.setVelocity(0,0)
-        #else:
-        #    self.hsub.resumeOldVelocity()
-        #    #logging.debug("TimeDifference:" + str(time.time() - startTime))
-
         return env_assumption_hold
-
-    def printViolations(self):
-        """
-        This function prints violations to the terminal and the status log
-        """
-        pass
 
     def run_check_envTrans_violations(self):
         """
         This function puts checkEnvTransViolationWithNextPossibleStates into a while loop for using with thread
         """
+        sensor_state = None
+        otherEnvPropDict = None
+        current_state = None
+
         old_sensor_state = None
         old_otherEnvPropDict = None
+        old_current_state = None
         try:
             while self.alive.isSet():
                 if self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
@@ -105,7 +94,13 @@ class ExecutorModesExtensions(object):
                     elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
                         otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
 
-                    if old_sensor_state != sensor_state or old_otherEnvPropDict != otherEnvPropDict:
+                    # figure out the form of current strategy
+                    if self.runCentralizedStrategy:
+                        current_state = self.dPatchingExecutor.strategy.current_state
+                    else:
+                        current_state = self.strategy.current_state
+
+                    if old_current_state != current_state or old_sensor_state != sensor_state or old_otherEnvPropDict != otherEnvPropDict:
                         runCheck = True
 
                     if runCheck:
@@ -129,6 +124,8 @@ class ExecutorModesExtensions(object):
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
+                    old_current_state = current_state
+
         except:
             import traceback
             logging.error(traceback.format_exc())
