@@ -379,7 +379,8 @@ class MsgHandlerExtensions(object):
         self.message_queues[csock].put(self.robotName + '-' + 'coordinationRequest = ' + str(coordinationRequest) +  '\n')
 
         #track who we have sent reqeust to
-        self.coordinationRequestSent.append(self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())])
+        #if self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())] not in self.coordinationRequestSent:
+        #    self.coordinationRequestSent.append(self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())])
 
         logging.info('MSG-Put-Status: set coorindation status to ' + str(coordinationRequest) + ' to ' + str(csock))
 

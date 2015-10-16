@@ -1484,7 +1484,9 @@ class ExecutorResynthesisExtensions(object):
         # now only send requests to robots violating the spec
         robotsInConflict = self.checkRobotsInConflict(self.LTLViolationCheck.violated_specStr)
         if robotsInConflict: # list not empty. Some robots is in conflict with us
-            self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+            #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+            self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
+
         else:
             logging.warning("we need to trigger env characterization instead. It is not done here!")
             pass
@@ -1630,8 +1632,8 @@ class ExecutorResynthesisExtensions(object):
                 self.prepareForCentralizedStrategySnippetToOtherRobots(csockNewRobotsToCoordinate)
 
                 #update coordination sent
-                self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
-
+                #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
+                self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
 
         else:
             logging.warning("we need to trigger env characterization instead. It is not done here!")

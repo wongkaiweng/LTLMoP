@@ -952,12 +952,18 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         Output:
         {robot:True} dict if any robot's pathcing status is true and {robot:False} otherwise
         """
-        if self.coordinationRequest.values().count(True):
+        if self.coordinationRequest.values().count(True) or self.coordinationRequestSent:
             # also make sure there are no duplicates
             #logging.debug('robots coordinating:' + str(list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))))
             return list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))
         else:
             return []
+
+    def setCoordinationRequestSent(self, robotList):
+        """
+        This function updates self.coordinationRequestSent
+        """
+        self.coordinationRequestSent = copy.deepcopy(robotList)
 
 
 if __name__ == "__main__":
