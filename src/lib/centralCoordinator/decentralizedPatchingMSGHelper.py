@@ -240,7 +240,10 @@ class MsgHandlerExtensions(object):
                     propDict[propKey.replace('_rc', '')] = propDict.pop(propKey)
 
             # remove sensor props of other robots
-            propDict = {k:v for k, v in propDict.iteritems() if self.robotName in k}
+            propDict = {k:v for k, v in propDict.iteritems() for robot in self.robotInRange if robot not in k}
+
+            # add our name back to sensors not having my name
+            propDict = {k if self.robotName in k else self.robotName+'_'+k:v for k, v in propDict.iteritems()}
 
             # append robot name to all props
             if propDict not in stateArray:
@@ -277,7 +280,7 @@ class MsgHandlerExtensions(object):
                 possible_next_states_dict_array.append(copy.deepcopy(ourProps))
 
         #logging.debug("nextStatesArray:" + str(nextStatesArray))
-        logging.debug("possible_next_states_dict_array:" + str(possible_next_states_dict_array))
+        #logging.debug("possible_next_states_dict_array:" + str(possible_next_states_dict_array))
 
         for csock in self.clients.values():
             if csock != self.serv:

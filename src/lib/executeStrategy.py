@@ -329,14 +329,14 @@ class ExecutorStrategyExtensions(object):
                     if self.proj.compile_options['include_heading']:
                         # update region info for all connected robots.
                         self.dPatchingExecutor.updateRobotRegionWithAllClients(self.next_region)
-                        self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(self.next_state.getPropValue('regionCompleted'))
+                        self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(sensor_state['regionCompleted'])
                     else:
                         self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
 
                 else:
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateRobotRegion(self.next_region)
-                        self.robClient.updateCompletedRobotRegion(self.next_state.getPropValue('regionCompleted'))
+                        self.robClient.updateCompletedRobotRegion(sensor_state['regionCompleted'])
                     else:
                         self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
             # ------------------------------- #
@@ -346,7 +346,7 @@ class ExecutorStrategyExtensions(object):
 
                 # first find all next possible states
                 if self.dPatchingExecutor.compiler.proj.compile_options['symbolic'] or self.dPatchingExecutor.compiler.proj.compile_options['interactive']:
-                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableNextStates(from_state=self.next_state)
+                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableNextStates(from_state=self.dPatchingExecutor.strategy.current_state)
                     """
                     statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
                     #logging.debug('statesToConsider:' + str(statesToConsider))
@@ -359,7 +359,7 @@ class ExecutorStrategyExtensions(object):
                             possible_next_states.append(state)
                     """
                 else:
-                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableStates({}, from_state=self.next_state)
+                    possible_next_states = self.dPatchingExecutor.strategy.findTransitionableStates({}, from_state=self.dPatchingExecutor.strategy.current_state)
 
                 # update current next states sent tothe other robot
                 self.dPatchingExecutor.sendNextPossibleEnvStatesPreparedToOtherRobotToAllClients(possible_next_states)
