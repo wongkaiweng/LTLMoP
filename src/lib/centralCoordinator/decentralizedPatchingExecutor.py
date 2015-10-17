@@ -826,6 +826,8 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             logging.info('Starting at State ' + str(self.strategy.current_state.state_id))
         else:
             logging.error('cannot synthesize a centralized patch')
+            self.closeConnection(None, None)
+            sys.exit()
 
         # set up sensor_strategy for runtime monitoring the liveness condition
         self.sensor_state = self.strategy.states.addNewState()

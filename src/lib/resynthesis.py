@@ -755,11 +755,13 @@ class ExecutorResynthesisExtensions(object):
     # ------------------------------# 
     
     ########### ENV Assumption Mining ####################
-    def addStatetoEnvSafety(self,  sensor_state, firstRun = False):
+    def addStatetoEnvSafety(self, sensor_state, firstRun=False, checker=None):
         """
         append the current detected state to our safety
         """
-        
+        if checker is None:
+            checker = self.LTLViolationCheck
+
         if (self.otherRobotStatus is None) or (not self.otherRobotStatus):
             # Add the current state in init state of the LTL spec
             self.postEvent("VIOLATION","Adding the current state to our initial conditions")
@@ -775,22 +777,22 @@ class ExecutorResynthesisExtensions(object):
 
             if not( self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching") or realizable is False:
                 if not firstRun:
-                    self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
+                    self.spec['EnvTrans'] = checker.modify_LTL_file("")
 
                 self.recreateLTLfile(self.proj)
                 realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
              
                 if not firstRun:
-                    self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+                    self.postEvent("VIOLATION",self.simGUILearningDialog[checker.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
                     if not realizable:
-                        while self.LTLViolationCheck.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
+                        while checker.modify_stage < 2 and not realizable:   # < 3 and not realizable:        # CHANGED TO 2 FOR PAPER
 
-                            self.LTLViolationCheck.modify_stage += 1
-                            self.spec['EnvTrans'] = self.LTLViolationCheck.modify_LTL_file("")
+                            checker.modify_stage += 1
+                            self.spec['EnvTrans'] = checker.modify_LTL_file("")
                             self.recreateLTLfile(self.proj)
                             realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
 
-                            self.postEvent("VIOLATION",self.simGUILearningDialog[self.LTLViolationCheck.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
+                            self.postEvent("VIOLATION",self.simGUILearningDialog[checker.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
                         if self.proj.compile_options['neighbour_robot']:
                             if not realizable:
@@ -830,7 +832,7 @@ class ExecutorResynthesisExtensions(object):
 
             # only update ltl_tree in LTLcheck if the spec is realizable
             if realizable:
-                self.LTLViolationCheck.updateEnvTransTree("")
+                checker.updateEnvTransTree("")
 
             self.realizable = realizable
 
@@ -860,7 +862,7 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
                 sys.exit()
             else:                   
-                self.LTLViolationCheck.modify_stage  = 1 # reset the stage to 1
+                checker.modify_stage  = 1 # reset the stage to 1
         """
 
              
@@ -1021,11 +1023,13 @@ class ExecutorResynthesisExtensions(object):
         logging.debug('toHighlight in analyze cores'+ str(self.to_highlight))
         self.analysisDialog.ShowModal()
         
-    def onMenuResynthesize(self, envLiveness):
+    def onMenuResynthesize(self, envLiveness, checker=None):
         """
         Resynthesize the specification with a new livenessEditor
         envLiveness: new env liveness from the user
         """
+        if checker is None:
+            checker = self.LTLViolationCheck
 
         try:
             spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
@@ -1046,16 +1050,16 @@ class ExecutorResynthesisExtensions(object):
         else:
             currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
             
-        for x in range(len(self.LTLViolationCheck.env_safety_assumptions_stage)):
-            self.LTLViolationCheck.modify_stage  = x+1 
-            currentSpec["EnvTrans"] = self.LTLViolationCheck.modify_LTL_file("")
+        for x in range(len(checker.env_safety_assumptions_stage)):
+            checker.modify_stage  = x+1
+            currentSpec["EnvTrans"] = checker.modify_LTL_file("")
             self.recreateLTLfile(self.proj,currentSpec)
             slugsEnvSafetyCNF, normalEnvSafetyCNF = self.exportSpecification(appendLog = False)
             
             if self.analyzeCores(appendLog = False):
                 break
 
-        self.postEvent("INFO","Reset stage to " + str(self.LTLViolationCheck.modify_stage))
+        self.postEvent("INFO","Reset stage to " + str(checker.modify_stage))
         
         if self.analyzeCores():
             self.spec = currentSpec  # realizable, replace the new spec to be the self.spec
@@ -1119,35 +1123,54 @@ class ExecutorResynthesisExtensions(object):
     #########################################################################
 
     # ************** patching **************** #
-    def checkEnvTransViolationWithNextPossibleStates(self):
+    def checkEnvTransViolationWithNextPossibleStates(self, checker=None, current_state=None, sensor_state=None):
         """
         This function obtains all possible next states and check if they will violate the environment assumptions.
         """
+        # set to default if no value is given
+        if checker is None:
+            checker =self.LTLViolationCheck
+        if current_state is None:
+            current_state=self.strategy.current_state
+        if sensor_state is None:
+            sensor_state=self.sensor_strategy
+
         if self.proj.compile_options["multi_robot_mode"] == "patching":
             otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
-            robotName = self.robClient.robotName
+            robotNameList = [self.robClient.robotName]
         elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
             otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
-            robotName = self.dPatchingExecutor.robotName
+            robotNameList = list(set([self.dPatchingExecutor.robotName] + self.dPatchingExecutor.coordinatingRobots))
         else:
             logging.warning('not in a valid mode - ' + str(self.proj.compile_options["multi_robot_mode"]))
 
-        for propCombination in itertools.product(*[v for k,v in otherEnvPropDict.iteritems() if k != robotName]):
-            #logging.debug("propCombination:" + str(propCombination))
-            # assignments to sensor_strategy for each combination
-            for propDict in propCombination:
-                for propKey, propValue in propDict.iteritems():
-                    # check if key exist in sensor strategy?
-                    if propKey in self.sensor_strategy.getInputs(expand_domains=True).keys():
-                        self.sensor_strategy.setPropValue(propKey, propValue)
+        # first verify that we won't be skipping th check
+        if list(set(otherEnvPropDict.keys()+[self.dPatchingExecutor.robotName])) != robotNameList:
+            logging.debug("we are checking propCombination")
+            for propCombination in itertools.product(*[v for k,v in otherEnvPropDict.iteritems() if k not in robotNameList]):
+                #logging.debug("propCombination:" + str(propCombination))
+                # assignments to sensor_strategy for each combination
+                for propDict in propCombination:
+                    for propKey, propValue in propDict.iteritems():
+                        # check if key exist in sensor strategy?
+                        if propKey in sensor_state.getInputs(expand_domains=True).keys():
+                            sensor_state.setPropValue(propKey, propValue)
 
-                # the current state stays the same but checks with differnt next possible states
-                env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
-                if not env_assumption_hold:
-                    logging.debug("asssumptions violated!")
-                    logging.debug("self.strategy.current_state:" + str(self.strategy.current_state.getAll(expand_domains=True)))
-                    logging.debug("self.sensor_strategy" + str(self.sensor_strategy.getInputs(expand_domains=True)))
-                    return False
+                    # the current state stays the same but checks with differnt next possible states
+                    env_assumption_hold = checker.checkViolation(current_state, sensor_state)
+                    if not env_assumption_hold:
+                        logging.debug("asssumptions violated!")
+                        logging.debug("current_state:" + str([k for k, v in current_state.getAll(expand_domains=True).iteritems() if v]))
+                        logging.debug("sensor_state" + str([k for k, v in sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                        return False
+        else:
+            logging.debug("we have all the robots. doing only once")
+            env_assumption_hold = checker.checkViolation(current_state, sensor_state)
+            if not env_assumption_hold:
+                logging.debug("asssumptions violated!")
+                logging.debug("current_state:" + str([k for k, v in current_state.getAll(expand_domains=True).iteritems() if v]))
+                logging.debug("sensor_state" + str([k for k, v in sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                return False
         return True
 
     def loadSpecObjectFromFile(self, spec_file = ""):
@@ -1473,9 +1496,10 @@ class ExecutorResynthesisExtensions(object):
             self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName].update({prop:prop})
         logging.debug("we should have finished setting up things for ourselves")
 
-    def initiateDPatching(self):
+    def initiateDPatching(self, received_request=False):
         """
         This function prepares for dencentralized global strategy with the other robots.
+        received_request: False if we initiate patching. True if we received request
         """
         # update the other robots with the latest location of us
         self.updateLatestRegionInfoWithAllRobots()
@@ -1486,10 +1510,11 @@ class ExecutorResynthesisExtensions(object):
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
-
+        elif received_request:
+            logging.info("We are asked to join patching")
         else:
-            logging.warning("we need to trigger env characterization instead. It is not done here!")
-            pass
+            logging.warning("we need to trigger env characterization instead. This is not checked yet!")
+            self.addStatetoEnvSafety(self.sensor_strategy)
 
         # first put together our spec
         self.prepareForCentralizedStrategySnippetToSelf()
@@ -1578,9 +1603,10 @@ class ExecutorResynthesisExtensions(object):
             self.dPatchingExecutor.runIterationNotCentralExecution()
             time.sleep(0.2)
 
-    def initiateDPatchingCentralizedMode(self):
+    def initiateDPatchingCentralizedMode(self, received_request=False):
         """
         This function is to trigger coordination when we are already coordinating.
+        received_request: False if we initiate patching. True if we received request
         """
         # update the other robots with the latest location of us
         self.updateLatestRegionInfoWithAllRobots()
@@ -1599,6 +1625,7 @@ class ExecutorResynthesisExtensions(object):
             for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
                 logging.debug("Robot Under consideration:" + str(robot))
                 self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.violated_spec_list, self.dPatchingExecutor.spec['EnvTrans'][robot])
+                self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
                 logging.debug("-------------------------------------------")
 
             # add violations of local spec to LTL violated_str list
@@ -1636,9 +1663,11 @@ class ExecutorResynthesisExtensions(object):
                 #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
                 self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
 
+        elif received_request:
+            logging.info("We are asked to coordinate with more robots!")
         else:
-            logging.warning("we need to trigger env characterization instead. It is not done here!")
-            pass
+            self.addStatetoEnvSafety(self.dPatchingExecutor.sensor_state, checker=self.globalEnvTransCheck)
+            logging.warning("we need to trigger env characterization instead. This is not checked!")
 
         # make sure all sensors are the latest
         for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():

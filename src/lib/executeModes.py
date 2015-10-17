@@ -50,7 +50,10 @@ class ExecutorModesExtensions(object):
                 for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
                     self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
-                env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
+                #env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
+                env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates(checker=self.globalEnvTransCheck,\
+                    current_state=self.dPatchingExecutor.strategy.current_state, sensor_state=self.dPatchingExecutor.sensor_state)
+
                 if not env_assumption_hold:
                     logging.debug("sensor_state:" + str([x for x, value in self.dPatchingExecutor.sensor_state.getInputs().iteritems() if value]))
                     logging.debug("env_assumption_hold:" + str(env_assumption_hold))

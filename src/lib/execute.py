@@ -691,9 +691,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
-                            #self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
+
                             self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
+
+                            # updated regions
+                            self.dPatchingExecutor.proj = self.proj
+                            self.dPatchingExecutor.loadProjectAndRegions()
+
                             while not self.dPatchingExecutor.checkRestartStatus():
                                 logging.debug('Waiting for the other robot to restart')
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
@@ -718,6 +723,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 current_next_states = self.last_next_states
 
                 env_assumption_hold = self.env_assumption_hold #self.check_envTrans_violations()
+
+                if not env_assumption_hold:
+                    self.hsub.setVelocity(0,0)
 
                 ###############################################################
                 ####### CHECK IF REQUEST FROM OTHER ROBOTS IS RECEVIED ########
@@ -753,9 +761,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
                             self.runRuntimeMonitoring.clear()
                             if self.runCentralizedStrategy:
-                                self.initiateDPatchingCentralizedMode()
+                                self.initiateDPatchingCentralizedMode(received_request=True)
                             else:
-                                self.initiateDPatching()
+                                self.initiateDPatching(received_request=True)
                             self.resumeRuntimeMonitoring()
                             #TODO: need to take care of cases where mulptiple requests are received
                             logging.error('Decentralized Patching is not completed yet!')
