@@ -1,0 +1,3 @@
+notes:
+-can also make bob starts at r5 and set to same speed.
+-current set up makes sure the initial position is valid
