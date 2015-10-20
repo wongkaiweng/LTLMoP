@@ -27,7 +27,7 @@ def prepareSlugsInput(proj_dir):
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        file_dir = os.path.join(os.path.join(os.path.dirname(p), "../../"), sys.argv[1])
+        file_dir = sys.argv[1]
     else:
         file_dir = os.path.join(os.path.join(os.path.dirname(p), "../../"), "examples/firefighting/firefighting")
     prepareSlugsInput(file_dir)
