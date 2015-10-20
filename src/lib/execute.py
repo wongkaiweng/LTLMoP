@@ -352,6 +352,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.hsub.coordmap_map2lab, self.hsub.coordmap_lab2map = robot_config.getCoordMaps()
         self.proj.coordmap_map2lab, self.proj.coordmap_lab2map = robot_config.getCoordMaps()
 
+        ################self.proj.compile_options['neighbour_robot'] = False
 
         # Import the relevant handlers
         if firstRun:
@@ -539,7 +540,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         
         #for using get LTLRepresentation of current sensors
         self.sensor_strategy = new_strategy.states.addNewState() 
-        
+
         # resynthesize if cannot find initial state
         if init_state is None: 
 
@@ -598,10 +599,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             logging.debug('We finished')
 
         # start checkViolation thread
-        self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
-        self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
-        self.checkEnvTransViolationThread.start()
-        self.runRuntimeMonitoring.set() # start checking violations
+        if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation":
+            self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+            self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
+            self.checkEnvTransViolationThread.start()
+            self.runRuntimeMonitoring.set() # start checking violations
 
         return  init_state, self.strategy
 
@@ -722,7 +724,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 #############################################
                 current_next_states = self.last_next_states
 
-                env_assumption_hold = self.env_assumption_hold #self.check_envTrans_violations()
+                # HACK: This should be fixed. thread access in executeModes
+                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    env_assumption_hold = self.check_envTrans_violations()
+                    self.violated_spec_list = copy.deepcopy(self.LTLViolationCheck.violated_specStr)
+                    self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
+                    self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
+                else:
+                    env_assumption_hold = self.env_assumption_hold #self.check_envTrans_violations() #
 
                 if not env_assumption_hold:
                     self.hsub.setVelocity(0,0)
