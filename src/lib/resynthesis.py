@@ -1396,8 +1396,12 @@ class ExecutorResynthesisExtensions(object):
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
                 violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
-                specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
-                #logging.debug("specNewStr:" + str(specNewStr))
+                # remove violated spec
+                #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
+                # OR
+                # remove spec relating the coordinating robots
+                specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
+                logging.debug("specNewStr:" + str(specNewStr))
 
                 for csock in csockList:
                     self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
@@ -1458,7 +1462,11 @@ class ExecutorResynthesisExtensions(object):
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
                 violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
-                specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
+                # remove violated spec
+                #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
+                # OR
+                # remove spec relating the coordinating robots
+                specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
 
                 self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
                     self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
@@ -1567,6 +1575,24 @@ class ExecutorResynthesisExtensions(object):
                     robotNameCoordinating.append(robot)
 
         return robotNameCoordinating
+
+    def filterAndExcludeSpecOfCoordinatingRobots(self, violatedList, specStr):
+        """
+        This function takes in the violated envTrans, first figure out the robots in conflict, then remove spec relating the robots from specStr if the specStr contains it.
+        violatedList: violated EnvTrans list
+        specStr: EnvTrans spec string
+        """
+        # first find out robots coordinating
+        robotsInConflict = self.checkRobotsInConflict(violatedList)
+
+        #then send in the list of coordinating robots to remove spec (need to pass in str list)
+        specStrList = LTLParser.LTLcheck.ltlStrToList(specStr)
+        specToExclude = LTLParser.LTLcheck.filterSpecList(specStrList, robotsInConflict + [self.dPatchingExecutor.robotName])
+        logging.debug("specToExclude:" + str(specToExclude))
+
+        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, specToExclude)
+
+        return specNewStr
 
     def filterAndExcludeSpec(self, violatedList, specStr):
         """
