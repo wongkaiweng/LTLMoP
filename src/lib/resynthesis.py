@@ -1296,6 +1296,44 @@ class ExecutorResynthesisExtensions(object):
 
         return "[]<>("+sysGoalsLTL+")"
 
+
+    def extractWinningPositions(self):
+        """
+        This function obtains the conjunction of the current liveness with winning positions.
+        sysGoalsId: current system goal number
+        """
+        # first read sysGoals LTL with winning positions preComputed.
+        if self.proj.compile_options['symbolic']:
+            with open(self.proj.getFilenamePrefix()+".bddWinPos", 'r') as f:
+                slugsStr = f.read()
+        else:
+            with open(self.proj.getFilenamePrefix()+".autWinPos", 'r') as f:
+                slugsStr = f.read()
+        f.closed
+
+        # modify sensor list to parse region props properly
+        sensorList = self.proj.enabled_sensors
+        if self.proj.compile_options['fastslow']:
+            # remove _rc props from sensor_list
+            sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                #add in sbit for region completion
+                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(len(self.proj.rfi.regions)))))])
+            else:
+                # added in region_rc with the decomposed region names
+                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
+
+        #logging.debug("sensorList:" + str(sensorList))
+        # convert formula from slugs to our format
+        sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
+        #logging.debug(sysGoalsLTLList)
+
+        # replace with normal region bits (like actual regions)
+        sysWinningPosLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
+        #logging.debug(sysGoalsLTL)
+
+        return "("+sysWinningPosLTL+")"
+
     def replaceIndividualSbitsToGroupSbits(self, LTLList):
         """
         This function takes in an LTL list, extract sbits and put in the right bits afterwards
@@ -1375,6 +1413,11 @@ class ExecutorResynthesisExtensions(object):
         # load spec
         mySpec = self.loadSpecObjectFromFile()
 
+        # send winning positions
+        winPosStr = self.extractWinningPositions()
+        for csock in csockList:
+            self.dPatchingExecutor.sendSpec(csock, 'WinPos', winPosStr, fastslow=True, include_heading=True)
+
         # send spec
         for specType, specStr in mySpec.iteritems():
             if specType not in ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals']:
@@ -1382,10 +1425,10 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                #specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
                 for csock in csockList:
-                    self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
-                #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+                    #self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
+                    self.dPatchingExecutor.sendSpec(csock, specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
 
                 # print current goal pursuing
                 #currentGoalLTL = (str(LTLParser.LTLcheck.ltlStrToList(specStr)[int(self.strategy.current_state.goal_id)]) if not specStr.count('[]<>') == 1 else specStr)
@@ -1412,7 +1455,7 @@ class ExecutorResynthesisExtensions(object):
 
         # send also the old sysGoals
         for csock in csockList:
-            self.dPatchingExecutor.sendSpec(csock, 'SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+            self.dPatchingExecutor.sendSpec(csock, 'SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
 
             # send prop
             self.dPatchingExecutor.sendProp(csock, 'env', self.sensor_strategy.getInputs(expand_domains=True))
@@ -1443,6 +1486,11 @@ class ExecutorResynthesisExtensions(object):
         # load spec
         mySpec = self.loadSpecObjectFromFile()
 
+        # send winning positions
+        winPosStr = self.extractWinningPositions()
+        self.dPatchingExecutor.winPos[self.dPatchingExecutor.robotName] = \
+            self.dPatchingExecutor.sendSpecHelper('WinPos', winPosStr, fastslow=True, include_heading=True)
+
         # send spec
         for specType, specStr in mySpec.iteritems():
             if specType not in ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals']:
@@ -1450,12 +1498,14 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                #specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                #self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
+                #    self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
                 self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
-                    self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
+                    self.dPatchingExecutor.sendSpecHelper(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
 
                 # print current goal pursuing
-                self.postEvent("D-PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.strategy.current_state.goal_id)]-1])
+                self.postEvent("D-PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.prev_z)]-1])
 
             elif specType == 'EnvTrans':
                 # remove violated lines. Can be changed to doing sth else
@@ -1477,7 +1527,7 @@ class ExecutorResynthesisExtensions(object):
 
         # send also the old sysGoals
         self.dPatchingExecutor.sysGoalsOld[self.dPatchingExecutor.robotName] = \
-            self.dPatchingExecutor.sendSpecHelper('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
+            self.dPatchingExecutor.sendSpecHelper('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
 
         # send prop
         self.dPatchingExecutor.envPropList[self.dPatchingExecutor.robotName] = \
@@ -1587,7 +1637,8 @@ class ExecutorResynthesisExtensions(object):
 
         #then send in the list of coordinating robots to remove spec (need to pass in str list)
         specStrList = LTLParser.LTLcheck.ltlStrToList(specStr)
-        specToExclude = LTLParser.LTLcheck.filterSpecList(specStrList, robotsInConflict + [self.dPatchingExecutor.robotName])
+        specToExclude = LTLParser.LTLcheck.filterSpecList(specStrList, \
+            list(set(robotsInConflict + [self.dPatchingExecutor.robotName]  + [k for k, v in self.dPatchingExecutor.coordinationRequest.iteritems() if v])))
         logging.debug("specToExclude:" + str(specToExclude))
 
         specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, specToExclude)

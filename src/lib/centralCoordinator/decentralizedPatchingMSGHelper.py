@@ -124,7 +124,6 @@ class MsgHandlerExtensions(object):
         current_goal_id: current goal the robot is pursuing (for patching)
         """
         spec = self.sendSpecHelper(specType, spec, fastslow, include_heading, current_goal_id)
-
         # send sysSafety to negotiation monitor
         self.message_queues[csock].put(self.robotName + "-" + specType + " = '" + spec + "'\n")
         logging.info('MSG-Put-spec: send '+ specType +' from ' + str(self.robotName))
@@ -135,7 +134,7 @@ class MsgHandlerExtensions(object):
         (can also just give it to the server directly.)
         """
         # check if the specType is valid
-        possibleSpecTypes = ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals', 'SysGoalsOld']
+        possibleSpecTypes = ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals', 'SysGoalsOld','WinPos']
         if specType not in possibleSpecTypes:
             raise TypeError('specType must be ' + str(possibleSpecTypes))
 
@@ -155,7 +154,7 @@ class MsgHandlerExtensions(object):
             ## PATCHING SPECIFICS ##
             ########################
             # only sends the current goal we are pursuing
-            if specType == 'SysGoalsOld':
+            if specType == 'SysGoalsOld' or specType == 'SysGoals':
                 if not spec.count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
                     spec = LTLParser.LTLcheck.ltlStrToList(spec)[current_goal_id]
 

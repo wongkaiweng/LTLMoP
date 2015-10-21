@@ -613,6 +613,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         avg_freq = 20
         last_gui_update_time = 0
 
+        # track number of goals
+        if not self.spec['SysGoals'].count('[]<>') == 1:
+            self.totalSysGoals = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
+        else:
+            self.totalSysGoals = 1
+        logging.debug("totalSysGoals:" + str(self.totalSysGoals))
+        logging.debug(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
+
         # FIXME: don't crash if no spec file is loaded initially
         while self.alive.isSet():
             # Idle if we're not running
@@ -633,7 +641,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 break
 
             self.prev_outputs = self.strategy.current_state.getOutputs()
-            self.prev_z = self.strategy.current_state.goal_id
+            if int(self.strategy.current_state.goal_id) < self.totalSysGoals:
+                self.prev_z = self.strategy.current_state.goal_id
+            else:
+                pass #stays the same
 
             tic = self.timer_func()
             ###### ENV VIOLATION CHECK ######  

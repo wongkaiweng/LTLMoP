@@ -177,6 +177,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         self.spec = {'EnvInit' : {}, 'EnvTrans' : {}, 'EnvGoals' : {}, 'SysInit' : {}, 'SysTrans' : {}, 'SysGoals' : {}}
         self.sysGoalsOld = {} # for checking if goals are reached in patching
+        self.winPos = {} # for storing the winning position formula of the robots
         self.coordinatingRobots = [] #track the robots cooridnating
         self.old_coordinatingRobots = [] # store previous copy of coordinatingRobots
         self.envPropList = {} #tracking env propositions of each robot envPropList[robot]= propList = {prop:value}
@@ -220,6 +221,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
         # add robot key in sysGoalsOld
         self.sysGoalsOld[robot_name] = ""
+
+        # add robot key to winPos
+        self.winPos[robot_name] = ""
 
     def checkData(self):
         """
@@ -336,6 +340,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                             # We got spec from robotClient, save spec
                             self.sysGoalsOld[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
                             printSpec(item.group('packageType'), self.sysGoalsOld[item.group("robotName")], item.group("robotName"))
+
+                    elif item.group('packageType') == 'WinPos':
+                        if ast.literal_eval(item.group("packageValue")):
+                            # We got spec from robotClient, save spec
+                            self.winPos[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                            printSpec(item.group('packageType'), self.winPos[item.group("robotName")], item.group("robotName"))
+
 
                     elif item.group('packageType') == "coordinationRequest":
                         # receiving coorindation request
@@ -596,6 +607,38 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         time.sleep(1)
         return True
 
+    def renameSpecWithAllRobots(self, spec):
+        """
+        This function takes in a spec dict with keys to be robots and rename propositions in it.
+        Helper Fn of renameSpecAndStoreNewMapping
+        we are modifying the reference one so no return is needed?
+        """
+        # e.region to s.region (region heading)
+        for robot in self.coordinatingRobots:
+            for reg in self.robotLocations.keys():
+                for otherRobot in self.coordinatingRobots:
+                    spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, spec[robot])
+
+        # append robot name in front of actuators and sensors props, but not regions
+        ## sensor props
+        ## e.g: sensorProp  -> robotName_sensorProp
+        for robot, ePropList in self.envPropList.iteritems():
+            for eProp, eValue in ePropList.iteritems():
+                #ignore any region related props
+                if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                    continue
+                spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, spec[robot])
+
+
+        ## actuator props
+        ## e.g: actuatorProp  -> robotName_actuatorProp
+        for robot, sPropList in self.sysPropList.iteritems():
+            for sProp, sValue in sPropList.iteritems():
+                #ignore any region related props
+                if sProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots]:
+                    continue
+                spec[robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, spec[robot])
+
     def renameSpecAndStoreNewMapping(self):
         """
         Rename specs and store mapping.
@@ -605,59 +648,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         Rename specs
         """
         for specType in self.spec.keys():
-            # e.region to s.region (region heading) # TODO: duplicates with robClient?
-            for robot in self.coordinatingRobots:
-                for reg in self.robotLocations.keys():
-                    for otherRobot in self.coordinatingRobots:
-                        self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, self.spec[specType][robot])
+            self.renameSpecWithAllRobots(self.spec[specType])
 
-            # append robot name in front of actuators and sensors props, but not regions
-            ## sensor props
-            ## e.g: sensorProp  -> robotName_sensorProp
-            for robot, ePropList in self.envPropList.iteritems():
-                for eProp, eValue in ePropList.iteritems():
-                    #ignore any region related props
-                    if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
-                        continue
-                    self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, self.spec[specType][robot])
+        # also just for sysGoalsOld
+        self.renameSpecWithAllRobots(self.sysGoalsOld)
 
-
-            ## actuator props
-            ## e.g: actuatorProp  -> robotName_actuatorProp
-            for robot, sPropList in self.sysPropList.iteritems():
-                for sProp, sValue in sPropList.iteritems():
-                    #ignore any region related props
-                    if sProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots]:
-                        continue
-                    self.spec[specType][robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, self.spec[specType][robot])
-
-        # also just for sysGoalsOld # TODO: combine with the one above
-        for specStr in self.sysGoalsOld.keys():
-            # e.region to s.region (region heading)
-            for robot in self.coordinatingRobots:
-                for reg in self.robotLocations.keys():
-                    for otherRobot in self.coordinatingRobots:
-                        self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, self.sysGoalsOld[robot])
-
-            # append robot name in front of actuators and sensors props, but not regions
-            ## sensor props
-            ## e.g: sensorProp  -> robotName_sensorProp
-            for robot, ePropList in self.envPropList.iteritems():
-                for eProp, eValue in ePropList.iteritems():
-                    #ignore any region related props
-                    if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
-                        continue
-                    self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, self.sysGoalsOld[robot])
-
-
-            ## actuator props
-            ## e.g: actuatorProp  -> robotName_actuatorProp
-            for robot, sPropList in self.sysPropList.iteritems():
-                for sProp, sValue in sPropList.iteritems():
-                    #ignore any region related props
-                    if sProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots]:
-                        continue
-                    self.sysGoalsOld[robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, self.sysGoalsOld[robot])
+        # also for winPos
+        self.renameSpecWithAllRobots(self.winPos)
 
         """
         Store mapping
@@ -786,8 +783,23 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     LTLspec_envList.append(self.spec[specType][robot])
 
         # join the goals of the robots so that the goals are pursued at the same time
-        specSysGoals = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.spec['SysGoals'].values()]))
-        LTLspec_sysList.append("[]<>(" + specSysGoals + ")" if specSysGoals else specSysGoals)
+        # ----- OLD ------- #
+        #specSysGoals = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.spec['SysGoals'].values()]))
+        #LTLspec_sysList.append("[]<>(" + specSysGoals + ")" if specSysGoals else specSysGoals)
+        # ----------------- #
+
+        # ---- []<>(goal1 and winPos) & []<>(goal2 and winPos) ----- #
+        # sysGoalsList = []
+        # for x in self.spec['SysGoals'].values():
+        #     sysGoalsList.append("[]<>(" + " &\n ".join(filter(None, [x.strip().lstrip('[]<>')] + self.winPos.values())) + ")")
+
+        # specSysGoals = " &\n ".join(filter(None, sysGoalsList))
+        # logging.debug("specSysGoals:" + str(specSysGoals))
+        # LTLspec_sysList.append(specSysGoals)
+
+        # ---- []<>(goal1) & []<>(goal2) & []<>(winPos) ---- #
+        LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values() + ["[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"])))
+
 
         # set up violation check object
         specSysGoalsOld = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
