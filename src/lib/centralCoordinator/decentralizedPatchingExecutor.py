@@ -13,6 +13,7 @@ import time   #for temporary pause, timing synthesis time
 import random #for chosing one next states from the list
 import Queue  #for queueing messages from other robots
 import copy   #for tracking coorindating robots
+import threading #for monitoring sysGoals
 
 # Climb the tree to find out where we are
 import os
@@ -170,6 +171,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.robotInRange = [] # list of robots that are in range (We are communicating with).
         self.robotStatusOnCentralizedStrategyExecution = {} # dict of robots ready to execute. False stands for not ready. True stands for ready.
         self.tempRobotStatusOnCentralizedStrategyExecution = {} # temporarily store robotStatusOnCentralizedStrategyExecution of other robots and update in checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy. (Prevents incorrect removal of status)
+        self.checkSysGoalsThread = None # for checking sysGoals in the background
 
     def cleanVariables(self, first_time=True):
         """
@@ -192,7 +194,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.coordinationRequest = {} #track if coorindation is initiated. True if started and false otherwise
         self.coordinationRequestSent = [] #track whom we have sent coordination request to.
         self.last_next_states = [] #track the last next states in our autonmaton execution
-        self.sysGoalsCheck = None # runtime monitoring object to check if goals are reached
+        self.sysGoalsCheck = {} # runtime monitoring object to check if goals are reached
+        self.sysGoalsCheckStatus = {} # True if that goals had been satisfied. False otherwise
+        self.goalsSatisfied = False # track if all goals are satisfied at least once.
+        self.winPosCheck = None # runtime monitoring object to check if goals are reached
         self.nextPossibleStatesArray = {} # store array of next possible states dict of robots. To be request by the other robots
         self.readyToRestart = {} # track if the two robots are ready to restart execution
 
@@ -490,7 +495,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         if (self.toc-self.tic) > 1:
             self.tic = time.time()
             # check if goals are satisfied
-            if self.checkIfGoalsAreSatisfied():
+            if self.goalsSatisfied: #checkIfGoalsAreSatisfied():
                 logging.debug('The centralized system goal is satisfied.')
                 # reset status
                 self.centralizedExecutionStatus = None
@@ -802,10 +807,18 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
 
         # set up violation check object
-        specSysGoalsOld = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
-        logging.debug("specSysGoalsOld:" + str(specSysGoalsOld))
-        if specSysGoalsOld:
-            self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'sysGoals':specSysGoalsOld}, 'sysGoals')
+        # ------ OLD ------- #
+        # specSysGoalsOld = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
+        # logging.debug("specSysGoalsOld:" + str(specSysGoalsOld))
+        # if specSysGoalsOld:
+        #     self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'sysGoals':specSysGoalsOld}, 'sysGoals')
+        # ------ check winning positions and each goal ------ #
+        for robot in self.spec['SysGoals'].keys():
+            self.sysGoalsCheck[robot] = LTLParser.LTLcheck.LTL_Check(None, {}, {'SysGoals':self.spec['SysGoals'][robot]}, 'SysGoals')
+            self.sysGoalsCheckStatus[robot] = False
+        specWinPos = "[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"
+        if specWinPos:
+            self.winPosCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'WinPos':specWinPos}, 'WinPos')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None, LTLspec_sysList)))
         startTime = time.time()
@@ -902,6 +915,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 logging.debug(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
                 logging.debug('---------------------------------------------------------')
 
+            # check if state is satisified
+            if not self.checkSysGoalsThread or not self.checkSysGoalsThread.isAlive():
+                self.runSingleTime_checkIfGoalsAreSatisfied() #self.checkIfGoalsAreSatisfied()
+
         """
         send updated outputs to the robot
         """
@@ -912,13 +929,55 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
         return nextOutputs
 
+    def runSingleTime_checkIfGoalsAreSatisfied(self):
+        """
+        This function runs checkIfGoalsAreSatisfied once in thread.
+        """
+        self.checkSysGoalsThread = threading.Thread(target=self.checkIfGoalsAreSatisfied, args=())
+        self.checkSysGoalsThread.start()
+
+    def startCheckSysGoalsThread(self):
+        """
+        this functions starts the thread to run run_checkIfGoalsAreSatisfied.
+        """
+        self.checkSysGoalsThread = threading.Thread(target=self.run_checkIfGoalsAreSatisfied, args=())
+        self.checkSysGoalsThread.daemon = True  # Daemonize thread
+        self.checkSysGoalsThread.start()
+
+    def run_checkIfGoalsAreSatisfied(self):
+        """
+        thread version of checkIfGoalsAreSatisfied.
+        """
+        old_current_state = None
+        while not self.goalsSatisfied:
+            # only carry out the check when state is updated
+            if old_current_state is None or old_current_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
+                self.goalsSatisfied = self.checkIfGoalsAreSatisfied()
+            old_current_state = self.strategy.current_state
+
     def checkIfGoalsAreSatisfied(self):
         """
         Constant check if goal is achieved. If so, terminate cooridation.
         Return true if goals are satisfied and false otherwise.
         """
-        logging.debug("Is sysGoals satisfied? " + str(self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)))
-        return self.sysGoalsCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
+        winPosStatus = False
+        startTime = time.time()
+        if False in self.sysGoalsCheckStatus.values():
+            for robot in self.sysGoalsCheck.keys():
+                if not self.sysGoalsCheckStatus[robot]:
+                    self.sysGoalsCheckStatus[robot] = self.sysGoalsCheck[robot].checkViolation(self.strategy.current_state, self.strategy.current_state)
+                    logging.debug("Is sysGoals of " + robot + " satisfied? " + str(self.sysGoalsCheckStatus[robot]))
+                    logging.debug("System goal:" + str(self.sysGoalsCheck[robot].env_safety_assumptions))
+                    logging.debug("current_state:" + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
+
+        if not False in self.sysGoalsCheckStatus.values(): # now we can check winning positions
+            winPosStatus = self.winPosCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
+            logging.debug("Are we in winning positions?:" + str(winPosStatus))
+
+        logging.debug("time taken:" + str(time.time() - startTime))
+
+        self.goalsSatisfied = (False if False in self.sysGoalsCheckStatus.values() else winPosStatus)
+        return (False if False in self.sysGoalsCheckStatus.values() else winPosStatus)
 
     def testTriggerSysGoalsSatisfaction(self):
         """
