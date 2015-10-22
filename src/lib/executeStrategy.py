@@ -241,7 +241,11 @@ class ExecutorStrategyExtensions(object):
             self.strategy.current_state = self.next_state
             #self.last_next_states = []  # reset
 
-            self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+            if not self.proj.compile_options['interactive']:
+                self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+            else:
+                logging.debug(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
+                logging.debug('---------------------------------------------------------')
 
         if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
             # Move one step towards the next region (or stay in the same region)
@@ -310,7 +314,7 @@ class ExecutorStrategyExtensions(object):
 
             # check if goals are reached
             if not self.dPatchingExecutor.checkSysGoalsThread or not self.dPatchingExecutor.checkSysGoalsThread.isAlive():
-                self.runSingleTime_checkIfGoalsAreSatisfied()
+                self.dPatchingExecutor.runSingleTime_checkIfGoalsAreSatisfied()
             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
             return
 
