@@ -491,22 +491,22 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
         # set time to check if sysGoals is satisfied
-        self.toc = time.time()
-        if (self.toc-self.tic) > 1:
-            self.tic = time.time()
-            # check if goals are satisfied
-            if self.goalsSatisfied: #checkIfGoalsAreSatisfied():
-                logging.debug('The centralized system goal is satisfied.')
-                # reset status
-                self.centralizedExecutionStatus = None
-                # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
-                self.coordinationRequest = {k:False for k in self.coordinationRequest.keys()}
-                #self.keepConnection = False
+        # self.toc = time.time()
+        # if (self.toc-self.tic) > 1:
+        #     self.tic = time.time()
+        # check if goals are satisfied
+        if self.goalsSatisfied: #checkIfGoalsAreSatisfied():
+            logging.debug('The centralized system goal is satisfied.')
+            # reset status
+            self.centralizedExecutionStatus = None
+            # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
+            self.coordinationRequest = {k:False for k in self.coordinationRequest.keys()}
+            #self.keepConnection = False
 
-                # To do: make sure both robots are ready first, before we go back to local execution.
-                for robot in list(set(self.coordinatingRobots) - set([self.robotName])):
-                    self.readyToRestart[robot] = False
-                    self.checkedRestartStatus = False
+            # To do: make sure both robots are ready first, before we go back to local execution.
+            for robot in list(set(self.coordinatingRobots) - set([self.robotName])):
+                self.readyToRestart[robot] = False
+                self.checkedRestartStatus = False
 
     # def run(self):
     #     """
@@ -973,6 +973,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         if not False in self.sysGoalsCheckStatus.values(): # now we can check winning positions
             winPosStatus = self.winPosCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
             logging.debug("Are we in winning positions?:" + str(winPosStatus))
+            logging.debug("current_state: no-" + str(self.strategy.current_state.state_id) + "," + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
 
         logging.debug("time taken:" + str(time.time() - startTime))
 

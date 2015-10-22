@@ -307,6 +307,10 @@ class ExecutorStrategyExtensions(object):
                         self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
                     else:
                         self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
+
+            # check if goals are reached
+            if not self.dPatchingExecutor.checkSysGoalsThread or not self.dPatchingExecutor.checkSysGoalsThread.isAlive():
+                self.runSingleTime_checkIfGoalsAreSatisfied()
             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
             return
 
