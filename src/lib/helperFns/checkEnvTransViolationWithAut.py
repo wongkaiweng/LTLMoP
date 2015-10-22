@@ -233,7 +233,10 @@ if __name__ == '__main__':
         # set up violation check object
         LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
         LTLViolationCheckSysTrans = LTLParser.LTLcheck.LTL_Check("",{},spec,specType='SysTrans')
-        sysGoalsList  = LTLParser.LTLcheck.ltlStrToList(spec['SysGoals'])
+        if not spec['SysGoals'].count('[]<>') == 1:
+            sysGoalsList  = LTLParser.LTLcheck.ltlStrToList(spec['SysGoals'])
+        else:
+            sysGoalsList =[spec['SysGoals']]
         LTLViolationCheckSysGoalslist = []
         for ltlStr in sysGoalsList:
             LTLViolationCheckSysGoalslist.append(LTLParser.LTLcheck.LTL_Check("",{},{'SysGoals':ltlStr},specType='SysGoals'))
