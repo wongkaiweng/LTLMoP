@@ -77,14 +77,14 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
                 self.outputAPs.append(lastLine)
         logging.debug( "outputAPs:" + str(self.outputAPs))
 
-    def searchForStates(self, prop_assignments, state_list=None):
-        """ Returns an iterator for the subset of all known states (or a subset
-            specified in `state_list`) that satisfy `prop_assignments`. """
-
-        # HACK: currently perform no check
+    def getInitState(self):
+        """
+        This function requires no input and will return the initial state.
+        """
         self.slugsProcess.stdin.write("XGETINIT\n")#XCOMPLETEINIT\n" + initInputsOutputs)#
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # Skip the prompt
+
         currentState = self.slugsProcess.stdout.readline().strip()
         logging.debug( "currentState:" + str(currentState))
 
@@ -99,12 +99,74 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         logging.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
         curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
 
+        # set current state id
+        curStateObject.goal_id = currentState.partition(",")[2] # it's a string
+
+        return (x for x in [curStateObject])
+
+    def searchForStates(self, prop_assignments, state_list=None):
+        """ Returns an iterator for the subset of all known states (or a subset
+            specified in `state_list`) that satisfy `prop_assignments`. """
+
+        # first expand all domains
+        prop_assignments = self.states.expandDomainsInPropAssignment(prop_assignments)
+
+        logging.debug("prop_assignments for searching states:" + str([k for k, v in prop_assignments.iteritems() if v]))
+        initInputsOutputs = ""
+        for prop in self.inputAPs:
+            if prop in prop_assignments.keys():
+                initInputsOutputs += "1" if (prop_assignments[prop] is True) else "0"
+            else:
+                initInputsOutputs += "."
+        for prop in self.outputAPs:
+            if prop in prop_assignments.keys():
+                initInputsOutputs += "1" if (prop_assignments[prop] is True) else "0"
+            else:
+                initInputsOutputs += "."
+
+        self.slugsProcess.stdin.write("XCOMPLETEINIT\n" + initInputsOutputs)
+        self.slugsProcess.stdin.flush()
+        self.slugsProcess.stdout.readline() # Skip the prompt
+        currentState = self.slugsProcess.stdout.readline().strip()
+
+        # in the form of AaGa
+        # A: given true value,    a:given false value
+        # G: possible true value, g:possible false value
+        logging.debug( "currentState:" + str(currentState))
+
+        # create state with the current state prop assignments
+        prop_assignments = {}
+        for idx,element in enumerate(currentState):
+            value = True if element == 'A' or element == 'G' else False
+            if idx > len(self.inputAPs)-1:
+                prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
+            else:
+                prop_assignments[self.inputAPs[idx]] = value
+        logging.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
+        curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
+
+        # set position in slugs
+        self.slugsProcess.stdin.write("SETPOS\n" + currentState.replace("A","1\n").replace("a","0\n").replace("G","1\n").replace("g","0\n"))
+        self.slugsProcess.stdin.flush()
+        self.slugsProcess.stdout.readline() # only read Position:
+
+        # get and set current state id
+        self.slugsProcess.stdin.write("XGETCURRENTGOAL\n")
+        self.slugsProcess.stdin.flush()
+        currentGoal = self.slugsProcess.stdout.readline().partition(">")[2] #strip("> ")
+        logging.debug("currentGoal:" + str(currentGoal))
+        curStateObject.goal_id = currentGoal # it's a string
+
         return (x for x in [curStateObject])
 
     def findTransitionableStates(self, prop_assignments, from_state=None):
         """ Return a list of states that can be reached from `from_state`
             and satisfy `prop_assignments`.  If `from_state` is omitted,
             the strategy's current state will be used. """
+        logging.debug("prop_assignments:" + str(prop_assignments))
+
+        # first expand all domains
+        prop_assignments = self.states.expandDomainsInPropAssignment(prop_assignments)
 
         # PICK THE NEXT VALUES HERE
         nextInput = ""
