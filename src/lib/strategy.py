@@ -627,7 +627,7 @@ class Strategy(object):
 
         raise NotImplementedError("Use a subclass of Strategy")
 
-    def searchForStates(self, prop_assignments, state_list=None):
+    def searchForStates(self, prop_assignments, state_list=None, goal_id=None):
         """ Returns an iterator for the subset of all known states (or a subset
             specified in `state_list`) that satisfy `prop_assignments`. """
 
@@ -647,7 +647,7 @@ class Strategy(object):
             Returns None if no such state is found.  """
 
         if goal_id is not None:
-            for state in self.searchForStates(prop_assignments, state_list):
+            for state in self.searchForStates(prop_assignments, state_list, goal_id):
                 if state.goal_id == goal_id:
                     return state
         

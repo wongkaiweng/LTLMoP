@@ -129,7 +129,7 @@ class FSAStrategy(strategy.Strategy):
         # All done, hooray!
         logging.info("Loaded %d states.", len(self.states))
 
-    def searchForStates(self, prop_assignments, state_list=None):
+    def searchForStates(self, prop_assignments, state_list=None, goal_id=None):
         """ Returns an iterator for the subset of all known states (or a subset
             specified in `state_list`) that satisfy `prop_assignments`. """
 

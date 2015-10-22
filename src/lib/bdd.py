@@ -127,7 +127,7 @@ class BDDStrategy(strategy.Strategy):
         # Create a Domain for jx to help with conversion to/from bitvectors
         self.jx_domain = strategy.Domain("_jx", value_mapping=range(self.num_goals), endianness=strategy.Domain.B0_IS_LSB)
 
-    def searchForStates(self, prop_assignments, state_list=None):
+    def searchForStates(self, prop_assignments, state_list=None, goal_id=None):
         """ Returns an iterator for the subset of all known states (or a subset
             specified in `state_list`) that satisfy `prop_assignments`. """
 

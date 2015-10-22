@@ -104,7 +104,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
 
         return (x for x in [curStateObject])
 
-    def searchForStates(self, prop_assignments, state_list=None):
+    def searchForStates(self, prop_assignments, state_list=None, goal_id=None):
         """ Returns an iterator for the subset of all known states (or a subset
             specified in `state_list`) that satisfy `prop_assignments`. """
 
@@ -127,11 +127,18 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.write("XCOMPLETEINIT\n" + initInputsOutputs)
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # Skip the prompt
-        currentState = self.slugsProcess.stdout.readline().strip()
+        prompt = self.slugsProcess.stdout.readline().strip()
+
+        # iterate until we actually get our state
+        while re.search('[^aAgG]',prompt):
+            prompt = self.slugsProcess.stdout.readline().strip()
+            logging.debug("prompt:" + str(prompt))
+        currentState = prompt
 
         # in the form of AaGa
         # A: given true value,    a:given false value
         # G: possible true value, g:possible false value
+        logging.debug("initInputsOutputs:" + str(initInputsOutputs))
         logging.debug( "currentState:" + str(currentState))
 
         # create state with the current state prop assignments
@@ -150,6 +157,11 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # only read Position:
 
+        if goal_id is not None:
+            self.slugsProcess.stdin.write("XGETCURRENTGOAL\n" + str(goal_id) + "\n")
+            self.slugsProcess.stdin.flush()
+            self.slugsProcess.stdout.readline() # only read Position:
+
         # get and set current state id
         self.slugsProcess.stdin.write("XGETCURRENTGOAL\n")
         self.slugsProcess.stdin.flush()
@@ -163,7 +175,6 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         """ Return a list of states that can be reached from `from_state`
             and satisfy `prop_assignments`.  If `from_state` is omitted,
             the strategy's current state will be used. """
-        logging.debug("prop_assignments:" + str(prop_assignments))
 
         # first expand all domains
         prop_assignments = self.states.expandDomainsInPropAssignment(prop_assignments)
@@ -173,7 +184,6 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         for prop in self.inputAPs:
             nextInput += "1" if (prop_assignments[prop] is True) else "0"
 
-        logging.debug("next inputs:" + str([k for k, v in prop_assignments.iteritems() if v]))
         # Make the transition
         self.slugsProcess.stdin.write("XMAKETRANS\n"+nextInput)
         self.slugsProcess.stdin.flush()
@@ -183,6 +193,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             currentState = nextLine
         else:
             logging.debug("nextLine:" + str(nextLine))
+            logging.debug("next inputs:" + str([k for k, v in prop_assignments.iteritems() if v]))
             logging.error("No next state!")
             return []
 
