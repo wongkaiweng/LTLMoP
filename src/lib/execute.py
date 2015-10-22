@@ -686,6 +686,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # *********** patching ************** #
                             # once switched back to local strategy need to find init state again
                             self.runCentralizedStrategy = False
+                            self.hsub.setVelocity(0,0)
+                            self.runRuntimeMonitoring.clear()
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
@@ -696,15 +698,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 logging.debug('Waiting for the other robot to restart')
                                 time.sleep(1) #wait for the other robot to get ready
                             logging.debug('Running again ...')
+                            self.resumeRuntimeMonitoring()
+
+                            continue
                             # *********************************** #
                         elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
                             # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
                             # once switched back to local strategy need to find init state again
                             self.runCentralizedStrategy = False
+                            self.hsub.setVelocity(0,0)
+                            self.runRuntimeMonitoring.clear()
+                            logging.debug("stopped runRuntimeMonitoring...")
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
-
+                            logging.debug("finished initializing")
                             self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
 
@@ -717,6 +725,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
                                 time.sleep(0.2) #wait for the other robot to get ready
                             logging.debug('Running again ...')
+                            self.resumeRuntimeMonitoring()
+
+                            continue
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
                         else:
                             logging.warning('runCentralizedStrategy should not be true!')

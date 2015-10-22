@@ -41,7 +41,9 @@ class ExecutorModesExtensions(object):
 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
             # ************ patching ****************** #
-            env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
+            env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+            if env_assumption_hold:
+                env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
             # **************************************** #
 
         elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
@@ -67,7 +69,9 @@ class ExecutorModesExtensions(object):
                         env_assumption_hold = True
                         logging.debug("no violations as it's only about one robot (later should change to only topology)")
             else:
-                env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
+                env_assumption_hold = self.LTLViolationCheck.checkViolation(self.strategy.current_state, self.sensor_strategy)
+                if env_assumption_hold:
+                    env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates()
             #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
         else:
             # Check for environment violation - change the env_assumption_hold to int again
@@ -106,9 +110,8 @@ class ExecutorModesExtensions(object):
                     if old_current_state != current_state or old_sensor_state != sensor_state or old_otherEnvPropDict != otherEnvPropDict:
                         runCheck = True
 
-                    if runCheck:
+                    if runCheck and self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
                         self.env_assumption_hold = self.check_envTrans_violations()
-
                         # stop check violations until this one is solved.
                         if not self.env_assumption_hold:
                             self.runRuntimeMonitoring.clear()
