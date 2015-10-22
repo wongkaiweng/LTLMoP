@@ -808,4 +808,94 @@ def createLTLfile(fileName, spec_env, spec_sys):
     # close the file
     ltlFile.close()
 
+# ---- spec snippets for patching ---- #
+def createIAMaintainDistanceSysTopologyFragment(regionMapping, regions, adjData, use_bits=True, other_robot_names_list=[]):
+    """
+    []( (next(e.other_robot_name_reg)) -> ( !(next(e.reg_rc)|()   & next(s.reg)|()  )))
+    """
+    # skip any boundary or obstacles
+    regions_old = regions
+    regions = []
+    for reg in regions_old:
+        if reg.name == 'boundary' or reg.isObstacle:
+            continue
+        else:
+            regions.append(reg)
+
+    if use_bits:
+        numBits = int(math.ceil(math.log(len(regions),2)))
+        # TODO: only calc bitencoding once
+        bitEncode = parseEnglishToLTL.bitEncoding(len(regions), numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+        envBitEnc = bitEncode['env']
+        envNextBitEnc = bitEncode['envNext']
+
+    # The topological relation (adjacency)
+    adjFormulas = []
+
+    if not other_robot_names_list:
+        logging.info('robot_name not provided!')
+        return
+
+    # retrieve only the region names
+    regionNames = [x.name for x in regions]
+    for robot in other_robot_names_list:
+        for reg, subregList in regionMapping.iteritems():
+            reg = reg.encode('ascii','ignore')
+
+            # skip boundary and obstacles
+            skipRegion = False
+            for subReg in subregList:
+                if regions[regionNames.index(subReg)].isObstacle:
+                    skipRegion = True
+                    continue
+
+            if reg == 'boundary' or reg == 'others' or skipRegion:
+                continue
+
+            toExcludeList = []
+            toIncludeList = []
+            for subReg in subregList:
+                subRegIdx = regionNames.index(subReg)
+                toExcludeList.append(subReg)
+
+                # first find neighbour regions to exclude
+                for destIdx in range(len(adjData)):
+                    if adjData[regionNames.index(subReg)][destIdx]:
+                        toExcludeList.append(regionNames[destIdx])
+
+            #logging.debug("toExcludeList:" + str(toExcludeList))
+            # 1st time
+            for excludedSubReg in toExcludeList:
+                for destIdx in range(len(adjData)):
+                    if adjData[regionNames.index(excludedSubReg)][destIdx] and regionNames[destIdx] not in toExcludeList:
+                        toIncludeList.append(regionNames[destIdx])
+
+            # 2nd time
+            toIncludeListNew = []
+            for includedSubReg in toIncludeList:
+                for destIdx in range(len(adjData)):
+                    if adjData[regionNames.index(includedSubReg)][destIdx] and regionNames[destIdx] not in toExcludeList and regionNames[destIdx] not in toIncludeList:
+                        toIncludeListNew.append(regionNames[destIdx])
+
+            toIncludeList = list(set(toIncludeList + toIncludeListNew))
+
+            # 3rd time
+            toIncludeListNew = []
+            for includedSubReg in toIncludeList:
+                for destIdx in range(len(adjData)):
+                    if adjData[regionNames.index(includedSubReg)][destIdx] and regionNames[destIdx] not in toExcludeList and regionNames[destIdx] not in toIncludeList:
+                        toIncludeListNew.append(regionNames[destIdx])
+
+            toIncludeList = list(set(toIncludeList + toIncludeListNew))
+            #logging.debug("toIncludeList:" + str(toIncludeList))
+
+            adjFormula = '\t\t\t []( next(e.'+ robot + '_' + reg + ') -> (' +\
+                                    ' ! (' + '|'.join(filter(None, list(set([envNextBitEnc[regionNames.index(x)] if use_bits else "next(s."+ x + ")" for x in toExcludeList])))) + ') & ' +\
+                                       '(' + '|'.join(filter(None, list(set([envNextBitEnc[regionNames.index(x)] if use_bits else "next(s."+ x + ")" for x in toIncludeList])))) + ') ) )'
+
+            adjFormulas.append(adjFormula)
+
+    return " & \n".join(adjFormulas)
 
