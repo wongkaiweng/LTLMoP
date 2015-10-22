@@ -367,10 +367,13 @@ class SpecCompiler(object):
                 if self.proj.compile_options['decompose']:
                     # make sure the bits are mapped correctly with the use of self.parser
                     spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans']]+[createSysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], robot, self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow']) for robot in self.proj.otherRobot]))
+                    spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans']]+[createSysMutualExclusion(self.parser.proj.regionMapping, self.parser.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], robot, self.proj.compile_options['include_heading'], False) for robot in self.proj.otherRobot]))
+
                 else:
                     spec["SysTrans"] = '&\n '.join(filter(None,[spec["SysTrans"]]+[createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], robot, self.proj.compile_options['include_heading'], self.proj.compile_options['fastslow']) for robot in self.proj.otherRobot]))
+                    spec["SysTrans"] = '&\n '.join(filter(None,[spec["SysTrans"]]+[createSysMutualExclusion(self.parser.proj.regionMapping, self.proj.rfi.regions, self.proj.compile_options['use_region_bit_encoding'], robot, self.proj.compile_options['include_heading'], False) for robot in self.proj.otherRobot]))
 
-                if self.proj.compile_options['multi_robot_mode'] == 'd-patching':
+                if self.proj.compile_options['multi_robot_mode'] == 'd-patching' and False: #'charlie' in self.proj.project_root: (modified here)
                     if self.proj.compile_options['decompose']:
                         spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans']]+[createIAMaintainDistanceSysTopologyFragment(self.parser.proj.regionMapping, self.parser.proj.rfi.regions,\
                             self.parser.proj.rfi.transitions, use_bits=self.proj.compile_options['use_region_bit_encoding'], other_robot_names_list=self.proj.otherRobot)]))
