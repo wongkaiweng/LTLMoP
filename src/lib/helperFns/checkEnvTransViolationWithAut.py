@@ -115,14 +115,14 @@ def getSpecDict(ltlFile):
 
     for key, formulaType in assumptionsPair.iteritems():
         LTLlist = []
-        for x in assumptions.getConjunctsByType(LTLParser.LTLFormula.LTLFormulaType.SAFETY):
+        for x in assumptions.getConjunctsByType(formulaType):
             LTLlist.append(LTLParser.LTLFormula.treeToString(x.tree))
 
         LTLDict[key]="&".join(LTLlist)
 
     for key, formulaType in guaranteesPair.iteritems():
         LTLlist = []
-        for x in guarantees.getConjunctsByType(LTLParser.LTLFormula.LTLFormulaType.SAFETY):
+        for x in guarantees.getConjunctsByType(formulaType):
             LTLlist.append(LTLParser.LTLFormula.treeToString(x.tree))
 
         LTLDict[key]="&".join(LTLlist)
@@ -229,6 +229,15 @@ if __name__ == '__main__':
 
         # create strategy
         strat = strategy.createStrategyFromFile(fileName+'.aut', inputs, outputs)
+
+        # set up violation check object
+        LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
+        LTLViolationCheckSysTrans = LTLParser.LTLcheck.LTL_Check("",{},spec,specType='SysTrans')
+        sysGoalsList  = LTLParser.LTLcheck.ltlStrToList(spec['SysGoals'])
+        LTLViolationCheckSysGoalslist = []
+        for ltlStr in sysGoalsList:
+            LTLViolationCheckSysGoalslist.append(LTLParser.LTLcheck.LTL_Check("",{},{'SysGoals':ltlStr},specType='SysGoals'))
+
         for stateNo in noSuccessorsStateList:
             # find current violated state
             for stateObject in strat.states:
@@ -241,14 +250,15 @@ if __name__ == '__main__':
                             currentStateObject.setPropValue(prop_name, False)
 
                     # check violation
-                    LTLViolationCheck = LTLParser.LTLcheck.LTL_Check("",{},spec)
-                    LTLViolationCheckSysTrans = LTLParser.LTLcheck.LTL_Check("",{},spec,specType='SysTrans')
                     logging.info('-------------------------')
                     logging.info('Printing violations of State ' + str(stateNo))
                     logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
                     logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
+                    for idx, checkObject in enumerate(LTLViolationCheckSysGoalslist):
+                        if checkObject.checkViolation(currentStateObject, currentStateObject, LTLMoP = True):
+                            logging.info(str(idx) + "-SysGoalsHolds: True")
                     logging.info('=========================')
                     break
 
