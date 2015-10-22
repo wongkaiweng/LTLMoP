@@ -125,6 +125,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         ########## ENV Assumption Learning ######
         self.compiler = None                   
         self.LTLViolationCheck = None
+        self.LTLViolationCheckPossibleStates = None
         self.analysisDialog = None
         self.to_highlight = None
         self.tracebackTree = None               # tells you init, trans and sys line no 
@@ -152,6 +153,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.old_violated_specStr = []
         self.old_violated_specStr_with_no_specText_match = [] # for spec with no specText match
         self.old_violated_spec_line_no = []
+        self.old_possible_states_violated_specStr = []
+        self.old_possible_states_violated_specStr_with_no_specText_match = [] # for spec with no specText match
+        self.old_possible_states_violated_spec_line_no = []
         self.prev_z  = 0
         # -----------------------------------------#
 
@@ -167,6 +171,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.globalEnvTransCheck = None # violation check for global spec
         self.checkDataThread = None # main loop of dPatchingExecutor
         self.checkEnvTransViolationThread = None # for checking violations
+        self.possibleStatesCheckEnvTransViolationThread = None # for checking violations
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
 
@@ -382,6 +387,99 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             logging.info("Ready.  Press [Start] to begin...")
             self.runStrategy.wait()
 
+        ######## ENV Assumption Learning ###########
+        if firstRun:
+
+            # synthesize our controller again just to see if it's realizable and replace spec if FALSE
+            self.compiler = specCompiler.SpecCompiler(spec_file)
+            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+            ###########
+            #self.tracebackTree : separate spec lines to spec groups
+            #############
+            self.spec, self.tracebackTree, response = self.compiler._writeLTLFile()#False)
+            self.originalLTLSpec  = self.spec.copy()
+            realizable, realizableFS, output  = self.compiler._synthesize()
+
+            # initializing dialog in simGUI when violation occurs
+            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"]
+
+            # for mapping from lineNo to LTL
+            for key,value in self.compiler.LTL2SpecLineNumber.iteritems():
+                self.LTLSpec[ value ] = key.replace("\t","").replace("\n","").replace(" ","")
+
+            self.originalSpec = copy.deepcopy(self.spec)
+            if not realizable:
+                # start with always false
+                self.oriEnvTrans = '[]((FALSE))' #added but should never be used for the unrealizable case.
+                self.spec['EnvTrans'] = "\t[]((FALSE))\n"
+                self.EnvTransRemoved = self.tracebackTree["EnvTrans"]
+            else:
+                # put all clauses in EnvTrans into conjuncts
+                if self.proj.compile_options['fastslow']:
+                    self.spec['EnvTrans'] = ' &\n'.join(filter(None, [self.spec['EnvTrans'], self.spec["EnvTopo"]]))
+                self.oriEnvTrans = copy.copy(self.spec['EnvTrans'])
+                self.spec['EnvTrans'] = '[](('+ copy.copy(self.oriEnvTrans).replace('[]','') +'))\n'
+                self.EnvTransRemoved = []
+
+            # rewrite ltl file
+            self.recreateLTLfile(self.proj)
+
+            # path of ltl file to be passed to the function
+            self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")
+            #create LTL checking object
+            self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
+            self.LTLViolationCheckPossibleStates = LTLParser.LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
+
+            #safe a copy of the original sys initial condition (for resynthesis later)
+            self.originalSysInit = self.spec['SysInit']
+
+            # pass in current env assumptions if we have some
+            if realizable:
+                self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))
+                #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
+                self.LTLViolationCheckPossibleStates.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))
+            else:
+                self.LTLViolationCheck.ltl_treeEnvTrans = None
+                self.LTLViolationCheck.setOriginalEnvTrans('FALSE')
+
+                self.LTLViolationCheckPossibleStates.ltl_treeEnvTrans = None
+                self.LTLViolationCheckPossibleStates.setOriginalEnvTrans('FALSE')
+        #for using get LTLRepresentation of current sensors
+        self.sensor_strategy = new_strategy.states.addNewState()
+
+        ############################################
+
+        ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
+        ### pass in sensor values, current actuator and custom proposition values, and current region object
+
+        ## Region
+        # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
+        init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
+        if init_region is None:
+            logging.error("Initial pose not inside any region!")
+            sys.exit(-1)
+
+        logging.info("Starting from initial region: " + init_region.name)
+        # include initial regions in picking states
+        if self.proj.compile_options['fastslow']:
+            init_prop_assignments = {"regionCompleted": init_region}
+            # TODO: check init_region format
+        else:
+            init_prop_assignments = {"region": init_region}
+
+        # initialize all sensor and actuator methods
+        logging.info("Initializing sensor and actuator methods...")
+        self.hsub.initializeAllMethods()
+
+        ## outputs
+        if firstRun or self.strategy is None:
+            # save the initial values of the actuators and the custom propositions
+            for prop in self.proj.enabled_actuators + self.proj.all_customs:
+                self.current_outputs[prop] = (prop in self.hsub.executing_config.initial_truths)
+
+        init_prop_assignments.update(self.current_outputs)
+
+
         if self.proj.compile_options['neighbour_robot']:
             if self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "negotiation":
                 # -------- two_robot_negotiation ----------#
@@ -412,37 +510,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 logging.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
                 sys.exit(3)
 
-        ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
-        ### pass in sensor values, current actuator and custom proposition values, and current region object
-
-        ## Region
-        # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
-        init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
-        if init_region is None:
-            logging.error("Initial pose not inside any region!")
-            sys.exit(-1)
-
-        logging.info("Starting from initial region: " + init_region.name)
-        # include initial regions in picking states
-        if self.proj.compile_options['fastslow']:
-            init_prop_assignments = {"regionCompleted": init_region}
-            # TODO: check init_region format
-        else:
-            init_prop_assignments = {"region": init_region}
-
-        # initialize all sensor and actuator methods
-        logging.info("Initializing sensor and actuator methods...")
-        self.hsub.initializeAllMethods()
-
-
-        ## outputs
-        if firstRun or self.strategy is None:
-            # save the initial values of the actuators and the custom propositions
-            for prop in self.proj.enabled_actuators + self.proj.all_customs:
-                self.current_outputs[prop] = (prop in self.hsub.executing_config.initial_truths)
-
-        init_prop_assignments.update(self.current_outputs)
-
         ## inputs
         # ---- two_robot_negotiation ----- #
         if self.proj.compile_options['neighbour_robot']:
@@ -466,6 +533,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         else:
         	init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
+        logging.debug("init_prop_assignments:" + str(init_prop_assignments))
         #search for initial state in the strategy
         if firstRun:
             init_state = new_strategy.searchForOneState(init_prop_assignments)
@@ -483,63 +551,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             else:
                 current_goal_id = self.prev_z
             init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = current_goal_id)
-        
-        ######## ENV Assumption Learning ###########                  
-        if firstRun:
-            
-            # synthesize our controller again just to see if it's realizable and replace spec if FALSE
-            self.compiler = specCompiler.SpecCompiler(spec_file)
-            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
-            ########### 
-            #self.tracebackTree : separate spec lines to spec groups
-            #############
-            self.spec, self.tracebackTree, response = self.compiler._writeLTLFile()#False)
-            self.originalLTLSpec  = self.spec.copy()
-            realizable, realizableFS, output  = self.compiler._synthesize()
-            
-            # initializing dialog in simGUI when violation occurs
-            self.simGUILearningDialog = ["Added current inputs", "Added current and incoming inputs", "Added current, incoming inputs and current outputs"] 
-            
-            # for mapping from lineNo to LTL
-            for key,value in self.compiler.LTL2SpecLineNumber.iteritems():
-                self.LTLSpec[ value ] = key.replace("\t","").replace("\n","").replace(" ","")
-
-            self.originalSpec = copy.deepcopy(self.spec)
-            if not realizable:
-                # start with always false
-                self.oriEnvTrans = '[]((FALSE))' #added but should never be used for the unrealizable case.
-                self.spec['EnvTrans'] = "\t[]((FALSE))\n"
-                self.EnvTransRemoved = self.tracebackTree["EnvTrans"] 
-            else:
-                # put all clauses in EnvTrans into conjuncts
-                if self.proj.compile_options['fastslow']:
-                    self.spec['EnvTrans'] = ' &\n'.join(filter(None, [self.spec['EnvTrans'], self.spec["EnvTopo"]]))
-                self.oriEnvTrans = copy.copy(self.spec['EnvTrans'])
-                self.spec['EnvTrans'] = '[](('+ copy.copy(self.oriEnvTrans).replace('[]','') +'))\n'
-                self.EnvTransRemoved = []
-
-            # rewrite ltl file   
-            self.recreateLTLfile(self.proj)
-            
-            # path of ltl file to be passed to the function 
-            self.path_LTLfile =  os.path.join(self.proj.project_root,self.proj.getFilenamePrefix()+".ltl")  
-            #create LTL checking object
-            self.LTLViolationCheck = LTLParser.LTLcheck.LTL_Check(self.path_LTLfile,self.compiler.LTL2SpecLineNumber,self.spec)
-            
-            #safe a copy of the original sys initial condition (for resynthesis later)
-            self.originalSysInit = self.spec['SysInit']
-            
-            # pass in current env assumptions if we have some
-            if realizable:
-                self.LTLViolationCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(str(self.oriEnvTrans))       
-                #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-
-            else:
-                self.LTLViolationCheck.ltl_treeEnvTrans = None
-                self.LTLViolationCheck.setOriginalEnvTrans('FALSE')
-        
-        #for using get LTLRepresentation of current sensors
-        self.sensor_strategy = new_strategy.states.addNewState() 
 
         # resynthesize if cannot find initial state
         if init_state is None: 
@@ -589,6 +600,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         self.strategy = new_strategy
         self.strategy.current_state = init_state
+        logging.debug("self.strategy.current_state:" + str(self.strategy.current_state))
         self.last_sensor_state = self.strategy.current_state.getInputs()
 
         if self.proj.compile_options['symbolic']:
@@ -600,9 +612,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         # start checkViolation thread
         if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation":
-            self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+            #self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+            self.checkEnvTransViolationThread = threading.Thread(target=self.run_simple_check_envTrans_violations, args=())
             self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
             self.checkEnvTransViolationThread.start()
+
+            self.possibleStatesCheckEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+            self.possibleStatesCheckEnvTransViolationThread.daemon = True  # Daemonize thread
+            self.possibleStatesCheckEnvTransViolationThread.start()
             self.runRuntimeMonitoring.set() # start checking violations
 
         return  init_state, self.strategy
@@ -619,7 +636,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         else:
             self.totalSysGoals = 1
         logging.debug("totalSysGoals:" + str(self.totalSysGoals))
-        logging.debug(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
+
+        # force simGUI to display robot
+        #self.hsub.setVelocity(0,0) DOESN"T WORK??!!
 
         # FIXME: don't crash if no spec file is loaded initially
         while self.alive.isSet():
@@ -663,6 +682,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     if not self.runCentralizedStrategy:
                         self.runCentralizedStrategy = True
                         self.postEvent("PATCH","Start running centralized strategy ...")
+
+                    # first check if global system goals are satisfied
+                    # if self.dPatchingExecutor.goalsSatisfied:
+                    #     self.hsub.setVelocity(0,0)
                     self.runStrategyIterationInstanteousActionCentralized()
                     # *********************************** #
 
@@ -673,6 +696,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     if not self.runCentralizedStrategy:
                         self.runCentralizedStrategy = True
                         self.postEvent("D-PATCH","Start running centralized strategy ...")
+
+                    # first check if global system goals are satisfied
+                    # if self.dPatchingExecutor.goalsSatisfied:
+                    #     self.hsub.setVelocity(0,0)
 
                     # update info from other robots
                     self.dPatchingExecutor.runIterationCentralExecution()
@@ -723,6 +750,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             while not self.dPatchingExecutor.checkRestartStatus():
                                 logging.debug('Waiting for the other robot to restart')
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
+                                logging.debug("RestartStatus:" + str(self.dPatchingExecutor.readyToRestart))
                                 time.sleep(0.2) #wait for the other robot to get ready
                             logging.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
@@ -753,7 +781,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
                     self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
                 else:
-                    env_assumption_hold = self.env_assumption_hold #self.check_envTrans_violations() #
+                    env_assumption_hold = self.env_assumption_hold and self.possible_states_env_assumption_hold #self.check_envTrans_violations() #
+                    #TODO: maybe we only get copies of the violated list instead of using the one in the memory?
 
                 if not env_assumption_hold:
                     self.hsub.setVelocity(0,0)
@@ -818,6 +847,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                     self.postEvent("VIOLATION", x)
                             self.old_violated_specStr = self.violated_spec_list
 
+                            for x in self.possible_states_violated_spec_list:
+                                if x not in self.old_possible_states_violated_specStr and x not in self.old_violated_specStr:
+                                    self.postEvent("VIOLATION", "POSSIBLE violation:" + str(x))
+                            self.old_possible_states_violated_specStr = self.possible_states_violated_spec_list
                             # stop the robot from moving
                             self.hsub.setVelocity(0, 0)
 
@@ -876,12 +909,28 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 if len(self.violated_spec_line_no) == 1 and len(self.old_violated_spec_line_no) == 0:
                                     self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                             else:
-                                self.postEvent("VIOLATION","Detected the following env safety violation:" )
+                                self.postEvent("VIOLATION","Detected the following env safety violation???:" )
                                 self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
 
                     for x in self.violated_spec_list_with_no_specText_match:
                         if x not in self.old_violated_specStr_with_no_specText_match:
+                            self.postEvent("VIOLATION","Detected the following violation-----:")
                             self.postEvent("VIOLATION", x)
+
+                    # print out the violated possible specs
+                    for x in self.possible_states_violated_spec_line_no:
+                        if x not in list(set(self.old_possible_states_violated_spec_line_no + self.old_violated_spec_line_no)):
+                            if x == 0 :
+                                if len(self.possible_states_violated_spec_line_no) == 1 and len(self.old_possible_states_violated_spec_line_no) == 0:
+                                    self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
+                            else:
+                                self.postEvent("VIOLATION","Detected the following env safety violation:" )
+                                self.postEvent("VIOLATION", "POSSIBLE violation: " + str(self.proj.specText.split('\n')[x-1]))
+
+                    for x in self.possible_states_violated_spec_list_with_no_specText_match:
+                        if x not in list(set(self.old_possible_states_violated_specStr_with_no_specText_match + self.old_violated_specStr_with_no_specText_match)):
+                            self.postEvent("VIOLATION","Detected the following violation----++ :")
+                            self.postEvent("VIOLATION", "POSSIBLE violation:" + str(x))
 
                     # save a copy
                     self.old_violated_specStr = self.violated_spec_list
@@ -908,7 +957,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
-                        self.postEvent("D-PATCH","We will now ask for a centralized strategy to be executed.")
                         self.runRuntimeMonitoring.clear()
                         self.initiateDPatching()
                         self.resumeRuntimeMonitoring()

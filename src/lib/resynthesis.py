@@ -459,6 +459,8 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
         self.old_violated_specStr = []
         self.old_violated_specStr_with_no_specText_match = []
+        self.old_possible_states_violated_specStr = []
+        self.old_possible_states_violated_specStr_with_no_specText_match = []
 
 
         # obtain SysGoals, EnvTrans of the other robot 
@@ -514,6 +516,8 @@ class ExecutorResynthesisExtensions(object):
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
         self.old_violated_specStr = []
         self.old_violated_specStr_with_no_specText_match = []
+        self.old_possible_states_violated_specStr = []
+        self.old_possible_states_violated_specStr_with_no_specText_match = []
 
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
         self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
@@ -715,6 +719,8 @@ class ExecutorResynthesisExtensions(object):
                     self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
                     self.old_violated_specStr = []
                     self.old_violated_specStr_with_no_specText_match = []
+                    self.old_possible_states_violated_specStr = []
+                    self.old_possible_states_violated_specStr_with_no_specText_match = []
 
                     #convert to the original specification
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
@@ -1156,20 +1162,24 @@ class ExecutorResynthesisExtensions(object):
                         if propKey in sensor_state.getInputs(expand_domains=True).keys():
                             sensor_state.setPropValue(propKey, propValue)
 
+                    deepcopy_current_state = copy.deepcopy(current_state)
+                    deepcopy_sensor_state = copy.deepcopy(sensor_state)
                     # the current state stays the same but checks with differnt next possible states
-                    env_assumption_hold = checker.checkViolation(current_state, sensor_state)
+                    env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
                     if not env_assumption_hold:
                         logging.debug("asssumptions violated!")
-                        logging.debug("current_state:" + str([k for k, v in current_state.getAll(expand_domains=True).iteritems() if v]))
-                        logging.debug("sensor_state" + str([k for k, v in sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                        logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
+                        logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
                         return False
         else:
             logging.debug("we have all the robots. doing only once")
-            env_assumption_hold = checker.checkViolation(current_state, sensor_state)
+            deepcopy_current_state = copy.deepcopy(current_state)
+            deepcopy_sensor_state = copy.deepcopy(sensor_state)
+            env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
             if not env_assumption_hold:
                 logging.debug("asssumptions violated!")
-                logging.debug("current_state:" + str([k for k, v in current_state.getAll(expand_domains=True).iteritems() if v]))
-                logging.debug("sensor_state" + str([k for k, v in sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
+                logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
                 return False
         return True
 
@@ -1438,7 +1448,7 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
                 # remove violated spec
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
@@ -1511,7 +1521,7 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(self.violated_spec_list)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
                 # remove violated spec
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
@@ -1564,14 +1574,19 @@ class ExecutorResynthesisExtensions(object):
 
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(self.violated_spec_list)
+        robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
+        logging.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
+        logging.debug("robotsInConflict:" + str(robotsInConflict))
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
+            self.postEvent("D-PATCH","We will now ask for a centralized strategy to be executed.")
         elif received_request:
             logging.info("We are asked to join patching")
         else:
             logging.warning("we need to trigger env characterization instead. This is not checked yet!")
+            self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
+            logging.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
             self.addStatetoEnvSafety(self.sensor_strategy)
 
         # first put together our spec
@@ -1690,7 +1705,7 @@ class ExecutorResynthesisExtensions(object):
 
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(self.violated_spec_list)
+        robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             ################################
             ########## PREPARATION #########
@@ -1701,18 +1716,20 @@ class ExecutorResynthesisExtensions(object):
             # remove violated envTrans from list.
             for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
                 logging.debug("Robot Under consideration:" + str(robot))
-                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(self.violated_spec_list, self.dPatchingExecutor.spec['EnvTrans'][robot])
+                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)), self.dPatchingExecutor.spec['EnvTrans'][robot])
                 self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
                 logging.debug("-------------------------------------------")
 
             # add violations of local spec to LTL violated_str list
-            for specStr in self.violated_spec_list:
+            for specStr in list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):
                 # replace e.g. alice_r1_rc to alice_r1 as the meaning changes in the central strategy
                 for region in self.dPatchingExecutor.regionList:
                     for otherRobot in list(set(self.dPatchingExecutor.coordinationRequestSent) | set([robot for robot in self.dPatchingExecutor.coordinationRequest.keys()])):
                         specStr = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'_rc'+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+region, specStr)
                 self.LTLViolationCheck.violated_specStr.append(specStr)
-            logging.debug("self.LTLViolationCheck.violated_specStr:" + str(self.LTLViolationCheck.violated_specStr))
+                self.LTLViolationCheckPossibleStates.violated_specStr.append(specStr)
+
+            logging.debug("self.LTLViolationCheck.violated_specStr (also LTLViolationCheckPossibleStates):" + str(self.LTLViolationCheck.violated_specStr))
 
             #################################################
             #### CHECK IF NEW ROBOTS ARE INVOLVED #########
@@ -1743,6 +1760,7 @@ class ExecutorResynthesisExtensions(object):
         elif received_request:
             logging.info("We are asked to coordinate with more robots!")
         else:
+            self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
             self.addStatetoEnvSafety(self.dPatchingExecutor.sensor_state, checker=self.globalEnvTransCheck)
             logging.warning("we need to trigger env characterization instead. This is not checked!")
 
