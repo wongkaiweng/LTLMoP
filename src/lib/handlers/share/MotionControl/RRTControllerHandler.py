@@ -426,7 +426,10 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                 # compare orientation difference
                 thetaPrev = V_theta[shape(V)[1]-1]
 
-                theta_orientation = abs(arctan((q_g[1,0]- V[2,shape(V)[1]-1])/(q_g[0,0]- V[1,shape(V)[1]-1])))
+                if not (q_g[0,0]- V[1,shape(V)[1]-1]) == 0:
+                    theta_orientation = abs(arctan((q_g[1,0]- V[2,shape(V)[1]-1])/(q_g[0,0]- V[1,shape(V)[1]-1])))
+                else:
+                    theta_orientation = 0
                 if q_g[1,0] > V[2,shape(V)[1]-1]:
                     if q_g[0,0] < V[1,shape(V)[1]-1]: # second quadrant
                         theta_orientation = pi - theta_orientation
