@@ -1141,6 +1141,9 @@ class ExecutorResynthesisExtensions(object):
         if sensor_state is None:
             sensor_state=self.sensor_strategy
 
+        deepcopy_current_state = copy.deepcopy(current_state)
+        deepcopy_sensor_state = copy.deepcopy(sensor_state)
+
         if self.proj.compile_options["multi_robot_mode"] == "patching":
             otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
             robotNameList = [self.robClient.robotName]
@@ -1159,11 +1162,9 @@ class ExecutorResynthesisExtensions(object):
                 for propDict in propCombination:
                     for propKey, propValue in propDict.iteritems():
                         # check if key exist in sensor strategy?
-                        if propKey in sensor_state.getInputs(expand_domains=True).keys():
-                            sensor_state.setPropValue(propKey, propValue)
+                        if propKey in deepcopy_sensor_state.getInputs(expand_domains=True).keys():
+                            deepcopy_sensor_state.setPropValue(propKey, propValue)
 
-                    deepcopy_current_state = copy.deepcopy(current_state)
-                    deepcopy_sensor_state = copy.deepcopy(sensor_state)
                     # the current state stays the same but checks with differnt next possible states
                     env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
                     if not env_assumption_hold:
@@ -1173,8 +1174,6 @@ class ExecutorResynthesisExtensions(object):
                         return False
         else:
             logging.debug("we have all the robots. doing only once")
-            deepcopy_current_state = copy.deepcopy(current_state)
-            deepcopy_sensor_state = copy.deepcopy(sensor_state)
             env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
             if not env_assumption_hold:
                 logging.debug("asssumptions violated!")
