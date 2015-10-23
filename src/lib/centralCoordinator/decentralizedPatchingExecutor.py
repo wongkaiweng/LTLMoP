@@ -792,7 +792,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.compiler.proj.compile_options['synthesizer'] = 'slugs' # use slugs
         self.compiler.proj.project_root = os.path.dirname(os.path.realpath(__file__)) #set directory to save slugsin
         self.compiler.proj.project_basename = self.filePath
-        createSMVfile(self.filePath, self.smvEnvPropList, self.smvSysPropList) # create a new SMV file
+        createSMVfile(self.filePath, sorted(self.smvEnvPropList), sorted(self.smvSysPropList)) # create a new SMV file
 
         # create a new LTL file
         LTLspec_envList = []
