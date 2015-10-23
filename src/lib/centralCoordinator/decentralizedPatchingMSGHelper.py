@@ -160,7 +160,7 @@ class MsgHandlerExtensions(object):
 
             # replace e.g. alice_r1 to alice_r1_rc as the meaning changes in the central strategy
             for region in self.regionList:
-                for otherRobot in list(set(self.coordinationRequestSent) | set([robot for robot in self.coordinationRequest.keys()])):
+                for otherRobot in list(set(self.coordinationRequestSent) | set([robot for robot, v in self.coordinationRequest.iteritems() if v])):
                     spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+region+'_rc', spec)
 
         else:

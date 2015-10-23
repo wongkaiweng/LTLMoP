@@ -474,6 +474,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             for robot in self.coordinatingRobots:
                 if robot != self.robotName:
                     self.sendCentralizedExecutionStatus(self.clients[robot])
+
+            # preparation step for returning to local aut later.
+            # To do: make sure both robots are ready first, before we go back to local execution.
+            for robot in list(set(self.coordinatingRobots) - set([self.robotName])):
+                self.readyToRestart[robot] = False
+                self.checkedRestartStatus = False
+
             return True
 
         else:
@@ -502,11 +509,6 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
             self.coordinationRequest = {k:False for k in self.coordinationRequest.keys()}
             #self.keepConnection = False
-
-            # To do: make sure both robots are ready first, before we go back to local execution.
-            for robot in list(set(self.coordinatingRobots) - set([self.robotName])):
-                self.readyToRestart[robot] = False
-                self.checkedRestartStatus = False
 
     # def run(self):
     #     """
@@ -630,7 +632,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         for robot, ePropList in self.envPropList.iteritems():
             for eProp, eValue in ePropList.iteritems():
                 #ignore any region related props
-                if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots] or eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                #!! used to be self.coordinatingRobots and self.coordinatingRobots if otherRobot != robot
+                if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]] or\
+                   eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
                     continue
                 spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, spec[robot])
 
@@ -640,9 +644,12 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         for robot, sPropList in self.sysPropList.iteritems():
             for sProp, sValue in sPropList.iteritems():
                 #ignore any region related props
-                if sProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots]:
+                #!! used to be self.coordinatingRobots
+                if sProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots + [self.robotName]]:
                     continue
                 spec[robot] = re.sub('(?<=[! &|(\t\n])'+'s.'+sProp+'(?=[ &|)\t\n])', 's.'+robot+'_'+sProp, spec[robot])
+
+        #TODO: how about global sensors??
 
     def renameSpecAndStoreNewMapping(self):
         """
@@ -670,28 +677,52 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
         # store env props
         for robot, ePropList in self.envPropList.iteritems():
+            logging.debug("#--------propMapping---------")
+            logging.debug("robot:" + str(robot))
+            logging.debug("self.coordinatingRobots:" + str(self.coordinatingRobots))
+            logging.debug("self.robotInRange:" + str(self.robotInRange))
             # check if those robots are in centralized mode already.
             if not robot in self.old_coordinatingRobots: # not in centralized mode
                 for eProp, eValue in ePropList.iteritems():
-                    if eProp in [robot+'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
-                        # keep original name
+
+                    # about ourselves (note that we never have otherRobot_reg_rc here from original list)
+                    if eProp in [robot +'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
+                        logging.debug("our own eProp:" + str(eProp))
                         self.smvEnvPropList.append(eProp)
                         self.currentAssignment.update({eProp: eValue})
 
+                    # about otherRobot_reg for otherRobot not coorindating (not that we don't have myRobot_reg here from original list)
+                    elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
+                        logging.debug("not coordinating robots:" + str(eProp))
+                        # keep original name
+                        if eProp not in self.smvEnvPropList:
+                            self.smvEnvPropList.append(eProp)
+                            self.currentAssignment.update({eProp: eValue})
+                        else:
+                            # sanity check on value when there's duplicate
+                            if self.currentAssignment[eProp] != eValue:
+                                logging.warning(str(eProp) + 'has different values. With' + str(robot) + ':' + str(eValue) + \
+                                ', In self.currentAssignment:' + str(self.currentAssignment[eProp]))
+
+                    # we are not keeping alice_r4 as alice_r4
                     # e.g: remove alice_r4 in bob's sensors. However, for robot not coorindating, we might have alice_charlie_r1 and bob_charlie_r1 in our smv file
-                    elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                    # !! used to be self.coordinatingRobots if otherRobot != robot
+                    elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]:
                         # store and update prop mapping
+                        logging.debug("rc eProp:" + str(eProp))
                         self.propMappingNewToOld[robot].pop(eProp)
                         self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
                         self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
                         #continue
 
                     # the similar case of _rc
-                    elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.coordinatingRobots if otherRobot != robot]:
+                    # !! used to be self.coordinatingRobots if otherRobot != robot
+                    elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
                         continue
 
                     else:
                         # store and update prop mapping
+                        logging.debug("adding robot: " + str(eProp))
                         self.propMappingNewToOld[robot].pop(eProp)
                         self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
                         self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
@@ -740,13 +771,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         Move clauses with next sysProp from EnvTrans to SysTrans.
         """
-        for robot, spec in self.spec['EnvTrans'].iteritems():
-            newEnvTrans, extraSysTrans = LTLParser.LTLcheck.separateLTLwithNextSystemProps(spec)
+        for robot in self.coordinatingRobots:
+            #for robot, spec in self.spec['EnvTrans'].iteritems():
+            newEnvTrans, extraSysTrans = LTLParser.LTLcheck.separateLTLwithNextSystemProps(self.spec['EnvTrans'][robot])
             self.spec['EnvTrans'][robot] = newEnvTrans
             self.spec['SysTrans'][robot] = '&\n'.join(filter(None, LTLParser.LTLcheck.ltlStrToList(self.spec['SysTrans'][robot])+[extraSysTrans]))
 
-        for robot, spec in self.spec['EnvInit'].iteritems():
-            newEnvInit, extraSysInit = LTLParser.LTLcheck.separateLTLwithoutEnvPropFromEnvInit(spec)
+            #for robot, spec in self.spec['EnvInit'].iteritems():
+            newEnvInit, extraSysInit = LTLParser.LTLcheck.separateLTLwithoutEnvPropFromEnvInit(self.spec['EnvInit'][robot])
             self.spec['EnvInit'][robot] = newEnvInit
             self.spec['SysInit'][robot] = '&\n'.join(filter(None, [self.spec['SysInit'][robot], extraSysInit]))
 
@@ -813,7 +845,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # if specSysGoalsOld:
         #     self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'sysGoals':specSysGoalsOld}, 'sysGoals')
         # ------ check winning positions and each goal ------ #
-        for robot in self.spec['SysGoals'].keys():
+        for robot in self.coordinatingRobots: #self.spec['SysGoals'].keys():
             self.sysGoalsCheck[robot] = LTLParser.LTLcheck.LTL_Check(None, {}, {'SysGoals':self.spec['SysGoals'][robot]}, 'SysGoals')
             self.sysGoalsCheckStatus[robot] = False
         specWinPos = "[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"

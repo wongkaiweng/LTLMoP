@@ -638,9 +638,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             self.totalSysGoals = 1
         logging.debug("totalSysGoals:" + str(self.totalSysGoals))
 
-        # force simGUI to display robot
-        #self.hsub.setVelocity(0,0) DOESN"T WORK??!!
-
         # FIXME: don't crash if no spec file is loaded initially
         while self.alive.isSet():
             # Idle if we're not running
@@ -750,6 +747,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                             while not self.dPatchingExecutor.checkRestartStatus():
                                 logging.debug('Waiting for the other robot to restart')
+                                self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
                                 logging.debug("RestartStatus:" + str(self.dPatchingExecutor.readyToRestart))
                                 time.sleep(0.2) #wait for the other robot to get ready

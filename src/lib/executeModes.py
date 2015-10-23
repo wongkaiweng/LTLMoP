@@ -169,7 +169,7 @@ class ExecutorModesExtensions(object):
 
                 #env_assumption_hold = self.globalEnvTransCheck.checkViolation(self.dPatchingExecutor.strategy.current_state, self.dPatchingExecutor.sensor_state)
                 deepcopy_sensor_state = copy.deepcopy(self.dPatchingExecutor.sensor_state)
-                deepcopy_current_state = copy.deepcopy(self.dPatchingExecutor.stratey.current_state)
+                deepcopy_current_state = copy.deepcopy(self.dPatchingExecutor.strategy.current_state)
                 env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates(checker=self.globalEnvTransCheck,\
                     current_state=deepcopy_current_state, sensor_state=deepcopy_sensor_state)
 
