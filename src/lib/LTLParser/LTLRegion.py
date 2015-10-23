@@ -6,6 +6,7 @@ import logging
 import ast                  # for parsing spec dict from negtiation monitor
 import re                   # for parsing specstr
 import parseEnglishToLTL    # for replacing original region name to region bits
+import math                 # for adding parentheses around region bits
 
 def findRegionBits(ltlFormula, fastslow=False):
     """
@@ -217,5 +218,31 @@ def replaceBiimplicationBits(ltlFormula, regionList, newRegionNameToOld, robotNa
             regionBiimplicationList.append('(next(e.'+ robotName + '_' + region +'_rc)<->next(s.'+ robotName + '_' + region +'))')
 
     ltlFormula = re.sub(pattern, "&".join(filter(None, regionBiimplicationList)), ltlFormula)
+
+    return ltlFormula
+
+def addParenthesisToBitsGroupInLTLList(ltlFormulaList, regions):
+    """
+    This function takes in a list of ltl and add parentesis around bits, (they are removed in checkviolation)
+    """
+    newLTLList = []
+    for ltlStr in ltlFormulaList:
+        newLTLList.append(addParenthesisToBitsGroupInLTL(ltlStr, regions))
+    return newLTLList
+
+def addParenthesisToBitsGroupInLTL(ltlFormula, regions):
+    """
+    This function takes in a ltl formula and add parentesis around bits, (they are removed in checkviolation)
+    """
+    numBits = int(math.ceil(math.log(len(regions),2)))
+    sBitPattern = "((!?next\(e.sbit[0-9]\)&?)){"+str(numBits)+"}"
+    bitPattern = "((!?next\(s.bit[0-9]\)&?)){"+str(numBits)+"}"
+    ltlFormula = ltlFormula.replace(' ','')
+
+    for bitStr in [x.group() for x in re.finditer(sBitPattern,ltlFormula)]:
+        ltlFormula = ltlFormula.replace(bitStr, '(' + bitStr + ')')
+
+    for bitStr in [x.group() for x in re.finditer(bitPattern,ltlFormula)]:
+        ltlFormula = ltlFormula.replace(bitStr, '(' + bitStr + ')')
 
     return ltlFormula

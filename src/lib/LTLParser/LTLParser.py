@@ -36,6 +36,10 @@
 # if advised of the possibility of such damage.
 
 from itertools import chain
+import sys
+
+sys.setrecursionlimit(10**6)
+
 
 class Unique(object):
 

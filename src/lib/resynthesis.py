@@ -25,6 +25,7 @@ import copy
 import os
 import LTLParser.translateFromSlugsLTLFormatToLTLFormat
 import sets # make sure there's no duplicates of elements
+import LTLParser.LTLRegion # for adding region parentheses
 # *************************** #
 
 class ExecutorResynthesisExtensions(object):
@@ -1451,7 +1452,11 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
+
+                # first make sure all bits can be parsed in violated list
+                violatedList = LTLParser.LTLRegion.addParenthesisToBitsGroupInLTLList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)),\
+                                self.proj.rfi.regions)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(violatedList)
                 # remove violated spec
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
@@ -1521,7 +1526,9 @@ class ExecutorResynthesisExtensions(object):
                 # remove violated lines. Can be changed to doing sth else
                 #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
                 specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
+                violatedList = LTLParser.LTLRegion.addParenthesisToBitsGroupInLTLList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)),\
+                                self.proj.rfi.regions)
+                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(violatedList)
                 # remove violated spec
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
