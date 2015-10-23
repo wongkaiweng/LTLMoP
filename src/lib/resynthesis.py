@@ -1419,6 +1419,10 @@ class ExecutorResynthesisExtensions(object):
         csockList: list of sockets to send snippets to
         """
 
+        # send cooridination status
+        for csock in csockList:
+            self.dPatchingExecutor.sendCoordinationRequest(csock, True)
+
         # load spec
         mySpec = self.loadSpecObjectFromFile()
 
@@ -1482,9 +1486,6 @@ class ExecutorResynthesisExtensions(object):
 
         for csock in csockList:
             self.dPatchingExecutor.sendProp(csock, 'sys', sysProps)
-
-            # send cooridination status
-            self.dPatchingExecutor.sendCoordinationRequest(csock, True)
 
     def prepareForCentralizedStrategySnippetToSelf(self):
         """
@@ -1579,7 +1580,7 @@ class ExecutorResynthesisExtensions(object):
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
-            self.postEvent("D-PATCH","We will now ask for a centralized strategy to be executed.")
+            self.postEvent("D-PATCH","We will now ask for a centralized strategy be executed.")
         elif received_request:
             logging.info("We are asked to join patching")
         else:
@@ -1588,20 +1589,20 @@ class ExecutorResynthesisExtensions(object):
             logging.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
             self.addStatetoEnvSafety(self.sensor_strategy)
 
-        # first put together our spec
-        self.prepareForCentralizedStrategySnippetToSelf()
+        if robotsInConflict or received_request:
+            # send spec to request received and also violated robots
+            csockRequestReceived = [self.dPatchingExecutor.clients[x] for x in [robot for robot, status in self.dPatchingExecutor.coordinationRequest.iteritems() if status]]
+            csockRobotsInConflict = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict]
+            self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(csockRobotsInConflict) | set(csockRequestReceived)))
+            #self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(self.dPatchingExecutor.clients.values()) - set([self.dPatchingExecutor.serv])))
 
-        # send spec to request received and also violated robots
-        csockRequestReceived = [self.dPatchingExecutor.clients[x] for x in [robot for robot, status in self.dPatchingExecutor.coordinationRequest.iteritems() if status]]
-        csockRobotsInConflict = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict]
-        self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(csockRobotsInConflict) | set(csockRequestReceived)))
-        #self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(self.dPatchingExecutor.clients.values()) - set([self.dPatchingExecutor.serv])))
+            # first put together our spec
+            self.prepareForCentralizedStrategySnippetToSelf()
+            # taking care all the synthesis and wait till everyone is ready.
+            self.synthesizeGlobalStrategyAndWaitForOthersToResume()
 
-        # taking care all the synthesis and wait till everyone is ready.
-        self.synthesizeGlobalStrategyAndWaitForOthersToResume()
-
-        # set up global envTrans check
-        self.setupGlobalEnvTransCheck()
+            # set up global envTrans check
+            self.setupGlobalEnvTransCheck()
 
     def updateLatestRegionInfoWithAllRobots(self):
         """
@@ -1763,13 +1764,14 @@ class ExecutorResynthesisExtensions(object):
             self.addStatetoEnvSafety(self.dPatchingExecutor.sensor_state, checker=self.globalEnvTransCheck)
             logging.warning("we need to trigger env characterization instead. This is not checked!")
 
-        # make sure all sensors are the latest
-        for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
-            self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
+        if robotsInConflict or received_request:
+            # make sure all sensors are the latest
+            for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
+                self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
-        # taking care all the synthesis and wait till everyone is ready.
-        self.synthesizeGlobalStrategyAndWaitForOthersToResume()
+            # taking care all the synthesis and wait till everyone is ready.
+            self.synthesizeGlobalStrategyAndWaitForOthersToResume()
 
-        # set up global envTrans check
-        self.setupGlobalEnvTransCheck()
+            # set up global envTrans check
+            self.setupGlobalEnvTransCheck()
     # %%%%%%%%%%%%%%%%%%%%%%%%%%% #
