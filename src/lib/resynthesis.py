@@ -1652,11 +1652,16 @@ class ExecutorResynthesisExtensions(object):
 
         #then send in the list of coordinating robots to remove spec (need to pass in str list)
         specStrList = LTLParser.LTLcheck.ltlStrToList(specStr)
-        specToExclude = LTLParser.LTLcheck.filterSpecList(specStrList, \
-            list(set(robotsInConflict + [self.dPatchingExecutor.robotName]  + [k for k, v in self.dPatchingExecutor.coordinationRequest.iteritems() if v])))
-        logging.debug("specToExclude:" + str(specToExclude))
 
-        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, specToExclude)
+        coordinatingRobots = list(set(robotsInConflict + [self.dPatchingExecutor.robotName]  + [k for k, v in self.dPatchingExecutor.coordinationRequest.iteritems() if v]))
+        # keylist = all robots, keymatch = conflicting robots
+        specFilteredList = LTLParser.LTLcheck.filterRelatedRobotSpec(specStrList, \
+            self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName],
+            coordinatingRobots, self.dPatchingExecutor.robotName)
+
+
+        #specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, specToExclude)
+        specNewStr = "&\n".join(filter(None, specFilteredList))
 
         return specNewStr
 
@@ -1667,10 +1672,11 @@ class ExecutorResynthesisExtensions(object):
         specStr: EnvTrans spec string
         """
         logging.debug("violatedList:" + str(violatedList))
-        violatedListFiltered = LTLParser.LTLcheck.filterSpecList(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
+        violatedListFiltered = LTLParser.LTLcheck.filterOneRobotViolatedSpec(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
         logging.debug("violatedListFiltered:" + str(violatedListFiltered))
 
-        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
+        #specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
+        specNewStr = "&\n".join(filter(None,violatedListFiltered))
 
         return specNewStr
 

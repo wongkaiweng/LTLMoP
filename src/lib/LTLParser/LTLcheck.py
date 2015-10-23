@@ -23,7 +23,24 @@ debug_true_ltl           = False # print ltl that are evaluated as true
 debug_tree_terminal      = False # print the entire tree in terminal
 
 
-def filterSpecList(ltlList, keyList, keyListMatch=[]):
+def filterOneRobotViolatedSpec(violatedList, allRobotsList):
+    """
+    takes in violatedSpecList and return the ones with one-robot-spec removed
+    """
+    ltlListFiltered, ltlListExcluded = filterSpecList(violatedList, allRobotsList, one_robot_mode=True)
+    return ltlListFiltered
+
+def filterRelatedRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
+    """
+    removes ltl involving only rlatedRobots
+    """
+    ltlListFiltered, ltlListExcluded = filterSpecList(ltlList, allRobotsList, relatedRobots, one_robot_mode=False, myName=myName)
+    logging.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
+
+    return ltlListFiltered
+
+
+def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myName=""):
     """
     This function checks if keys in keyList are in each ltl formula
     .If keys found matches keyListMatch, then the formula is excluded. Otherwise, it is kept.
@@ -31,25 +48,37 @@ def filterSpecList(ltlList, keyList, keyListMatch=[]):
 
     keyList: cannot be empty. Should be list of robots coordinating (including myself)
     """
+    logging.debug("keyList:" + str(keyList))
+    logging.debug("keyListMatch:" + str(keyListMatch))
+    logging.debug("myName:" + str(myName))
+
     ltlKept = []
+    ltlExcluded = []
     for ltl in ltlList:
         keyFound = []
         for key in keyList:
             if checkIfKeyInFormula(ltl, key):
                 keyFound.append(key)
-        logging.debug("keyFound:" + str(keyFound))
-        if len(keyFound) == 1: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
+        #logging.debug("keyFound:" + str(keyFound))
+        if len(keyFound) == 1 and one_robot_mode: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
             logging.debug(str(ltl) + " is ignored with only one robot involved")
+            ltlExcluded.append(ltl)
             continue
+        elif len(keyFound) == 1 and myName in keyFound:
+            # we will never remove spec about only ourselves
+            ltlKept.append(ltl)
         elif not len(keyListMatch): # don't care. just match everything except spec of one robot
             ltlKept.append(ltl)
-        elif set(keyListMatch) == set(keyList): # if list is provided, and matches, then ignore this ltl
-            logging.debug(str(ltl) + " is ignored with keyMatch")
+        elif set(keyFound).issubset(set(keyListMatch)) and keyFound:
+            # if list is provided, and matches, then ignore this ltl.
+            #** now exclude subsets as well. also make sure list is not empty
+            #logging.debug(str(ltl) + " is ignored with keyMatch")
+            ltlExcluded.append(ltl)
             continue
         else:
             ltlKept.append(ltl)
 
-    return ltlKept
+    return ltlKept, ltlExcluded
 
 
 def checkIfKeyInFormula(ltlFormula, key):
