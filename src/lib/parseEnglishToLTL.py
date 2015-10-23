@@ -98,6 +98,8 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     envBitEnc = bitEncode['env']
     envNextBitEnc = bitEncode['envNext']
 
+
+
     # Regular expressions to help us out
     EnvInitRE = re.compile('^(environment|env) starts with',re.IGNORECASE)
     SysInitRE = re.compile('^(robot |you |)starts?',re.IGNORECASE)
@@ -107,8 +109,8 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     CommentRE = re.compile('^\s*#',re.IGNORECASE)
     LivenessRE = re.compile('^\s*(go to|visit|infinitely often do|infinitely often sense|infinitely often)',re.IGNORECASE)
     if fastslow:
-        SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished)',re.IGNORECASE)
-        SafetyCompletionRE = re.compile('^\s*(finished)',re.IGNORECASE)
+        SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
+        SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
     else:
         SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense)',re.IGNORECASE)
     StayRE = re.compile('(stay there|stay)',re.IGNORECASE)
@@ -205,7 +207,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 newRegionGroup = []
                 for formula in RegionGroups[groupName]:
                     for prop in regionList:
-                        formula = re.sub(prop, 'e.'+prop.replace('s.','')+'_rc',formula)
+                        formula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', formula)
                     newRegionGroup.append(formula)
                 RegionGroups[groupName] = newRegionGroup
 
@@ -247,7 +249,9 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 failed = True
                 continue
 
-            spec['EnvInit']= spec['EnvInit'] + LTLsubformula
+            ### put parentheses around the env init condition for DNF later #####
+            LTLsubformula = LTLsubformula[0:LTLsubformula.rfind('&')]
+            spec['EnvInit']= '&\n'.join(filter(None, [spec['EnvInit'], "(" + LTLsubformula + ")"]))
             linemap['EnvInit'].append(lineInd)
             
             LTL2LineNo[replaceRegionName(LTLsubformula,bitEncode,regionList)] = lineInd
@@ -287,8 +291,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 LTLEnvRegSubformula = LTLRegSubformula
                 if fastslow:
                     for prop in regionList:
-                        LTLEnvRegSubformula = LTLEnvRegSubformula.replace(prop,"e."+prop.replace("s.","")+"_rc")
-
+                        LTLEnvRegSubformula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', LTLEnvRegSubformula)
             if ActInit:
                 if len(robotPropList) == 0:
                     LTLActSubformula = ''
@@ -300,19 +303,21 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                     LTLEnvActSubformula = LTLActSubformula
                     if fastslow:
                         for prop in actuatorList:
-                            LTLEnvActSubformula = LTLEnvActSubformula.replace(prop,"e."+prop.replace("s.","")+"_ac")
+                            LTLEnvActSubformula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', LTLEnvActSubformula)
 
             if QuantifierFlag == "ANY":
                 LTLRegSubformula = LTLRegSubformula.replace("QUANTIFIER_PLACEHOLDER", quant_or_string['current'])
             elif QuantifierFlag == "ALL":
                 LTLRegSubformula = LTLRegSubformula.replace("QUANTIFIER_PLACEHOLDER", quant_and_string['current'])
 
-            spec['SysInit']= spec['SysInit'] + LTLRegSubformula + LTLActSubformula
+            ### put parentheses around the sys init condition for DNF later #####
+            spec['SysInit']= '& '.join(filter(None,[x.strip().rstrip('&') for x in [spec['SysInit'], LTLRegSubformula, LTLActSubformula]]))
+
             linemap['SysInit'].append(lineInd)            
             LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
             # also add to envInit if we are running instantaneous action
             if fastslow:
-                spec['EnvInit']= spec['EnvInit'] + LTLEnvRegSubformula + LTLEnvActSubformula
+                spec['EnvInit']= '& '.join(filter(None, [x.strip().rstrip('&') for x in [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]]))
                 linemap['EnvInit'].append(lineInd)
                 LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
 
@@ -698,15 +703,17 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
         # A safety requirement
         elif SafetyRE.search(line):
+
+            # remove the first words
+            SafetyReq = SafetyRE.sub('',line)
+
             if fastslow:
                 #check if we are using the 'finished' keyword
-                if SafetyCompletionRE.search(Requirement):
+                if SafetyCompletionRE.search(SafetyReq):
                     CompletionFlag = True
+                    SafetyReq = SafetyRE.sub('',SafetyReq)
                 else:
                     CompletionFlag = False
-
-            # remove the first words     
-            SafetyReq = SafetyRE.sub('',line)
 
             # parse the safety requirement
             if fastslow:
@@ -815,14 +822,15 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
             continue
         else:
             unusedProp = unusedProp + [prop]
+
     # if there are unused propositions, print out a warning
-    if unusedProp:
-        print '##############################################'
-        print 'Warning:'
-        print 'The following propositions seem to be unused:'
-        print unusedProp
-        print 'They should be removed from the proposition lists\n'
-    
+
+    if unusedProp and not fastslow:
+       print '##############################################'
+       print 'Warning:'
+       print 'The following propositions seem to be unused:'
+       print unusedProp
+       print 'They should be removed from the proposition lists\n'
 
     return spec,linemap,failed,LTL2LineNo,internal_props
 
@@ -894,9 +902,18 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
     
     # Replace logic operations with TLV convention
     tempFormula = replaceLogicOp(tempFormula)
-
     # checking that all propositions are 'legal' (in the list of propositions)
-    for prop in re.findall('([\w\.]+)',tempFormula):
+    if CompletionFlag:
+        MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
+        MatchPropStr ='((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+    else:
+        MatchStr = '([\w\.]+)'
+
+    for prop in re.findall(MatchStr,tempFormula):
+        originalProp = prop
+        if CompletionFlag:
+            prop = re.search(MatchPropStr,prop).group('prop')
+
         if not prop in PropList:
             print 'ERROR(2): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
             formulaInfo['type'] = 'EnvTrans' # arbitrary
@@ -910,6 +927,7 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             formulaInfo['type'] = 'EnvTrans' # arbitrary
             return formulaInfo
 
+        originalPropPattern = originalProp.replace('(','\(').replace(')','\)')
         if prop in sensorList and formulaInfo['type'] == '':
             formulaInfo['type'] = 'EnvTrans'
             # replace every occurrence of the proposition with next(proposition)
@@ -922,19 +940,17 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
             if CompletionFlag:
                 if prop in regionList:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
                 elif prop in actuatorList:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
                 else:
-                    tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
             else:
-                tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
+                tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
         else:
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
-            tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
-    
-    
+            tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
     formulaInfo['formula'] = '\t\t\t [](' + tempFormula + ') & \n'
 
     return formulaInfo
@@ -959,11 +975,26 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
     allRobotProp = regionList + robotPropList
     PropList = sensorList + allRobotProp
 
+    SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
+    SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
+    MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
+    MatchPropStr = '((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+
     # Replace logic operations with TLV convention
     tempFormula = replaceLogicOp(tempFormula)
 
-    # checking that all propositions are 'legal' (in the list of propositions)
-    for prop in re.findall('([\w\.]+)',tempFormula):
+
+    for prop in re.findall(MatchStr,tempFormula):
+        originalProp = prop
+
+        #check if we are using the 'finished' keyword
+        if SafetyCompletionRE.search(prop):
+            CompletionFlag = True
+        else:
+            CompletionFlag = False
+
+        prop = re.search(MatchPropStr,prop).group('prop')
+
         if not prop in PropList:
             print 'ERROR(4): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
             formulaInfo['type'] = 'EnvGoals' # arbitrary
@@ -978,18 +1009,36 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
             #return formulaInfo
             pass
 
-        if prop in sensorList and formulaInfo['type'] == '':
+        if prop in sensorList and formulaInfo['type'] == '' or CompletionFlag:
             formulaInfo['type'] = 'EnvGoals'
 
         elif prop in allRobotProp and formulaInfo['type'] == '':
             formulaInfo['type'] = 'SysGoals'
 
+        originalPropPattern = originalProp.replace('(','\(').replace(')','\)')
         if fastslow:
-            if prop in regionList:
-                tempFormula = tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_rc")
-            elif prop in actuatorList:
-                tempFormula = tempFormula.replace(prop,"e."+ prop.replace("s.","")+"_ac")
-    
+            if CompletionFlag:
+                if prop in regionList:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+                    newProp = 'next(e.'+prop.replace('s.','')+'_rc)'
+                elif prop in actuatorList:
+                    newProp = 'next(e.'+prop.replace('s.','')+'_ac)'
+                else:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                    newProp = 'next('+prop+')'
+            else:
+                if prop in regionList:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
+                    newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
+                elif prop in actuatorList:
+                    newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_ac)'
+                else:
+                    #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
+                    newProp = 'next('+prop+')'
+
+            tempFormula = re.sub('(?<=[! &|(\t\n])'+originalPropPattern+'(?=[ &|)\t\n])|(?<=[! &|(\t\n])'+originalPropPattern +\
+                                  '|'+originalPropPattern + '(?<=[! &|(\t\n])', newProp, tempFormula)
+
     formulaInfo['formula'] = '\t\t\t []<>(' + tempFormula + ') & \n'
 
     return formulaInfo
@@ -1275,15 +1324,16 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                     if NextFlag:
                         # replace every occurrence of the proposition with next(proposition)
                         # it is written this way to prevent nesting of 'next' (as with the .replace method)
+                        prop = prop.replace('(','').replace(')','')
                         subTempFormula = re.sub('(next\('+prop+'\)|'+prop+')', 'next('+ prop +')',subTempFormula)
 
             if fastslow and CompletionFlag:
                 for prop in props:
                     prop = prop.replace('(','').replace(')','')
                     if prop in regionList:
-                        subTempFormula = subTempFormula.replace(prop,"e." + prop.replace("s.","") + "_rc")
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', subTempFormula)
                     elif prop in actuatorList:
-                        subTempFormula = subTempFormula.replace(prop,"e." + prop.replace("s.","") + "_ac")
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', subTempFormula)
 
             tempFormula = tempFormula + subTempFormula
 
@@ -1419,9 +1469,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
             if fastslow:
                 if "finished" in prop:
                     if propStriped in regionList:
-                        SetEvent = SetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_rc")
+                        SetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', '('+propStriped.replace('s.','e.')+'_rc)', SetEvent)
                     elif propStriped in actuatorList:
-                        SetEvent = SetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_ac")
+                        SetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', propStriped.replace('s.','e.')+'_ac', SetEvent)
 
     if ResetEvent.upper()=='FALSE':
         ResetEvent = 'FALSE'
@@ -1439,9 +1489,9 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
                 if fastslow:
                     if "finished" in prop:
                         if propStriped in regionList:
-                            ResetEvent = ResetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_rc")
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', '('+propStriped.replace('s.','e.')+'_rc)', ResetEvent)
                         elif propStriped in actuatorList:
-                            ResetEvent = ResetEvent.replace(prop, "e." + propStriped.replace("s.","") + "_ac")
+                            ResetEvent = re.sub('(?<=[! &|(\t\n])?'+prop.replace('(','\(').replace(')','\)')+'(?=[ &|)\t\n])?', propStriped.replace('s.','e.')+'_ac', ResetEvent)
 
     # Checking the event proposition
     if EventProp in sensorProp:
@@ -1491,9 +1541,7 @@ def replaceRegionName(formula,bitEncode,regionList):
     
     # first replace all 'next' region names with the next encoding
     for nextProp in re.findall('(next\(s\.\w+\)|next\(\(s\.\w+\)\))',tempFormula):
-        prop = nextProp.replace('next((s.','')
-        prop = prop.replace('next(s.','')
-        prop = prop.replace(')','')
+        prop = nextProp.replace('next((s.','').replace('next(s.','').replace(')','')
 
         if prop in regionList:
             ind = regionList.index(prop)
@@ -1511,7 +1559,16 @@ def replaceRegionName(formula,bitEncode,regionList):
             tempFormula = re.sub('\\bs\.'+prop+'\\b', bitEncode['current'][ind],tempFormula)
 
             #tempFormula = tempFormula.replace(prop, bitEncode['current'][ind])
-    
+
+    # Handle region sensor names. first replace all 'next' region names with the next encoding
+    for nextProp in re.findall('(next\(e\.\w+\)|next\(\(e\.\w+\)\))',tempFormula):
+        prop = nextProp.replace('next((e.','').replace('next(e.','').replace(')','')
+
+        if prop in regionList:
+            ind = regionList.index(prop)
+            tempFormula = tempFormula.replace(nextProp, bitEncode['envNext'][ind])
+            # 'replace' is fine here because we are replacing next(region) and that cannot be a partial name
+
     # Handle region sensor names
     for prop in re.findall('e\.(\w+)',tempFormula):
         if prop in regionList:
@@ -1536,9 +1593,9 @@ def createStayFormula(regionNames, use_bits=True, fastslow=False):
 
             # Encoding the string
             if fastslow:
-                tempFormula = tempFormula + '& (next(e.sbit'+ str(bitNum) +') <-> next(s.bit'+ str(bitNum) +') ) ' 
+                tempFormula = tempFormula + '& (next(e.sbit'+ str(bitNum) +') <-> next(s.bit'+ str(bitNum) +') ) '
             else:
-                tempFormula = tempFormula + '& (next(s.bit'+ str(bitNum) +') <-> s.bit'+ str(bitNum) +') ' 
+                tempFormula = tempFormula + '& (next(s.bit'+ str(bitNum) +') <-> s.bit'+ str(bitNum) +') '
         
         StayFormula = tempFormula + ')'
 

@@ -303,15 +303,15 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     """
 
     # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits))
+    adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     if onDebugMode:
         logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits))
+        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     return " & \n".join(adjFormulas)
 
-def createIAInitialEnvRegionFragment(regions, use_bits=True):
+def createIAInitialEnvRegionFragment(regions, use_bits=True, nextProp=False):
     # Setting the system initial formula to allow only valid
     #  region (encoding). This may be redundant if an initial region is
     #  specified, but it is here to ensure the system cannot start from
@@ -323,17 +323,37 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True):
         envBitEnc = bitEncode['env']
         envNextBitEnc = bitEncode['envNext']
 
-        initreg_formula = '( ' + envBitEnc[0] + ' \n'
-        for regionInd in range(1,len(envBitEnc)):
-            initreg_formula = initreg_formula + '\t\t\t\t | ' + envBitEnc[regionInd] + '\n'
-        initreg_formula = initreg_formula + '\t\t\t) \n'
+        if nextProp:
+            initreg_formula_list = []
+            for regionInd in range(0,len(envNextBitEnc)):
+                initreg_formula = '( ' + envNextBitEnc[regionInd] #+ ' \n'
+                for notRegionInd in range(0,len(envNextBitEnc)):
+                    if notRegionInd != regionInd:
+                        initreg_formula = initreg_formula + '& !' + envNextBitEnc[notRegionInd] #+ '\n'
+                initreg_formula = initreg_formula + ')'
+                initreg_formula_list.append(initreg_formula)
+
+            initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
+        else:
+            initreg_formula_list = []
+            for regionInd in range(0,len(envBitEnc)):
+                initreg_formula = '( ' + envBitEnc[regionInd] #+ ' \n'
+                for notRegionInd in range(0,len(envBitEnc)):
+                    if notRegionInd != regionInd:
+                        initreg_formula = initreg_formula + '& !' + envBitEnc[notRegionInd] #+ '\n'
+                initreg_formula = initreg_formula + ')'
+                initreg_formula_list.append(initreg_formula)
+
+            initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
-        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in regions])) for r in regions]))
+        if nextProp:
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+r2.name+"_rc)" if r is r2 else "!next(e."+r2.name+"_rc)" for r2 in regions])) for r in regions]))
+        else:
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in regions])) for r in regions]))
 
     return initreg_formula
 
-#---------------------#
-    
+# -------------------------------------------------#
 
 def createTopologyFragment(adjData, regions, use_bits=True):
     if use_bits:
@@ -383,10 +403,16 @@ def createInitialRegionFragment(regions, use_bits=True):
         currBitEnc = bitEncode['current']
         nextBitEnc = bitEncode['next']
 
-        initreg_formula = '\t\t\t( ' + currBitEnc[0] + ' \n'
-        for regionInd in range(1,len(currBitEnc)):
-            initreg_formula = initreg_formula + '\t\t\t\t | ' + currBitEnc[regionInd] + '\n'
-        initreg_formula = initreg_formula + '\t\t\t) \n'
+        initreg_formula_list = []
+        for regionInd in range(0,len(currBitEnc)):
+            initreg_formula = '( ' + currBitEnc[regionInd] #+ ' \n'
+            for notRegionInd in range(0,len(currBitEnc)):
+                if notRegionInd != regionInd:
+                    initreg_formula = initreg_formula + ' & !' + currBitEnc[notRegionInd] #+ '\n'
+            initreg_formula = initreg_formula + ')'
+            initreg_formula_list.append(initreg_formula)
+
+        initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
         initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["s."+r2.name if r is r2 else "!s."+r2.name for r2 in regions])) for r in regions]))
         
@@ -402,8 +428,10 @@ def createNecessaryFillerSpec(spec_part):
     else:
         formula = LTLFormula.fromString(spec_part)
         filler_spec = []
+        """
         if not formula.getConjunctsByType(LTLFormulaType.INITIAL):
             filler_spec.append("TRUE")
+        """
         if not formula.getConjunctsByType(LTLFormulaType.SAFETY):
             filler_spec.append("[](TRUE)")
         if not formula.getConjunctsByType(LTLFormulaType.LIVENESS):
@@ -481,5 +509,4 @@ def createLTLfile(fileName, spec_env, spec_sys):
 
     # close the file
     ltlFile.close()
-
 
