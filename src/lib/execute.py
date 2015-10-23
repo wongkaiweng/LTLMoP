@@ -510,6 +510,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 logging.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
                 sys.exit(3)
 
+        # update GUI
+        pose = self.hsub.getPose(cached=True)[0:2]
+        self.postEvent("POSE", tuple(map(int, self.hsub.coordmap_lab2map(pose))))
+
         ## inputs
         # ---- two_robot_negotiation ----- #
         if self.proj.compile_options['neighbour_robot']:
@@ -519,13 +523,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             otherRobotsReady = False
 
             while not otherRobotsReady:
-                for key, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
-                    if value is None:
-                        break
-                else:
+                logging.debug(self.hsub.getSensorValue(self.proj.enabled_sensors))
+                if not None in self.hsub.getSensorValue(self.proj.enabled_sensors).values():
                     otherRobotsReady = True
-
-            time.sleep(2)
+                time.sleep(2)
         # -------------------------------- #
 
         if self.proj.compile_options['fastslow']:
