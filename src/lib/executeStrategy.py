@@ -153,8 +153,9 @@ class ExecutorStrategyExtensions(object):
 
             self.next_state = random.choice(next_states)
             # find next region
-            self.next_region = self.strategy.current_state.getPropValue('region')
+            self.next_region = self.next_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
+            logging.info("Currently at state %s." % self.next_state.state_id)
 
             # See what we, as the system, need to do to get to this new state
             self.transition_contains_motion = self.next_region is not None and (self.next_state.getPropValue('regionCompleted') != self.strategy.current_state.getPropValue('regionCompleted'))
@@ -165,20 +166,19 @@ class ExecutorStrategyExtensions(object):
             # save current sensor state for next iteration
             self.last_sensor_state = sensor_state
 
-        if self.strategy.current_state == self.next_state:
+            if self.transition_contains_motion:
+                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.next_state.getPropValue('regionCompleted').name))
+                self.postEvent("INFO", "Heading to region %s..." % self.next_state.getPropValue('region').name)
+
+            self.strategy.current_state = self.next_state
+            #self.last_next_states = []  # reset
+
+            self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
+
+        if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
             # Move one step towards the next region (or stay in the same region)
             self.hsub.gotoRegion(self.current_region, self.next_region)
 
-        # Check for completion of motion
-        if self.next_state != self.strategy.current_state:
-            if self.transition_contains_motion:
-                self.postEvent("INFO", "Crossed border from %s to %s!" % (self.current_region.name, self.next_state.getPropValue('regionCompleted').name))
-                self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
-
-            self.strategy.current_state = self.next_state
-            self.last_next_states = []  # reset
-
-            self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
 
     def HSubGetSensorValue(self,sensorList):
         """
