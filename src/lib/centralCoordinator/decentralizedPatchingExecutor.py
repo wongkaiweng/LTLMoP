@@ -373,9 +373,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                             self.sysPropList[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
 
                         # save proposition mapping
-                        for prop in ast.literal_eval(item.group("packageValue")).keys():
-                            self.propMappingNewToOld[item.group("robotName")].update({prop:prop})
-                            self.propMappingOldToNew[item.group("robotName")].update({prop:prop})
+                        #for prop in ast.literal_eval(item.group("packageValue")).keys():
+                        #    self.propMappingNewToOld[item.group("robotName")].update({prop:prop})
+                        #    self.propMappingOldToNew[item.group("robotName")].update({prop:prop})
 
                     elif item.group('packageType') in 'nextPossibleStates':
                         if ast.literal_eval(item.group("packageValue")):
@@ -673,30 +673,77 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         states = strategy.StateCollection()
 
-        logging.debug("self.old_coordinatingRobots:" + str(self.old_coordinatingRobots))
+        """
+        First clean up old variables.
+        """
+        for robot in self.propMappingOldToNew.keys():
+            self.propMappingNewToOld[robot] = {}
+            self.propMappingOldToNew[robot] = {}
+        self.smvEnvPropList = []
+        self.smvSysPropList = []
+        self.currentAssignment = {}
 
-        # store env props
+        """
+        store env props
+        """
         for robot, ePropList in self.envPropList.iteritems():
             logging.debug("#--------propMapping---------")
             logging.debug("robot:" + str(robot))
             logging.debug("self.coordinatingRobots:" + str(self.coordinatingRobots))
+            logging.debug("self.old_coordinatingRobots:" + str(self.old_coordinatingRobots))
             logging.debug("self.robotInRange:" + str(self.robotInRange))
-            # check if those robots are in centralized mode already.
-            if not robot in self.old_coordinatingRobots: # not in centralized mode
-                for eProp, eValue in ePropList.iteritems():
+            for eProp, eValue in ePropList.iteritems():
 
+                # about ourselves (note that we never have otherRobot_reg_rc here from original list)
+                if eProp in [robot +'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
+                    logging.debug("our own eProp:" + str(eProp))
+                    self.smvEnvPropList.append(eProp)
+                    self.propMappingNewToOld[robot][eProp] = eProp
+                    self.propMappingOldToNew[robot][eProp] = eProp
+
+                # about otherRobot_reg for otherRobot not coorindating
+                #(not that we don't have myRobot_reg here from original list)
+                elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
+                    logging.debug("not coordinating robots:" + str(eProp))
+                    # keep original name
+                    if eProp not in self.smvEnvPropList:
+                        self.smvEnvPropList.append(eProp)
+                        self.propMappingNewToOld[robot][eProp] = eProp
+                        self.propMappingOldToNew[robot][eProp] = eProp
+
+                # we are now keeping alice_r4 as alice_r4_rc for example
+                elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]:
+                    # store and update prop mapping
+                    logging.debug("rc eProp:" + str(eProp))
+                    self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
+                    self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
+
+                # the similar case of _rc
+                elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
+                    continue
+
+                else:
+                    # store and update prop mapping
+                    logging.debug("adding robot: " + str(eProp))
+                    self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
+                    self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
+                    self.smvEnvPropList.append(robot+'_'+eProp)
+
+                """
+                CURRENT ASSIGNMENT ONLY
+                """
+                # check if those robots are in centralized mode already.
+                if not robot in self.old_coordinatingRobots: # not in centralized mode
                     # about ourselves (note that we never have otherRobot_reg_rc here from original list)
                     if eProp in [robot +'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
-                        logging.debug("our own eProp:" + str(eProp))
-                        self.smvEnvPropList.append(eProp)
+                        logging.debug("AS-our own eProp:" + str(eProp))
                         self.currentAssignment.update({eProp: eValue})
 
                     # about otherRobot_reg for otherRobot not coorindating (not that we don't have myRobot_reg here from original list)
                     elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
-                        logging.debug("not coordinating robots:" + str(eProp))
+                        logging.debug("AS-not coordinating robots:" + str(eProp))
                         # keep original name
-                        if eProp not in self.smvEnvPropList:
-                            self.smvEnvPropList.append(eProp)
+                        if eProp not in self.currentAssignment.keys():
                             self.currentAssignment.update({eProp: eValue})
                         else:
                             # sanity check on value when there's duplicate
@@ -705,65 +752,70 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                                 ', In self.currentAssignment:' + str(self.currentAssignment[eProp]))
 
                     # we are not keeping alice_r4 as alice_r4
-                    # e.g: remove alice_r4 in bob's sensors. However, for robot not coorindating, we might have alice_charlie_r1 and bob_charlie_r1 in our smv file
-                    # !! used to be self.coordinatingRobots if otherRobot != robot
+                    # e.g: remove alice_r4 in bob's sensors
                     elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]:
                         # store and update prop mapping
-                        logging.debug("rc eProp:" + str(eProp))
-                        self.propMappingNewToOld[robot].pop(eProp)
-                        self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
-                        self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
-                        #continue
+                        continue
 
                     # the similar case of _rc
-                    # !! used to be self.coordinatingRobots if otherRobot != robot
                     elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
                         continue
 
                     else:
                         # store and update prop mapping
-                        logging.debug("adding robot: " + str(eProp))
-                        self.propMappingNewToOld[robot].pop(eProp)
-                        self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
-                        self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
-                        self.smvEnvPropList.append(robot+'_'+eProp)
+                        logging.debug("AS-adding robot: " + str(eProp))
                         self.currentAssignment.update({robot+'_'+eProp: eValue})
-
-            else: # robot in centralized mode.
-                # update assignments only
-                self.currentAssignment.update({k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k})
+                else: # robot in centralized mode.
+                    # update assignments only
+                    self.currentAssignment.update({k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k})
 
         # add input props to states collection
         states.addInputPropositions(self.smvEnvPropList)
 
-        # stroe sys props
+        """
+        stroe sys props
+        """
         for robot, sPropList in self.sysPropList.iteritems():
-            # check if those robots are in centralized mode already.
-            if not robot in self.old_coordinatingRobots: # not in centralized mode
-                for sProp, sValue in sPropList.iteritems():
+            for sProp, sValue in sPropList.iteritems():
+                if sProp in [robot+'_'+reg for reg in self.robotLocations.keys()]:
+                    # keep original name
+                    self.propMappingNewToOld[robot][sProp] = sProp
+                    self.propMappingOldToNew[robot][sProp] = sProp
+                    self.smvSysPropList.append(sProp)
+                else:
+                    # store and update prop mapping
+                    self.propMappingNewToOld[robot][robot+'_'+sProp] = sProp
+                    self.propMappingOldToNew[robot][sProp] = robot+'_'+sProp
+                    self.smvSysPropList.append(robot+'_'+sProp)
+
+
+                """
+                CURRENT ASSIGNMENT ONLY
+                """
+                # check if those robots are in centralized mode already.
+                if not robot in self.old_coordinatingRobots: # not in centralized mode
                     if sProp in [robot+'_'+reg for reg in self.robotLocations.keys()]:
                         # keep original name
-                        self.smvSysPropList.append(sProp)
                         self.currentAssignment.update({sProp: sValue})
                     else:
                         # store and update prop mapping
-                        self.propMappingNewToOld[robot].pop(sProp)
-                        self.propMappingNewToOld[robot][robot+'_'+sProp] = sProp
-                        self.propMappingOldToNew[robot][sProp] = robot+'_'+sProp
-                        self.smvSysPropList.append(robot+'_'+sProp)
                         self.currentAssignment.update({robot+'_'+sProp: sValue})
-            else: # robot in centralized mode.
-                # update assignments only. make reg_rc and reg the same
-                sysProps = {k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k}
-                for eProp, eValue in {k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
-                    for reg in self.robotLocations.keys():
-                        if reg in eProp:
-                            sysProps[eProp.replace('_rc', '')] = eValue
-                self.currentAssignment.update(sysProps)
+
+                else: # robot in centralized mode.
+                    # update assignments only. make reg_rc and reg the same
+                    sysProps = {k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k}
+                    for eProp, eValue in {k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
+                        for reg in self.robotLocations.keys():
+                            if reg in eProp:
+                                sysProps[eProp.replace('_rc', '')] = eValue
+                    self.currentAssignment.update(sysProps)
 
         # add input props to states collection
         states.addOutputPropositions(self.smvSysPropList)
 
+        logging.warning("self.propMappingOldToNew:" + str(self.propMappingOldToNew))
+        logging.warning("self.propMappingNewToOld:" + str(self.propMappingNewToOld))
+        logging.warning("self.currentAssignment:" + str(self.currentAssignment))
         # store current state
         self.currentState = states.addNewState(self.currentAssignment)
 
