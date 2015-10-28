@@ -172,6 +172,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.robotStatusOnCentralizedStrategyExecution = {} # dict of robots ready to execute. False stands for not ready. True stands for ready.
         self.tempRobotStatusOnCentralizedStrategyExecution = {} # temporarily store robotStatusOnCentralizedStrategyExecution of other robots and update in checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy. (Prevents incorrect removal of status)
         self.checkSysGoalsThread = None # for checking sysGoals in the background
+        self.pauseForSynthesis = {} # track status of other robots asking us to pause
 
     def cleanVariables(self, first_time=True):
         """
@@ -200,6 +201,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.winPosCheck = None # runtime monitoring object to check if goals are reached
         self.nextPossibleStatesArray = {} # store array of next possible states dict of robots. To be request by the other robots
         self.readyToRestart = {} # track if the two robots are ready to restart execution
+        self.robotSensors = {} # track sensors that are not regions in centralize strategy
 
         self.centralizedExecutionStatus = None # track centralized execution. True for centralized execution. False for waiting to execute centralized strategy. None for no centralized execution/execution ended.
 
@@ -229,6 +231,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
         # add robot key to winPos
         self.winPos[robot_name] = ""
+
+        # add robotsensors
+        self.robotSensors[robot_name] = {}
 
     def checkData(self):
         """
@@ -365,6 +370,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                             # receive the centralized execution status of the other robots
                             self.robotStatusOnCentralizedStrategyExecution[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
 
+                    elif item.group('packageType') == 'robotSensors':
+                        self.robotSensors[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+
                     elif item.group('packageType') in ['envPropList', 'sysPropList']:
                         # store propositions list
                         if item.group('packageType') == 'envPropList':
@@ -384,6 +392,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     elif item.group('packageType') in 'restartStatus':
                         if ast.literal_eval(item.group("packageValue")):
                             self.readyToRestart[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+
+                    elif item.group('packageType') in 'pauseForSynthesis':
+                        self.pauseForSynthesis[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
 
                     elif "closeConnection" in data:
                         x.close()
@@ -965,6 +976,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # update inputs based on the inputs from the other robot
         currentInputs.update(nextInputs)
 
+        # now updates robot sensors
+        #logging.warning("self.robotSensors:" + str(self.robotSensors))
+        for coR in self.coordinatingRobots:
+            if coR != self.robotName:
+                nextRobotSensors = {self.propMappingOldToNew[coR][k]:v for k, v in self.robotSensors[coR].iteritems()}
+                #logging.warning('nextRobotSensors:' + str(nextRobotSensors))
+                currentInputs.update(nextRobotSensors)
         # update sensor_state with the latest information
         #self.sensor_state.setPropValues(nextInputs)
 

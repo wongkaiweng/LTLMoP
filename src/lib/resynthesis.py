@@ -1579,6 +1579,10 @@ class ExecutorResynthesisExtensions(object):
         # update the other robots with the latest location of us
         self.updateLatestRegionInfoWithAllRobots()
 
+        # also stops the other robots operating
+        for robot in self.dPatchingExecutor.robotInRange:
+            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], True)
+
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
         robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
@@ -1611,6 +1615,13 @@ class ExecutorResynthesisExtensions(object):
             # set up global envTrans check
             self.setupGlobalEnvTransCheck()
 
+        # update locations and sensors once more
+        self.updateLatestRegionInfoWithAllRobots()
+
+        # allows the other robots to move again
+        for robot in self.dPatchingExecutor.robotInRange:
+            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], False)
+
     def updateLatestRegionInfoWithAllRobots(self):
         """
         This function updates all region info (including heading if necessary to all robots)
@@ -1622,6 +1633,11 @@ class ExecutorResynthesisExtensions(object):
             self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(self.sensor_strategy.getPropValue('regionCompleted'))
         else:
             self.dPatchingExecutor.updateRobotRegionWithAllClients(self.sensor_strategy.getPropValue('regionCompleted'))
+
+        # update sensor info too
+        enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
+        logging.warning('self.hsub.getSensorValue(enabled_sensors):' + str(self.hsub.getSensorValue(enabled_sensors)))
+        self.dPatchingExecutor.updateRobotSensorsWithAllClients(self.hsub.getSensorValue(enabled_sensors))
 
     def setupGlobalEnvTransCheck(self):
         """
@@ -1716,6 +1732,10 @@ class ExecutorResynthesisExtensions(object):
         # update the other robots with the latest location of us
         self.updateLatestRegionInfoWithAllRobots()
 
+        # also stops the other robots operating
+        for robot in self.dPatchingExecutor.robotInRange:
+            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], True)
+
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
         robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
@@ -1787,4 +1807,11 @@ class ExecutorResynthesisExtensions(object):
 
             # set up global envTrans check
             self.setupGlobalEnvTransCheck()
+
+        # update locations and sensors once more
+        self.updateLatestRegionInfoWithAllRobots()
+
+        # also stops the other robots operating
+        for robot in self.dPatchingExecutor.robotInRange:
+            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], False)
     # %%%%%%%%%%%%%%%%%%%%%%%%%%% #

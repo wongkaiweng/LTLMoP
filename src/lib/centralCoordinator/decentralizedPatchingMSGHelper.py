@@ -82,6 +82,24 @@ class MsgHandlerExtensions(object):
             if csock != self.serv:
                 self.updateRobotRegion(csock, current_region)
 
+    def updateRobotSensors(self, csock, sensorDict):
+        """
+        This function update the region info in the negotiation monitor if the robot is at a next region
+        current_region: region object in LTLMoP
+        csock: client socket object
+        """
+        # send current region to the othe robot (csock)
+        self.message_queues[csock].put(self.robotName + '-' + 'robotSensors = ' + str(sensorDict) + '\n')
+        logging.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
+
+    def updateRobotSensorsWithAllClients(self, sensorDict):
+        """
+        This function calls updateRobotRegion with all clients in self.clients except self.serv
+        """
+        for csock in self.clients.values():
+            if csock != self.serv:
+                self.updateRobotSensors(csock, sensorDict)
+
     def initializeCompletedRegionExchange(self, csock, current_region_completed):
         """
         This function sends the list of completed region to the negotiation Monitor
@@ -454,3 +472,15 @@ class MsgHandlerExtensions(object):
         None: Centralized execution has ended/ not started
         """
         return self.centralizedExecutionStatus
+
+    def setPauseForControllerSynthesis(self, csock, status):
+        """
+        This function notifiies the other robots to stay in place and wait for synthesis together.
+        """
+        self.message_queues[csock].put(self.robotName + '-' + 'pauseForSynthesis = ' + str(status) +  '\n')
+
+    def getPauseForControllerSynthesis(self):
+        """
+        This function gets the status to whether stay in place and wait for synthesis.
+        """
+        return True in self.pauseForSynthesis.values()
