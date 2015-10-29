@@ -1,0 +1,379 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+park
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                885.0, 
+                4.0
+            ], 
+            [
+                769.0, 
+                4.0
+            ], 
+            [
+                644.0, 
+                0.0
+            ], 
+            [
+                482.0, 
+                0.0
+            ], 
+            [
+                317.0, 
+                0.0
+            ], 
+            [
+                170.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                1.0, 
+                250.0
+            ], 
+            [
+                170.0, 
+                250.0
+            ], 
+            [
+                317.0, 
+                250.0
+            ], 
+            [
+                482.0, 
+                250.0
+            ], 
+            [
+                644.0, 
+                250.0
+            ], 
+            [
+                769.0, 
+                251.0
+            ], 
+            [
+                885.0, 
+                251.0
+            ]
+        ], 
+        "position": [
+            47.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            885.0, 
+            251.0
+        ]
+    }, 
+    {
+        "name": "gov", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            816.0, 
+            54.0
+        ], 
+        "type": "rect", 
+        "size": [
+            116.0, 
+            247.0
+        ]
+    }, 
+    {
+        "name": "threeWay", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                250.0
+            ], 
+            [
+                0.0, 
+                131.0
+            ], 
+            [
+                0.0, 
+                93.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                125.0, 
+                4.0
+            ], 
+            [
+                125.0, 
+                251.0
+            ]
+        ], 
+        "position": [
+            691.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            125.0, 
+            251.0
+        ]
+    }, 
+    {
+        "name": "roadBR", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            529.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            162.0, 
+            119.0
+        ]
+    }, 
+    {
+        "name": "roadTR", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            529.0, 
+            50.0
+        ], 
+        "type": "rect", 
+        "size": [
+            162.0, 
+            93.0
+        ]
+    }, 
+    {
+        "name": "roadBL", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            364.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            165.0, 
+            119.0
+        ]
+    }, 
+    {
+        "name": "roadTL", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            364.0, 
+            50.0
+        ], 
+        "type": "rect", 
+        "size": [
+            165.0, 
+            93.0
+        ]
+    }, 
+    {
+        "name": "park", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                165.0, 
+                0.0
+            ], 
+            [
+                327.0, 
+                0.0
+            ], 
+            [
+                327.0, 
+                38.0
+            ], 
+            [
+                165.0, 
+                38.0
+            ], 
+            [
+                0.0, 
+                38.0
+            ]
+        ], 
+        "position": [
+            364.0, 
+            143.0
+        ], 
+        "type": "poly", 
+        "size": [
+            327.0, 
+            38.0
+        ]
+    }, 
+    {
+        "name": "office2", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                147.0, 
+                0.0
+            ], 
+            [
+                147.0, 
+                93.0
+            ], 
+            [
+                147.0, 
+                131.0
+            ], 
+            [
+                147.0, 
+                250.0
+            ], 
+            [
+                0.0, 
+                250.0
+            ]
+        ], 
+        "position": [
+            217.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            147.0, 
+            250.0
+        ]
+    }, 
+    {
+        "name": "office1", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                170.0, 
+                0.0
+            ], 
+            [
+                170.0, 
+                250.0
+            ], 
+            [
+                1.0, 
+                250.0
+            ]
+        ], 
+        "position": [
+            47.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            170.0, 
+            250.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	gov	932.0	301.0	816.0	301.0	932.0	301.0	932.0	54.0	816.0	54.0	932.0	54.0
+boundary	threeWay	816.0	54.0	691.0	50.0	816.0	301.0	691.0	300.0
+boundary	roadBR	691.0	300.0	529.0	300.0
+boundary	roadTR	529.0	50.0	691.0	50.0
+boundary	roadBL	364.0	300.0	529.0	300.0
+boundary	roadTL	529.0	50.0	364.0	50.0
+boundary	office2	217.0	50.0	364.0	50.0	364.0	300.0	217.0	300.0
+boundary	office1	217.0	300.0	48.0	300.0	47.0	50.0	48.0	300.0	217.0	50.0	47.0	50.0
+gov	threeWay	816.0	54.0	816.0	301.0
+threeWay	roadBR	691.0	300.0	691.0	181.0
+threeWay	roadTR	691.0	143.0	691.0	50.0
+threeWay	park	691.0	143.0	691.0	181.0
+roadBR	roadBL	529.0	181.0	529.0	300.0
+roadBR	park	529.0	181.0	691.0	181.0
+roadTR	roadTL	529.0	50.0	529.0	143.0
+roadTR	park	691.0	143.0	529.0	143.0
+roadBL	park	364.0	181.0	529.0	181.0
+roadBL	office2	364.0	181.0	364.0	300.0
+roadTL	park	364.0	143.0	529.0	143.0
+roadTL	office2	364.0	50.0	364.0	143.0
+park	office2	364.0	181.0	364.0	143.0
+office2	office1	217.0	50.0	217.0	300.0
+

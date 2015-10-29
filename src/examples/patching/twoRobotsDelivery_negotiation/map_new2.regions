@@ -1,0 +1,304 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+park
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                599.0, 
+                4.0
+            ], 
+            [
+                474.0, 
+                0.0
+            ], 
+            [
+                312.0, 
+                0.0
+            ], 
+            [
+                147.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                250.0
+            ], 
+            [
+                147.0, 
+                250.0
+            ], 
+            [
+                312.0, 
+                250.0
+            ], 
+            [
+                474.0, 
+                250.0
+            ], 
+            [
+                599.0, 
+                251.0
+            ]
+        ], 
+        "position": [
+            217.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            599.0, 
+            251.0
+        ]
+    }, 
+    {
+        "name": "storage",
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                250.0
+            ], 
+            [
+                0.0, 
+                131.0
+            ], 
+            [
+                0.0, 
+                93.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                125.0, 
+                4.0
+            ], 
+            [
+                125.0, 
+                251.0
+            ]
+        ], 
+        "position": [
+            691.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            125.0, 
+            251.0
+        ]
+    }, 
+    {
+        "name": "roadD",
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            529.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            162.0, 
+            119.0
+        ]
+    }, 
+    {
+        "name": "roadB",
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            529.0, 
+            50.0
+        ], 
+        "type": "rect", 
+        "size": [
+            162.0, 
+            93.0
+        ]
+    }, 
+    {
+        "name": "roadC",
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            364.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            165.0, 
+            119.0
+        ]
+    }, 
+    {
+        "name": "roadA",
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            364.0, 
+            50.0
+        ], 
+        "type": "rect", 
+        "size": [
+            165.0, 
+            93.0
+        ]
+    }, 
+    {
+        "name": "park", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                165.0, 
+                0.0
+            ], 
+            [
+                327.0, 
+                0.0
+            ], 
+            [
+                327.0, 
+                38.0
+            ], 
+            [
+                165.0, 
+                38.0
+            ], 
+            [
+                0.0, 
+                38.0
+            ]
+        ], 
+        "position": [
+            364.0, 
+            143.0
+        ], 
+        "type": "poly", 
+        "size": [
+            327.0, 
+            38.0
+        ]
+    }, 
+    {
+        "name": "office",
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                147.0, 
+                0.0
+            ], 
+            [
+                147.0, 
+                93.0
+            ], 
+            [
+                147.0, 
+                131.0
+            ], 
+            [
+                147.0, 
+                250.0
+            ], 
+            [
+                0.0, 
+                250.0
+            ]
+        ], 
+        "position": [
+            217.0, 
+            50.0
+        ], 
+        "type": "poly", 
+        "size": [
+            147.0, 
+            250.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	storage	816.0	54.0	816.0	301.0	816.0	54.0	691.0	50.0	816.0	301.0	691.0	300.0
+boundary	roadD	691.0	300.0	529.0	300.0
+boundary	roadB	529.0	50.0	691.0	50.0
+boundary	roadC	364.0	300.0	529.0	300.0
+boundary	roadA	529.0	50.0	364.0	50.0
+boundary	office	217.0	50.0	364.0	50.0	364.0	300.0	217.0	300.0	217.0	50.0	217.0	300.0
+storage	roadD	691.0	300.0	691.0	181.0
+storage	roadB	691.0	143.0	691.0	50.0
+storage	park	691.0	143.0	691.0	181.0
+roadD	roadC	529.0	181.0	529.0	300.0
+roadD	park	529.0	181.0	691.0	181.0
+roadB	roadA	529.0	50.0	529.0	143.0
+roadB	park	691.0	143.0	529.0	143.0
+roadC	park	364.0	181.0	529.0	181.0
+roadC	office	364.0	181.0	364.0	300.0
+roadA	park	364.0	143.0	529.0	143.0
+roadA	office	364.0	50.0	364.0	143.0
+park	office	364.0	181.0	364.0	143.0
+

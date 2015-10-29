@@ -1,0 +1,5 @@
+notes:
+maintainDistance_patching : intro example in AAMAS
+->maintainDistance_nego in FStwo_robot_negotiation is the same example using nego (failed)
+
+threeRobots_small: example section in AAMAS
