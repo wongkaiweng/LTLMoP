@@ -62,21 +62,25 @@ def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myNa
                 keyFound.append(key)
         #logging.debug("keyFound:" + str(keyFound))
         if len(keyFound) == 1 and one_robot_mode: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
-            logging.debug(str(ltl) + " is ignored with only one robot involved")
+            #logging.debug(str(ltl) + " is excluded because of one_robot_mode and only ony key is found")
             ltlExcluded.append(ltl)
             continue
         elif len(keyFound) == 1 and myName in keyFound:
             # we will never remove spec about only ourselves
             ltlKept.append(ltl)
+            #logging.debug(str(ltl) + " is kept because of one key is Found and is my name")
         elif not len(keyListMatch): # don't care. just match everything except spec of one robot
             ltlKept.append(ltl)
+            #logging.debug(str(ltl) + " is kept because in keyListMatch is not provided.")
+
         elif set(keyFound).issubset(set(keyListMatch)) and keyFound:
             # if list is provided, and matches, then ignore this ltl.
             #** now exclude subsets as well. also make sure list is not empty
-            #logging.debug(str(ltl) + " is ignored with keyMatch")
+            #logging.debug(str(ltl) + " is excluded with keyFound in keyListMatch.")
             ltlExcluded.append(ltl)
             continue
         else:
+            #logging.debug(str(ltl) + " is kept because no option is matched.")
             ltlKept.append(ltl)
 
     return ltlKept, ltlExcluded
@@ -263,6 +267,24 @@ class LTL_Check:
         # if it's not None, the checkViolations will be carried out twice.
         # modify in execute.py so that single envTrans formula can be displayed.
         self.ltl_treeEnvTrans = None
+
+    def updateEnvTrans(self, ltlFormula):
+        """
+        This function updates the envtrans to characterize on without resetting the stages
+        ltlFormula should be WITH the always '[]' operators
+        """
+        # first save thte new ltlFormula
+        self.env_safety_assumptions = ltlFormula.replace('[]','')
+
+        # now update the env_safety_assumptions_stage
+        self.modify_stage = 1
+        self.updateEnvSafetyAssumptionsStages()
+
+        # now update the tree that is checked in runtime monitoring
+        self.updateEnvTransTree("")
+
+        # also update for single formula display
+        self.ltl_treeEnvTrans = LTLFormula.parseLTL(ltlFormula)
 
     def setOriginalEnvTrans(self, ltlFormula):
         """
