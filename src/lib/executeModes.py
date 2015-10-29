@@ -211,7 +211,7 @@ class ExecutorModesExtensions(object):
                 if self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
                     # only run check violation if sensor or possible next states has changed
                     runCheck = False
-                    logging.warning("how often do we come.....possible states")
+                    #logging.warning("how often do we come.....possible states")
                     sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()

@@ -1035,8 +1035,14 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
                 if prop in regionList:
                     #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', tempFormula)
                     newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_rc)'
+                    #newProp = 'next('+prop+')'
+                    #newProp = 'next(e.'+prop.replace('s.','')+'_rc)'
+
                 elif prop in actuatorList:
                     newProp = 'next('+prop+') & next(e.'+prop.replace('s.','')+'_ac)'
+                    #newProp = 'next('+prop+')'
+                    #newProp = 'next(e.'+prop.replace('s.','')+'_ac)'
+
                 else:
                     #tempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', tempFormula)
                     newProp = 'next('+prop+')'

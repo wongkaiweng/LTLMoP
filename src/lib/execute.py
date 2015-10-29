@@ -631,9 +631,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
             self.checkEnvTransViolationThread.start()
 
-            self.possibleStatesCheckEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
-            self.possibleStatesCheckEnvTransViolationThread.daemon = True  # Daemonize thread
-            self.possibleStatesCheckEnvTransViolationThread.start()
+            #self.possibleStatesCheckEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
+            #self.possibleStatesCheckEnvTransViolationThread.daemon = True  # Daemonize thread
+            #self.possibleStatesCheckEnvTransViolationThread.start()
             self.runRuntimeMonitoring.set() # start checking violations
 
         return  init_state, self.strategy

@@ -51,9 +51,11 @@ def printRegionInfo(robotLocations):
     for region, robots in robotLocations.iteritems():
         table = ""
         for rob, status in robots.iteritems():
-            table = table + "-{0:10}: {1:6} ".format(rob, status)
-        table = "{0:13}".format(region) + table
-        logging.info(table)
+            if status:
+                table = table + "-{0:10}: {1:6} ".format(rob, status)
+                table = "{0:13}".format(region) + table
+        if table:
+            logging.info(table)
     logging.info('----------------------------------------------')
 
 def printSpec(specType, specStr, robotName):
@@ -357,7 +359,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         if ast.literal_eval(item.group("packageValue")):
                             # We got spec from robotClient, save spec
                             self.winPos[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
-                            printSpec(item.group('packageType'), self.winPos[item.group("robotName")], item.group("robotName"))
+                            #printSpec(item.group('packageType'), self.winPos[item.group("robotName")], item.group("robotName"))
 
 
                     elif item.group('packageType') == "coordinationRequest":
@@ -613,6 +615,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         for robot in self.coordinatingRobots:
             for specType in self.spec.keys():
                 if not robot in self.spec[specType]:
+                    logging.warning("specType:" + str(specType))
                     logging.warning('We have not recevied specs from ' + str(robot))
                     time.sleep(1)
                     return False
