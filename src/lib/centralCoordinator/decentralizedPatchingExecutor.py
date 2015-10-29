@@ -14,6 +14,7 @@ import random #for chosing one next states from the list
 import Queue  #for queueing messages from other robots
 import copy   #for tracking coorindating robots
 import threading #for monitoring sysGoals
+import pdb  # for debugger
 
 # Climb the tree to find out where we are
 import os
@@ -35,7 +36,7 @@ import LTLParser.LTLcheck
 
 # recursionlimits
 logging.debug("recursion limits:" + str(sys.getrecursionlimit()))
-sys.setrecursionlimit(1500)
+sys.setrecursionlimit(10**6)
 
 from decentralizedPatchingMSGHelper import MsgHandlerExtensions #also inherit other functions
 
@@ -73,7 +74,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     """
     LTLMoP robot object used to communicate with the negotiationMonitor
     """
-    def __init__(self, hsub, proj, current_region=None, current_region_completed=None):
+    def __init__(self, hsub, proj, current_region=None, current_region_completed=None, testDPatchingMode=False):
         """
         current_region: current region object of the robot
         current_region_completed: current region completed object of the robot
@@ -82,6 +83,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.hsub = hsub
         self.initializeVariables() #initialize permanent variables
         self.cleanVariables(first_time=True) #initialize variables that are cleaned after patching
+        self.testDPatchingMode = testDPatchingMode # if true then we disable winpos (and we are using testDPatching.py), False when using LTLMoP
 
         super(PatchingExecutor, self).__init__(hsub, proj)
 
@@ -898,9 +900,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # LTLspec_sysList.append(specSysGoals)
 
         # ---- []<>(goal1) & []<>(goal2) & []<>(winPos) ---- #
-        LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values() + ["[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"])))
-
-
+        if self.testDPatchingMode:
+            LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values())))
+        else:
+            LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values() + ["[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"])))
+        logging.debug("Finished LTL file")
         # set up violation check object
         # ------ OLD ------- #
         # specSysGoalsOld = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
@@ -914,7 +918,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         specWinPos = "[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"
         logging.debug("Setting up winPosCheck...")
         startTime = time.time()
-        if not testDPatchingMode:
+        if not self.testDPatchingMode:
             #we will do this differently
             if specWinPos:
                 #self.winPosCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'WinPos':specWinPos}, 'WinPos')
@@ -923,13 +927,20 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         logging.debug("WinPosCheck finished in " + str(time.time()-startTime) + 's.')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None, LTLspec_sysList)))
+
+        # enter deugger if we are running testDPatching
+        if self.testDPatchingMode:
+            pdb.set_trace()
+
         startTime = time.time()
         #HACK: Make it to recovery mode to try it out
         #self.compiler.proj.compile_options['recovery']=True # interactive strategy auto synthesizes with recovery option
         self.compiler.proj.compile_options["cooperative_gr1"] = True
         self.compiler.proj.compile_options["symbolic"] = False
+
         #self.compiler.proj.compile_options["interactive"] = True
         #self.compiler.proj.compile_options["only_realizability"] = True
+        logging.debug('SYNTHESIZING NOW..')
         realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
         logging.info(output)
@@ -953,8 +964,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             logging.info('Starting at State ' + str(self.strategy.current_state.state_id))
         else:
             logging.error('cannot synthesize a centralized patch')
-            self.closeConnection(None, None)
-            sys.exit()
+            if self.testDPatchingMode:
+                return
+            else:
+                self.closeConnection(None, None)
+                sys.exit()
 
         # set up sensor_strategy for runtime monitoring the liveness condition
         self.sensor_state = self.strategy.states.addNewState()
