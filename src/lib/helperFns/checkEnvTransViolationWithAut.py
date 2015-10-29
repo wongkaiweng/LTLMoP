@@ -13,12 +13,13 @@ import LTLParser.LTLFormula
 import LTLParser.LTLcheck
 import fsa
 import strategy
+import time
 
 logging.basicConfig(level=logging.INFO)
 
 # recursionlimits
 logging.debug("recursion limits:" + str(sys.getrecursionlimit()))
-sys.setrecursionlimit(1500)
+sys.setrecursionlimit(10**6)
 
 def getTruePropsInStates(autFile,stateList):
     truePropsOption = True # only returns true proposition if true
@@ -241,6 +242,7 @@ if __name__ == '__main__':
         for ltlStr in sysGoalsList:
             LTLViolationCheckSysGoalslist.append(LTLParser.LTLcheck.LTL_Check("",{},{'SysGoals':ltlStr},specType='SysGoals'))
 
+        winPosSimple = LTLParser.LTLcheck.LTL_Check_slugsWinPos(ltlStr)
         for stateNo in noSuccessorsStateList:
             # find current violated state
             for stateObject in strat.states:
@@ -255,14 +257,19 @@ if __name__ == '__main__':
                     # check violation
                     logging.info('-------------------------')
                     logging.info('Printing violations of State ' + str(stateNo))
+                    logging.info('State props:' + str([k for k, v in currentStateObject.getAll(expand_domains=True).iteritems() if v]))
                     logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
                     logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
                     for idx, checkObject in enumerate(LTLViolationCheckSysGoalslist):
+                        startTime = time.time()
                         if checkObject.checkViolation(currentStateObject, currentStateObject, LTLMoP = True):
-                            logging.info(str(idx) + "-SysGoalsHolds: True")
+                            logging.info(str(idx) + "-SysGoalsHolds: True, Time taken = " + str(time.time() - startTime))
                     logging.info('=========================')
+                    startTime = time.time()
+                    logging.info('winPosValue:' + str(winPosSimple.checkViolation(currentStateObject, currentStateObject)) + ' , time taken:' + str(time.time() - startTime))
+
                     break
 
     elif propDict:
