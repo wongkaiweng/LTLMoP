@@ -63,10 +63,10 @@ R1 = p3
 R2 = p2
 R3 = p1
 ML = p5
-L1 = p9
+MR = p4
 M1 = p6
 L3 = p7
-MR = p4
+L1 = p9
 L2 = p8
 others = 
 

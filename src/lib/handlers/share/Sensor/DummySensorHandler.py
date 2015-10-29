@@ -40,6 +40,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.robClient = None # fetch negMonitor from executor 
         logging.debug(executor.robClient)
         self.robotRegionStatus  = {} # for keeping track of robot locations
+        self.viconServer = {} # dict of vicon poses
         # ----------------------------- #
 
     def _stop(self):
@@ -227,3 +228,37 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
 
+
+    def checkIfViconObjectNearLocation(self, vicon_object_name, poseX, poseY, range=0.5, initial=False):
+        """
+        check if vicon object is near location specified.
+        vicon_object_name (string): name of the vicon object (default='folder:mainBody')
+        poseX (float): x-coorindate of the location (default=0.0)
+        poseY (float): y-coorindate of the location (default=0.0)
+        """
+        if initial:
+            print "Connecting to Vicon server..."
+            self.viconServer[vicon_object_name] = _pyvicon.ViconStreamer()
+            self.viconServer[vicon_object_name].connect("10.0.0.102", 800)
+
+            #model_name = "GPSReceiverHelmet-goodaxes:GPSReceiverHelmet01"
+            #model_name = "folder:mainBody"
+
+            self.viconServer[vicon_object_name].selectStreams(["Time"] + ["{} <{}>".format(vicon_object_name, s) for s in ("t-X", "t-Y")])
+            self.viconServer[vicon_object_name].startStreams()
+
+            # Wait for first data to come in
+            while self.viconServer[vicon_object_name].getData() is None:
+                pass
+
+        else:
+            (t, x, y) = self.viconServer[vicon_object_name].getData()
+            (t, x, y) = [t/100, x/1000, y/1000]
+
+            # Find our current configuration
+            pose = [poseX, poseY]
+
+            if math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range:
+                print >>sys.__stdout__, "See" + vicon_object_name + ": location: " + str(pose) + vicon_object_name +": " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
+
+            return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range
