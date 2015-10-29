@@ -544,13 +544,26 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
                 if not self.spec['SysGoals'].count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
                     specLen = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
-                    current_goal_id = str((int(self.prev_z) + 1) % (specLen))
+                    logging.debug('Old goal number is:' + str(self.prev_z))
+                    current_goal_id = str((int(self.prev_z) + 1) % specLen)
                     logging.debug("Current goal number is:" + current_goal_id)
                 else:
                     current_goal_id = str(0)
+
+                # also add in the system as that's what make winPos satisfied
+                centralizedSysPropDict = {k:v for k, v in self.dPatchingExecutor.strategy.current_state.getOutputs(expand_domains=True).iteritems() if self.dPatchingExecutor.robotName in k}
+                for propKey, propValue in centralizedSysPropDict.iteritems():
+                    if propKey.replace(self.dPatchingExecutor.robotName+'_','') in self.proj.regionMapping.keys() and propValue: #regionProp
+                        init_prop_assignments.update({"region": \
+                                                      self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[propKey.replace(self.dPatchingExecutor.robotName+'_','')][0])]\
+                                                     })
+                    else: # normal prop
+                        init_prop_assignments.update({propKey.replace(self.dPatchingExecutor.robotName+'_',''): propValue})
                 # ---------------------------- #
             else:
                 current_goal_id = self.prev_z
+
+            logging.debug('init_prop_assignments:' + str(init_prop_assignments))
             init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = current_goal_id)
 
         # resynthesize if cannot find initial state
@@ -658,10 +671,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 break
 
             self.prev_outputs = self.strategy.current_state.getOutputs()
-            if int(self.strategy.current_state.goal_id) < self.totalSysGoals:
-                self.prev_z = self.strategy.current_state.goal_id
-            else:
-                pass #stays the same
 
             tic = self.timer_func()
             ###### ENV VIOLATION CHECK ######  
@@ -711,13 +720,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # *********** patching ************** #
                             # once switched back to local strategy need to find init state again
                             self.runCentralizedStrategy = False
+                            self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.hsub.setVelocity(0,0)
                             self.runRuntimeMonitoring.clear()
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
                             self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
-                            self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.robClient.setRestartStatus()
                             while not self.robClient.checkRestartStatus():
                                 logging.debug('Waiting for the other robot to restart')
@@ -730,6 +739,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
                             # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
                             # once switched back to local strategy need to find init state again
+                            # also stops the other robots operating
+                            for robot in self.dPatchingExecutor.robotInRange:
+                                self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], True)
+
+                            self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.runCentralizedStrategy = False
                             self.hsub.setVelocity(0,0)
                             self.runRuntimeMonitoring.clear()
@@ -738,7 +752,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
                             logging.debug("finished initializing")
-                            self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
 
                             # updated regions
@@ -754,6 +767,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             logging.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
 
+                            # also restarts the other robots operating
+                            for robot in self.dPatchingExecutor.robotInRange:
+                                self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], False)
                             continue
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
                         else:
@@ -766,6 +782,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
 
                     self.runStrategyIterationInstanteousAction()
+
+            #######################################
+            ########## UPDATE GOAL ID #############
+            #######################################
+            #also make sure we are not in centralized mode to change goal_id
+            if int(self.strategy.current_state.goal_id) < self.totalSysGoals and not self.runCentralizedStrategy:
+                self.prev_z = self.strategy.current_state.goal_id
+            else:
+                pass #stays the same
 
             if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
                 #############################################
@@ -908,12 +933,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 if len(self.violated_spec_line_no) == 1 and len(self.old_violated_spec_line_no) == 0:
                                     self.postEvent("VIOLATION","Detected violation of env safety from env characterization")
                             else:
-                                self.postEvent("VIOLATION","Detected the following env safety violation???:" )
+                                self.postEvent("VIOLATION","Detected the following env safety violation:" )
                                 self.postEvent("VIOLATION", str(self.proj.specText.split('\n')[x-1]))
 
                     for x in self.violated_spec_list_with_no_specText_match:
                         if x not in self.old_violated_specStr_with_no_specText_match:
-                            self.postEvent("VIOLATION","Detected the following violation-----:")
+                            self.postEvent("VIOLATION","Detected the following violation:")
                             self.postEvent("VIOLATION", x)
 
                     # print out the violated possible specs
@@ -928,7 +953,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                     for x in self.possible_states_violated_spec_list_with_no_specText_match:
                         if x not in list(set(self.old_possible_states_violated_specStr_with_no_specText_match + self.old_violated_specStr_with_no_specText_match)):
-                            self.postEvent("VIOLATION","Detected the following violation----++ :")
+                            self.postEvent("VIOLATION","Detected the following violation:")
                             self.postEvent("VIOLATION", "POSSIBLE violation:" + str(x))
 
                     # save a copy

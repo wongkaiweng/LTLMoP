@@ -2,6 +2,7 @@ import fsa
 import sys
 import logging,random
 import project
+import copy
 
 class ExecutorStrategyExtensions(object):
     """ Extensions to Executor to allow for the strategy structure.
@@ -248,8 +249,15 @@ class ExecutorStrategyExtensions(object):
                 logging.debug('---------------------------------------------------------')
 
         if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
-            # Move one step towards the next region (or stay in the same region)
-            self.hsub.gotoRegion(self.current_region, self.next_region)
+            ##########################################
+            #### CHECK IF WE ARE ASKED TO PAUSE ######
+            ##########################################
+            if self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.dPatchingExecutor.getPauseForControllerSynthesis():
+                # we are asked to pause
+                self.hsub.setVelocity(0, 0)
+            else:
+                # Move one step towards the next region (or stay in the same region)
+                self.hsub.gotoRegion(self.current_region, self.next_region)
 
 
     def runStrategyIterationInstanteousActionCentralized(self):
@@ -306,6 +314,12 @@ class ExecutorStrategyExtensions(object):
                         self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(sensor_state('regionCompleted'))
                     else:
                         self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
+
+                    # also update sensors
+                    enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
+                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
+
                 else:
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
@@ -341,6 +355,10 @@ class ExecutorStrategyExtensions(object):
                     else:
                         self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
 
+                    # also update sensors
+                    enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
+                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
                 else:
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateRobotRegion(self.next_region)
@@ -385,10 +403,19 @@ class ExecutorStrategyExtensions(object):
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.centralized_strategy_state.getPropValue('regionCompleted').name))
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
-            self.strategy.current_state = self.centralized_strategy_state
+            self.strategy.current_state = copy.deepcopy(self.centralized_strategy_state)
 
-        # Move one step towards the next region (or stay in the same region)
-        self.hsub.gotoRegion(self.strategy.current_state.getPropValue('regionCompleted'), self.strategy.current_state.getPropValue('region'))
+        ##########################################
+        #### CHECK IF WE ARE ASKED TO PAUSE ######
+        ##########################################
+        if self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.dPatchingExecutor.getPauseForControllerSynthesis():
+            # we are asked to pause
+            self.hsub.setVelocity(0, 0)
+        elif self.strategy.current_state.getPropValue('regionCompleted') == self.strategy.current_state.getPropValue('region'):
+            self.hsub.setVelocity(0, 0)
+        else:
+            # Move one step towards the next region (or stay in the same region)
+            self.hsub.gotoRegion(self.strategy.current_state.getPropValue('regionCompleted'), self.strategy.current_state.getPropValue('region'))
 
     def HSubGetSensorValue(self,sensorList):
         """
