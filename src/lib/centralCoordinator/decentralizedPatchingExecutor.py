@@ -912,8 +912,15 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             self.sysGoalsCheck[robot] = LTLParser.LTLcheck.LTL_Check(None, {}, {'SysGoals':self.spec['SysGoals'][robot]}, 'SysGoals')
             self.sysGoalsCheckStatus[robot] = False
         specWinPos = "[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"
-        if specWinPos:
-            self.winPosCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'WinPos':specWinPos}, 'WinPos')
+        logging.debug("Setting up winPosCheck...")
+        startTime = time.time()
+        if not testDPatchingMode:
+            #we will do this differently
+            if specWinPos:
+                #self.winPosCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'WinPos':specWinPos}, 'WinPos')
+                self.winPosCheck = LTLParser.LTLcheck.LTL_Check_slugsWinPos(specWinPos) # should shorten the time
+
+        logging.debug("WinPosCheck finished in " + str(time.time()-startTime) + 's.')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None, LTLspec_sysList)))
         startTime = time.time()
@@ -1065,15 +1072,26 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         winPosStatus = False
         startTime = time.time()
         if False in self.sysGoalsCheckStatus.values():
+            current_state_copy = copy.deepcopy(self.strategy.current_state)
             for robot in self.sysGoalsCheck.keys():
                 if not self.sysGoalsCheckStatus[robot]:
-                    self.sysGoalsCheckStatus[robot] = self.sysGoalsCheck[robot].checkViolation(self.strategy.current_state, self.strategy.current_state)
+                    self.sysGoalsCheckStatus[robot] = self.sysGoalsCheck[robot].checkViolation(current_state_copy, current_state_copy)
                     logging.debug("Is sysGoals of " + robot + " satisfied? " + str(self.sysGoalsCheckStatus[robot]))
                     logging.debug("System goal:" + str(self.sysGoalsCheck[robot].env_safety_assumptions))
                     logging.debug("current_state:" + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
 
         if not False in self.sysGoalsCheckStatus.values(): # now we can check winning positions
-            winPosStatus = self.winPosCheck.checkViolation(self.strategy.current_state, self.strategy.current_state)
+            # replace sys and env to be the same
+            current_state_winPose_copy = copy.deepcopy(self.strategy.current_state)
+            #for eProp, eValue in current_state_winPose_copy.getInputs(expand_domains=True).iteritems():
+            #    for reg in self.robotLocations.keys():
+            #        if reg in eProp:
+            #            current_state_winPose_copy.setPropValues({eProp.replace('_rc', ''):eValue})
+
+            winPosStatus = self.winPosCheck.checkViolation(current_state_winPose_copy, current_state_winPose_copy)
+
+
+
             logging.debug("Are we in winning positions?:" + str(winPosStatus))
             logging.debug("current_state: no-" + str(self.strategy.current_state.state_id) + "," + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
 

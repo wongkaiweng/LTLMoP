@@ -6,6 +6,7 @@ from collections import OrderedDict
 import re
 import strategy
 import logging
+import copy
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -777,6 +778,43 @@ def parseSlugsEnvTransToStructuredEng(slugsLTLText, aut):
     else:   
         return "always" + toReturn 
     
+
+
+class LTL_Check_slugsWinPos:
+
+    """
+    Check which ltl statement was violated.
+    """
+    def __init__(self, spec):
+        """
+        Obtain .ltl of the current specification and trim the string to include only LTL.
+        path is obsoleted. There's no call in the function and can be removed (if all calls to the function are changed)
+        """
+        self.spec          = spec.replace('[]<>','')         # split that got split into different parts
+        self.current_state = None
+        self.sensor_state  = None
+
+    def checkViolation(self, cur_state, sensor_state):
+        """
+        this function call the subtree function to check for violation
+        cur_state: state object. see strategy.py
+        sensor_state: state object. see strategy.py
+        """
+
+        self.current_state = cur_state
+        self.sensor_state  = sensor_state
+
+        specTempStr = copy.copy(self.spec)
+        for prop, propValue in self.current_state.getInputs(expand_domains=True).iteritems():
+            specTempStr = specTempStr.replace('!e.'+prop, str(not propValue))
+            specTempStr = specTempStr.replace('e.'+prop, str(propValue))
+
+        for prop, propValue in self.current_state.getOutputs(expand_domains=True).iteritems():
+            specTempStr = specTempStr.replace('!s.'+prop, str(not propValue))
+            specTempStr = specTempStr.replace('s.'+prop, str(propValue))
+
+        # return whether the environment assumptions are being violated
+        return eval(specTempStr)
 
 """
 sample = ' []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.hazardous_item)) ) & []((( ((!s.bit0 & !s.bit1 & !s.bit2)) ) ) -> (   !  next(e.person)) ) '
