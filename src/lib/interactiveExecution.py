@@ -124,27 +124,27 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             else:
                 initInputsOutputs += "."
 
+        logging.debug("initInputsOutputs:" + str(initInputsOutputs))
         self.slugsProcess.stdin.write("XCOMPLETEINIT\n" + initInputsOutputs)
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # Skip the prompt
         prompt = self.slugsProcess.stdout.readline().strip()
 
         # iterate until we actually get our state
-        while re.search('[^aAgG]',prompt):
-            prompt = self.slugsProcess.stdout.readline().strip()
+        while re.search('[^aAgGsS01]',prompt):
             logging.debug("prompt:" + str(prompt))
+            prompt = self.slugsProcess.stdout.readline().strip()
         currentState = prompt
 
         # in the form of AaGa
         # A: given true value,    a:given false value
         # G: possible true value, g:possible false value
-        logging.debug("initInputsOutputs:" + str(initInputsOutputs))
         logging.debug( "currentState:" + str(currentState))
 
         # create state with the current state prop assignments
         prop_assignments = {}
         for idx,element in enumerate(currentState):
-            value = True if element == 'A' or element == 'G' else False
+            value = True if element == 'A' or element == 'G' or element == '1' or element == 'S' else False
             if idx > len(self.inputAPs)-1:
                 prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
@@ -157,8 +157,10 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # only read Position:
 
+        logging.debug('goal_id:' + str(goal_id))
         if goal_id is not None:
-            self.slugsProcess.stdin.write("XGETCURRENTGOAL\n" + str(goal_id) + "\n")
+            logging.debug('rewriting goals... ')
+            self.slugsProcess.stdin.write("XMAKEGOAL\n" + str(goal_id) + "\n")
             self.slugsProcess.stdin.flush()
             self.slugsProcess.stdout.readline() # only read Position:
 
