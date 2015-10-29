@@ -1169,17 +1169,19 @@ class ExecutorResynthesisExtensions(object):
                     # the current state stays the same but checks with differnt next possible states
                     env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
                     if not env_assumption_hold:
-                        logging.debug("asssumptions violated!")
+                        logging.debug("POSSIBLE STATES - asssumptions violated!")
                         logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
                         logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                        logging.debug("checker.violated_specStr:" + str(checker.violated_specStr))
                         return False
         else:
             logging.debug("we have all the robots. doing only once")
             env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
             if not env_assumption_hold:
-                logging.debug("asssumptions violated!")
+                logging.debug("POSSIBLE STATES - asssumptions violated!")
                 logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
                 logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                logging.debug("checker.violated_specStr:" + str(checker.violated_specStr))
                 return False
         return True
 
@@ -1225,7 +1227,8 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
+                logging.warning("SLUGS does not output bddLivenesses now and this will fail.")
+                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id) #FIXIT: no bddLivenesses now.
                 self.robClient.sendSpec(specType, specNewStr, fastslow=True, include_heading=True)
                 #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
 
@@ -1461,9 +1464,9 @@ class ExecutorResynthesisExtensions(object):
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
                 # remove spec relating the coordinating robots
-                specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
-                logging.debug("specNewStr:" + str(specNewStr))
-
+                #specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
+                #logging.debug("specNewStr:" + str(specNewStr))
+                specNewStr = specStr
                 for csock in csockList:
                     self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
 
@@ -1533,8 +1536,8 @@ class ExecutorResynthesisExtensions(object):
                 #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
                 # OR
                 # remove spec relating the coordinating robots
-                specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
-
+                #specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
+                specNewStr = specStr
                 self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
                     self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
 
@@ -1644,10 +1647,20 @@ class ExecutorResynthesisExtensions(object):
         This function setup the checkviolation object with the global envTrans used in the global strategy
         """
         # set up global envTrans check
-        globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.spec['EnvTrans'][robot] for robot in self.dPatchingExecutor.coordinatingRobots]))
+        #globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.spec['EnvTrans'][robot] for robot in self.dPatchingExecutor.coordinatingRobots])) # OLD
+        # (also filter coordinating robot EnvTrans)
+        globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.dPatchingExecutor.spec['EnvTrans'][robot], robot)\
+                                                     for robot in self.dPatchingExecutor.coordinatingRobots]))
+
+        logging.debug('globalEnvTrans:' + str(globalEnvTrans))
+        # globalEnvTransList = []
+        # for robot in self.dPatchingExecutor.coordinatingRobots:
+        #     globalEnvTransList.append(self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.spec['EnvTrans'][robot], robot))
+        # globalEnvTrans = " &\n".join(filter(None, ))
+
         self.globalEnvTransCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'EnvTrans': globalEnvTrans}, 'EnvTrans')
         self.globalEnvTransCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(globalEnvTrans)
-
+        logging.debug('finished setupGlobalEnvTransCheck')
     def checkRobotsInConflict(self, violatedEnvTransList):
         """
         This function checks the robots involved in the conflict.

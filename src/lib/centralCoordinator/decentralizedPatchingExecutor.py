@@ -633,11 +633,18 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         Helper Fn of renameSpecAndStoreNewMapping
         we are modifying the reference one so no return is needed?
         """
+        # ---> not sure why we need this. Not sending heading now.
         # e.region to s.region (region heading)
+        #for robot in self.coordinatingRobots:
+        #    for reg in self.robotLocations.keys():
+        #        for otherRobot in self.coordinatingRobots:
+        #            spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, spec[robot])
+
+        # e.robot_region to e.robot_region_rc for reconstructing spec in centralized mode
         for robot in self.coordinatingRobots:
             for reg in self.robotLocations.keys():
                 for otherRobot in self.coordinatingRobots:
-                    spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 's.'+otherRobot+'_'+reg, spec[robot])
+                    spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+reg+'_rc', spec[robot])
 
         # append robot name in front of actuators and sensors props, but not regions
         ## sensor props
@@ -719,10 +726,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
                     logging.debug("not coordinating robots:" + str(eProp))
                     # keep original name
+                    self.propMappingNewToOld[robot][eProp] = eProp
+                    self.propMappingOldToNew[robot][eProp] = eProp
                     if eProp not in self.smvEnvPropList:
                         self.smvEnvPropList.append(eProp)
-                        self.propMappingNewToOld[robot][eProp] = eProp
-                        self.propMappingOldToNew[robot][eProp] = eProp
+
 
                 # we are now keeping alice_r4 as alice_r4_rc for example
                 elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]:
@@ -847,18 +855,18 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             self.spec['EnvInit'][robot] = newEnvInit
             self.spec['SysInit'][robot] = '&\n'.join(filter(None, [self.spec['SysInit'][robot], extraSysInit]))
 
-
     def compileCentralizedSpec(self):
         """
         Compile centralized spec.
         """
+        logging.debug("Compling centralized Spec")
         # synthesize our new centralized controller again
         self.compiler = specCompiler.SpecCompiler()
         self.compiler.proj.compile_options['synthesizer'] = 'slugs' # use slugs
         self.compiler.proj.project_root = os.path.dirname(os.path.realpath(__file__)) #set directory to save slugsin
         self.compiler.proj.project_basename = self.filePath
         createSMVfile(self.filePath, sorted(self.smvEnvPropList), sorted(self.smvSysPropList)) # create a new SMV file
-
+        logging.debug("Finished smv file")
         # create a new LTL file
         LTLspec_envList = []
         LTLspec_sysList = []
@@ -879,9 +887,15 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 # here we will skip the goals and join them together below
                 if specType in ['SysGoals']:
                     continue
-                elif specType in ['SysInit', 'SysTrans']:
+                elif specType in ['SysInit','SysTrans']:
                     LTLspec_sysList.append(self.spec[specType][robot])
-                else:
+                elif specType in ['EnvTrans']:
+                    #also filter coordinating robot EnvTrans
+                    envTransStr = self.filterAndExcludeSpecOfCoordinatingRobots(self.spec['EnvTrans'][robot], robot)
+
+                    LTLspec_envList.append(envTransStr)
+
+                else: # EnvGoals
                     LTLspec_envList.append(self.spec[specType][robot])
 
         # join the goals of the robots so that the goals are pursued at the same time
@@ -951,7 +965,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         if realizable:
             logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
             # load strategy and initial state
-            if not self.compiler.proj.compile_options["symbolic"]: # explicit strategy
+            if not self.compiler.proj.compile_options["symbolic"] and not self.compiler.proj.compile_options["interactive"]: # explicit strategy
                 self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
             elif self.compiler.proj.compile_options["interactive"]:
                 self.strategy = strategy.createStrategyFromFile(self.filePath + '.slugsin', self.smvEnvPropList, self.smvSysPropList)
@@ -1173,6 +1187,26 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         self.coordinationRequestSent = copy.deepcopy(robotList)
 
+
+    def filterAndExcludeSpecOfCoordinatingRobots(self, specStr, robotName):
+        """
+        This function takes in the violated envTrans, first figure out the robots in conflict, then remove spec relating the robots from specStr if the specStr contains it.
+        violatedList: violated EnvTrans list
+        specStr: EnvTrans spec string
+        !!!! This is different from the one in resynthesis.py
+        """
+
+        #send in the list of coordinating robots to remove spec (need to pass in str list)
+        specStrList = LTLParser.LTLcheck.ltlStrToList(specStr)
+
+        # keylist = all robots, keymatch = conflicting robots
+        specFilteredList = LTLParser.LTLcheck.filterRelatedRobotSpec(specStrList, \
+            self.robotInRange + [self.robotName],
+            self.coordinatingRobots, robotName)
+
+        specNewStr = "&\n".join(filter(None, specFilteredList))
+
+        return specNewStr
 
 if __name__ == "__main__":
     logging.info('Please run testDPatching in helperFns to test the module.')
