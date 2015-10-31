@@ -14,6 +14,7 @@ import sys
 # ---- two_robot_negotiation  --- #
 import logging
 import random
+import Polygon, Polygon.IO, Polygon.Utils, Polygon.Shapes
 # ------------------------------- #
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -41,6 +42,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         logging.debug(executor.robClient)
         self.robotRegionStatus  = {} # for keeping track of robot locations
         self.viconServer = {} # dict of vicon poses
+        self.prev_pose = []
+        self.currentRegionPoly = None
         # ----------------------------- #
 
     def _stop(self):
@@ -185,13 +188,62 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
         self.robotRegionStatus = self.robClient.requestRegionInfo()
 
-    def inRegion(self, regionName , initial = False):
+    def inRegion(self, regionName, radius, initial = False):
+        """
+        Check if the robot is in this region
+        regionName (string): Name of the region
+        radius (float): radius of the robot, 5.0 for basicSim and 0.15 for Nao (default=5.0)
+        """
+
+        if initial:
+            self.prev_pose = self.executor.hsub.getPose()
+            regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
+            pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+            pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+            vertices = numpy.mat(pointArray).T
+            if is_inside([self.prev_pose[0], self.prev_pose[1]], vertices):
+                self.currentRegionPoly = Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
+            #return True
+
+        else:
+            pose =self.executor.hsub.getPose()
+            #########################################
+            ### Copied from vectorController.py #####
+            #########################################
+
+            # make sure the pose is valid
+            if sum(pose) == 0:
+                pose = self.prev_pose # maybe do interpolation later?
+                logging.warning("Losing pose... Using old one.")
+            else:
+                self.prev_pose = pose
+
+            # form polygon for the robot
+            RobotPoly = Polygon.Shapes.Circle(radius,(pose[0],pose[1]))
+
+            # form polygon for the region in consideration
+            regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
+            pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+            pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+            vertices = numpy.mat(pointArray).T
+
+            if Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray]).covers(RobotPoly):
+                self.currentRegionPoly = Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
+                return True
+            elif self.currentRegionPoly.overlaps(RobotPoly):
+                return False
+            else:
+                logging.warning("not inside next region or overlaps current region?!")
+                return False
+
+    def inRegion_old(self, regionName , initial = False):
         """
         Check if the robot is in this region
         regionName (string): Name of the region
         """
 
         if initial:
+            self.prev_pose = self.executor.hsub.getPose()
             return True
 
         else:
@@ -200,10 +252,18 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             ### Copied from vectorController.py #####
             #########################################
 
+            # make sure the pose is valid
+            if sum(pose) == 0:
+                pose = self.prev_pose # maybe do interpolation later?
+                logging.warning("Losing pose... Using old one.")
+            else:
+                self.prev_pose = pose
+
             regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
             pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
             pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
             vertices = numpy.mat(pointArray).T
+            #logging.debug('self.proj.rfiold.regions:' + str(self.proj.rfiold.regions))
             #logging.debug("pose:" + str(pose))
             #logging.debug("vertices:" + str(vertices))
             #logging.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
@@ -256,7 +316,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             (t, x, y) = [t/100, x/1000, y/1000]
 
             # Find our current configuration
-            pose = [poseX, poseY]
+            pose = [poseX/1000, poseY/1000]
 
             if math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range:
                 print >>sys.__stdout__, "See" + vicon_object_name + ": location: " + str(pose) + vicon_object_name +": " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
