@@ -1251,7 +1251,7 @@ class ExecutorResynthesisExtensions(object):
         sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
         sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp,sValue in sysProps.iteritems() }
 
-        for eProp, eValue in self.strategy.current_state.getInputs(expand_domains = True).iteritems():
+        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains = True).iteritems():
             if 'regionCompleted_b' in eProp and eValue:
                 sysProps[eProp.replace('regionCompleted_b','region_b')] = eValue
 
@@ -1488,7 +1488,7 @@ class ExecutorResynthesisExtensions(object):
         sysProps = self.strategy.current_state.getOutputs(expand_domains=True)
         sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp, sValue in sysProps.iteritems()}
 
-        for eProp, eValue in self.strategy.current_state.getInputs(expand_domains=True).iteritems():
+        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains=True).iteritems():
             if 'regionCompleted_b' in eProp and eValue:
                 sysProps[eProp.replace('regionCompleted_b', 'region_b')] = eValue
 
@@ -1559,7 +1559,7 @@ class ExecutorResynthesisExtensions(object):
         sysProps = self.strategy.current_state.getOutputs(expand_domains=True)
         sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp, sValue in sysProps.iteritems()}
 
-        for eProp, eValue in self.strategy.current_state.getInputs(expand_domains=True).iteritems():
+        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains=True).iteritems():
             if 'regionCompleted_b' in eProp and eValue:
                 sysProps[eProp.replace('regionCompleted_b', 'region_b')] = eValue
 
