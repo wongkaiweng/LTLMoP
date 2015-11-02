@@ -702,8 +702,7 @@ class HandlerSubsystem:
                 self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
             elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
                 # get the latest update from the other robots
-                pass
-                #self.executor.dPatchingExecutor.checkData()
+                self.getHandlerInstanceByName('DummySensorHandler')._lockCurrentRegion(initial=False)
         # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:
