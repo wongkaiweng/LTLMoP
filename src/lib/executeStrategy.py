@@ -221,7 +221,6 @@ class ExecutorStrategyExtensions(object):
 
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.next_state.getPropValue('regionCompleted').name))
-                self.postEvent("INFO", "Heading to region %s..." % self.next_state.getPropValue('region').name)
 
                 # ------------------------------- #
                 # --- two_robot_negotiation ----- #
@@ -238,6 +237,9 @@ class ExecutorStrategyExtensions(object):
                         else:
                             self.robClient.updateRobotRegion(self.next_state.getPropValue('regionCompleted'))
                 # ------------------------------- #
+
+            if self.transition_contains_motion or self.next_region is not None and (self.next_state.getPropValue('region') != self.strategy.current_state.getPropValue('region')):
+                self.postEvent("INFO", "Heading to region %s..." % self.next_state.getPropValue('region').name)
 
             self.strategy.current_state = self.next_state
             #self.last_next_states = []  # reset
@@ -401,6 +403,8 @@ class ExecutorStrategyExtensions(object):
             # Check for completion of motion
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.centralized_strategy_state.getPropValue('regionCompleted').name))
+
+            if self.transition_contains_motion or self.next_region is not None and (self.strategy.current_state.getPropValue('region')!= self.centralized_strategy_state.getPropValue('region')):
                 self.postEvent("INFO", "Heading to region %s..." % self.next_region.name)
 
             self.strategy.current_state = copy.deepcopy(self.centralized_strategy_state)
