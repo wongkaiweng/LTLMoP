@@ -957,9 +957,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.postEvent("VIOLATION", "POSSIBLE violation:" + str(x))
 
                     # save a copy
-                    self.old_violated_specStr = self.violated_spec_list
-                    self.old_violated_specStr_with_no_specText_match = self.violated_spec_list_with_no_specText_match
-                    self.old_violated_spec_line_no = self.violated_spec_line_no
+                    self.old_violated_specStr = copy.copy(self.violated_spec_list)
+                    self.old_violated_specStr_with_no_specText_match = copy.copy(self.violated_spec_list_with_no_specText_match)
+                    self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+
+                    self.old_possible_states_violated_specStr_with_no_specText_match = copy.copy(self.possible_states_violated_spec_list_with_no_specText_match)
+                    self.old_possible_states_violated_spec_line_no = copy.copy(self.possible_states_violated_spec_line_no)
 
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         # ******* patching ********** #

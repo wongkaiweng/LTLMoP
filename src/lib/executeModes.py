@@ -123,8 +123,11 @@ class ExecutorModesExtensions(object):
                             self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
                             self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
 
-                        logging.debug("**self.violated_spec_list:" + str(self.violated_spec_list))
-                        logging.debug("self.env_assumption_hold:" + str(self.env_assumption_hold))
+                        if not self.env_assumption_hold:
+                            logging.debug("**self.violated_spec_list:" + str(self.violated_spec_list))
+                            logging.debug("**self.violated_spec_list_with_no_specText_match:" + str(self.violated_spec_list_with_no_specText_match))
+                            logging.debug("**self.violated_spec_line_no:" + str(self.violated_spec_line_no))
+                            logging.debug("self.env_assumption_hold:" + str(self.env_assumption_hold))
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
@@ -258,6 +261,14 @@ class ExecutorModesExtensions(object):
         """
         This function clears all violations related variables and set the runtime thread again.
         """
+        # reset previous variables
+        self.old_violated_specStr = []
+        self.old_violated_specStr_with_no_specText_match = []
+        self.old_violated_spec_line_no = []
+
+        self.old_possible_states_violated_specStr_with_no_specText_match = []
+        self.old_possible_states_violated_spec_line_no = []
+
         # reset variables
         self.env_assumption_hold = True
         self.violated_spec_list = []
@@ -268,6 +279,16 @@ class ExecutorModesExtensions(object):
         self.possible_states_violated_spec_list = [] # keep track of specs violated
         self.possible_states_violated_spec_list_with_no_specText_match = [] # keep track of specs violated but with no specText match
         self.possible_states_violated_spec_line_no = [] # keep track of specText lines violated.
+
+        # also reset those in the object
+        if self.runCentralizedStrategy:
+            if self.globalEnvTransCheck:
+                self.globalEnvTransCheck.clearViolations()
+        else:
+            if self.LTLViolationCheckPossibleStates:
+                self.LTLViolationCheckPossibleStates.clearViolations()
+            if self.LTLViolationCheck:
+                self.LTLViolationCheck.clearViolations()
 
         #resume the thread
         self.runRuntimeMonitoring.set()

@@ -352,12 +352,18 @@ class LTL_Check:
         
         # Environment Violations are removed
         if value == True and len(self.violated_spec_line_no) != 0:
-            self.violated_spec_line_no = []
-            self.violated_specStr_with_no_specText_match = []
-            self.violated_specStr = []
+            self.clearViolations()
         
         # return whether the environment assumptions are being violated
         return value
+
+    def clearViolations(self):
+        """
+        This function reset all lists that keep track of violations
+        """
+        self.violated_spec_line_no = []
+        self.violated_specStr_with_no_specText_match = []
+        self.violated_specStr = []
 
     def resetEnvCharacterization(self):
         """
@@ -642,14 +648,17 @@ class LTL_Check:
                         except:  
                             #TODO: could be spec from autogeneration but not env characterization 
                             if envTransTree:
-                                self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
+                                if LTLFormula.treeToString(x) not in self.violated_specStr_with_no_specText_match:
+                                    self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
                             else:
                                 if 0 not in violated_spec_line_no:                  
                                     treeNo = 0
                                     violated_spec_line_no.append(treeNo)
                         if envTransTree:
-                            logging.debug(LTLFormula.treeToString(x))
-                            self.violated_specStr.append(LTLFormula.treeToString(x))
+                            to_be_added_violated_specStr = LTLFormula.treeToString(x)
+                            logging.debug(to_be_added_violated_specStr)
+                            if to_be_added_violated_specStr not in self.violated_specStr:
+                                self.violated_specStr.append(LTLFormula.treeToString(x))
 
                     else:
                         if debug_true_ltl == True:                        
