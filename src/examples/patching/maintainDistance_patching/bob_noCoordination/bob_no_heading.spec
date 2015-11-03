@@ -24,7 +24,7 @@ decompose: True
 interactive: True
 
 CurrentConfigName:
-bobWithAliceSensor
+naoInLab
 
 Customs: # List of custom propositions
 
@@ -41,6 +41,8 @@ alice_r6, 1
 
 
 ======== SPECIFICATION ========
+
+GlobalSensors: # Sensors accessible by all robots
 
 OtherRobot: # The other robot in the same workspace
 alice

@@ -6,6 +6,9 @@ Background: # Relative path of background image file
 None
 
 CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	3
+boundary	8
+fountain	1
 
 Obstacles: # Names of regions to treat as obstacles
 fountain
@@ -15,8 +18,8 @@ Regions: # Stored as JSON string
     {
         "name": "boundary", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
