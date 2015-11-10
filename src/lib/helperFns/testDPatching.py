@@ -85,7 +85,16 @@ def sendSpec(csock, patchObject, specDict, stateObject, ltlSpecPath):
     f.closed
     patchObject.sendSpec(csock, 'WinPos', '('+winPosSpec+')', fastslow=True, include_heading=True)
     patchObject.sendProp(csock, 'env', stateObject.getInputs(expand_domains = True))
-    patchObject.sendProp(csock, 'sys', stateObject.getOutputs(expand_domains = True))
+
+    sysProps = stateObject.getOutputs(expand_domains=True)
+    sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp, sValue in sysProps.iteritems()}
+
+    for eProp, eValue in stateObject.getInputs(expand_domains=True).iteritems():
+        if 'regionCompleted_b' in eProp:
+            sysProps[eProp.replace('regionCompleted_b', 'region_b')] = eValue
+    logging.warning('sysProps:' + str(sysProps))
+
+    patchObject.sendProp(csock, 'sys', sysProps)
 
 def sendSpecToMySelf(robotName, patchObject, specDict, stateObject, ltlSpecPath):
     """
@@ -136,13 +145,13 @@ charlieStateDict  = {'alice_M1':0, 'bob_M1':0, 'alice_R2':0, 'bob_R2':1, 'alice_
                       'regionCompleted_b1':0, 'regionCompleted_b2':1, 'regionCompleted_b3':1, 'region_b0':0, 'region_b1':0, 'region_b2':1, 'region_b3':1}
 
 
-#ltlSpecA = '../../examples/FStwo_robot_negotiation/alice_noCoordination/alice_no_heading.spec'
-#ltlSpecB = '../../examples/FStwo_robot_negotiation/bob_noCoordination/bob_no_heading.spec'
+ltlSpecA = '../../examples/patching/maintainDistance_patching/alice_noCoordination/alice_no_heading.spec'
+ltlSpecB = '../../examples/patching/maintainDistance_patching/bob_noCoordination/bob_no_heading.spec'
 # specify initial state
-#aliceStateDict = {'bob_r1':0, 'bob_r3':0, 'bob_r4':1, 'bob_r5':0, 'bob_r6':0, 'bob_r2':0, 'regionCompleted_b0':0, 'regionCompleted_b1':1,\
-#                'regionCompleted_b2':1, 'region_b0':0, 'region_b1':1, 'region_b2':1}
-#bobStateDict  = {'alice_r1':1, 'alice_r2':0, 'alice_r3':0, 'alice_r4':0, 'alice_r5':0, 'alice_r6':0, 'regionCompleted_b0':0, 'regionCompleted_b1':0, \
-#                'regionCompleted_b2':1, 'region_b0':0, 'region_b1':0, 'region_b2':1}
+aliceStateDict = {'bob_r1':0, 'bob_r3':0, 'bob_r4':1, 'bob_r5':0, 'bob_r6':0, 'bob_r2':0, 'regionCompleted_b0':0, 'regionCompleted_b1':1,\
+                'regionCompleted_b2':1, 'region_b0':0, 'region_b1':1, 'region_b2':1}
+bobStateDict  = {'alice_r1':1, 'alice_r2':0, 'alice_r3':0, 'alice_r4':0, 'alice_r5':0, 'alice_r6':0, 'regionCompleted_b0':0, 'regionCompleted_b1':0, \
+                'regionCompleted_b2':1, 'region_b0':0, 'region_b1':0, 'region_b2':1}
 
 alicePatching, aliceStrategy = initDPatching(ltlSpecA)
 bobPatching, bobStrategy = initDPatching(ltlSpecB)
