@@ -27,7 +27,7 @@ class ExecutorModesExtensions(object):
         This version of check violation only monitor the current sensors and incoming sensors.
         """
         # Take a snapshot of our current sensor readings
-        sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+        sensor_state = copy.deepcopy(self.hsub.getSensorValue(self.proj.enabled_sensors))
         for prop_name, value in sensor_state.iteritems():
             if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
                 continue
@@ -35,31 +35,36 @@ class ExecutorModesExtensions(object):
             self.sensor_strategy.setPropValue(prop_name, value)
 
         if self.proj.compile_options['fastslow']:
-            curRegionIdx = self._getCurrentRegionFromPose()
-            if curRegionIdx is None:
-                curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+        #    curRegionIdx = self._getCurrentRegionFromPose()
+        #    if curRegionIdx is None:
+        #        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+            currentRegionCompleted_oldName = [prop_name for prop_name, value in sensor_state.iteritems() \
+                if prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)) and value]
+            currentRegionCompleted_newName = self.proj.regionMapping[currentRegionCompleted_oldName[0].replace('_rc','')]
+            curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_newName[0])
             self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
+
+        deepcopy_sensor_state = copy.deepcopy(self.sensor_strategy)
+        deepcopy_current_state = copy.deepcopy(self.strategy.current_state)
 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
             # ************ patching ****************** #
-            env_assumption_hold = self.LTLViolationCheck.checkViolation(copy.deepcopy(self.strategy.current_state), copy.deepcopy(self.sensor_strategy))
+            env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \
+                self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
             # **************************************** #
 
         elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
             # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%% #
             if self.runCentralizedStrategy:
-                for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
+                for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains=True)).iteritems():
                     self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
                 deepcopy_sensor_state = copy.deepcopy(self.dPatchingExecutor.sensor_state)
-                env_assumption_hold = self.globalEnvTransCheck.checkViolation(\
-                    copy.deepcopy(self.dPatchingExecutor.strategy.current_state), deepcopy_sensor_state)
+                deepcopy_current_state = copy.deepcopy(self.dPatchingExecutor.strategy.current_state)
+                env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \
+                    self.globalEnvTransCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
 
                 if not env_assumption_hold:
-                    logging.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs().iteritems() if value]))
-                    logging.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))
-                    logging.debug("======== envTrans violations ============")
-
                     # now checks if it's only about one coordinating robot
                     for x in self.globalEnvTransCheck.violated_specStr:
                         if LTLParser.LTLcheck.filterSpecList([x], self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName]):
@@ -68,11 +73,20 @@ class ExecutorModesExtensions(object):
                         env_assumption_hold = True
                         logging.debug("no violations as it's only about one robot (later should change to only topology)")
             else:
-                env_assumption_hold = self.LTLViolationCheck.checkViolation(copy.deepcopy(self.strategy.current_state), copy.deepcopy(self.sensor_strategy))
+                env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \
+                    self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
             #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
         else:
             # Check for environment violation - change the env_assumption_hold to int again
-            env_assumption_hold = self.LTLViolationCheck.checkViolation(copy.deepcopy(self.strategy.current_state), copy.deepcopy(self.sensor_strategy))
+            env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \
+                self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
+
+        if not env_assumption_hold:
+            logging.debug("self.sensor_strategy:" + str([x for x, value in self.sensor_strategy.getInputs(expand_domains=True).iteritems() if value]))
+            logging.debug("ACTUAL-current_state:" + str([x for x, value in deepcopy_current_state.getAll(expand_domains=True).iteritems() if value]))
+            logging.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if value]))
+            logging.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))
+            logging.debug("======== envTrans violations ============")
 
         return env_assumption_hold
 
@@ -92,11 +106,11 @@ class ExecutorModesExtensions(object):
                 if self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
                     # only run check violation if sensor or possible next states has changed
                     runCheck = False
-                    sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
-                    if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
-                        otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
-                    elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
-                        otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
+                    sensor_state = copy.deepcopy(self.hsub.getSensorValue(self.proj.enabled_sensors))
+                    #if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
+                    #    otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
+                    #elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    #    otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
 
                     # figure out the form of current strategy
                     if self.runCentralizedStrategy:
@@ -105,7 +119,7 @@ class ExecutorModesExtensions(object):
                         current_state = copy.deepcopy(self.strategy.current_state)
 
                     if (old_current_state is None or old_current_state.getAll(expand_domains=True) != current_state.getAll(expand_domains=True)) or\
-                        old_sensor_state != sensor_state or old_otherEnvPropDict != otherEnvPropDict:
+                        old_sensor_state != sensor_state: #or old_otherEnvPropDict != otherEnvPropDict:
                         runCheck = True
 
                     if runCheck and self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
@@ -114,24 +128,24 @@ class ExecutorModesExtensions(object):
                         if not self.env_assumption_hold:
                             self.runRuntimeMonitoring.clear()
 
-                        if self.runCentralizedStrategy:
-                            self.violated_spec_list = copy.deepcopy(self.globalEnvTransCheck.violated_specStr)
-                            self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.globalEnvTransCheck.violated_specStr_with_no_specText_match)
-                            self.violated_spec_line_no = copy.deepcopy(self.globalEnvTransCheck.violated_spec_line_no)
-                        else:
-                            self.violated_spec_list = copy.deepcopy(self.LTLViolationCheck.violated_specStr)
-                            self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
-                            self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
+                        #if self.runCentralizedStrategy:
+                        #    self.violated_spec_list = copy.deepcopy(self.globalEnvTransCheck.violated_specStr)
+                        #    self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.globalEnvTransCheck.violated_specStr_with_no_specText_match)
+                        #    self.violated_spec_line_no = copy.deepcopy(self.globalEnvTransCheck.violated_spec_line_no)
+                        #else:
+                        #    self.violated_spec_list = copy.deepcopy(self.LTLViolationCheck.violated_specStr)
+                        #    self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
+                        #    self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
 
                         if not self.env_assumption_hold:
                             logging.debug("**self.violated_spec_list:" + str(self.violated_spec_list))
                             logging.debug("**self.violated_spec_list_with_no_specText_match:" + str(self.violated_spec_list_with_no_specText_match))
                             logging.debug("**self.violated_spec_line_no:" + str(self.violated_spec_line_no))
-                            logging.debug("self.env_assumption_hold:" + str(self.env_assumption_hold))
+                            logging.debug("**self.env_assumption_hold:" + str(self.env_assumption_hold))
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
-                    old_current_state = current_state
+                    old_current_state = copy.deepcopy(current_state)
                     #logging.debug("seemed like we did not exit")
         except:
             import traceback
@@ -154,9 +168,13 @@ class ExecutorModesExtensions(object):
             self.sensor_strategy.setPropValue(prop_name, value)
 
         if self.proj.compile_options['fastslow']:
-            curRegionIdx = self._getCurrentRegionFromPose()
-            if curRegionIdx is None:
-                curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+        #    curRegionIdx = self._getCurrentRegionFromPose()
+        #    if curRegionIdx is None:
+        #        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+            currentRegionCompleted_oldName = [prop_name for prop_name, value in sensor_state.iteritems() \
+                if prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)) and value]
+            currentRegionCompleted_newName = self.proj.regionMapping[currentRegionCompleted_oldName[0].replace('_rc','')]
+            curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_newName[0])
             self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
@@ -215,7 +233,7 @@ class ExecutorModesExtensions(object):
                     # only run check violation if sensor or possible next states has changed
                     runCheck = False
                     #logging.warning("how often do we come.....possible states")
-                    sensor_state = self.hsub.getSensorValue(self.proj.enabled_sensors)
+                    sensor_state = copy.deepcopy(self.hsub.getSensorValue(self.proj.enabled_sensors))
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
                     elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
@@ -234,7 +252,7 @@ class ExecutorModesExtensions(object):
                     if runCheck and self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
                         self.possible_states_env_assumption_hold = self.check_envTrans_violations()
                         # stop check violations until this one is solved.
-                        if not self.env_assumption_hold:
+                        if not self.possible_states_env_assumption_hold:
                             self.runRuntimeMonitoring.clear()
 
                         if self.runCentralizedStrategy:
@@ -251,7 +269,7 @@ class ExecutorModesExtensions(object):
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
-                    old_current_state = current_state
+                    old_current_state = copy.deepcopy(current_state)
 
         except:
             import traceback
