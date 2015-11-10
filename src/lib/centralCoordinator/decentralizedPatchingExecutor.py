@@ -12,7 +12,7 @@ import signal #for terminating object when keyboard interrupt
 import time   #for temporary pause, timing synthesis time
 import random #for chosing one next states from the list
 import Queue  #for queueing messages from other robots
-import copy   #for tracking coorindating robots
+import copy   #for tracking coorindating robots, make a copy of the state for checking violation
 import threading #for monitoring sysGoals
 import pdb  # for debugger
 
@@ -108,6 +108,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         listenConn = 5  #listenConn is the maximum number of queued connections we'll allow
 
         #find our socket to the address
+        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # no one minute timeout for reconnection
         self.serv.bind((ADDR))    #the double parens are to create a tuple with one element
         self.serv.listen(listenConn)
         logging.info('CONNECTION: Listening...')
@@ -177,6 +178,8 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.tempRobotStatusOnCentralizedStrategyExecution = {} # temporarily store robotStatusOnCentralizedStrategyExecution of other robots and update in checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy. (Prevents incorrect removal of status)
         self.checkSysGoalsThread = None # for checking sysGoals in the background
         self.pauseForSynthesis = {} # track status of other robots asking us to pause
+        self.globalSensors = [] # list of global sensors that doesn't have to be renamed
+        self.regionLock = threading.Lock() # set up a lock for regions updates
 
     def cleanVariables(self, first_time=True):
         """
@@ -333,6 +336,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         if item.group("packageValue").rfind('_rc') > 0:
                             RCregion = True
 
+                        self.regionLock.acquire()
                         # update region info of robot
                         for region in self.robotLocations.keys():
                             if self.robotLocations[region][item.group("robotName")] and ((region.rfind('_rc') > 0) == RCregion):
@@ -340,6 +344,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
                             if item.group("packageValue") == region:
                                 self.robotLocations[region][item.group("robotName")] = True
+                        self.regionLock.release()
 
                         printRegionInfo(self.robotLocations)
 
@@ -347,13 +352,13 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         if ast.literal_eval(item.group("packageValue")):
                             # We got spec from robotClient, save spec
                             self.spec[item.group('packageType')][item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
-                            printSpec(item.group('packageType'), self.spec[item.group('packageType')][item.group("robotName")], item.group("robotName"))
+                            #printSpec(item.group('packageType'), self.spec[item.group('packageType')][item.group("robotName")], item.group("robotName"))
 
                     elif item.group('packageType') == 'SysGoalsOld':
                         if ast.literal_eval(item.group("packageValue")):
                             # We got spec from robotClient, save spec
                             self.sysGoalsOld[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
-                            printSpec(item.group('packageType'), self.sysGoalsOld[item.group("robotName")], item.group("robotName"))
+                            #printSpec(item.group('packageType'), self.sysGoalsOld[item.group("robotName")], item.group("robotName"))
 
                     elif item.group('packageType') == 'WinPos':
                         if ast.literal_eval(item.group("packageValue")):
@@ -650,14 +655,15 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+reg+'_rc', spec[robot])
 
         # append robot name in front of actuators and sensors props, but not regions
-        ## sensor props
+        ## sensor props #!!! excluding global sensors
         ## e.g: sensorProp  -> robotName_sensorProp
         for robot, ePropList in self.envPropList.iteritems():
             for eProp, eValue in ePropList.iteritems():
                 #ignore any region related props
                 #!! used to be self.coordinatingRobots and self.coordinatingRobots if otherRobot != robot
                 if eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]] or\
-                   eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
+                   eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]] or \
+                   eProp in self.globalSensors:
                     continue
                 spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+eProp+'(?=[ &|)\t\n])', 'e.'+robot+'_'+eProp, spec[robot])
 
@@ -724,6 +730,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     self.propMappingNewToOld[robot][eProp] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp
 
+                # for the case of global sensors
+                elif eProp in self.globalSensors:
+                    logging.debug("global sensors:" + str(eProp))
+                    if eProp not in self.smvEnvPropList:
+                        self.smvEnvPropList.append(eProp)
+                    self.propMappingNewToOld[robot][eProp] = eProp
+                    self.propMappingOldToNew[robot][eProp] = eProp
+
                 # about otherRobot_reg for otherRobot not coorindating
                 #(not that we don't have myRobot_reg here from original list)
                 elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
@@ -763,6 +777,12 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         logging.debug("AS-our own eProp:" + str(eProp))
                         self.currentAssignment.update({eProp: eValue})
 
+                    # for the case of global sensors
+                    elif eProp in self.globalSensors:
+                        logging.debug("AS-global sensors:" + str(eProp))
+                        if eProp not in self.currentAssignment.keys():
+                            self.currentAssignment.update({eProp: eValue})
+
                     # about otherRobot_reg for otherRobot not coorindating (not that we don't have myRobot_reg here from original list)
                     elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
                         logging.debug("AS-not coordinating robots:" + str(eProp))
@@ -790,8 +810,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         logging.debug("AS-adding robot: " + str(eProp))
                         self.currentAssignment.update({robot+'_'+eProp: eValue})
                 else: # robot in centralized mode.
-                    # update assignments only
-                    self.currentAssignment.update({k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k})
+                    if eProp not in self.currentAssignment.keys() and eProp in self.sensor_state.getInputs(expand_domains=True).keys():
+                        # update assignments only
+                        self.currentAssignment.update({eProp: self.sensor_state.getInputs(expand_domains=True)[eProp]})
+                    elif eProp not in self.currentAssignment.keys() and robot+'_'+eProp in self.sensor_state.getInputs(expand_domains=True).keys():
+                        # update assignments only
+                        self.currentAssignment.update({robot+'_'+eProp: self.sensor_state.getInputs(expand_domains=True)[robot+'_'+eProp]})
+                    else:
+                        logging.debug('CURRENT ASSIGNMENT: This prop is not added: ' + str(eProp))
 
         # add input props to states collection
         states.addInputPropositions(self.smvEnvPropList)
@@ -827,12 +853,15 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
                 else: # robot in centralized mode.
                     # update assignments only. make reg_rc and reg the same
-                    sysProps = {k:v for k, v in self.strategy.current_state.getOutputs(expand_domains=True).iteritems() if robot in k}
-                    for eProp, eValue in {k:v for k, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if robot in k}.iteritems():
+                    if sProp not in self.currentAssignment.keys() and sProp in self.strategy.current_state.getOutputs(expand_domains=True).keys():
+                        isRegionProp = False
                         for reg in self.robotLocations.keys():
-                            if reg in eProp:
-                                sysProps[eProp.replace('_rc', '')] = eValue
-                    self.currentAssignment.update(sysProps)
+                            if reg in sProp:
+                                self.currentAssignment.update({sProp: self.sensor_state.getInputs(expand_domains=True)[sProp+'_rc']})
+                                isRegionProp = True
+
+                        if not isRegionProp:
+                            self.currentAssignment.update({sProp: self.strategy.current_state.getOutputs(expand_domains=True)[sProp]})
 
         # add input props to states collection
         states.addOutputPropositions(self.smvSysPropList)
@@ -1021,11 +1050,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 nextRobotSensors = {self.propMappingOldToNew[coR][k]:v for k, v in self.robotSensors[coR].iteritems()}
                 #logging.warning('nextRobotSensors:' + str(nextRobotSensors))
                 currentInputs.update(nextRobotSensors)
+
         # update sensor_state with the latest information
         #self.sensor_state.setPropValues(nextInputs)
 
         # find if the state is changed
         next_states = self.strategy.findTransitionableStates(currentInputs, from_state=self.strategy.current_state)
+        #if next_states:
+        #    next_states = self.strategy.findTransitionableStates(currentInputs, from_state=next_states[0]) #HACK .. make two steps (should stop state toggle)
 
         ## This is from executeStrategy.py
         # Make sure we have somewhere to go
@@ -1093,7 +1125,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             # only carry out the check when state is updated
             if old_current_state is None or old_current_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
                 self.goalsSatisfied = self.checkIfGoalsAreSatisfied()
-            old_current_state = self.strategy.current_state
+            old_current_state = copy.deepcopy(self.strategy.current_state)
 
     def checkIfGoalsAreSatisfied(self):
         """
@@ -1102,29 +1134,25 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         winPosStatus = False
         startTime = time.time()
+        current_state_copy = copy.deepcopy(self.strategy.current_state)
         if False in self.sysGoalsCheckStatus.values():
-            current_state_copy = copy.deepcopy(self.strategy.current_state)
             for robot in self.sysGoalsCheck.keys():
                 if not self.sysGoalsCheckStatus[robot]:
                     self.sysGoalsCheckStatus[robot] = self.sysGoalsCheck[robot].checkViolation(current_state_copy, current_state_copy)
                     logging.debug("Is sysGoals of " + robot + " satisfied? " + str(self.sysGoalsCheckStatus[robot]))
                     logging.debug("System goal:" + str(self.sysGoalsCheck[robot].env_safety_assumptions))
-                    logging.debug("current_state:" + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
+                    logging.debug("current_state:" + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
 
         if not False in self.sysGoalsCheckStatus.values(): # now we can check winning positions
             # replace sys and env to be the same
-            current_state_winPose_copy = copy.deepcopy(self.strategy.current_state)
             #for eProp, eValue in current_state_winPose_copy.getInputs(expand_domains=True).iteritems():
             #    for reg in self.robotLocations.keys():
             #        if reg in eProp:
             #            current_state_winPose_copy.setPropValues({eProp.replace('_rc', ''):eValue})
 
-            winPosStatus = self.winPosCheck.checkViolation(current_state_winPose_copy, current_state_winPose_copy)
-
-
-
+            winPosStatus = self.winPosCheck.checkViolation(current_state_copy, current_state_copy)
             logging.debug("Are we in winning positions?:" + str(winPosStatus))
-            logging.debug("current_state: no-" + str(self.strategy.current_state.state_id) + "," + str([k for k, v in self.strategy.current_state.getAll(expand_domains=True).iteritems() if v]))
+            logging.debug("current_state: no-" + str(current_state_copy.state_id) + "," + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
 
         logging.debug("time taken:" + str(time.time() - startTime))
 
