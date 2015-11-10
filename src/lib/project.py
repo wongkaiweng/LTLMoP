@@ -30,7 +30,8 @@ class Project:
         self.rfi = None
         self.specText = ""
         # -------- two_robot_negotiation ------#
-        self.otherRobot = ""
+        self.otherRobot = []
+        self.global_sensors = []
         # ------------------------------------ #
         self.all_sensors = []
         self.enabled_sensors = []
@@ -145,6 +146,11 @@ class Project:
             self.otherRobot = spec_data['SPECIFICATION']['OtherRobot']
         except KeyError:
             logging.warning("other robot undefined")
+
+        try:
+            self.global_sensors = spec_data['SPECIFICATION']['GlobalSensors']
+        except KeyError:
+            logging.warning("global sensors undefined")
         # ---------------------------------- #
         
         if 'CompileOptions' in spec_data['SETTINGS']:
@@ -173,7 +179,7 @@ class Project:
         data = {}
         
         # ----------- two_robot_negotiation ---------- #
-        data['SPECIFICATION'] = {"OtherRobot": self.otherRobot, "Spec": self.specText}
+        data['SPECIFICATION'] = {"OtherRobot": self.otherRobot, "GlobalSensors": self.global_sensors, "Spec": self.specText}
         # -------------------------------------------- #
         
         if self.regionMapping is not None:
@@ -202,6 +208,7 @@ class Project:
                     "Customs": "List of custom propositions",
                     "Spec": "Specification in structured English",
                     "OtherRobot": "The other robot in the same workspace",
+                    "GlobalSensors": "Sensors accessible by all robots",
                     "RegionMapping": "Mapping between region names and their decomposed counterparts"}
 
         fileMethods.writeToFile(filename, data, comments)

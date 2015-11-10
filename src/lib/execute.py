@@ -502,6 +502,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         self.dPatchingExecutor = centralCoordinator.decentralizedPatchingExecutor.PatchingExecutor(self.hsub, self.proj, \
                             self.proj.rfi.regions[self._getCurrentRegionFromPose()])
 
+                    # set global sensors
+                    self.dPatchingExecutor.globalSensors = self.proj.global_sensors
+                    logging.debug('self.dPatchingExecutor.globalSensors:' + str(self.dPatchingExecutor.globalSensors))
                     self.checkDataThread = threading.Thread(target=self.dPatchingExecutor.runCheckData, args=())
                     self.checkDataThread.daemon = True  # Daemonize thread
                     self.checkDataThread.start()
@@ -844,6 +847,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # stop the robot from moving
                             self.hsub.setVelocity(0,0)
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
+                            logging.info("We are asked to join a centralized strategy")
                             self.runRuntimeMonitoring.clear()
                             if self.runCentralizedStrategy:
                                 self.initiateDPatchingCentralizedMode(received_request=True)
@@ -986,6 +990,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
                         self.runRuntimeMonitoring.clear()
+                        logging.info("Initiating patching...")
                         self.initiateDPatching()
                         self.resumeRuntimeMonitoring()
                         continue
