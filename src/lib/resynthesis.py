@@ -1339,11 +1339,9 @@ class ExecutorResynthesisExtensions(object):
         #logging.debug("sensorList:" + str(sensorList))
         # convert formula from slugs to our format
         sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
-        #logging.debug(sysGoalsLTLList)
 
         # replace with normal region bits (like actual regions)
         sysWinningPosLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
-        #logging.debug(sysGoalsLTL)
 
         return "("+sysWinningPosLTL+")"
 
@@ -1397,11 +1395,15 @@ class ExecutorResynthesisExtensions(object):
             numBitsToEnumerate = numBits-1
             bitStrList = []
             # if we have three bits, then only enumerate 2
-            for x in range(2**numBitsToEnumerate):
-                # also reverse bit so that we have bits 0 1 2 ...
-                tempBitStr = "{0:0{width}b}".format(x, width=numBitsToEnumerate)
-                # add the missing bit at the right position
-                bitStrList.append(tempBitStr[:bitInConsideration] + ('0' if '!' in regionProp else'1') + tempBitStr[bitInConsideration:])
+            if numBitsToEnumerate:
+                for x in range(2**numBitsToEnumerate):
+                    # also reverse bit so that we have bits 0 1 2 ...
+                    tempBitStr = "{0:0{width}b}".format(x, width=numBitsToEnumerate)
+                    # add the missing bit at the right position
+                    bitStrList.append(tempBitStr[:bitInConsideration] + ('0' if '!' in regionProp else'1') + tempBitStr[bitInConsideration:])
+            else:
+                # only one bit
+                bitStrList.append(('0' if '!' in regionProp else'1'))
 
             # find all region bit str now
             for regionIdx in [int(x,2) for x in bitStrList]:
@@ -1595,8 +1597,11 @@ class ExecutorResynthesisExtensions(object):
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
             self.postEvent("D-PATCH","We will now ask for a centralized strategy be executed.")
+            self.runCentralizedStrategy = True
         elif received_request:
             logging.info("We are asked to join patching")
+            self.runCentralizedStrategy = True
+
         else:
             logging.warning("we need to trigger env characterization instead. This is not checked yet!")
             self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
@@ -1669,7 +1674,7 @@ class ExecutorResynthesisExtensions(object):
         """
         robotNameCoordinating = []
         for ltlSpec in violatedEnvTransList: # list
-            for robot in self.dPatchingExecutor.robotInRange:
+            for robot in self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName]:
                 robotInFormula = LTLParser.LTLcheck.checkIfKeyInFormula(ltlSpec, robot)
 
                 if robotInFormula and robot not in robotNameCoordinating:
@@ -1711,9 +1716,9 @@ class ExecutorResynthesisExtensions(object):
         violatedListFiltered = LTLParser.LTLcheck.filterOneRobotViolatedSpec(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
         logging.debug("violatedListFiltered:" + str(violatedListFiltered))
 
-        #specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedList)
-        specNewStr = "&\n".join(filter(None,violatedListFiltered))
-
+        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedListFiltered)
+        #specNewStr = "&\n".join(filter(None,violatedListFiltered))
+        logging.debug("specNewStr:" + specNewStr)
         return specNewStr
 
     def synthesizeGlobalStrategyAndWaitForOthersToResume(self):
@@ -1760,11 +1765,11 @@ class ExecutorResynthesisExtensions(object):
             self.dPatchingExecutor.old_coordinatingRobots = copy.deepcopy(self.dPatchingExecutor.coordinatingRobots)
 
             # remove violated envTrans from list.
-            for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
-                logging.debug("Robot Under consideration:" + str(robot))
-                self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)), self.dPatchingExecutor.spec['EnvTrans'][robot])
-                self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
-                logging.debug("-------------------------------------------")
+            #for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
+            #    logging.debug("Robot Under consideration:" + str(robot))
+            #    self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)), self.dPatchingExecutor.spec['EnvTrans'][robot])
+            #    self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
+            #    logging.debug("-------------------------------------------")
 
             # add violations of local spec to LTL violated_str list
             for specStr in list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):
