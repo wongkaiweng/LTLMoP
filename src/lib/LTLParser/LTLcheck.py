@@ -132,12 +132,12 @@ def excludeSpecFromList(specList, toExcludeSpecList):
 
 def removeLTLwithKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit removed
-    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)
+    value, LTLlist, LTLExcludedList, nextOperator = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, False)
     return " &\n ".join(LTLlist)
 
 def removeLTLwithoutKeyFromEnvTrans(spec, key):
     # return an LTLFomula with all clauses containing s.bit kept
-    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
+    value, LTLlist, LTLExcludedList, nextOperator = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, key, True)
     return " &\n ".join(LTLlist)
 
 def separateLTLwithoutEnvPropFromEnvInit(spec):
@@ -146,7 +146,7 @@ def separateLTLwithoutEnvPropFromEnvInit(spec):
     LTLlist: return an LTLFomula with all clauses containing env prop kept
     LTLExcludedList: LTL without any env prop
     """
-    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 'e.', True)
+    value, LTLlist, LTLExcludedList, nextOperator = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 'e.', True)
     return " &\n ".join(['('+x+')' for x in LTLlist]), " &\n ".join(['('+x+')' for x in LTLExcludedList])
 
 def separateLTLwithNextSystemProps(spec):
@@ -156,7 +156,7 @@ def separateLTLwithNextSystemProps(spec):
     LTLExcludedList: LTL with next system prop
     """
     # return an LTLFomula with all clauses containing s.bit removed
-    value, LTLlist, LTLExcludedList, next = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 's.', False, True, False)
+    value, LTLlist, LTLExcludedList, nextOperator = findLTLWithNoKeyInEnvTrans(LTLFormula.parseLTL(spec),LTLFormula.p.terminals, 0, 's.', False, True, False)
     return " &\n ".join(LTLlist), " &\n ".join(LTLExcludedList)
 
 def ltlStrToList(ltlFormula):
@@ -172,7 +172,7 @@ def ltlStrToList(ltlFormula):
 
     return LTLlist
 
-def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False, use_next = False, next = False):
+def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = False, use_next = False, nextOperator = False):
     """
     Return an LTLFomula with formulas involving bits removed
     mode: False if see key then the clause is not kept
@@ -187,14 +187,14 @@ def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = Fals
 
         # for system propositions
         if key in tree[0]:
-            if not use_next or (use_next and next):
+            if not use_next or (use_next and nextOperator):
                 return True, [], [], False
 
         # change the next flag
         elif tree[0] == 'NextOperator':
-            next = True
+            nextOperator = True
 
-        next_in_loop   = next
+        next_in_loop   = nextOperator
         for x in tree[1:]:
             # skip ltl that does not contain a global operator
             if level == 0 :
@@ -210,7 +210,7 @@ def findLTLWithNoKeyInEnvTrans(tree, terminals, level=0, key = 's.', mode = Fals
                 else:
                     LTLExcludedList.append(LTLFormula.treeToString(x))
 
-    return final_value, LTLlist, LTLExcludedList, next
+    return final_value, LTLlist, LTLExcludedList, nextOperator
 
 
 class LTL_Check:
@@ -333,10 +333,10 @@ class LTL_Check:
         self.current_state = cur_state
         self.sensor_state  = sensor_state
         self.violated_specStr = []
-        
-        # check for env violations     
-        value, negate, next = self.evaluate_subtree(self.ltl_tree, LTLFormula.p.terminals, self.violated_spec_line_no)
-        
+
+        # check for env violations
+        value, negate, nextOperator = self.evaluate_subtree(self.ltl_tree, LTLFormula.p.terminals, self.violated_spec_line_no)
+
         # for printing original spec violated
         if not self.ltl_treeEnvTrans is None:
             valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, LTLFormula.p.terminals, self.violated_spec_line_no, envTransTree = True)
@@ -348,14 +348,50 @@ class LTL_Check:
 
         if debug_proposition_values == True:
             logging.debug( "self.current_state:")
-            logging.debug(self.current_state.getAll(expand_domains = True))        
-        
+            logging.debug(self.current_state.getAll(expand_domains = True))
+
+        if not value and not self.violated_spec_line_no and not self.violated_specStr and not self.violated_specStr_with_no_specText_match:
+            logging.error('Violation value should be true but it\'s false here!')
+            value = True
+
         # Environment Violations are removed
         if value == True and len(self.violated_spec_line_no) != 0:
             self.clearViolations()
-        
+
         # return whether the environment assumptions are being violated
         return value
+
+    def checkViolationWithListReturned(self,cur_state,sensor_state, LTLMoP = True):
+        """
+        this function call the subtree function to check for violation
+        cur_state: state object. see strategy.py
+        sensor_state: state object. see strategy.py
+        """
+
+        # Set if we are using LTLMoP
+        self.LTLMoP = LTLMoP
+
+        self.current_state = cur_state
+        self.sensor_state  = sensor_state
+        self.clearViolations()  # originally self.violated_specStr = []
+
+        # check for env violations
+        value, negate, nextOperator = self.evaluate_subtree(self.ltl_tree, LTLFormula.p.terminals, self.violated_spec_line_no)
+
+        # for printing original spec violated
+        if not self.ltl_treeEnvTrans is None:
+            valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, LTLFormula.p.terminals, self.violated_spec_line_no, envTransTree = True)
+
+        if not value and not self.violated_spec_line_no and not self.violated_specStr and not self.violated_specStr_with_no_specText_match:
+            logging.error('Violation value should be true but it\'s false here!')
+            value = True
+
+        # Environment Violations are removed
+        if value == True and len(self.violated_spec_line_no) != 0:
+            self.clearViolations()
+
+        # return whether the environment assumptions are being violated
+        return value, copy.deepcopy(self.violated_spec_line_no), copy.deepcopy(self.violated_specStr), copy.deepcopy(self.violated_specStr_with_no_specText_match)
 
     def clearViolations(self):
         """
@@ -469,7 +505,7 @@ class LTL_Check:
                 
         return read_data        
                
-    def evaluate_subtree(self, tree, terminals,  violated_spec_line_no, level=0, next = False, disjunction = False, envTransTree = False):
+    def evaluate_subtree(self, tree, terminals,  violated_spec_line_no, level=0, nextOperator = False, disjunction = False, envTransTree = False):
         """
         Evaluate the parsed tree and yell the environment assumptions violated.
         violated_spec_line_no
@@ -504,7 +540,7 @@ class LTL_Check:
                 
             # change the next flag 
             elif tree[0] == 'NextOperator':
-                next = True
+                nextOperator = True
                 
             elif tree[0] == 'TRUE':
                 return True, negate, False
@@ -522,18 +558,18 @@ class LTL_Check:
                 if debug_proposition_values == True:
                     print "evaluating system proposition|  key: " + str(key) + " value: " + str(self.current_state[key])
                 if self.LTLMoP:
-                    return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
+                    return int(self.current_state.getAll(expand_domains=True)[key]), negate, nextOperator
                 else:
-                    if next == True:
+                    if nextOperator == True:
                         try:
                             return int(self.sensor_state.getAll(expand_domains=True)[key]), negate, False
                         except:
                             return int(self.sensor_state.getAll(expand_domains=True)[oldKey]), negate, False
                     else:
                         try:
-                            return int(self.current_state.getAll(expand_domains=True)[key]), negate, next
+                            return int(self.current_state.getAll(expand_domains=True)[key]), negate, nextOperator
                         except:
-                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate, next
+                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate, nextOperator
 
             # for environement propositions
             elif "e." in tree[0]:                
@@ -543,10 +579,10 @@ class LTL_Check:
                 if "sbit" in key:
                     key = key.replace("sbit","regionCompleted_b")
                 if debug_proposition_values == True:
-                    print " next: " + str(next)
+                    print " nextOperator: " + str(nextOperator)
                     print "evaluating env propositions: " + str(key) 
 
-                if next == True:
+                if nextOperator == True:
                     if self.LTLMoP:
                         return int(self.sensor_state.getInputs(expand_domains = True)[key]), negate, False
                     else:
@@ -556,14 +592,14 @@ class LTL_Check:
                             return int(self.sensor_state.getInputs(expand_domains = True)[oldKey]), negate, False
                 else:
                     if self.LTLMoP:
-                        return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
+                        return int(self.current_state.getAll(expand_domains=True)[key]), negate,  nextOperator
                     else:
                         try:
-                            return int(self.current_state.getAll(expand_domains=True)[key]), negate,  next
+                            return int(self.current_state.getAll(expand_domains=True)[key]), negate,  nextOperator
                         except:
-                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate,  next
+                            return int(self.current_state.getAll(expand_domains=True)[oldKey]), negate,  nextOperator
 
-            next_in_loop   = next
+            next_in_loop   = nextOperator
             node_count = 1
 
             for x in tree[1:]:
@@ -641,8 +677,12 @@ class LTL_Check:
                         try:
                             if not self.LTLMoP:
                                 logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
-                                logging.debug(self.ltlTree_to_lineNo)
                             treeNo = self.ltlTree_to_lineNo[LTLFormula.treeToString(x)]
+                            if self.LTLMoP:
+                                logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
+                                logging.debug('treeNo:' + str(treeNo))
+                                logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                                logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
                                 violated_spec_line_no.append(treeNo)
                         except:  
@@ -650,8 +690,11 @@ class LTL_Check:
                             if envTransTree:
                                 if LTLFormula.treeToString(x) not in self.violated_specStr_with_no_specText_match:
                                     self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
+                                    logging.debug("not text match violation:" +  str(LTLFormula.treeToString(x)))
+                                    logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                                    logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             else:
-                                if 0 not in violated_spec_line_no:                  
+                                if 0 not in violated_spec_line_no:
                                     treeNo = 0
                                     violated_spec_line_no.append(treeNo)
                         if envTransTree:
@@ -672,10 +715,10 @@ class LTL_Check:
                 node_count += 1
             
                             
-            return final_value, negate, next                 
+            return final_value, negate, nextOperator
             
         else:
-            return True, negate, next    
+            return True, negate, nextOperator
 
 def parseSlugsEnvTransToNormalEnvTrans(slugsLTLText, sensor_list):
     """
