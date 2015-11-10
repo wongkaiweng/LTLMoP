@@ -262,13 +262,14 @@ if __name__ == '__main__':
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
                     logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
                     logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
-                    for idx, checkObject in enumerate(LTLViolationCheckSysGoalslist):
+                    if 'centralizedSpec' in fileName:
+                        for idx, checkObject in enumerate(LTLViolationCheckSysGoalslist):
+                            startTime = time.time()
+                            if checkObject.checkViolation(currentStateObject, currentStateObject, LTLMoP = False):
+                                logging.info(str(idx) + "-SysGoalsHolds: True, Time taken = " + str(time.time() - startTime))
+                        logging.info('=========================')
                         startTime = time.time()
-                        if checkObject.checkViolation(currentStateObject, currentStateObject, LTLMoP = True):
-                            logging.info(str(idx) + "-SysGoalsHolds: True, Time taken = " + str(time.time() - startTime))
-                    logging.info('=========================')
-                    startTime = time.time()
-                    logging.info('winPosValue:' + str(winPosSimple.checkViolation(currentStateObject, currentStateObject)) + ' , time taken:' + str(time.time() - startTime))
+                        logging.info('winPosValue:' + str(winPosSimple.checkViolation(currentStateObject, currentStateObject)) + ' , time taken:' + str(time.time() - startTime))
 
                     break
 
