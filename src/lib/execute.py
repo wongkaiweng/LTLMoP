@@ -551,14 +551,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     current_goal_id = str(0)
 
                 # also add in the system as that's what make winPos satisfied
-                centralizedSysPropDict = {k:v for k, v in self.dPatchingExecutor.strategy.current_state.getOutputs(expand_domains=True).iteritems() if self.dPatchingExecutor.robotName in k}
-                for propKey, propValue in centralizedSysPropDict.iteritems():
-                    if propKey.replace(self.dPatchingExecutor.robotName+'_','') in self.proj.regionMapping.keys() and propValue: #regionProp
-                        init_prop_assignments.update({"region": \
-                                                      self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[propKey.replace(self.dPatchingExecutor.robotName+'_','')][0])]\
-                                                     })
-                    else: # normal prop
-                        init_prop_assignments.update({propKey.replace(self.dPatchingExecutor.robotName+'_',''): propValue})
+                if self.dPatchingExecutor.strategy.current_state:
+                    centralizedSysPropDict = {k:v for k, v in self.dPatchingExecutor.strategy.current_state.getOutputs(expand_domains=True).iteritems() if self.dPatchingExecutor.robotName in k}
+                    for propKey, propValue in centralizedSysPropDict.iteritems():
+                        if propKey.replace(self.dPatchingExecutor.robotName+'_','') in self.proj.regionMapping.keys() and propValue: #regionProp
+                            init_prop_assignments.update({"region": \
+                                                          self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[propKey.replace(self.dPatchingExecutor.robotName+'_','')][0])]\
+                                                         })
+                        else: # normal prop
+                            init_prop_assignments.update({propKey.replace(self.dPatchingExecutor.robotName+'_',''): propValue})
                 # ---------------------------- #
             else:
                 current_goal_id = self.prev_z
