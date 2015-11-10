@@ -15,6 +15,19 @@ import sys
 import logging
 import random
 import Polygon, Polygon.IO, Polygon.Utils, Polygon.Shapes
+from copy import deepcopy
+
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "share":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+logging.debug(p)
+sys.path.append(os.path.join(p,"share","Pose"))
+import _pyvicon
 # ------------------------------- #
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -47,6 +60,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.prev_current_region = '' # storing prev region str
         self.polyRegionList = {} # region polygon dict
         self.radius = 5 # radius of robot poly
+        self.robotLocationsCopy = {} # copy of the dPatching robotLocations dict
         # ----------------------------- #
 
     def _stop(self):
@@ -208,16 +222,25 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             self.prev_pose = pose
 
         # form polygon for the robot
-        RobotPoly = Polygon.Shapes.Circle(self.radius,(pose[0],pose[1]))
+        RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))
 
         # check robot location
         for regionName in self.polyRegionList.keys():
             if self.polyRegionList[regionName].covers(RobotPoly):
                 self.currentRegionPoly = self.polyRegionList[regionName]
+                if regionName != self.prev_current_region:
+                    logging.debug("Dummy SENSOR: current region changed to:" + str(regionName))
                 self.prev_current_region = regionName
 
         if not self.currentRegionPoly.overlaps(RobotPoly):
             logging.warning("not inside next region or overlaps current region?!")
+
+        # also lock locations of environment robots
+        if self.executor.proj.compile_options['neighbour_robot'] and self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
+            if self.executor.dPatchingExecutor.robotLocations:
+                while self.executor.dPatchingExecutor.regionLock.locked():
+                    time.sleep(0.002)
+                self.robotLocationsCopy = deepcopy(self.executor.dPatchingExecutor.robotLocations)
 
     def inRegion(self, regionName, radius, initial=False):
         """
@@ -287,7 +310,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 #logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
                 return self.robotRegionStatus[region][robot_name]
             elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
-                return self.executor.dPatchingExecutor.robotLocations[region][robot_name]
+                return self.robotLocationsCopy[region][robot_name]
             else:
                 logging.warning('not matching any mode in dummy. returning None.')
                 return None
@@ -325,7 +348,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             # Find our current configuration
             pose = [poseX/1000, poseY/1000]
 
-            if math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range:
-                print >>sys.__stdout__, "See" + vicon_object_name + ": location: " + str(pose) + vicon_object_name +": " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
+            #if math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range:
+                #print >>sys.__stdout__, "See" + vicon_object_name + ": location: " + str(pose) + vicon_object_name +": " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
 
             return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range
