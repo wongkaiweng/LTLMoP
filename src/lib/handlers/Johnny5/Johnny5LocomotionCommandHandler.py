@@ -68,8 +68,8 @@ class Johnny5LocomotionCommandHandler(handlerTemplates.LocomotionCommandHandler)
 
 
         # print debugging message
-        logging.debug("Angular Velocity: {}".format(cmd[1]))
-        logging.debug("Forward Velocity: {}".format(cmd[0]))
+        #logging.debug("Angular Velocity: {}".format(cmd[1]))
+        #logging.debug("Forward Velocity: {}".format(cmd[0]))
 
         # Send command to johnny5
         self.johnny5Serial.write('#15 P%d\r' % (self.ang_servo_neutral-self.ang_vel_gain*cmd[1]))

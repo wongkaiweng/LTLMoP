@@ -24,14 +24,15 @@ from math import sqrt, fabs , pi
 import random
 import thread
 import threading
-
+import logging
 # importing matplotlib to show the path if possible
 try:
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
     import_matplotlib = True
+    logging.warning("matplotlib is successfully imported")
 except:
-    print "matplotlib is not imported. Plotting is disabled"
+    logging.error("matplotlib is not imported. Plotting is disabled")
     import_matplotlib = False
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -41,7 +42,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         """
         Rapidly-Exploring Random Trees alogorithm motion planning controller
 
-        robot_type (int): Which robot is used for execution. BasicSim is 1, ODE is 2, ROS is 3, Nao is 4, Pioneer is 5(default=1)
+        robot_type (int): Which robot is used for execution. BasicSim is 1, ODE is 2, ROS is 3, Nao is 4, Pioneer is 5, Johnny5 is 6 (default=1)
         max_angle_goal (float): The biggest difference in angle between the new node and the goal point that is acceptable. If it is bigger than the max_angle, the new node will not be connected to the goal point. The value should be within 0 to 6.28 = 2*pi. Default set to 6.28 = 2*pi (default=6.28)
         max_angle_overlap (float): difference in angle allowed for two nodes overlapping each other. If you don't want any node overlapping with each other, put in 2*pi = 6.28. Default set to 1.57 = pi/2 (default=1.57)
         plotting (bool): Check the box to enable plotting. Uncheck to disable plotting (default=True)
@@ -75,7 +76,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         self.stuck_thres        = 20          # threshold for changing the range of sampling omega
 
         # Information about the robot (default set to ODE)
-        if robot_type not in [1,2,3,4,5]:
+        if robot_type not in [1,2,3,4,5,6]:
             robot_type = 1
         self.system = robot_type
 
@@ -107,7 +108,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         #  self.step_size  : the length of each step for connection to goal point
         #  self.velocity   : Velocity of the robot in m/s in control space (m/s)
         if self.system  == 1:
-            self.radius = 5
+            self.radius = 25 #15#5
             self.step_size  = 25
             self.timeStep = 10
             self.velocity = 2    # 1.5
@@ -132,7 +133,11 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
             self.step_size  = 0.2      #set the step_size for points be 1/5 of the norm  ORIGINAL = 0.4
             self.timeStep = 5
             self.velocity  = 0.05
-
+        elif self.system == 6:
+            self.radius = 0.15*1.2
+            self.step_size  = 0.2      #set the step_size for points be 1/5 of the norm  ORIGINAL = 0.4
+            self.timeStep = 5
+            self.velocity  = 0.05
 
         # Operate_system (int): Which operating system is used for execution.
         # Ubuntu and Mac is 1, Windows is 2
@@ -178,8 +183,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
 
         # Check if Vicon has cut out
         # TODO: this should probably go in posehandler?
-        if math.isnan(pose[2]):
-            print "WARNING: No Vicon data! Pausing."
+        if math.isnan(pose[2]) or sum(pose) == 0:
+            logging.warning("WARNING: No Vicon data! Pausing.")
             self.drive_handler.setVelocity(0, 0)  # So let's stop
             time.sleep(1)
             return False
@@ -237,6 +242,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                 plt.cla()
                 self.plotMap(self.map)
                 plt.plot(pose[0],pose[1],'ko')
+                plt.figure(1).canvas.draw()
+                plt.pause(0.001)
 
             self.RRT_V,self.RRT_E,self.E_current_column = self.buildTree(\
             [pose[0], pose[1]],pose[2],self.currentRegionPoly, self.nextRegionPoly,q_gBundle,face_normal)
@@ -252,13 +259,23 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
 
         # Run algorithm to find a velocity vector (global frame) to take the robot to the next region
         self.Velocity = self.getVelocity([pose[0], pose[1]], self.RRT_V,self.RRT_E)
+
+        # scale velocity for Johnny5
+        if self.system == 6:
+            self.Velocity = self.Velocity*1.5 #2
+
         #self.Node = self.getNode([pose[0], pose[1]], self.RRT_V,self.RRT_E)
         self.previous_next_reg = next_reg
 
         # Pass this desired velocity on to the drive handler
         self.drive_handler.setVelocity(self.Velocity[0,0], self.Velocity[1,0], pose[2])
         #self.drive_handler.setVelocity(self.Node[0,0], self.Node[1,0], pose[2])
-        RobotPoly = Polygon.Shapes.Circle(self.radius,(pose[0],pose[1]))
+        if self.system == 1:
+            RobotPoly = Polygon.Shapes.Circle(1.5*self.radius,(pose[0],pose[1]))
+        elif self.system == 4 or self.system == 6:
+            RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))
+        else:
+            RobotPoly = Polygon.Shapes.Circle(self.radius,(pose[0],pose[1]))
 
         # check if robot is inside the current region
         departed = not self.currentRegionPoly.overlaps(RobotPoly)
@@ -377,7 +394,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         self.omega_range_escape = linspace(omegaLowerBound*4,omegaUpperBound*4,omegaNoOfSteps*4)    # range used when stuck > stuck_thres
 
         regionPolyOld = Polygon.Polygon(regionPoly)
-        regionPoly += PolyShapes.Circle(self.radius*2.5,(q_init[0,0],q_init[1,0]))
+        #regionPoly += PolyShapes.Circle(self.radius*2.5,(q_init[0,0],q_init[1,0]))
+        regionPoly += PolyShapes.Circle(self.radius*4,(q_init[0,0],q_init[1,0]))
 
         # check faces of the current region for goal points
         E     = [[],[]]       # the tree matrix
@@ -397,7 +415,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         while not path:
             #step -1: try connection to q_goal (generate path to goal)
             i = 0
-
+            logging.debug("finding RRT Path...")
             if self.system_print == True:
                 print "Try Connection to the goal points"
 
@@ -495,6 +513,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                             plt.plot(( V[1,E[0,shape(E)[1]-1]], V[1,shape(V)[1]-1],q_g[0,0]),( V[2,E[0,shape(E)[1]-1]], V[2,shape(V)[1]-1],q_g[1,0]),'b')
                         plt.plot(q_g[0,0],q_g[1,0],'ko')
                         plt.figure(1).canvas.draw()
+                        plt.pause(0.0001)
                     else:
                         BoundPolyPoints = asarray(PolyUtils.pointList(regionPoly))
                         self.ax.plot(BoundPolyPoints[:,0],BoundPolyPoints[:,1],'k')
@@ -516,9 +535,17 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                         E = hstack((E,vstack((shape(V)[1]-2,shape(V)[1]-1))))
 
                 #push the goal point to the next region
-                q_g = q_g+face_normal[:,q_pass[0,cols]]*3*self.radius    ##original 2*self.radius
+                if self.system == 1:
+                    q_g = q_g+face_normal[:,q_pass[0,cols]]*4*self.radius    ##original 3*self.radius
+                else:
+                    q_g = q_g+face_normal[:,q_pass[0,cols]]*3*self.radius    ##original 3*self.radius
+
                 if not nextRegionPoly.isInside(q_g[0],q_g[1]):
-                    q_g = q_g-face_normal[:,q_pass[0,cols]]*6*self.radius    ##original 2*self.radius
+                    if self.system == 1:
+                        q_g = q_g-face_normal[:,q_pass[0,cols]]*8*self.radius    ##original 6*self.radius
+                    else:
+                        q_g = q_g-face_normal[:,q_pass[0,cols]]*6*self.radius    ##original 6*self.radius
+
                 V = hstack((V,vstack((shape(V)[1],q_g[0,0],q_g[1,0]))))
                 E = hstack((E,vstack((shape(V)[1]-2 ,shape(V)[1]-1))))
 
@@ -527,6 +554,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                         plt.plot(q_g[0,0],q_g[1,0],'ko')
                         plt.plot(( V[1,shape(V)[1]-1],V[1,shape(V)[1]-2]),( V[2,shape(V)[1]-1],V[2,shape(V)[1]-2]),'b')
                         plt.figure(1).canvas.draw()
+                        plt.pause(0.0001)
                     else:
                         self.ax.plot(q_g[0,0],q_g[1,0],'ko')
                         self.ax.plot(( V[1,shape(V)[1]-1],V[1,shape(V)[1]-2]),( V[2,shape(V)[1]-1],V[2,shape(V)[1]-2]),'b')
@@ -568,6 +596,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                     plt.text(V[1,E[0,i]],V[2,E[0,i]], V[0,E[0,i]], fontsize=12)
                     plt.text(V[1,E[1,i]],V[2,E[1,i]], V[0,E[1,i]], fontsize=12)
                 plt.figure(1).canvas.draw()
+                plt.pause(0.0001)
+
             else:
                 BoundPolyPoints = asarray(PolyUtils.pointList(regionPoly))
                 self.ax.plot(BoundPolyPoints[:,0],BoundPolyPoints[:,1],'k')
@@ -637,11 +667,10 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         thetaPrev = self.orientation_bound(thetaPrev)
         path_all = PolyUtils.convexHull(path_robot)
         in_bound = regionPoly.covers(path_all)
-        """
+
         # plotting
-        if plotting == True:
+        if self.plotting == True:
             self.plotPoly(path_all,'r',1)
-        """
 
         stuck = stuck + 1
 
@@ -715,7 +744,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         if self.operate_system == 1:
             for regionName,regionPoly in mappedRegions.iteritems():
                 self.plotPoly(regionPoly,'k')
-            plt.figure(1).canvas.draw()
+
 
     def plotPoly(self,c,string,w = 1):
         """
@@ -738,7 +767,9 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                         else:
                             plt.plot(BoundPolyPoints[:,0],BoundPolyPoints[:,1],string,linewidth=w)
                             plt.plot([BoundPolyPoints[-1,0],BoundPolyPoints[0,0]],[BoundPolyPoints[-1,1],BoundPolyPoints[0,1]],string,linewidth=w)
-                            plt.figure(1).canvas.draw()
+        if self.operate_system == 1:
+            plt.figure(1).canvas.draw()
+            plt.pause(0.001)
 
     def data_gen(self):
         #self.ax.cla()
