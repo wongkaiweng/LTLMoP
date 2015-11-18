@@ -61,6 +61,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.polyRegionList = {} # region polygon dict
         self.radius = 5 # radius of robot poly
         self.robotLocationsCopy = {} # copy of the dPatching robotLocations dict
+        self.actionStatusCopy = {} # copy of the dPatching actionStatus dict
         # ----------------------------- #
 
     def _stop(self):
@@ -241,6 +242,27 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 while self.executor.dPatchingExecutor.regionLock.locked():
                     time.sleep(0.002)
                 self.robotLocationsCopy = deepcopy(self.executor.dPatchingExecutor.robotLocations)
+
+            if self.executor.dPatchingExecutor.actionStatus:
+                while self.executor.dPatchingExecutor.actionLock.locked():
+                    time.sleep(0.002)
+                self.actionStatusCopy = deepcopy(self.executor.dPatchingExecutor.actionStatus)
+
+    def otherRobotActionStatus(self, robot_name, action, initial = False):
+        """
+        get action status from patching executor
+        robot_name (string): name of the robot
+        action (string): action name
+        """
+        try:
+            if self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
+                return self.actionStatusCopy[robot_name][action]
+            else:
+                logging.warning('not matching any mode in dummy. returning None.')
+                return None
+        except:
+            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            return None
 
     def inRegion(self, regionName, radius, initial=False):
         """

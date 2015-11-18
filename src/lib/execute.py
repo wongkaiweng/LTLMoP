@@ -557,10 +557,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 if self.dPatchingExecutor.strategy.current_state:
                     centralizedSysPropDict = {k:v for k, v in self.dPatchingExecutor.strategy.current_state.getOutputs(expand_domains=True).iteritems() if self.dPatchingExecutor.robotName in k}
                     for propKey, propValue in centralizedSysPropDict.iteritems():
-                        if propKey.replace(self.dPatchingExecutor.robotName+'_','') in self.proj.regionMapping.keys() and propValue: #regionProp
-                            init_prop_assignments.update({"region": \
-                                                          self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[propKey.replace(self.dPatchingExecutor.robotName+'_','')][0])]\
-                                                         })
+                        if propKey.replace(self.dPatchingExecutor.robotName+'_','') in self.proj.regionMapping.keys():
+                            if propValue: #regionProp
+                                init_prop_assignments.update({"region": \
+                                                              self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[propKey.replace(self.dPatchingExecutor.robotName+'_','')][0])]\
+                                                            })
                         else: # normal prop
                             init_prop_assignments.update({propKey.replace(self.dPatchingExecutor.robotName+'_',''): propValue})
                 # ---------------------------- #

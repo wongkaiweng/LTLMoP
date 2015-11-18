@@ -82,6 +82,34 @@ class MsgHandlerExtensions(object):
             if csock != self.serv:
                 self.updateRobotRegion(csock, current_region)
 
+    def initializeActionStatusExchange(self, csock, actionList):
+        """
+        This function obtains the name of the robot and also the list of region and send the info to the negotiation Monitor
+        csock: client socket object
+        current_region: region object   ---  if current_region = None, then all regions are false
+        #!! now sending dict, with init region location included.
+        """
+        # send action info to the other robot
+        self.message_queues[csock].put(self.robotName +'-' + 'actionNames = ' + str(actionList) + '\n')
+        logging.info("MSG-Put-region: initialize action sensor info from " + str(self.robotName))
+
+    def updateRobotActionStatus(self, csock, actionSensorDict):
+        """
+        This function update the action info in the negotiation monitor if the robot is at a next region
+        csock: client socket object
+        """
+        # send current region to the othe robot (csock)
+        self.message_queues[csock].put(self.robotName + '-' + 'updateActionStatus = ' + str(actionSensorDict) + '\n')
+        logging.info("MSG-Put-region: update action sensor dict from " + str(self.robotName))
+
+    def updateRobotActionStatusWithAllClients(self, actionSensorDict):
+        """
+        This function calls updateRobotActionStatus with all clients in self.clients except self.serv
+        """
+        for csock in self.clients.values():
+            if csock != self.serv:
+                self.updateRobotActionStatus(csock, actionSensorDict)
+
     def updateRobotSensors(self, csock, sensorDict):
         """
         This function update the region info in the negotiation monitor if the robot is at a next region

@@ -71,6 +71,12 @@ def printSpec(specType, specStr, robotName):
     logging.info(specStr)
     logging.info('===============================================')
 
+def printActionInfo(actionStatus, robot):
+    """
+    This function prints action status:
+    """
+    logging.info('True Actions:' + str([x for x,v in actionStatus[robot].iteritems() if v]))
+
 
 class PatchingExecutor(MsgHandlerExtensions, object):
     """
@@ -140,6 +146,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     if self.proj.compile_options['include_heading']:
                         self.initializeCompletedRegionExchange(csock, current_region_completed)
 
+                    # also send out initial action info
+                    self.initializeActionStatusExchange(csock, [x.replace('_ac','') for x in self.proj.enabled_sensors if x.endswith('_ac')])
+
                 except:
                     logging.error('CONNECTION: Cannot connect to ' + robot + ' with address ' + str(robotADDR))
 
@@ -180,6 +189,8 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.pauseForSynthesis = {} # track status of other robots asking us to pause
         self.globalSensors = [] # list of global sensors that doesn't have to be renamed
         self.regionLock = threading.Lock() # set up a lock for regions updates
+        self.actionStatus = {} # similar to robotLocations, track values of action completion
+        self.actionLock = threading.Lock() # set up a lock for action updates
 
     def cleanVariables(self, first_time=True):
         """
@@ -273,6 +284,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 #send out initial info, send current region info of myself to the other robot
                 self.initializeRegionExchange(csock, self.current_region)
 
+                # also send out inital action sensor info
+                self.initializeActionStatusExchange(csock, [x.replace('_ac','') for x in self.proj.enabled_sensors if x.endswith('_ac')])
+
                 # also update completed region
                 if self.proj.compile_options['include_heading']:
                     self.initializeCompletedRegionExchange(csock, self.current_region_completed)
@@ -347,6 +361,17 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         self.regionLock.release()
 
                         printRegionInfo(self.robotLocations)
+
+                    elif item.group('packageType') == "actionNames":
+                        self.actionStatus[item.group("robotName")] = {}
+                        for x in ast.literal_eval(item.group("packageValue")):
+                            self.actionStatus[item.group("robotName")][x] = False
+
+                    elif item.group('packageType') == "updateActionStatus":
+                        self.actionLock.acquire()
+                        self.actionStatus[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        self.actionLock.release()
+                        printActionInfo(self.actionStatus, item.group("robotName"))
 
                     elif item.group('packageType') in ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals']:
                         if ast.literal_eval(item.group("packageValue")):
@@ -654,6 +679,12 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 for otherRobot in self.coordinatingRobots:
                     spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+reg+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+reg+'_rc', spec[robot])
 
+        # e.robot_action to e.robot_action_ac for reconstructing spec in centralized mode
+        for robot in self.coordinatingRobots:
+            for otherRobot in self.coordinatingRobots:
+                for act in self.actionStatus[otherRobot].keys():
+                    spec[robot] = re.sub('(?<=[! &|(\t\n])'+'e.'+otherRobot+'_'+act+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+act+'_ac', spec[robot])
+
         # append robot name in front of actuators and sensors props, but not regions
         ## sensor props #!!! excluding global sensors
         ## e.g: sensorProp  -> robotName_sensorProp
@@ -756,6 +787,15 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
 
+                # we are now keeping alice_r4 as alice_r4_rc for example
+                elif eProp in [otherRobot+'_'+act for otherRobot in \
+                    [otherRobot for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]\
+                    for act in self.actionStatus[otherRobot].keys()]:
+                    # store and update prop mapping
+                    logging.debug("ac eProp:" + str(eProp))
+                    self.propMappingNewToOld[robot][eProp+'_ac'] = eProp
+                    self.propMappingOldToNew[robot][eProp] = eProp+'_ac'
+
                 # the similar case of _rc
                 elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
                     continue
@@ -777,6 +817,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         logging.debug("AS-our own eProp:" + str(eProp))
                         self.currentAssignment.update({eProp: eValue})
 
+                    # about ourselves (note that we never have otherRobot_act_ac here from original list)
+                    elif eProp in [robot +'_'+act+'_rc' for act in self.actionStatus[robot].keys()]:
+                        logging.debug("AS-our own AC eProp:" + str(eProp))
+                        self.currentAssignment.update({eProp: eValue})
+
                     # for the case of global sensors
                     elif eProp in self.globalSensors:
                         logging.debug("AS-global sensors:" + str(eProp))
@@ -784,7 +829,8 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                             self.currentAssignment.update({eProp: eValue})
 
                     # about otherRobot_reg for otherRobot not coorindating (not that we don't have myRobot_reg here from original list)
-                    elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
+                    elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots] or\
+                         eProp in [x+'_'+act for act in self.actionStatus[robot].keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
                         logging.debug("AS-not coordinating robots:" + str(eProp))
                         # keep original name
                         if eProp not in self.currentAssignment.keys():
@@ -803,6 +849,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
                     # the similar case of _rc
                     elif eProp in [otherRobot+'_'+reg+'_rc' for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName]]:
+                        continue
+
+                    # skip robot_act eProp (is added as _ac prop)
+                    elif eProp in [otherRobot+'_'+act for act in self.actionStatus[robot].keys() for otherRobot in self.robotInRange + [self.robotName]]:
                         continue
 
                     else:

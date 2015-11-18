@@ -59,6 +59,14 @@ class ExecutorModesExtensions(object):
                 for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains=True)).iteritems():
                     self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
+                # now updates robot sensors
+                #logging.warning("self.robotSensors:" + str(self.robotSensors))
+                for coR in self.dPatchingExecutor.coordinatingRobots:
+                    if coR != self.dPatchingExecutor.robotName:
+                        nextRobotSensors = {self.dPatchingExecutor.propMappingOldToNew[coR][k]:v for k, v in self.dPatchingExecutor.robotSensors[coR].iteritems()}
+                        #logging.warning('nextRobotSensors:' + str(nextRobotSensors))
+                        self.dPatchingExecutor.sensor_state.setPropValues(nextRobotSensors)
+
                 deepcopy_sensor_state = copy.deepcopy(self.dPatchingExecutor.sensor_state)
                 deepcopy_current_state = copy.deepcopy(self.dPatchingExecutor.strategy.current_state)
                 env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \

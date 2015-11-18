@@ -217,6 +217,10 @@ class ExecutorStrategyExtensions(object):
                 else: #d-patching
                     self.dPatchingExecutor.sendNextPossibleEnvStatesToOtherRobotToAllClients(possible_next_states)
 
+                # also update action completions
+                self.dPatchingExecutor.updateRobotActionStatusWithAllClients({k.replace('_ac',''):v for k, v in self.next_state.getInputs(expand_domains=True).iteritems() if k.endswith('_ac')})
+                # update our own dPatching
+                self.dPatchingExecutor.actionStatus[self.dPatchingExecutor.robotName] = {k.replace('_ac',''):v for k, v in self.next_state.getInputs(expand_domains=True).iteritems() if k.endswith('_ac')}
             # ******************************** #
 
             if self.transition_contains_motion:
@@ -392,6 +396,10 @@ class ExecutorStrategyExtensions(object):
                 # update current next states sent tothe other robot
                 self.dPatchingExecutor.sendNextPossibleEnvStatesPreparedToOtherRobotToAllClients(possible_next_states)
 
+                # also update action completions
+                self.dPatchingExecutor.updateRobotActionStatusWithAllClients({k.replace('_ac',''):v for k, v in self.centralized_strategy_state.getInputs(expand_domains=True).iteritems() if k.endswith('_ac')})
+                # update our own dPatching
+                self.dPatchingExecutor.actionStatus[self.dPatchingExecutor.robotName] = {k.replace('_ac',''):v for k, v in self.centralized_strategy_state.getInputs(expand_domains=True).iteritems() if k.endswith('_ac')}
             # ******************************** #
 
             # See what we, as the system, need to do to get to this new state
