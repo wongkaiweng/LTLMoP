@@ -251,6 +251,7 @@ class LTL_Check:
         self.violated_spec_line_no = [] # storing lineNo found in the violations
         self.violated_specStr = [] # storing all violations LTL
         self.violated_specStr_with_no_specText_match = []   # for storing specStr with no specText match
+        self.old_violated_spec_line_no = [] # save a copy of violated_spec_line_no to figure out new violations
 
         self.modify_stage        = 1       # to be used in modify_LTL_file
 
@@ -390,6 +391,11 @@ class LTL_Check:
         if value == True and len(self.violated_spec_line_no) != 0:
             self.clearViolations()
 
+        # compare new and old violated line no and only returns new ones
+        old_violated_spec_line_no = list(set(self.old_violated_spec_line_no) - set([0]))
+        self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+        self.violated_spec_line_no = list(set(self.violated_spec_line_no) - set(old_violated_spec_line_no))
+
         # return whether the environment assumptions are being violated
         return value, copy.deepcopy(self.violated_spec_line_no), copy.deepcopy(self.violated_specStr), copy.deepcopy(self.violated_specStr_with_no_specText_match)
 
@@ -426,11 +432,13 @@ class LTL_Check:
             self.sensor_state = sensor_state
 
         # for current inputs only
-        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
-        if not '(' + curInputs + ')' in self.add_ltl_current_list:
-            self.add_ltl_current_list.append('(' + curInputs + ')')
+        # **** Note we changed from using curInputs in 1st stage to nextInputs with next operator. (i.e. sensor_state)
+        curInputsOnly = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
+        if not '(' + curInputsOnly + ')' in self.add_ltl_current_list:
+            self.add_ltl_current_list.append('(' + curInputsOnly + ')')
 
         # for current and next inputs
+        curInputs = self.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
         nextInputs = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
         if not '(' + curInputs + ' & ' + nextInputs + ')' in self.add_ltl_current_next_list:
             self.add_ltl_current_next_list.append('(' + curInputs + ' & ' + nextInputs + ')')

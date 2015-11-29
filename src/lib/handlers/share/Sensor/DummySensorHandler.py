@@ -27,6 +27,7 @@ while t != "share":
         sys.exit(1)
 logging.debug(p)
 sys.path.append(os.path.join(p,"share","Pose"))
+sys.path.append(os.path.join(p,"share","MotionControl"))
 import _pyvicon
 # ------------------------------- #
 

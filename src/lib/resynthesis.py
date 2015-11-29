@@ -878,6 +878,9 @@ class ExecutorResynthesisExtensions(object):
             if not self.otherRobotStatus:
                 self.postEvent("RESOLVED", "The specification violation is resolved.")
 
+                # clear all violations and resume runtime monitoring
+                self.resumeRuntimeMonitoring()
+
                 # ------------ two_robot_negotiation ----------#
                 # store time stamp of violation
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
@@ -999,7 +1002,8 @@ class ExecutorResynthesisExtensions(object):
         LTLspec_sys = ' &\n'.join(filter(None,[spec["SysInit"], spec["SysTrans"], spec["SysGoals"], spec['InitRegionSanityCheck'], spec['Topo']]))
 
         if proj.compile_options["fastslow"]:
-            LTLspec_env += "\n&"+spec['SysImplyEnv']
+            # EnvTopo is in EnvTrans already
+            LTLspec_env = ' &\n'.join(filter(None,[spec['InitEnvRegionSanityCheck'], LTLspec_env, spec['SysImplyEnv']]))
 
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)
