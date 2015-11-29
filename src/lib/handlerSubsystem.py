@@ -700,9 +700,10 @@ class HandlerSubsystem:
             if (self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation"):
                 # update region info
                 self.getHandlerInstanceByName('DummySensorHandler')._requestRegionInfo(initial = True)
-            elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
-                # get the latest update from the other robots
-                self.getHandlerInstanceByName('DummySensorHandler')._lockCurrentRegion(initial=False)
+
+        if self.executor.proj.compile_options['fastslow']:
+            # get the latest update from the other robots
+            self.getHandlerInstanceByName('DummySensorHandler')._lockCurrentRegion(initial=False)
         # ----------------------------------- #
         sensor_state = {}
         for prop_name in prop_name_list:
