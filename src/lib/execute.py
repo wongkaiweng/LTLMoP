@@ -244,9 +244,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         else:
             regionCompleted_domain = []
 
+        # figure out slugs option even if it's not used
+        cmd = self.compiler._getSlugsCommand(execution=True)
+
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 enabled_sensors  + regionCompleted_domain,
-                                                self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain)
+                                                self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain, cmd)
         return strat
 
     def _getCurrentRegionFromPose(self, rfi=None):
@@ -367,6 +370,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
             logging.info("Preparing proposition mapping...")
             self.hsub.prepareMapping()
+
+            # synthesize our controller again just to see if it's realizable and replace spec if FALSE
+            self.compiler = specCompiler.SpecCompiler(spec_file)
+            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
         else:
             #print "Reloading motion control handler..."
             #self.proj.importHandlers(['motionControl'])
@@ -389,10 +396,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         ######## ENV Assumption Learning ###########
         if firstRun:
-
-            # synthesize our controller again just to see if it's realizable and replace spec if FALSE
-            self.compiler = specCompiler.SpecCompiler(spec_file)
-            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
             ###########
             #self.tracebackTree : separate spec lines to spec groups
             #############

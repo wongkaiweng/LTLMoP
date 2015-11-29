@@ -24,7 +24,7 @@ import globalConfig
 # TODO: should we be using region names instead of objects to avoid
 # weird errors if two copies of the same map are used?
 
-def createStrategyFromFile(filename, input_propositions, output_propositions):
+def createStrategyFromFile(filename, input_propositions, output_propositions, slugsOptions=[]):
     """ High-level method for loading a strategy of any type from file.
 
         Takes a filename and lists of input and output propositions.
@@ -43,7 +43,7 @@ def createStrategyFromFile(filename, input_propositions, output_propositions):
     elif filename.endswith(".slugsin"):
         import interactiveExecution
         logging.debug("using interactiveStrategy")
-        new_strategy = interactiveExecution.SLUGSInteractiveStrategy()
+        new_strategy = interactiveExecution.SLUGSInteractiveStrategy(slugsOptions)
     else:
         raise ValueError("Unsupported strategy file type.  Filename must end with either '.aut' or '.bdd'.")
 

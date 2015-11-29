@@ -23,10 +23,11 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
     current state of the automaton when being executed.
     """
 
-    def __init__(self):
+    def __init__(self, slugsOptions):
         super(SLUGSInteractiveStrategy, self).__init__()
 
         self.states = strategy.StateCollection()
+        self.slugsOptions = slugsOptions
 
     def _loadFromFile(self, filename):
         """
@@ -44,12 +45,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         logging.debug(slugs_path)
         """
 
-        #command = " --interactiveStrategy --simpleRecovery --cooperativeGR1Strategy --sysInitRoboticsSemantics "
-        command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics "
-        logging.debug("slugs" + command + filename)
+        #command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics " # copy of old options in patching
+        #logging.debug("slugs" + command + filename)
+        logging.debug(self.slugsOptions)
 
         # Open Slugs
-        self.slugsProcess = subprocess.Popen("slugs" + command + filename, shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.slugsProcess = subprocess.Popen(' '.join(self.slugsOptions), shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Get input APs
         self.slugsProcess.stdin.write("XPRINTINPUTS\n")
@@ -153,7 +154,9 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
 
         # set position in slugs
-        self.slugsProcess.stdin.write("SETPOS\n" + currentState.replace("A","1\n").replace("a","0\n").replace("G","1\n").replace("g","0\n"))
+        self.slugsProcess.stdin.write("SETPOS\n" + currentState.replace("1","1\n").replace("0","0\n")\
+                                                               .replace("A","1\n").replace("a","0\n")\
+                                                               .replace("G","1\n").replace("g","0\n"))
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # only read Position:
 
@@ -204,7 +207,6 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         prop_assignments = {}
         for idx,element in enumerate(currentState.partition(",")[0]):
             value = True if element == '1' else False
-
             if idx > len(self.inputAPs) - 1:
                 prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:

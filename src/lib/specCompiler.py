@@ -621,7 +621,7 @@ class SpecCompiler(object):
                     logging.warning(err_message)
                     err = 1
 
-    def _getSlugsCommand(self):
+    def _getSlugsCommand(self, execution=False):
         slugs_path = os.path.join(self.proj.ltlmop_root, "etc", "slugs", "src", "slugs")
 
         # Check that slugs is compiled
@@ -630,7 +630,7 @@ class SpecCompiler(object):
             raise RuntimeError("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
         cmd  = [slugs_path, "--sysInitRoboticsSemantics"]
 
-        if self.proj.compile_options["recovery"]:
+        if self.proj.compile_options["recovery"] and execution:
             cmd.append("--simpleRecovery")
             logging.debug('Synthesizing strategy with recovery')
 
@@ -642,9 +642,13 @@ class SpecCompiler(object):
             cmd.append("--symbolicStrategy")
             logging.debug('Synthesizing strategy with bdd')
 
-        if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive']:
+        if self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution):
             cmd.append("--onlyRealizability")
             logging.debug('Only checking realizability')
+
+        if self.proj.compile_options['interactive'] and execution:
+            cmd.append("--interactiveStrategy")
+            logging.debug('Using interacitve strategy mode')
 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["winning_livenesses"]:
             #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
@@ -735,17 +739,13 @@ class SpecCompiler(object):
         else:
             regionCompleted_domain = []
 
+        if self.proj.compile_options["symbolic"] or self.proj.compile_options['interactive'] or self.proj.compile_options['only_realizability']:
+            logging.info("We will not check if the strategy is trivial or load the strategy with symbolic/interactive strategy or only realizability option.")
+            return True
+
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 enabled_sensors  + regionCompleted_domain,
                                                 self.proj.enabled_actuators + self.proj.all_customs  + self.proj.internal_props + region_domain)
-
-        if self.proj.compile_options["symbolic"]:
-            logging.info("We will not check if the strategy is trivial with symbolic strategy.")
-            return True
-
-        if self.proj.compile_options['interactive']:
-            logging.info("We will not check if the strategy is trivial with interactive strategy.")
-            return True
 
         nonTrivial = any([len(strat.findTransitionableStates({}, s)) > 0 for s in strat.iterateOverStates()])
 
