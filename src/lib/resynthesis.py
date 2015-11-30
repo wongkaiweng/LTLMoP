@@ -69,7 +69,7 @@ class ExecutorResynthesisExtensions(object):
         
         # ---two_robot_negotiation ------ #
         self.exchangedSpec = False #track if we have exchanged spec with the other robot
-        self.otherRobotStatus = None #track if we are prioritized. False: env Characterization enabled. True: env Char disabled. None: no negotiation 
+        self.disableEnvChar = None #track if we are prioritized. False: env Characterization enabled. True: env Char disabled. None: no negotiation
         self.lastSensorState  = None
         self.negotiationStatus= None #track who is appending spec
         self.receivedSpec = False #track if we have recevied request from the other robot
@@ -443,19 +443,13 @@ class ExecutorResynthesisExtensions(object):
         self.received_user_query_response.set()
    
     # --- two_robot_negotiation --- #
-    def synthesizeWithExchangedSpec(self, level = False):
+    def resetEnvCharacterization(self):
         """
-        spec negotiation in execute.py
+        This function reset old values of violated things and replace LTLViolationCheck EnvTrans
         """
-
-        # fist append new environment /and system init state
-        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
-
         # reset env characterization
         self.spec['EnvTrans'] = self.oriEnvTrans
         self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
-        #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] } # we are striping the last ))
         self.LTLViolationCheck.resetEnvCharacterization()
         self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
         self.old_violated_specStr = []
@@ -463,6 +457,12 @@ class ExecutorResynthesisExtensions(object):
         self.old_possible_states_violated_specStr = []
         self.old_possible_states_violated_specStr_with_no_specText_match = []
 
+    def synthesizeWithExchangedSpec(self, level = False):
+        """
+        spec negotiation in execute.py
+        """
+        # fist append new environment /and system init state
+        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
 
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
@@ -472,8 +472,6 @@ class ExecutorResynthesisExtensions(object):
 
         # see if we can take the other robot's actions into account. 
         # first we safe a copy of our SysTrans and EnvGoals before modification
-        #oldSpecSysTrans = self.spec['SysTrans'].replace('\t',"").replace(' ','').replace('\n','')
-        #oldSpecEnvGoals = self.spec['EnvGoals'].replace('\t',"").replace(' ','').replace('\n','')
         oldSpecSysTrans = self.spec['SysTrans']
         oldSpecEnvGoals = self.spec['EnvGoals']
 
@@ -494,9 +492,9 @@ class ExecutorResynthesisExtensions(object):
         self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
         self.recreateLTLfile(self.proj)
         realizable, realizableFS, output  = self.compiler._synthesize()
-       
-        return realizable, oldSpecSysTrans, oldSpecEnvGoals 
-        
+
+        return realizable, oldSpecSysTrans, oldSpecEnvGoals
+
     def appendSpecFromEnvRobots(self):
         """
         asked for spec from negotiation monitor and append to our spec.
@@ -508,151 +506,83 @@ class ExecutorResynthesisExtensions(object):
         #self.compiler.proj.compile_options['recovery'] = True
 
         # modify envTrans to remove all characterization. Restart Characterization
-        self.spec['EnvTrans'] = self.oriEnvTrans
-        self.LTLViolationCheck.replaceLTLTree(self.oriEnvTrans)
-        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace("\t","").replace("\n","").replace(" ","").replace('[]','')[:-1] +'))&\n'
-        #self.spec['EnvTrans'] = '[](('+self.spec['EnvTrans'].replace('[]','') +'))\n'
-        #self.LTLViolationCheck.env_safety_assumptions_stage = {"1": self.spec['EnvTrans'][:-3] , "3": self.spec['EnvTrans'][:-3] , "2": self.spec['EnvTrans'][:-3] }
-        self.LTLViolationCheck.resetEnvCharacterization()
-        self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
-        self.old_violated_specStr = []
-        self.old_violated_specStr_with_no_specText_match = []
-        self.old_possible_states_violated_specStr = []
-        self.old_possible_states_violated_specStr_with_no_specText_match = []
+        self.resetEnvCharacterization() # reset env characterization both ways
 
-        self.postEvent('NEGO','-- NEGOTIATION STARTED --')                
-        self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
+        self.postEvent('NEGO','-- NEGOTIATION STARTED --')
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
         if self.proj.compile_options["fastslow"]:
             self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
         else:
             self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-        #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals']) 
+        #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
         self.sentSpec = True
 
         self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+
+        # here we have an extra step to synthesize with exchanged spec too
+        self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
+        self.postEvent("NEGO",'Adding system guarantees with environment goals.')
+        realizable, _, _ = self.synthesizeWithExchangedSpec(False)
+
         while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
             # wait for the actions of the other robot
             time.sleep(2)
-        
+
         if self.robClient.checkNegotiationStatus() == True:
-            # we need to use our original spec
-            self.spec = copy.deepcopy(self.originalSpec)
-            self.spec['EnvTrans'] = self.oriEnvTrans
-            #convert to the original specification
-            self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
-            self.recreateLTLfile(self.proj, spec = self.spec)
-            realizable, realizableFS, output  = self.compiler._synthesize()
-            logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
-            self.otherRobotStatus = True # env characterization disabled
-            self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
-            self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-            self.postEvent('RESOLVED','')
-            
+            if realizable:
+                self.disableEnvChar = False # env characterization enabled
+                self.postEvent('NEGO','Incorated the other robot'' requirements. The other robot has incorporated ours.')
+                self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+                self.postEvent('RESOLVED','')
+            else:
+                # we need to use our original spec
+                self.postEvent('NEGO','CANNOT incororate the other robot'' requirements.')
+                self.postEvent('NEGO','Ask the other robot to include our actions in its controller.')
+                self.spec = copy.deepcopy(self.originalSpec)
+                self.spec['EnvTrans'] = self.oriEnvTrans
+                #convert to the original specification
+                self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+                self.recreateLTLfile(self.proj, spec = self.spec)
+                realizable, _, _ = self.compiler._synthesize()
+                logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
+                self.disableEnvChar = True # env characterization disabled
+                self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
+                self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+                self.postEvent('RESOLVED','')
+
         elif self.robClient.checkNegotiationStatus() == self.robClient.robotName and not self.receivedSpec:
-            self.postEvent('NEGO','The other robot cannot incorporate our actions. We will try incorporating its actions instead.')
+            self.postEvent('NEGO','The other robot cannot incorporate our actions.')# We will try incorporating its actions instead.')
             # try to synthesize controller with spec from the other robot instead
             ###### ONE STEP ####
-            realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
-            self.postEvent("NEGO",'Adding system guarantees with environment goals.')
-            
+            #realizable, _, _ = self.synthesizeWithExchangedSpec(False)
+
             if realizable:
                 self.postEvent('NEGO','We can continue with the exchanged information.')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.postEvent('RESOLVED','')
                 self.robClient.setNegotiationStatus(True)
-                self.otherRobotStatus = False # env characterization enabled
+                self.disableEnvChar = False # env characterization enabled
             else:
                 self.postEvent('NEGO','Negotiation failed')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.robClient.setNegotiationStatus(False)
-                self.otherRobotStatus = False # env characterization enabled
+                self.disableEnvChar = False # env characterization enabled
 
         else: #We have received spec before and it's unrealizable
             realizable = False
             self.postEvent('NEGO','Negotiation failed')
             self.postEvent('NEGO','-- NEGOTIATION ENDED --')
             self.robClient.setNegotiationStatus(False)
-            self.otherRobotStatus = False # env characterization enabled
+            self.disableEnvChar = False # env characterization enabled
 
         # reset violtion timestamp
         self.violationTimeStamp = 0
         self.robClient.setViolationTimeStamp(self.violationTimeStamp)
         logging.debug('Resetting violation timeStamp')
         time.sleep(1)
-        """
-        # --------------------------------------------- #
-        # check if the other robot is realizable. 
-        otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
-        # remove current robot status from the dict
-        otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
-        logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
-        
-        # force the spec to use the original spec
-        if True in otherRobotsStrategyStatus.values():
-            realizable = False
-        
-        # notify negotiation monitor our controller statues
-        self.robClient.updateStrategyStatus(realizable)  
-        # --------------------------------------------- #
-        
-        logging.debug('realizable status sent')
-        if not realizable:
-            self.postEvent("VIOLATION","Controller with exchanged information is unrealizable. Removing exchanged info from the spec")  
-            
-            # remove spec from other robots
-            self.spec['SysTrans'] = oldSpecSysTrans
-            self.spec['EnvGoals'] = oldSpecEnvGoals
-            self.recreateLTLfile(self.proj)
-            realizable, realizableFS, output  = self.compiler._synthesize()
-            
-        else:
-            self.postEvent("INFO",'Specification is realizable with the exchanged info.')    
-        
-        time.sleep(2)
-        # check if the other robot is realizable. 
-        otherRobotsStrategyStatus = self.robClient.requestStrategyStatus()
-        logging.debug(otherRobotsStrategyStatus)
-        
-        # remove current robot status from the dict
-        otherRobotsStrategyStatus.pop(self.robClient.robotName, None)
-        logging.debug('otherRobotsStrategyStatus: ' + str(otherRobotsStrategyStatus))
-        
-        if True in otherRobotsStrategyStatus.values() and not realizable:
-            # Yes.. it's great.. we can use our old spec. Maybe need liveness.
-            self.postEvent('RESOLVED','We can continue with the old spec as the other robot will yield for us.')
-            self.otherRobotStatus = True
-       
-        #TODO: making one with exchanged spec and the other with the original spec
-        elif True in otherRobotsStrategyStatus.values() and realizable:
-            self.postEvent('RESOLVED','Determing one to be the priority.')
-            #TODO: currently assuming two robots. This has to be changed later. 
-            if self.robClient.robotName < otherRobotsStrategyStatus.keys()[0]:
-                # We are the priority. Stay with the original spec
-                self.otherRobotStatus = True
-                self.postEvent('INFO','I am prioritized. Using original Spec')
-                
-                # remove spec from other robots and resynthesize
-                self.spec['SysTrans'] = oldSpecSysTrans
-                self.spec['EnvGoals'] = oldSpecEnvGoals
-                self.recreateLTLfile(self.proj)
-                realizable, realizableFS, output  = self.compiler._synthesize()
-            else:
-                # We will yeild to the other robot.
-                self.otherRobotStatus = False
-                self.postEvent('INFO','I am NOT prioritized. Yield to the other robot.')
-       
-        elif realizable:
-            self.postEvent('RESOLVED','We will yield to the other robot.')
-            self.otherRobotStatus = False 
-            
-        else:
-            # TODO: NO.. what should we do
-            self.postEvent('INFO','What should we do.. Both of us are unrealizable... ')
-            self.otherRobotStatus = False
-        """
-        return realizable             
+
+        return realizable
 
     def receiveRequestFromEnvRobot(self):
         """
@@ -663,20 +593,33 @@ class ExecutorResynthesisExtensions(object):
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
 
+            # prepare for conservative step of the sender (send him/her specs)
+            # send our spec to the other robot
+            self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
+            if self.proj.compile_options["fastslow"]:
+                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
+            else:
+                self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+            #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
+
+            # also reset env characterization
+            self.resetEnvCharacterization() # reset env characterization both ways
+
             # make resynthesis with recovery
             #self.recovery = True
             #self.proj.compile_options['recovery'] = True
             #self.compiler.proj.compile_options['recovery'] = True
 
             self.postEvent('NEGO','-- NEGOTIATION STARTED --')
+            self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
+            self.postEvent("NEGO",'Adding system guarantees with environment goals.')
             # synthesize a new controller to incorporate the actions of the other robot.
             ###### ONE STEP ######
-            self.realizable, oldSpecSysTrans_2, oldSpecEnvGoals_2 = self.synthesizeWithExchangedSpec(False)
-            self.postEvent("NEGO",'Adding system guarantees with environment goals.')
+            realizable, _, _ = self.synthesizeWithExchangedSpec(False)
 
-            if self.realizable:
+            if realizable:
                 self.robClient.setNegotiationStatus(True)
-                self.otherRobotStatus = False
+                self.disableEnvChar = False
                 self.postEvent('NEGO','Using exchanged specification.')
                 self.postEvent('RESOLVED','')
 
@@ -694,15 +637,6 @@ class ExecutorResynthesisExtensions(object):
 
             elif not self.sentSpec:
                 self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
-
-                # send our spec to the other robot
-                self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-                if self.proj.compile_options["fastslow"]:
-                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-                else:
-                    self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-
-                #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
                 self.sentSpec = True
                 self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
 
@@ -715,20 +649,12 @@ class ExecutorResynthesisExtensions(object):
                     self.spec = copy.deepcopy(self.originalSpec)
                     self.spec['EnvTrans'] = self.oriEnvTrans
 
-                    # also reset env characterization
-                    self.LTLViolationCheck.resetEnvCharacterization()
-                    self.LTLViolationCheck.setOriginalEnvTrans(self.spec['EnvTrans'].replace('[]',''))
-                    self.old_violated_specStr = []
-                    self.old_violated_specStr_with_no_specText_match = []
-                    self.old_possible_states_violated_specStr = []
-                    self.old_possible_states_violated_specStr_with_no_specText_match = []
-
                     #convert to the original specification
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)
-                    self.realizable, realizableFS, output  = self.compiler._synthesize()
+                    realizable, _, _ = self.compiler._synthesize()
                     logging.debug("Original spec with new env/sys init realizable?" + str(self.realizable))
-                    self.otherRobotStatus = True # env characterization disabled
+                    self.disableEnvChar = True # env characterization disabled
                     self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                     self.postEvent('RESOLVED','')
@@ -769,7 +695,7 @@ class ExecutorResynthesisExtensions(object):
         if checker is None:
             checker = self.LTLViolationCheck
 
-        if (self.otherRobotStatus is None) or (not self.otherRobotStatus):
+        if (self.disableEnvChar is None) or (not self.disableEnvChar):
             # Add the current state in init state of the LTL spec
             self.postEvent("VIOLATION","Adding the current state to our initial conditions")
             self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
@@ -858,24 +784,25 @@ class ExecutorResynthesisExtensions(object):
                     self.postEvent('INFO','Recreating automaton based on the new env init state.')
 
         self.lastSensorState = sensor_state   
-        """      
-        if not realizable:
-            self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
-            # Use Vasu's analysis tool 
-            self.onMenuAnalyze()  # in resynthesis.py
-            realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable                  
-            
+
+        if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "d-patching":
             if not realizable:
-                self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
-                sys.exit()
-            else:                   
-                checker.modify_stage  = 1 # reset the stage to 1
-        """
+                self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
+                # Use Vasu's analysis tool
+                self.onMenuAnalyze()  # in resynthesis.py
+                realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+
+                if not realizable:
+                    self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
+                    sys.exit()
+                else:
+                    checker.modify_stage  = 1 # reset the stage to 1
+
 
              
         # reload aut file if the new ltl is realizable                  
-        if self.realizable or self.otherRobotStatus:
-            if not self.otherRobotStatus:
+        if self.realizable or self.disableEnvChar:
+            if not self.disableEnvChar:
                 self.postEvent("RESOLVED", "The specification violation is resolved.")
 
                 # clear all violations and resume runtime monitoring

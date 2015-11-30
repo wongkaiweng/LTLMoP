@@ -156,7 +156,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.old_possible_states_violated_specStr = []
         self.old_possible_states_violated_specStr_with_no_specText_match = [] # for spec with no specText match
         self.old_possible_states_violated_spec_line_no = []
-        self.prev_z  = 0
+        self.prev_z  = str(0)
         # -----------------------------------------#
 
         # ********** patching ******************** #
@@ -447,9 +447,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                 self.LTLViolationCheckPossibleStates.ltl_treeEnvTrans = None
                 self.LTLViolationCheckPossibleStates.setOriginalEnvTrans('FALSE')
-        #for using get LTLRepresentation of current sensors
-        self.sensor_strategy = new_strategy.states.addNewState()
-
         ############################################
 
         ### Figure out where we should start from by passing proposition assignments to strategy and search for initial state
@@ -540,9 +537,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         else:
         	init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
-        logging.debug("init_prop_assignments:" + str(init_prop_assignments))
         #search for initial state in the strategy
         if firstRun:
+            logging.debug("init_prop_assignments:" + str(init_prop_assignments))
             init_state = new_strategy.searchForOneState(init_prop_assignments)
         else:
             # ------- patching ----------#
@@ -572,7 +569,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 current_goal_id = self.prev_z
 
             logging.debug('init_prop_assignments:' + str(init_prop_assignments))
-            init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id = current_goal_id)
+            init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id=current_goal_id)
+
+        #for using get LTLRepresentation of current sensors
+        self.sensor_strategy = new_strategy.states.addNewState()
 
         # resynthesize if cannot find initial state
         if init_state is None: 
@@ -604,7 +604,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             # store time stamp of violation
             if self.proj.compile_options["neighbour_robot"]:
                 if self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                    if not self.otherRobotStatus:
+                    if not self.disableEnvChar:
                         self.violationTimeStamp = time.clock()
                         self.robClient.setViolationTimeStamp(self.violationTimeStamp)
                         logging.debug('Setting violation timeStamp')
@@ -808,7 +808,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                 # HACK: This should be fixed. thread access in executeModes
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                    env_assumption_hold = self.check_envTrans_violations()
+                    env_assumption_hold = self.simple_check_envTrans_violation() #self.check_envTrans_violations()
                     self.violated_spec_list = copy.deepcopy(self.LTLViolationCheck.violated_specStr)
                     self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
                     self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
@@ -908,7 +908,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         if self.proj.compile_options["multi_robot_mode"] == "negotiation":
                             # ------------ two_robot_negotiation ----------#
                             # store time stamp of violation
-                            if not self.otherRobotStatus:
+                            if not self.disableEnvChar:
                                 self.violationTimeStamp = time.clock()
                                 self.robClient.setViolationTimeStamp(self.violationTimeStamp)
                                 logging.debug('Setting violation timeStamp')
@@ -1047,7 +1047,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         logging.debug("Value should be True: " + str(env_assumption_hold))
 
                     # For print violated safety in the log (update lines violated in every iteration)
-                    if len(self.violated_spec_line_no) == 0 and self.old_violated_spec_line_no !=self.violated_spec_line_no and (self.recovery or self.otherRobotStatus):
+                    if len(self.violated_spec_line_no) == 0 and self.old_violated_spec_line_no !=self.violated_spec_line_no and (self.recovery or self.disableEnvChar):
                         #self.postEvent("RESOLVED", "The specification violation is resolved.")
 
                         # ------------ two_robot_negotiation ----------#
