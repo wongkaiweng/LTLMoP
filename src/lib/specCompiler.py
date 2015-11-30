@@ -315,6 +315,8 @@ class SpecCompiler(object):
             ################ Env Assumption Mining #############
             self.sensorList = sensorList
             self.regionList = regionList
+            self.actuatorList = actuatorList
+            self.customsList = customsList
             self.robotPropList = robotPropList
             if "TRUE" in spec["EnvInit"] :
                 spec["EnvInit"] = "(TRUE)"

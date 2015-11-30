@@ -1043,8 +1043,11 @@ class ExecutorResynthesisExtensions(object):
             checker = self.LTLViolationCheck
 
         try:
-            spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, self.compiler.sensorList, self.compiler.regionList, self.compiler.robotPropList)
+            spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, \
+                self.compiler.sensorList, self.compiler.regionList, self.compiler.actuatorList,\
+                self.compiler.customsList, fastslow=self.proj.compile_options['fastslow'])
         except:
+            logging.debug('envLiveness:' + str(envLiveness))
             self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
             return
         else:
