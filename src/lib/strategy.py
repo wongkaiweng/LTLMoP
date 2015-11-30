@@ -650,9 +650,13 @@ class Strategy(object):
             for state in self.searchForStates(prop_assignments, state_list, goal_id):
                 if state.goal_id == goal_id:
                     return state
-        
+
         # if goal_id is not specified or cannot find state with that goal_id            
-        return next(self.searchForStates(prop_assignments, state_list, goal_id))
+        for state in self.searchForStates(prop_assignments, state_list, goal_id):
+            return state
+
+        # return None if no matching states are found.
+        return None
 
     def exportAsDotFile(self, filename, regionMapping, starting_states=None):
         """ Output an explicit-state strategy to a .dot file of name `filename`.
