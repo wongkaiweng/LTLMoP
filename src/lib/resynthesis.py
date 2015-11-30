@@ -918,22 +918,16 @@ class ExecutorResynthesisExtensions(object):
         current_env_init_state  = sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
 
         ## for actuators and regions
-        if firstRun:
+        if firstRun or self.strategy is None:
             tempY = []
             # figure out our current region
             init_region = self._getCurrentRegionFromPose()
-            numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))          
-            reg_idx_bin = numpy.binary_repr(init_region, width=numBits)
-            
-            for x in range(numBits):
-                if init_region & 2**x:
-                    tempY.append("s.bit" + str(x))
-                else:
-                    tempY.append("!s.bit" + str(x))
-                             
+            for prop, value in sensor_state.context.expandDomainsInPropAssignment({'region':self.proj.rfi.regions[init_region]}).iteritems():
+                tempY.append(prop.replace('region_b','s.bit') if value else '!'+prop.replace('region_b','s.bit'))
+
             # Figure out our initially true outputs
             init_outputs = []
-            for prop in self.proj.currentConfig.initial_truths:
+            for prop in self.hsub.executing_config.initial_truths:
                 if prop not in self.proj.enabled_sensors:
                     init_outputs.append(prop)
             
