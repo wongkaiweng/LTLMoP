@@ -110,7 +110,9 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     LivenessRE = re.compile('^\s*(go to|visit|infinitely often do|infinitely often sense|infinitely often)',re.IGNORECASE)
     if fastslow:
         SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
-        SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
+        #SafetyCompletionRE = re.compile('^[\s\(]*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
+        SafetyCompletionRE = re.compile('(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
+
     else:
         SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense)',re.IGNORECASE)
     StayRE = re.compile('(stay there|stay)',re.IGNORECASE)
@@ -714,7 +716,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 #check if we are using the 'finished' keyword
                 if SafetyCompletionRE.search(SafetyReq):
                     CompletionFlag = True
-                    SafetyReq = SafetyRE.sub('',SafetyReq)
+                    #SafetyReq = SafetyRE.sub('',SafetyReq)
                 else:
                     CompletionFlag = False
 
@@ -909,8 +911,8 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
     tempFormula = replaceLogicOp(tempFormula)
     # checking that all propositions are 'legal' (in the list of propositions)
     if CompletionFlag:
-        MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
-        MatchPropStr ='((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+        MatchStr = '((?:finish(?:ed)?\s+)?\(?(?!finished)[\w\.]+\)?)'
+        MatchPropStr ='((finish(ed)?\s+)?\(?(?P<prop>(?!finished)[\w\.]+)\)?)'
     else:
         MatchStr = '([\w\.]+)'
 
@@ -940,7 +942,10 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
 
         elif prop in allRobotProp and formulaInfo['type'] == '':
-            formulaInfo['type'] = 'SysTrans'
+            # make sure finished prop is not in here
+            if originalProp == prop:
+                formulaInfo['type'] = 'SysTrans'
+
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
             if CompletionFlag:
@@ -1442,15 +1447,15 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
 
     # String to match
     if fastslow:
-        MatchPropStr = '((?:finished\s+)?\(?[\w\.]+\)?)'
-        StripPropStr = '((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+        MatchPropStr = '((?:finished\s+)?\(?(?!finished)[\w\.]+\)?)'
+        StripPropStr = '((finished\s+)?\(?(?P<prop>(?!finished)[\w\.]+)\)?)'
     else:
-        MatchPropStr = '([\w\.]+)'
-        StripPropStr = '(?P<prop>[\w\.]+)'
+        MatchPropStr = '((?!finished)[\w\.]+)'
+        StripPropStr = '(?P<prop>(?!finished)[\w\.]+)'
 
     if fastslow:
-        regionGroupSetEvent = re.findall('((?:finished\s+\(?)(?P<propGroup>[\w\.\s+?\|?]+)\)?)', SetEvent)
-        regionGroupResetEvent = re.findall('((?:finished\s+\(?)(?P<propGroup>[\w\.\s+?\|?]+)\)?)', ResetEvent)
+        regionGroupSetEvent = re.findall('((?:finished\s+\(?)(?P<propGroup>(?!finished)[\w\.\s+?\|?]+)\)?)', SetEvent)
+        regionGroupResetEvent = re.findall('((?:finished\s+\(?)(?P<propGroup>(?!finished)[\w\.\s+?\|?]+)\)?)', ResetEvent)
 
         if regionGroupSetEvent:
             for groupProp in regionGroupSetEvent:
@@ -1475,7 +1480,7 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
             if propStriped not in RobotProp:
                 # replace every occurrence of the proposition with next(proposition)
                 # it is written this way to prevent nesting of 'next' (as with the .replace method)
-                SetEvent = re.sub('(next\('+prop+'\)|'+prop+')', 'next('+ prop +')',SetEvent)
+                SetEvent = re.sub('(next\('+propStriped+'\)|'+propStriped+')', 'next('+ propStriped +')',SetEvent)
 
             if fastslow:
                 if "finished" in prop:
@@ -1496,7 +1501,7 @@ def parseEvent(EventProp,SetEvent,ResetEvent,sensorProp,regionList,actuatorList,
                 if propStriped not in RobotProp:
                     # replace every occurrence of the proposition with next(proposition)
                     # it is written this way to prevent nesting of 'next' (as with the .replace method)
-                    ResetEvent = re.sub('(next\('+prop+'\)|'+prop+')', 'next('+ prop +')',ResetEvent)
+                    ResetEvent = re.sub('(next\('+propStriped+'\)|'+propStriped+')', 'next('+ propStriped +')',ResetEvent)
                 if fastslow:
                     if "finished" in prop:
                         if propStriped in regionList:
