@@ -681,14 +681,14 @@ class LTL_Check:
 
                 if level == 0:
                     
-                    if value == False: 
+                    if value == False:
+                        logging.debug('--------------------------------------')
                         try:
                             if not self.LTLMoP:
                                 logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
                             treeNo = self.ltlTree_to_lineNo[LTLFormula.treeToString(x)]
                             if self.LTLMoP:
-                                logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
-                                logging.debug('treeNo:' + str(treeNo))
+                                logging.debug("violated line "+ str(treeNo)+" in English:" +  str(LTLFormula.treeToString(x)))
                                 logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
                                 logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
@@ -698,7 +698,7 @@ class LTL_Check:
                             if envTransTree:
                                 if LTLFormula.treeToString(x) not in self.violated_specStr_with_no_specText_match:
                                     self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
-                                    logging.debug("not text match violation:" +  str(LTLFormula.treeToString(x)))
+                                    logging.debug("no text match violation:" +  str(LTLFormula.treeToString(x)))
                                     logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
                                     logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             else:
@@ -707,10 +707,10 @@ class LTL_Check:
                                     violated_spec_line_no.append(treeNo)
                         if envTransTree:
                             to_be_added_violated_specStr = LTLFormula.treeToString(x)
-                            logging.debug(to_be_added_violated_specStr)
                             if to_be_added_violated_specStr not in self.violated_specStr:
+                                logging.debug('Adding specStr to self.violated_specStr....')
                                 self.violated_specStr.append(LTLFormula.treeToString(x))
-
+                        logging.debug('--------------------------------------')
                     else:
                         if debug_true_ltl == True:                        
                             print "-----------------------------------------------"

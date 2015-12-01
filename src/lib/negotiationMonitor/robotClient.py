@@ -179,9 +179,9 @@ class RobotClient:
         specToAppend = ""
         
         #TODO: need to get full picture of all robots. The current solution only deals with two robots
+        logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
         while not len(specToAppend):
             self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
-            logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
 
             #receive info
             SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))

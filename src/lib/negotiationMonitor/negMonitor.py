@@ -20,6 +20,7 @@ serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listenConn = 5  #listenConn is the maximum number of queued connections we'll allow
 
 #find our socket to the address
+serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # no one minute timeout for reconnection
 serv.bind((ADDR))    #the double parens are to create a tuple with one element
 serv.listen(listenConn) 
 logging.info( 'NEGOTIATION_MONITOR: Listening...')

@@ -491,7 +491,7 @@ class ExecutorResynthesisExtensions(object):
         # resynthesize
         self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
         self.recreateLTLfile(self.proj)
-        realizable, realizableFS, output  = self.compiler._synthesize()
+        realizable, _, _ = self.compiler._synthesize()
 
         return realizable, oldSpecSysTrans, oldSpecEnvGoals
 
@@ -532,7 +532,7 @@ class ExecutorResynthesisExtensions(object):
         if self.robClient.checkNegotiationStatus() == True:
             if realizable:
                 self.disableEnvChar = False # env characterization enabled
-                self.postEvent('NEGO','Incorated the other robot'' requirements. The other robot has incorporated ours.')
+                self.postEvent('NEGO','Incorporated the other robot''s requirements. The other robot has incorporated ours.')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.postEvent('RESOLVED','')
             else:
@@ -551,7 +551,7 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.postEvent('RESOLVED','')
 
-        elif self.robClient.checkNegotiationStatus() == self.robClient.robotName and not self.receivedSpec:
+        elif self.robClient.checkNegotiationStatus() == self.robClient.robotName: #and not self.receivedSpec:
             self.postEvent('NEGO','The other robot cannot incorporate our actions.')# We will try incorporating its actions instead.')
             # try to synthesize controller with spec from the other robot instead
             ###### ONE STEP ####
@@ -593,6 +593,9 @@ class ExecutorResynthesisExtensions(object):
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
 
+            # also reset env characterization
+            self.resetEnvCharacterization() # reset env characterization both ways
+
             # prepare for conservative step of the sender (send him/her specs)
             # send our spec to the other robot
             self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
@@ -602,15 +605,13 @@ class ExecutorResynthesisExtensions(object):
                 self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
             #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
 
-            # also reset env characterization
-            self.resetEnvCharacterization() # reset env characterization both ways
-
             # make resynthesis with recovery
             #self.recovery = True
             #self.proj.compile_options['recovery'] = True
             #self.compiler.proj.compile_options['recovery'] = True
 
             self.postEvent('NEGO','-- NEGOTIATION STARTED --')
+            self.postEvent('NEGO','Received request to coordinate.')
             self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
             self.postEvent("NEGO",'Adding system guarantees with environment goals.')
             # synthesize a new controller to incorporate the actions of the other robot.
@@ -621,6 +622,7 @@ class ExecutorResynthesisExtensions(object):
                 self.robClient.setNegotiationStatus(True)
                 self.disableEnvChar = False
                 self.postEvent('NEGO','Using exchanged specification.')
+                self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                 self.postEvent('RESOLVED','')
 
                 # reset violtion timestamp
@@ -653,7 +655,7 @@ class ExecutorResynthesisExtensions(object):
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)
                     realizable, _, _ = self.compiler._synthesize()
-                    logging.debug("Original spec with new env/sys init realizable?" + str(self.realizable))
+                    logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
                     self.disableEnvChar = True # env characterization disabled
                     self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
@@ -767,8 +769,6 @@ class ExecutorResynthesisExtensions(object):
             if realizable:
                 checker.updateEnvTransTree("")
 
-            self.realizable = realizable
-
         else:
             logging.debug('Waiting for the other robot to yield our way.')
             #logging.debug(self.lastSensorState.getInputs())
@@ -776,11 +776,11 @@ class ExecutorResynthesisExtensions(object):
 
             # only append new init state if there's no request of negotiation
             if not self.receiveRequestFromEnvRobot():
-                if self.lastSensorState is None  or self.lastSensorState.getInputs(expand_domains=True) != sensor_state.getInputs(expand_domains=True) or not self.realizable:
+                if self.lastSensorState is None  or self.lastSensorState.getInputs(expand_domains=True) != sensor_state.getInputs(expand_domains=True) or not realizable:
                     # update spec with current state of the other robot
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,firstRun, sensor_state)
                     self.recreateLTLfile(self.proj)
-                    self.realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                    realizable, _, _ = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                     self.postEvent('INFO','Recreating automaton based on the new env init state.')
 
         self.lastSensorState = sensor_state   
@@ -790,7 +790,7 @@ class ExecutorResynthesisExtensions(object):
                 self.postEvent("VIOLATION","Please enter some environment liveness to make the specification realizable.")
                 # Use Vasu's analysis tool
                 self.onMenuAnalyze()  # in resynthesis.py
-                realizable = self.compiler._synthesize()[0]  # TRUE for realizable, FALSE for unrealizable
+                realizable ,_ ,_ = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
 
                 if not realizable:
                     self.postEvent("VIOLATION", "Specification is still unrealizable after adding env liveness. Now we will exit the execution")
@@ -801,7 +801,7 @@ class ExecutorResynthesisExtensions(object):
 
              
         # reload aut file if the new ltl is realizable                  
-        if self.realizable or self.disableEnvChar:
+        if realizable or self.disableEnvChar:
             if not self.disableEnvChar:
                 self.postEvent("RESOLVED", "The specification violation is resolved.")
 
@@ -897,12 +897,7 @@ class ExecutorResynthesisExtensions(object):
         # connect the original sysInit with the current system init
         #self.spec["SysInit"]  = self.originalSysInit + "\n| " + cur_sys_init
         self.spec['EnvInit'] = "(" + current_env_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
-
-        # adding also other initial mutual exclusions
-        if self.proj.compile_options['neighbour_robot']:
-            self.spec["EnvInit"] += " &\n " + self.spec['InitEnvRegionSanityCheck']
-
-        self.spec["SysInit"]  = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
+        self.spec["SysInit"] = "(" + current_sys_init_state.replace("\t", "").replace("\n", "").replace(" ", "") + ")"
 
     def recreateLTLfile(self, proj, spec = None , export = False):
         """
@@ -919,12 +914,12 @@ class ExecutorResynthesisExtensions(object):
             ltl_filename = proj.getFilenamePrefix() + ".ltl"       
         
         # putting all the LTL fragments together (see specCompiler.py to view details of these fragments)
-        LTLspec_env = ' &\n'.join(filter(None,[spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
+        LTLspec_env = ' &\n'.join(filter(None,[spec['InitEnvRegionSanityCheck'], spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
         LTLspec_sys = ' &\n'.join(filter(None,[spec["SysInit"], spec["SysTrans"], spec["SysGoals"], spec['InitRegionSanityCheck'], spec['Topo']]))
 
         if proj.compile_options["fastslow"]:
             # EnvTopo is in EnvTrans already
-            LTLspec_env = ' &\n'.join(filter(None,[spec['InitEnvRegionSanityCheck'], LTLspec_env, spec['SysImplyEnv']]))
+            LTLspec_env = ' &\n'.join(filter(None,[LTLspec_env, spec['SysImplyEnv']]))
 
         # Write the file back
         createLTLfile(ltl_filename, LTLspec_env, LTLspec_sys)

@@ -90,7 +90,6 @@ class ExecutorModesExtensions(object):
                 self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
 
         if not env_assumption_hold:
-            logging.debug("self.sensor_strategy:" + str([x for x, value in self.sensor_strategy.getInputs(expand_domains=True).iteritems() if value]))
             logging.debug("ACTUAL-current_state:" + str([x for x, value in deepcopy_current_state.getAll(expand_domains=True).iteritems() if value]))
             logging.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if value]))
             logging.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))

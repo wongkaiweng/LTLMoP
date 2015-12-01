@@ -526,7 +526,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             otherRobotsReady = False
 
             while not otherRobotsReady:
-                logging.debug(self.hsub.getSensorValue(self.proj.enabled_sensors))
+                logging.debug('Current Sensors:' + str(self.hsub.getSensorValue(self.proj.enabled_sensors)))
                 if not None in self.hsub.getSensorValue(self.proj.enabled_sensors).values():
                     otherRobotsReady = True
                 time.sleep(2)
@@ -1057,6 +1057,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.violationTimeStamp = 0
                             self.robClient.setViolationTimeStamp(self.violationTimeStamp)
                             logging.debug('Resetting violation timeStamp')
+
+                            # save a copy
+                            self.old_violated_specStr = copy.copy(self.violated_spec_list)
+                            self.old_violated_specStr_with_no_specText_match = copy.copy(self.violated_spec_list_with_no_specText_match)
+                            self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+
+                            self.old_possible_states_violated_specStr_with_no_specText_match = copy.copy(self.possible_states_violated_spec_list_with_no_specText_match)
+                            self.old_possible_states_violated_spec_line_no = copy.copy(self.possible_states_violated_spec_line_no)
                         # ---------------------------------------------- #
 
                 #self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
