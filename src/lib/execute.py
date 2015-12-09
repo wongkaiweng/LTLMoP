@@ -486,6 +486,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 if firstRun:
                     self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub, self.proj)
                 self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
+                self.robClient.updateRobotSensors(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors\
+                    if not x.startswith(tuple(self.proj.otherRobot)) and not x.endswith('_rc')])) # also update sensors
                 if self.proj.compile_options['include_heading']:
                     self.robClient.updateCompletedRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
                 # check negotiation statue only for two robot nego
@@ -801,20 +803,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 pass #stays the same
 
             if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
+                # set current_next_states to compare with last_next_states
+                current_next_states = self.last_next_states
+
                 #############################################
                 ######### CHECK ENVTRANS VIOLATION ##########
                 #############################################
-                current_next_states = self.last_next_states
-
-                # HACK: This should be fixed. thread access in executeModes
-                if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                    env_assumption_hold = self.simple_check_envTrans_violation() #self.check_envTrans_violations()
-                    self.violated_spec_list = copy.deepcopy(self.LTLViolationCheck.violated_specStr)
-                    self.violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheck.violated_specStr_with_no_specText_match)
-                    self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
-                else:
-                    env_assumption_hold = self.env_assumption_hold and self.possible_states_env_assumption_hold #self.check_envTrans_violations() #
-                    #TODO: maybe we only get copies of the violated list instead of using the one in the memory?
+                # note that for negotiation: env_assumption_hold is updated in executeStrategy
+                #           for patching: env_assumption hold is updated in thread
+                env_assumption_hold = self.env_assumption_hold and self.possible_states_env_assumption_hold #self.check_envTrans_violations() #
 
                 if not env_assumption_hold:
                     self.hsub.setVelocity(0,0)
@@ -931,7 +928,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             logging.error("Mulit robot mode is incorrect. This is impossible.")
 
                     # count the number of next state changes
-                    if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in self.last_next_states]:
+                    if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in last_next_states]:
                         self.envViolationCount += 1
                         logging.debug("No of env violations:"+ str(self.envViolationCount))
 
@@ -1005,8 +1002,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 ########################################
                                 #### FOR BOTH LEANRING AND RECOVERY  ###
                                 ########################################
-                                if str(self.strategy.current_state.state_id) in [x.state_id for x in self.last_next_states] \
-                                or self.envViolationCount == self.envViolationThres:
+                                if str(self.strategy.current_state.state_id) in [x.state_id for x in last_next_states] \
+                                or self.envViolationCount >= self.envViolationThres:
 
                                     # reset next state difference count
                                     self.envViolationCount = 0

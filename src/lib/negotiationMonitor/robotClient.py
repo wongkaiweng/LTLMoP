@@ -250,7 +250,7 @@ class RobotClient:
         
         #receive info
         originalStr = self.clientObject.recv(self.BUFSIZE)
-        bufferData = originalStr.split(':').pop()
+        bufferData = originalStr.split(';').pop()
         negotiationStatus = ast.literal_eval(bufferData)
         return negotiationStatus
         
@@ -464,3 +464,21 @@ class RobotClient:
         status = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
 
         return status
+
+    def updateRobotSensors(self, sensorDict):
+        """
+        This function update the sensor dict in the negotiation monitor if the robot's sensors changes
+        sensorDict: dictionary of sensors.
+        """
+        # send current region to the othe robot (csock)
+        self.clientObject.send(self.robotName + '-' + 'robotSensors = ' + str(sensorDict) + '\n')
+        #logging.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
+
+    def getRobotSensorsStatus(self):
+        # send current region to the othe robot (csock)
+        self.clientObject.send(self.robotName + '-' + 'robotSensors = ' + "''" + '\n')
+        #logging.info("MSG-Put-region: get sensor dict for " + str(self.robotName))
+        sensorDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+        return sensorDict
+
+

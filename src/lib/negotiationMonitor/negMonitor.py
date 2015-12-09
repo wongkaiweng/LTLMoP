@@ -38,6 +38,7 @@ strategyStatus = {} #tracking strategy status of each robot (true for realizable
 requestSpecStatus = {} # track what spec is being requested
 negotiationStatus = None # track the negotiation status
 violationTimeStamp = {} # track the time stamp that safety violation is detected
+robotSensors = {} # track list of sensors, esp after negotiation
 
 def printRegionInfo():
     """
@@ -108,6 +109,9 @@ while keepConnection:
                         
                         # initialize violation time stamp
                         violationTimeStamp[item.group("robotName")] = 0
+
+                        # initialize robot sensor dict
+                        robotSensors[item.group("robotName")] = {}
                         
                     elif item.group('packageType')  ==  "regionName":
                         # first figure out if it's rc region or not
@@ -142,8 +146,12 @@ while keepConnection:
                             # send spec back to the robot
                             x.send(str(spec[item.group('packageType')]))
                             
-                            
-                    
+                    elif item.group('packageType') == 'robotSensors':
+                        if ast.literal_eval(item.group("packageValue")) != '':
+                            robotSensors[item.group("robotName")] = ast.literal_eval(item.group("packageValue"))
+                        else:
+                            x.send(str(robotSensors))
+
                     elif item.group('packageType')  == "sensorUpdate":
                         # send the list of region info
                         x.send(str(regionList))
@@ -170,7 +178,7 @@ while keepConnection:
                             negotiationStatus = item.group("packageValue")
                         else:
                             # send negotiationStatus back to the robot
-                            x.send(":" + str(negotiationStatus))
+                            x.send(";" + str(negotiationStatus))
                     
                     elif item.group('packageType') == "violationTimeStamp":
                         if ast.literal_eval(item.group("packageValue")) != '':

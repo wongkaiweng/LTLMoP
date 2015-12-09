@@ -144,10 +144,55 @@ class ExecutorStrategyExtensions(object):
         # TODO: set current state so that we don't need to call from_state
         next_states = self.strategy.findTransitionableStates(sensor_state, from_state= self.strategy.current_state)
 
+        # check assumptions here only for negotitation
+        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+            self.env_assumption_hold = self.simple_check_envTrans_violation()
+            #!!! this is only for negotiation. also update snesor info and regions
+            if not self.env_assumption_hold and sensor_state != self.last_sensor_state:
+                self.last_sensor_state = sensor_state
+                if self.proj.compile_options['include_heading']:
+                    self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
+                else:
+                    self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
+
+                # also update sensors
+                self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
+                    if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
+
+                if len(next_states) == 0:
+                    # Well darn!
+                    logging.error("Could not find a suitable state to transition to!")
+                return
+
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
+
+            # %%%%%%%%%%%%  d-patching %%%%%%%%%%% #
+            # update current region even though no next state is found.
+            if self.proj.compile_options['neighbour_robot']:
+                if self.proj.compile_options["multi_robot_mode"] == "d-patching":
+                    if self.proj.compile_options['include_heading']:
+                        self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(sensor_state('regionCompleted'))
+                    else:
+                        self.dPatchingExecutor.updateRobotRegionWithAllClients(sensor_state['regionCompleted'])
+
+                    # also update sensors
+                    enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
+                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
+
+                elif self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    if self.proj.compile_options['include_heading']:
+                        self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
+                    else:
+                        self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
+
+                    # also update sensors
+                    self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
+                        if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
+
             return
 
         # See if we're beginning a new transition
@@ -177,6 +222,10 @@ class ExecutorStrategyExtensions(object):
                     self.dPatchingExecutor.updateRobotRegionWithAllClients(self.next_region)
                 else:
                     self.robClient.updateRobotRegion(self.next_region)
+
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                    self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
+                        if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state
@@ -326,7 +375,7 @@ class ExecutorStrategyExtensions(object):
                     logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
                     self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
 
-                else:
+                elif self.proj.compile_options["multi_robot_mode"] == "negotiation":
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
                     else:

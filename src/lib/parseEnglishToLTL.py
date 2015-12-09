@@ -963,6 +963,10 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
     formulaInfo['formula'] = '\t\t\t [](' + tempFormula + ') & \n'
 
+    # set to system safety if its type cannot be identified.
+    if formulaInfo['type'] == '':
+        formulaInfo['type'] = 'SysTrans'
+
     return formulaInfo
 
 def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineInd,fastslow=False):
@@ -1255,11 +1259,6 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
         else:
             # checking that all propositions are 'legal' (in the list of propositions)
             # and adding 'next' if needed
-            if fastslow:
-                props = re.findall('((?:finished\s+)?\(?[\w\.]+\)?)',subCondition)
-            else:
-                props = re.findall('([\w\.]+)',subCondition)
-            props = [x for x in props if not x in ['and','or']]
 
             # Add a '!' in front if needed
             if NotFlag:
@@ -1278,8 +1277,14 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
             # Replace logic operations with TLV convention 
             subTempFormula = replaceLogicOp(subTempFormula)
 
+            if fastslow:
+                props = re.findall('((?:finished\s+)?\(?(?!finished)[\w\.]+\)?)',subTempFormula)
+            else:
+                props = re.findall('([\w\.]+)',subCondition)
+            props = [x for x in props if not x in ['and','or']]
+
             for prop in props:
-                if not prop in PropList and (not fastslow or not re.search('((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop') in PropList):
+                if not prop in PropList and (not fastslow or not re.search('((finished\s+)?\(?(?P<prop>(?!finished)[\w\.]+)\)?)',prop).group('prop') in PropList):
                     print 'ERROR(8): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not recognized\n'
                     return ''
 
@@ -1297,7 +1302,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                     return ''
 
                 if fastslow and 'finished' in prop:
-                    propStriped = re.search('((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop')
+                    propStriped = re.search('((finished\s+)?\(?(?P<prop>(?!finished)[\w\.]+)\)?)',prop).group('prop')
                     if propStriped in regionList:
                         newProp = 'e.' + propStriped.replace('s.','')+'_rc'
                     elif propStriped in actuatorList:
@@ -1305,7 +1310,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                     else:
                         print 'ERROR(8): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not a region or actuator proposition and cannot be converted into a completion prop\n'
                         return ''
-                    subTempFormula = re.sub(prop,newProp,subTempFormula)
+                    subTempFormula = re.sub(prop.replace('(','\(').replace(')','\)'),newProp,subTempFormula)
                     prop = newProp
 
                 if (prop in allRobotProp) and (ReqType == 'EnvTrans'):
@@ -1320,7 +1325,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
             else:
                 for prop in props:
                     if fastslow and 'finished' in prop:
-                        propStriped = re.search('((finished\s+)?\(?(?P<prop>[\w\.]+)\)?)',prop).group('prop')
+                        propStriped = re.search('((finished\s+)?\(?(?P<prop>(?!finished)[\w\.]+)\)?)',prop).group('prop')
                         if propStriped in regionList:
                             newProp = 'e.' + propStriped.replace('s.','')+'_rc'
                         elif propStriped in actuatorList:
@@ -1328,7 +1333,7 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                         else:
                             print 'ERROR(8): Could not parse the sentence in line '+ str(lineInd)+' because ' + prop + ' is not a region or actuator proposition and cannot be converted into a completion prop\n'
                             return ''
-                        subTempFormula = re.sub(prop,newProp,subTempFormula)
+                        subTempFormula = re.sub(prop.replace('(','\(').replace(')','\)'),newProp,subTempFormula)
                         prop = newProp
 
                     if NextFlag and (prop in allRobotProp) and (ReqType == 'EnvTrans') and (not fastslow or not CompletionFlag):

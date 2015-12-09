@@ -631,6 +631,7 @@ class ExecutorResynthesisExtensions(object):
                 logging.debug('Resetting violation timeStamp')
                 time.sleep(1)
 
+                self.sentSpec = True
                 self.exchangedSpec = True
                 # reinitialize automaton
                 spec_file = self.proj.getFilenamePrefix() + ".spec"
@@ -697,6 +698,7 @@ class ExecutorResynthesisExtensions(object):
         if checker is None:
             checker = self.LTLViolationCheck
 
+        realizable=True
         if (self.disableEnvChar is None) or (not self.disableEnvChar):
             # Add the current state in init state of the LTL spec
             self.postEvent("VIOLATION","Adding the current state to our initial conditions")
@@ -706,7 +708,7 @@ class ExecutorResynthesisExtensions(object):
             # just update initial condition
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                 self.recreateLTLfile(self.proj)
-                realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                realizable, _, _ = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
                 self.postEvent("VIOLATION", "The specification is " + ("realizable." if realizable else "unrealizable."))
             # -------------------------#
 
@@ -715,7 +717,7 @@ class ExecutorResynthesisExtensions(object):
                     self.spec['EnvTrans'] = checker.modify_LTL_file("")
 
                 self.recreateLTLfile(self.proj)
-                realizable, realizableFS, output = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                realizable, _, _ = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
              
                 if not firstRun:
                     self.postEvent("VIOLATION",self.simGUILearningDialog[checker.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
@@ -725,7 +727,7 @@ class ExecutorResynthesisExtensions(object):
                             checker.modify_stage += 1
                             self.spec['EnvTrans'] = checker.modify_LTL_file("")
                             self.recreateLTLfile(self.proj)
-                            realizable, realizableFS, output  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
+                            realizable, _, _  = self.compiler._synthesize()  # TRUE for realizable, FALSE for unrealizable
 
                             self.postEvent("VIOLATION",self.simGUILearningDialog[checker.modify_stage-1] + " and the specification is " + ("realizable." if realizable else "unrealizable."))
 
@@ -879,7 +881,7 @@ class ExecutorResynthesisExtensions(object):
             # if using fastslow set env init bits to be the same as sys init bits
             if self.proj.compile_options['fastslow']:
                 # iterate each bit
-                for x in range(max(1, int(math.ceil(math.log(len([1,2,3,4,5]), 2))))):
+                for x in range(max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))):
                     negate = False
                     if "!s.bit" + str(x) in current_sys_init_state:
                         negate = True
