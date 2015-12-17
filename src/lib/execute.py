@@ -139,7 +139,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         
         ############# NEW THING FOR THRESHOLDING FOR RESYNTHESIS
         self.envViolationCount = 0    
-        self.envViolationThres = 5
+        self.envViolationThres = 0
         
         ################# WHAT MODE ARE WE IN
         self.recovery = False
@@ -551,7 +551,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     specLen = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
                     logging.debug('Old goal number is:' + str(self.prev_z))
                     current_goal_id = str((int(self.prev_z) + 1) % specLen)
-                    logging.debug("Current goal number is:" + current_goal_id)
                 else:
                     current_goal_id = str(0)
 
@@ -571,6 +570,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 current_goal_id = self.prev_z
 
             logging.debug('init_prop_assignments:' + str(init_prop_assignments))
+            logging.debug("Current goal number is:" + current_goal_id)
+
             init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id=current_goal_id)
 
         #for using get LTLRepresentation of current sensors
@@ -607,10 +608,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             if self.proj.compile_options["neighbour_robot"]:
                 if self.proj.compile_options["multi_robot_mode"] == "negotiation":
                     if not self.disableEnvChar:
-                        self.violationTimeStamp = time.clock()
-                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                        logging.debug('Setting violation timeStamp')
-                        time.sleep(1)
+                        if self.violationTimeStamp == 0:
+                            self.violationTimeStamp = time.clock()
+                            self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                            logging.debug('Setting violation timeStamp')
+                            time.sleep(1)
 
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
@@ -906,10 +908,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # ------------ two_robot_negotiation ----------#
                             # store time stamp of violation
                             if not self.disableEnvChar:
-                                self.violationTimeStamp = time.clock()
-                                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                                logging.debug('Setting violation timeStamp')
-                                time.sleep(1)
+                                if self.violationTimeStamp == 0:
+                                    self.violationTimeStamp = time.clock()
+                                    self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                                    logging.debug('Setting violation timeStamp')
+                                    time.sleep(1)
                             # ---------------------------------------------- #
 
                         elif self.proj.compile_options["multi_robot_mode"] == "patching":

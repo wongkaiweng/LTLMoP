@@ -63,6 +63,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.radius = 5 # radius of robot poly
         self.robotLocationsCopy = {} # copy of the dPatching robotLocations dict
         self.actionStatusCopy = {} # copy of the dPatching actionStatus dict
+        self.robotSensorInfo = {} # sensor info dict
         # ----------------------------- #
 
     def _stop(self):
@@ -207,6 +208,9 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
 
         self.robotRegionStatus = self.robClient.requestRegionInfo()
 
+        #overloaded a bit. also request sensors info
+        self.robotSensorInfo = self.robClient.getRobotSensorsStatus()
+
     def _lockCurrentRegion(self, initial=False):
         """
         This funcion locks the current region pose such that mutual exclusion is enforced.
@@ -321,6 +325,24 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             #logging.debug("vertices:" + str(vertices))
             #logging.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
             return is_inside([pose[0], pose[1]], vertices)
+
+    def otherRobotSensorStatus(self, robot_name, sensor_name, initial=False):
+        """
+        request other robot's sensors from negotiation Monitor. For negotiation only
+        robot_name (string): name of the robot
+        sensor_name (string): sensor name
+        """
+        try:
+            if self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation":
+                return self.robotSensorInfo[robot_name][sensor_name]
+            elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
+                logging.warning('This function is not supported for d-patching')
+            else:
+                logging.warning('not matching any mode in dummy. returning None.')
+                return None
+        except:
+            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            return None
 
     def otherRobotLocation(self, robot_name, region, initial = False):
         """
