@@ -962,10 +962,45 @@ class ExecutorResynthesisExtensions(object):
         if checker is None:
             checker = self.LTLViolationCheck
 
+        ############ COPIED FROM SPECCOMPILER LINE 285 ###########
+        if self.proj.compile_options["decompose"]:
+            # substitute the regions name in specs
+            for m in re.finditer(r'near (?P<rA>\w+)', envLiveness):
+                envLiveness=re.sub(r'near (?P<rA>\w+)', "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+str(50)]])+")", envLiveness)
+            for m in re.finditer(r'within (?P<dist>\d+) (from|of) (?P<rA>\w+)', envLiveness):
+                envLiveness=re.sub(r'within ' + m.group('dist')+' (from|of) '+ m.group('rA'), "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+m.group('dist')]])+")", envLiveness)
+            for m in re.finditer(r'between (?P<rA>\w+) and (?P<rB>\w+)', envLiveness):
+                envLiveness=re.sub(r'between ' + m.group('rA')+' and '+ m.group('rB'),"("+' or '.join(["s."+r for r in self.proj.regionMapping['between$'+m.group('rA')+'$and$'+m.group('rB')+"$"]])+")", envLiveness)
+
+            # substitute decomposed region
+            for r in self.proj.regionMapping.keys():
+                envLiveness = re.sub('\\b' + r + '\\b', "("+' | '.join(["s."+x for x in self.proj.regionMapping[r]])+")", envLiveness)
+
+        else:
+            for r in self.proj.regionMapping.keys():
+                if not (r.lower() == "boundary"):
+                    envLiveness = re.sub('\\b' + r + '\\b', "s."+r, envLiveness)
+
+        regionList = ["s."+x.name for x in self.proj.rfi.regions]
+        regionListCompleted = [x.name+"_rc" for x in self.proj.rfi.regions]
+        ##################################################
+
         try:
             spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, \
                 self.compiler.sensorList, self.compiler.regionList, self.compiler.actuatorList,\
                 self.compiler.customsList, fastslow=self.proj.compile_options['fastslow'])
+
+            if self.proj.compile_options["use_region_bit_encoding"]:
+                # Define the number of bits needed to encode the regions
+                numBits = int(math.ceil(math.log(len(regionList),2)))
+
+                # creating the region bit encoding
+                bitEncode = parseEnglishToLTL.bitEncoding(len(regionList),numBits)
+
+                # switch to bit encodings for regions
+                spec["EnvGoals"] = parseEnglishToLTL.replaceRegionName(spec["EnvGoals"], bitEncode, regionList)
+                spec["EnvGoals"] = parseEnglishToLTL.replaceRegionName(spec["EnvGoals"], bitEncode, regionListCompleted)
+
         except:
             logging.debug('envLiveness:' + str(envLiveness))
             self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
