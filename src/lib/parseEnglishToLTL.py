@@ -939,7 +939,7 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             formulaInfo['type'] = 'EnvTrans'
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
-            tempFormula = re.sub('(next\('+prop+'\)|\\b'+prop+'\\b)', 'next('+ prop +')',tempFormula)
+            tempFormula = re.sub('(next\('+prop+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next('+ prop +')',tempFormula)
 
         elif prop in allRobotProp and formulaInfo['type'] == '':
             # make sure finished prop is not in here
@@ -950,17 +950,19 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
             if CompletionFlag:
                 if prop in regionList:
-                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next(e.'+ prop.replace("s.","") +'_rc)',tempFormula)
                 elif prop in actuatorList:
-                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next(e.'+ prop.replace("s.","") +'_ac)',tempFormula)
                 else:
-                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
+                    tempFormula = re.sub('(next\('+originalPropPattern+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next('+ prop +')',tempFormula)
             else:
-                tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
+                tempFormula = re.sub('(next\('+originalPropPattern+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next('+ prop +')',tempFormula)
+
         else:
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
-            tempFormula = re.sub('(next\('+originalPropPattern+'\)|\\b'+originalPropPattern+'\\b|'+originalPropPattern+')', 'next('+ prop +')',tempFormula)
+            tempFormula = re.sub('(next\('+originalPropPattern+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next('+ prop +')',tempFormula)
+
     formulaInfo['formula'] = '\t\t\t [](' + tempFormula + ') & \n'
 
     # set to system safety if its type cannot be identified.
@@ -1352,9 +1354,9 @@ def parseCond(condition,sensorList,regionList,actuatorList,customsList,ReqType,l
                 for prop in props:
                     prop = prop.replace('(','').replace(')','')
                     if prop in regionList:
-                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_rc', subTempFormula)
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n]|\\b'+prop+'\\b)', 'e.'+prop.replace('s.','')+'_rc', subTempFormula)
                     elif prop in actuatorList:
-                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n])', 'e.'+prop.replace('s.','')+'_ac', subTempFormula)
+                        subTempFormula = re.sub('(?<=[! &|(\t\n])'+prop+'(?=[ &|)\t\n]|\\b'+prop+'\\b)', 'e.'+prop.replace('s.','')+'_ac', subTempFormula)
 
             tempFormula = tempFormula + subTempFormula
 
