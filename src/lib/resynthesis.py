@@ -461,6 +461,8 @@ class ExecutorResynthesisExtensions(object):
         """
         spec negotiation in execute.py
         """
+        self.envViolationThres = 1000    # set higher thres for recovery
+
         # fist append new environment /and system init state
         self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
 

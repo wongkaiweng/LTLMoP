@@ -169,6 +169,10 @@ class ExecutorStrategyExtensions(object):
             # Well darn!
             logging.error("Could not find a suitable state to transition to!")
 
+            if self.proj.compile_options['recovery']:
+                # set violationCount to be violationThres such that envChar is triggered
+                self.envViolationCount = self.envViolationThres+1
+
             # %%%%%%%%%%%%  d-patching %%%%%%%%%%% #
             # update current region even though no next state is found.
             if self.proj.compile_options['neighbour_robot']:
@@ -184,6 +188,7 @@ class ExecutorStrategyExtensions(object):
                     self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
 
                 elif self.proj.compile_options["multi_robot_mode"] == "negotiation":
+
                     if self.proj.compile_options['include_heading']:
                         self.robClient.updateCompletedRobotRegion(sensor_state('regionCompleted'))
                     else:
@@ -251,11 +256,7 @@ class ExecutorStrategyExtensions(object):
                     #logging.debug('statesToConsider:' + str(statesToConsider))
                     possible_next_states = []
                     for state in statesToConsider:
-                        # also checks if states satisfy phi_e^t and phi_s^t
-                        envTrans_hold = self.envTransCheck.checkViolation(self.next_state, state)
-                        sysTrans_hold = self.sysTransCheck.checkViolation(self.next_state, state)
-                        if envTrans_hold and sysTrans_hold:
-                            possible_next_states.append(state)
+                        logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
                     """
                 else:
                     possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
@@ -271,6 +272,28 @@ class ExecutorStrategyExtensions(object):
                 # update our own dPatching
                 self.dPatchingExecutor.actionStatus[self.dPatchingExecutor.robotName] = {k.replace('_ac',''):v for k, v in self.next_state.getInputs(expand_domains=True).iteritems() if k.endswith('_ac')}
             # ******************************** #
+
+            """
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                if self.proj.compile_options['interactive']:
+                   possible_next_states = self.strategy.findTransitionableNextStates(from_state=self.next_state)
+
+                   statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
+                   #logging.debug('statesToConsider:' + str(statesToConsider))
+                   possible_next_states = []
+                   for state in statesToConsider:
+                       envTrans_hold = self.envTransCheck.checkViolation(self.next_state, state)
+                       sysTrans_hold = self.sysTransCheck.checkViolation(self.next_state, state)
+                       if envTrans_hold and sysTrans_hold:
+                           logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
+                else:
+                    try:
+                        possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
+                        for state in possible_next_states:
+                            logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
+                    except:
+                        pass
+            """
 
             if self.transition_contains_motion:
                 self.postEvent("INFO", "Crossed border from %s to %s!" % (self.strategy.current_state.getPropValue('regionCompleted').name, self.next_state.getPropValue('regionCompleted').name))
@@ -300,8 +323,8 @@ class ExecutorStrategyExtensions(object):
             if not self.proj.compile_options['interactive']:
                 self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
             else:
-                logging.debug(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
-                logging.debug('---------------------------------------------------------')
+                logging.info(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
+                logging.info('---------------------------------------------------------')
 
         if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
             ##########################################

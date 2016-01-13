@@ -629,12 +629,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         logging.debug("self.strategy.current_state:" + str(self.strategy.current_state))
         self.last_sensor_state = self.strategy.current_state.getInputs()
 
-        if self.proj.compile_options['symbolic']:
+        if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive']:
             self.envTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'EnvTrans')
             self.sysTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'SysTrans')
-            logging.debug('We came here')
-            self.strategy.envTransBDD, term1, term2 = self.strategy.evaluateBDD(self.envTransCheck.ltl_tree, LTLParser.LTLFormula.p.terminals)
-            logging.debug('We finished')
+            if self.proj.compile_options['symbolic']:
+                logging.debug('We came here')
+                self.strategy.envTransBDD, term1, term2 = self.strategy.evaluateBDD(self.envTransCheck.ltl_tree, LTLParser.LTLFormula.p.terminals)
+                logging.debug('We finished')
 
         # start checkViolation thread
         if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation":
@@ -815,7 +816,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 #           for patching: env_assumption hold is updated in thread
                 env_assumption_hold = self.env_assumption_hold and self.possible_states_env_assumption_hold #self.check_envTrans_violations() #
 
-                if not env_assumption_hold:
+                if not env_assumption_hold and not self.proj.compile_options['recovery']:
                     self.hsub.setVelocity(0,0)
 
                 ###############################################################

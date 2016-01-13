@@ -134,6 +134,8 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         # iterate until we actually get our state
         while re.search('[^aAgGsS01]',prompt):
             logging.debug("prompt:" + str(prompt))
+            if 'FORCEDNONWINNING' in prompt:
+                return []
             prompt = self.slugsProcess.stdout.readline().strip()
         currentState = prompt
 
