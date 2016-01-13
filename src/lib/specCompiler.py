@@ -623,7 +623,7 @@ class SpecCompiler(object):
                     logging.warning(err_message)
                     err = 1
 
-    def _getSlugsCommand(self, execution=False):
+    def _getSlugsCommand(self, execution=False, analysis=False):
         slugs_path = os.path.join(self.proj.ltlmop_root, "etc", "slugs", "src", "slugs")
 
         # Check that slugs is compiled
@@ -632,32 +632,37 @@ class SpecCompiler(object):
             raise RuntimeError("Please compile the synthesis code first.  For instructions, see etc/slugs/README.md.")
         cmd  = [slugs_path, "--sysInitRoboticsSemantics"]
 
-        if self.proj.compile_options["recovery"] and execution:
-            cmd.append("--simpleRecovery")
-            logging.debug('Synthesizing strategy with recovery')
+        if analysis:
+            cmd.append("--unrealizabilityAnalysis")
+            logging.debug('Analyzing specification')
+
+        else:
+            if self.proj.compile_options["recovery"] and (execution or not self.proj.compile_options['interactive']):
+                cmd.append("--simpleRecovery")
+                logging.debug('Synthesizing strategy with recovery')
+
+            if (self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution)):
+                cmd.append("--onlyRealizability")
+                logging.debug('Only checking realizability')
+
+            if self.proj.compile_options["symbolic"]:
+                cmd.append("--symbolicStrategy")
+                logging.debug('Synthesizing strategy with bdd')
+
+            if self.proj.compile_options['interactive'] and execution:
+                cmd.append("--interactiveStrategy")
+                logging.debug('Using interacitve strategy mode')
+
+            if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["winning_livenesses"]:
+                #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
+                cmd.append("--withWinningLiveness")
+                logging.debug('Synthesizing strategy which also outputs livenesses')
 
         if self.proj.compile_options["cooperative_gr1"]:
             cmd.append("--cooperativeGR1Strategy")
             logging.debug('Synthesizing strategy with cooperative strategy')
 
-        if self.proj.compile_options["symbolic"]:
-            cmd.append("--symbolicStrategy")
-            logging.debug('Synthesizing strategy with bdd')
-
-        if self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution):
-            cmd.append("--onlyRealizability")
-            logging.debug('Only checking realizability')
-
-        if self.proj.compile_options['interactive'] and execution:
-            cmd.append("--interactiveStrategy")
-            logging.debug('Using interacitve strategy mode')
-
-        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["winning_livenesses"]:
-            #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
-            cmd.append("--withWinningLiveness")
-            logging.debug('Synthesizing strategy which also outputs livenesses')
-
-        if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive']:
+        if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive'] or analysis:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin"])
         elif self.proj.compile_options["symbolic"]:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".bdd"])
@@ -756,27 +761,26 @@ class SpecCompiler(object):
     ################## ENV Assumption Learning ##############
     def _analyze(self, generatedSpec = False):
     ##########################################################
-        #print "WARNING: Debug not yet supported by slugs.  Using JTLV."
 
-        if self.proj.compile_options["synthesizer"].lower() != "jtlv":
-            raise RuntimeError("Analysis is currently only supported when using JTLV.")
+        if self.proj.compile_options["synthesizer"].lower() == "jtlv":
+            cmd = self._getGROneCommand("GROneDebug")
+            ############## ENV ASSUMPTION LEARNING #################
+            if generatedSpec:
+                cmd[-1] = cmd[-1].replace(".ltl",'Generated.ltl')
+            ########################################################
 
-        cmd = self._getGROneCommand("GROneDebug")
+        elif self.proj.compile_options["synthesizer"].lower() == "slugs":
+            cmd = self._getSlugsCommand(analysis=True)
+
         logging.debug(cmd)
         if cmd is None:
             return (False, False, [], "")
-        
-        ############## ENV ASSUMPTION LEARNING #################
-        if generatedSpec:
-            cmd[-1] = cmd[-1].replace(".ltl",'Generated.ltl')
-        ########################################################
-        
+
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
 
         realizable = False
         unsat = False
         nonTrivial = False
-
 
         output = ""
         to_highlight = []
@@ -847,10 +851,6 @@ class SpecCompiler(object):
                 unsat = True
 
         subp.stdout.close()
-        
-        #print "OUTPUT",output
-
-
 
         return (realizable, unsat, nonTrivial, to_highlight, output)
 
