@@ -138,9 +138,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.sensor_strategy = None
         
         ############# NEW THING FOR THRESHOLDING FOR RESYNTHESIS
-        self.envViolationCount = 0    
-        self.envViolationThres = 0
-        
+        self.envViolationCount = 0
+        #self.envViolationThres = 0 # currently for negotiation
+        self.envViolationThres = 100
+
         ################# WHAT MODE ARE WE IN
         self.recovery = False
         self.ENVcharacterization = True

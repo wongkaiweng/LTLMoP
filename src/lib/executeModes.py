@@ -90,10 +90,10 @@ class ExecutorModesExtensions(object):
                 self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
 
         if not env_assumption_hold:
+            logging.debug("======== envTrans violations ============")
             logging.debug("ACTUAL-current_state:" + str([x for x, value in deepcopy_current_state.getAll(expand_domains=True).iteritems() if value]))
             logging.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if value]))
             logging.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))
-            logging.debug("======== envTrans violations ============")
 
         return env_assumption_hold
 
@@ -202,9 +202,9 @@ class ExecutorModesExtensions(object):
                     current_state=deepcopy_current_state, sensor_state=deepcopy_sensor_state)
 
                 if not env_assumption_hold:
+                    logging.debug("======== envTrans violations detected ============")
                     logging.debug("sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs().iteritems() if value]))
                     logging.debug("env_assumption_hold:" + str(env_assumption_hold))
-                    logging.debug("======== envTrans violations detected ============")
 
                     # now checks if it's only about one coordinating robot
                     for x in self.globalEnvTransCheck.violated_specStr:

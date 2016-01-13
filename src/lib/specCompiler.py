@@ -638,7 +638,7 @@ class SpecCompiler(object):
 
         else:
             if self.proj.compile_options["recovery"] and (execution or not self.proj.compile_options['interactive']):
-                cmd.append("--simpleRecovery")
+                cmd.extend(["--simpleRecovery", "--optimisticRecovery"])
                 logging.debug('Synthesizing strategy with recovery')
 
             if (self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution)):
