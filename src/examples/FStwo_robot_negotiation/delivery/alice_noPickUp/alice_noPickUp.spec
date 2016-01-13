@@ -43,6 +43,7 @@ bob_library, 1
 bob_atrium, 1
 bob_storageBottom, 1
 bob_storageTop, 1
+itemReceived, 1
 
 
 ======== SPECIFICATION ========
@@ -69,13 +70,21 @@ others =
 Spec: # Specification in structured English
 Robot starts in library
 Environment starts with bob_emergencyExit
+#always (not blockTop and not blockMiddle and blockBottom) or  (not blockTop and blockMiddle and not blockBottom) or (not blockTop and not blockMiddle and not blockBottom)
+# or (blockTop and not blockMiddle and not blockBottom)
 
-visit library
-visit office
+# don't go to hallways when they are blocked
+#if you are sensing blockTop then do not hallwayTop
+#if you are sensing blockMiddle then do not hallwayCentral
+#if you are sensing blockBottm then do not hallwayBottom
 
+# pick up and deliver things
+#if you are sensing itemRequest and you have finished library then do pickup
+if you are sensing itemReceived then visit office
+#do deliver if and only if you are sensing itemReceived and you have finished office
+# system goals
+if you are not sensing itemReceived then visit library
 
-
-# assumptions about the other robot
 if you have finished library then do not (bob_library or bob_atrium)
 if you have finished atrium then do not (bob_library or bob_atrium or bob_hallwayCentral)
 if you have finished hallwayCentral then do not (bob_library or bob_atrium or bob_hallwayCentral or bob_reception or bob_office)
@@ -83,16 +92,6 @@ if you have finished reception then do not (bob_hallwayCentral or bob_reception 
 if you have finished office then do not (bob_office or bob_reception)
 
 ####### assumptions added for this nego (extra)
-#if you have finished atrium then do not (bob_storageBottom or bob_storageTop)
-#if you have finished storageTop then do not (bob_atrium or bob_storageTop or bob_hallwayTop)
-#if you have finished storageBottom then do not (bob_atrium or bob_storageBottom or bob_hallwayBottom)
-#if you have finished hallwayBottom then do not (bob_cafe or bob_storageBottom or bob_hallwayBottom)
-#if you have finished hallwayTop then do not (bob_emergencyExit or bob_storageTop or bob_hallwayTop)
-#if you have finished cafe then do not (bob_reception or bob_cafe or bob_hallwayBottom)
-#if you have finished emergencyExit then do not (bob_emergencyExit or bob_reception or bob_hallwayTop)
-#if you have finished reception then do not (bob_emergencyExit or bob_cafe)
-
-
 if you have finished atrium then do not (bob_storageBottom or bob_storageTop or bob_hallwayBottom or bob_hallwayTop)
 if you have finished storageTop then do not (bob_atrium or bob_storageTop or bob_hallwayTop or bob_storageBottom or bob_emergencyExit)
 if you have finished storageBottom then do not (bob_atrium or bob_storageBottom or bob_hallwayBottom or bob_storageTop or bob_cafe)
@@ -101,7 +100,6 @@ if you have finished hallwayTop then do not (bob_emergencyExit or bob_storageTop
 if you have finished cafe then do not (bob_reception or bob_cafe or bob_hallwayBottom or bob_storageBottom or bob_emergencyExit)
 if you have finished emergencyExit then do not (bob_emergencyExit or bob_reception or bob_hallwayTop or bob_storageTop or bob_cafe)
 if you have finished reception then do not (bob_emergencyExit or bob_cafe or bob_hallwayTop or bob_hallwayBottom)
-
 
 
 # after nego sysTrans (new)

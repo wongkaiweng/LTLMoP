@@ -5,6 +5,8 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
+pickup, 1
+deliver, 1
 
 CompileOptions:
 neighbour_robot: True
@@ -32,6 +34,7 @@ RegionFile: # Relative path of region description file
 ../../../../../../../../../home/catherine/LTLMoP/src/examples/FStwo_robot_negotiation/delivery/threeCorridorsShort.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
+itemRequest, 1
 bob_hallwayTop, 1
 bob_office, 1
 bob_reception, 1
@@ -43,6 +46,7 @@ bob_library, 1
 bob_atrium, 1
 bob_storageBottom, 1
 bob_storageTop, 1
+itemReceived, 1
 
 
 ======== SPECIFICATION ========
@@ -67,32 +71,28 @@ cafe = p12
 others = 
 
 Spec: # Specification in structured English
-Robot starts in library
-Environment starts with bob_emergencyExit
+Robot starts in office
+Environment starts with bob_storageBottom
 
-visit library
-visit office
+# pick up and deliver things
+if you are sensing itemRequest and you have finished office then do pickup
+if you are sensing itemReceived then visit library
+do deliver if and only if you are sensing itemReceived and you have finished library
+if you are activating deliver then stay there
+if you are not sensing itemReceived then visit office
 
+#if you are not sensing itemReceived or itemRequest then visit hallwayCentral
 
-
-# assumptions about the other robot
+# assumptions about the other robot - one step
 if you have finished library then do not (bob_library or bob_atrium)
 if you have finished atrium then do not (bob_library or bob_atrium or bob_hallwayCentral)
-if you have finished hallwayCentral then do not (bob_library or bob_atrium or bob_hallwayCentral or bob_reception or bob_office)
+if you have finished hallwayCentral then do not ( bob_atrium or bob_hallwayCentral or bob_reception)
+
+#if you have finished hallwayCentral then do not (bob_library or bob_atrium or bob_hallwayCentral or bob_reception or bob_office)
 if you have finished reception then do not (bob_hallwayCentral or bob_reception or bob_office)
 if you have finished office then do not (bob_office or bob_reception)
 
-####### assumptions added for this nego (extra)
-#if you have finished atrium then do not (bob_storageBottom or bob_storageTop)
-#if you have finished storageTop then do not (bob_atrium or bob_storageTop or bob_hallwayTop)
-#if you have finished storageBottom then do not (bob_atrium or bob_storageBottom or bob_hallwayBottom)
-#if you have finished hallwayBottom then do not (bob_cafe or bob_storageBottom or bob_hallwayBottom)
-#if you have finished hallwayTop then do not (bob_emergencyExit or bob_storageTop or bob_hallwayTop)
-#if you have finished cafe then do not (bob_reception or bob_cafe or bob_hallwayBottom)
-#if you have finished emergencyExit then do not (bob_emergencyExit or bob_reception or bob_hallwayTop)
-#if you have finished reception then do not (bob_emergencyExit or bob_cafe)
-
-
+####### assumptions added for this nego (extra) - two steps
 if you have finished atrium then do not (bob_storageBottom or bob_storageTop or bob_hallwayBottom or bob_hallwayTop)
 if you have finished storageTop then do not (bob_atrium or bob_storageTop or bob_hallwayTop or bob_storageBottom or bob_emergencyExit)
 if you have finished storageBottom then do not (bob_atrium or bob_storageBottom or bob_hallwayBottom or bob_storageTop or bob_cafe)
@@ -102,6 +102,16 @@ if you have finished cafe then do not (bob_reception or bob_cafe or bob_hallwayB
 if you have finished emergencyExit then do not (bob_emergencyExit or bob_reception or bob_hallwayTop or bob_storageTop or bob_cafe)
 if you have finished reception then do not (bob_emergencyExit or bob_cafe or bob_hallwayTop or bob_hallwayBottom)
 
+
+####### assumptions added for this nego (extra) - one step
+#if you have finished atrium then do not (bob_storageBottom or bob_storageTop)
+#if you have finished storageTop then do not (bob_atrium or bob_storageTop or bob_hallwayTop)
+#if you have finished storageBottom then do not (bob_atrium or bob_storageBottom or bob_hallwayBottom)
+#if you have finished hallwayBottom then do not (bob_cafe or bob_storageBottom or bob_hallwayBottom)
+#if you have finished hallwayTop then do not (bob_emergencyExit or bob_storageTop or bob_hallwayTop)
+#if you have finished cafe then do not (bob_reception or bob_cafe or bob_hallwayBottom)
+#if you have finished emergencyExit then do not (bob_emergencyExit or bob_reception or bob_hallwayTop)
+#if you have finished reception then do not (bob_emergencyExit or bob_cafe)
 
 
 # after nego sysTrans (new)

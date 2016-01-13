@@ -1,0 +1,551 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+fountain2
+fountain1
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                1188.0, 
+                536.0
+            ], 
+            [
+                1404.0, 
+                536.0
+            ], 
+            [
+                1404.0, 
+                364.0
+            ], 
+            [
+                1188.0, 
+                364.0
+            ], 
+            [
+                1188.0, 
+                0.0
+            ], 
+            [
+                932.0, 
+                0.0
+            ], 
+            [
+                499.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                364.0
+            ], 
+            [
+                0.0, 
+                364.0
+            ], 
+            [
+                0.0, 
+                536.0
+            ], 
+            [
+                240.0, 
+                536.0
+            ], 
+            [
+                240.0, 
+                843.0
+            ], 
+            [
+                500.0, 
+                843.0
+            ], 
+            [
+                932.0, 
+                843.0
+            ], 
+            [
+                1188.0, 
+                843.0
+            ]
+        ], 
+        "position": [
+            109.0, 
+            87.0
+        ], 
+        "type": "poly", 
+        "size": [
+            1404.0, 
+            843.0
+        ]
+    }, 
+    {
+        "name": "office", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            1297.0, 
+            451.0
+        ], 
+        "type": "rect", 
+        "size": [
+            216.0, 
+            172.0
+        ]
+    }, 
+    {
+        "name": "fountain2", 
+        "color": [
+            30, 
+            18, 
+            7
+        ], 
+        "height": 0.0, 
+        "position": [
+            609.0, 
+            623.0
+        ], 
+        "type": "rect", 
+        "size": [
+            432.0, 
+            167.0
+        ]
+    }, 
+    {
+        "name": "cafe", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                167.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                256.0, 
+                0.0
+            ], 
+            [
+                256.0, 
+                307.0
+            ], 
+            [
+                0.0, 
+                307.0
+            ]
+        ], 
+        "position": [
+            1041.0, 
+            623.0
+        ], 
+        "type": "poly", 
+        "size": [
+            256.0, 
+            307.0
+        ]
+    }, 
+    {
+        "name": "reception", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            1041.0, 
+            451.0
+        ], 
+        "type": "rect", 
+        "size": [
+            256.0, 
+            172.0
+        ]
+    }, 
+    {
+        "name": "emergencyExit", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                256.0, 
+                0.0
+            ], 
+            [
+                256.0, 
+                364.0
+            ], 
+            [
+                0.0, 
+                364.0
+            ]
+        ], 
+        "position": [
+            1041.0, 
+            87.0
+        ], 
+        "type": "poly", 
+        "size": [
+            256.0, 
+            364.0
+        ]
+    }, 
+    {
+        "name": "fountain1", 
+        "color": [
+            92, 
+            92, 
+            44
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                1.0, 
+                0.0
+            ], 
+            [
+                433.0, 
+                0.0
+            ], 
+            [
+                433.0, 
+                176.0
+            ], 
+            [
+                1.0, 
+                176.0
+            ], 
+            [
+                0.0, 
+                176.0
+            ]
+        ], 
+        "position": [
+            608.0, 
+            275.0
+        ], 
+        "type": "poly", 
+        "size": [
+            433.0, 
+            176.0
+        ]
+    }, 
+    {
+        "name": "storageBottom", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                260.0, 
+                0.0
+            ], 
+            [
+                260.0, 
+                167.0
+            ], 
+            [
+                260.0, 
+                307.0
+            ], 
+            [
+                0.0, 
+                307.0
+            ]
+        ], 
+        "position": [
+            349.0, 
+            623.0
+        ], 
+        "type": "poly", 
+        "size": [
+            260.0, 
+            307.0
+        ]
+    }, 
+    {
+        "name": "library", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            109.0, 
+            451.0
+        ], 
+        "type": "rect", 
+        "size": [
+            240.0, 
+            172.0
+        ]
+    }, 
+    {
+        "name": "storageTop", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                259.0, 
+                0.0
+            ], 
+            [
+                259.0, 
+                188.0
+            ], 
+            [
+                259.0, 
+                364.0
+            ], 
+            [
+                0.0, 
+                364.0
+            ]
+        ], 
+        "position": [
+            349.0, 
+            87.0
+        ], 
+        "type": "poly", 
+        "size": [
+            259.0, 
+            364.0
+        ]
+    }, 
+    {
+        "name": "atrium", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                259.0, 
+                0.0
+            ], 
+            [
+                260.0, 
+                0.0
+            ], 
+            [
+                260.0, 
+                172.0
+            ], 
+            [
+                0.0, 
+                172.0
+            ]
+        ], 
+        "position": [
+            349.0, 
+            451.0
+        ], 
+        "type": "poly", 
+        "size": [
+            260.0, 
+            172.0
+        ]
+    }, 
+    {
+        "name": "hallwayBottom", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                432.0, 
+                0.0
+            ], 
+            [
+                432.0, 
+                140.0
+            ], 
+            [
+                0.0, 
+                140.0
+            ]
+        ], 
+        "position": [
+            609.0, 
+            790.0
+        ], 
+        "type": "poly", 
+        "size": [
+            432.0, 
+            140.0
+        ]
+    }, 
+    {
+        "name": "hallwayCentral", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            609.0, 
+            451.0
+        ], 
+        "type": "rect", 
+        "size": [
+            432.0, 
+            172.0
+        ]
+    }, 
+    {
+        "name": "hallwayTop", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                433.0, 
+                0.0
+            ], 
+            [
+                433.0, 
+                188.0
+            ], 
+            [
+                1.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                188.0
+            ]
+        ], 
+        "position": [
+            608.0, 
+            87.0
+        ], 
+        "type": "poly", 
+        "size": [
+            433.0, 
+            188.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	office	1513.0	451.0	1297.0	451.0	1513.0	451.0	1513.0	623.0	1513.0	623.0	1297.0	623.0
+boundary	cafe	1297.0	930.0	1297.0	623.0	1041.0	930.0	1297.0	930.0
+boundary	emergencyExit	1041.0	87.0	1297.0	87.0	1297.0	451.0	1297.0	87.0
+boundary	storageBottom	609.0	930.0	349.0	930.0	349.0	623.0	349.0	930.0
+boundary	library	109.0	451.0	349.0	451.0	109.0	623.0	109.0	451.0	109.0	623.0	349.0	623.0
+boundary	storageTop	349.0	87.0	349.0	451.0	349.0	87.0	608.0	87.0
+boundary	hallwayBottom	609.0	930.0	1041.0	930.0
+boundary	hallwayTop	608.0	87.0	1041.0	87.0
+office	reception	1297.0	451.0	1297.0	623.0
+fountain2	cafe	1041.0	790.0	1041.0	623.0
+fountain2	storageBottom	609.0	790.0	609.0	623.0
+fountain2	hallwayBottom	609.0	790.0	1041.0	790.0
+fountain2	hallwayCentral	1041.0	623.0	609.0	623.0
+cafe	reception	1297.0	623.0	1041.0	623.0
+cafe	hallwayBottom	1041.0	930.0	1041.0	790.0
+reception	emergencyExit	1041.0	451.0	1297.0	451.0
+reception	hallwayCentral	1041.0	451.0	1041.0	623.0
+emergencyExit	fountain1	1041.0	451.0	1041.0	275.0
+emergencyExit	hallwayTop	1041.0	275.0	1041.0	87.0
+fountain1	storageTop	608.0	451.0	608.0	275.0
+fountain1	atrium	608.0	451.0	609.0	451.0
+fountain1	hallwayCentral	609.0	451.0	1041.0	451.0
+fountain1	hallwayTop	609.0	275.0	1041.0	275.0	608.0	275.0	609.0	275.0
+storageBottom	atrium	349.0	623.0	609.0	623.0
+storageBottom	hallwayBottom	609.0	930.0	609.0	790.0
+library	atrium	349.0	623.0	349.0	451.0
+storageTop	atrium	608.0	451.0	349.0	451.0
+storageTop	hallwayTop	608.0	275.0	608.0	87.0
+atrium	hallwayCentral	609.0	451.0	609.0	623.0
+

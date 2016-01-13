@@ -43,6 +43,7 @@ alice_library, 1
 alice_atrium, 1
 alice_storageBottom, 1
 alice_storageTop, 1
+itemReceived, 1
 
 
 ======== SPECIFICATION ========
@@ -67,8 +68,8 @@ cafe = p12
 others = 
 
 Spec: # Specification in structured English
-Robot starts in emergencyExit
-Environment starts with alice_library
+Robot starts in storageBottom
+Environment starts with alice_office
 
 visit hallwayTop
 visit hallwayBottom
@@ -83,12 +84,4 @@ if you have finished reception then do not (alice_reception or alice_cafe)
 if you have finished cafe then do not (alice_cafe or alice_hallwayBottom)
 if you have finished hallwayBottom then do not (alice_hallwayBottom or alice_storageBottom)
 if you have finished storageBottom then do not (alice_atrium or alice_storageBottom)
-
-
-# sysTrans from nego
-###if you are sensing alice_library then do not (finished library or finished atrium)
-#if you are sensing alice_atrium then do not (finished library or finished atrium or finished hallwayCentral)
-#####if you are sensing alice_hallwayCentral then do not (finished library or finished atrium or finished hallwayCentral or finished reception or finished reception or finished office)
-#if you are sensing alice_reception then do not (finished hallwayCentral or finished reception or finished office)
-#####if you are sensing alice_office then do not (finished office or finished reception)
 

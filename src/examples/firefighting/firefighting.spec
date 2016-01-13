@@ -17,11 +17,15 @@ parser: structured
 symbolic: False
 use_region_bit_encoding: True
 multi_robot_mode: negotiation
+cooperative_gr1: False
 fastslow: False
-recovery: True
+only_realizability: False
+recovery: False
 include_heading: False
-synthesizer: slugs
+winning_livenesses: False
+synthesizer: jtlv
 decompose: True
+interactive: False
 
 CurrentConfigName:
 Basic Simulation
@@ -39,6 +43,8 @@ hazardous_item, 1
 
 
 ======== SPECIFICATION ========
+
+GlobalSensors: # Sensors accessible by all robots
 
 OtherRobot: # The other robot in the same workspace
 

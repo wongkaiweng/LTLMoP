@@ -13,11 +13,15 @@ parser: structured
 symbolic: False
 use_region_bit_encoding: True
 multi_robot_mode: negotiation
+cooperative_gr1: True
 fastslow: True
+only_realizability: False
 recovery: False
 include_heading: True
+winning_livenesses: False
 synthesizer: slugs
 decompose: True
+interactive: False
 
 CurrentConfigName:
 aliceWithBobSensor
@@ -38,19 +42,24 @@ bob_r5_rc, 1
 bob_r2_rc, 1
 bob_r4_rc, 1
 bob_r1_rc, 1
+bob_r6, 1
+bob_r6_rc, 1
 
 
 ======== SPECIFICATION ========
+
+GlobalSensors: # Sensors accessible by all robots
 
 OtherRobot: # The other robot in the same workspace
 bob
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r4 = p2
-r5 = p1
-r1 = p5
-r2 = p4
-r3 = p3
+r4 = p3
+r5 = p2
+r6 = p1
+r1 = p6
+r2 = p5
+r3 = p4
 others = 
 
 Spec: # Specification in structured English
