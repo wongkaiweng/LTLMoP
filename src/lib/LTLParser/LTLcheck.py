@@ -394,8 +394,8 @@ class LTL_Check:
 
         # compare new and old violated line no and only returns new ones
         old_violated_spec_line_no = list(set(self.old_violated_spec_line_no) - set([0]))
-        self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
-        self.violated_spec_line_no = list(set(self.violated_spec_line_no) - set(old_violated_spec_line_no))
+        #self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+        #self.violated_spec_line_no = list(set(self.violated_spec_line_no) - set(old_violated_spec_line_no))
 
         # return whether the environment assumptions are being violated
         return value, copy.deepcopy(self.violated_spec_line_no), copy.deepcopy(self.violated_specStr), copy.deepcopy(self.violated_specStr_with_no_specText_match)
@@ -434,7 +434,7 @@ class LTL_Check:
 
         # for current inputs only
         # **** Note we changed from using curInputs in 1st stage to nextInputs with next operator. (i.e. sensor_state)
-        curInputsOnly = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=True, include_outputs=False)
+        curInputsOnly = self.sensor_state.getLTLRepresentation(mark_players=True, use_next=True, include_inputs=True, include_outputs=False)
         if not '(' + curInputsOnly + ')' in self.add_ltl_current_list:
             self.add_ltl_current_list.append('(' + curInputsOnly + ')')
 
@@ -480,13 +480,10 @@ class LTL_Check:
         Modify spec['EnvTrans'] for runtime verification "learning" and return the new one.
         originalEnvTrans: original env safety from user (from structured English to LTL)
 
-        * remember to update the self.ltl_tree with updateEnvTransTree
+        self.ltl_tree updated with updateEnvTransTree in resynthesis.py
         """
 
         self.append_state_to_LTL()
-
-        # choosing modify stage to be added
-        #self.ltl_tree = LTLFormula.parseLTL(str(originalEnvTrans + self.env_safety_assumptions_stage[str(self.modify_stage)]))
 
         # remove line 0 as forced to be so that RV violation for [](FALSE .. is printed again)
         try:
@@ -686,7 +683,7 @@ class LTL_Check:
                         if debug_false_ltl:
                             logging.debug('--------------------------------------')
                         try:
-                            if not self.LTLMoP and debug_false_ltl:
+                            if not self.LTLMoP:
                                 logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
                             treeNo = self.ltlTree_to_lineNo[LTLFormula.treeToString(x)]
                             if self.LTLMoP and debug_false_ltl:

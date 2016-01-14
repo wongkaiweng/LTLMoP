@@ -139,8 +139,6 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         
         ############# NEW THING FOR THRESHOLDING FOR RESYNTHESIS
         self.envViolationCount = 0
-        #self.envViolationThres = 0 # currently for negotiation
-        self.envViolationThres = 100
 
         ################# WHAT MODE ARE WE IN
         self.recovery = False
@@ -175,6 +173,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.possibleStatesCheckEnvTransViolationThread = None # for checking violations
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
+    def setEnvViolationThreshold(self):
+        if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['multi_robot_mode'] == 'negotiation':
+            self.envViolationThres = 0 # currently for negotiation
+        else:
+            self.envViolationThres = 100
 
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
@@ -343,6 +346,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
             if self.proj.compile_options['decompose']:
                 self.proj.rfiold = self.proj.rfi  # Save the undecomposed regions
+
+        self.setEnvViolationThreshold() # set different thres in different modes.
 
         if self.proj.compile_options['decompose']:
             self.proj.rfi = self.proj.loadRegionFile(decomposed=True)
@@ -936,6 +941,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in last_next_states]:
                         self.envViolationCount += 1
                         logging.debug("No of env violations:"+ str(self.envViolationCount))
+                        if self.proj.compile_options['recovery']:
+                            self.runRuntimeMonitoring.set()
 
                     # print out the violated specs
                     for x in self.violated_spec_line_no:
@@ -1007,8 +1014,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 ########################################
                                 #### FOR BOTH LEANRING AND RECOVERY  ###
                                 ########################################
+
                                 if str(self.strategy.current_state.state_id) in [x.state_id for x in last_next_states] \
-                                or self.envViolationCount >= self.envViolationThres:
+                                and self.envViolationCount >= self.envViolationThres:
 
                                     # reset next state difference count
                                     self.envViolationCount = 0
@@ -1050,7 +1058,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                     # For print violated safety in the log (update lines violated in every iteration)
                     if len(self.violated_spec_line_no) == 0 and self.old_violated_spec_line_no !=self.violated_spec_line_no and (self.recovery or self.disableEnvChar):
-                        #self.postEvent("RESOLVED", "The specification violation is resolved.")
+                        if not self.proj.compile_options['neighbour_robot']:
+                            self.postEvent("RESOLVED", "The specification violation is resolved.")
+                            #self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
 
                         # ------------ two_robot_negotiation ----------#
                         # store time stamp of violation
@@ -1060,13 +1070,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.robClient.setViolationTimeStamp(self.violationTimeStamp)
                             logging.debug('Resetting violation timeStamp')
 
-                            # save a copy
-                            self.old_violated_specStr = copy.copy(self.violated_spec_list)
-                            self.old_violated_specStr_with_no_specText_match = copy.copy(self.violated_spec_list_with_no_specText_match)
-                            self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+                            # # save a copy
+                            # self.old_violated_specStr = copy.copy(self.violated_spec_list)
+                            # self.old_violated_specStr_with_no_specText_match = copy.copy(self.violated_spec_list_with_no_specText_match)
+                            # self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
 
-                            self.old_possible_states_violated_specStr_with_no_specText_match = copy.copy(self.possible_states_violated_spec_list_with_no_specText_match)
-                            self.old_possible_states_violated_spec_line_no = copy.copy(self.possible_states_violated_spec_line_no)
+                            # self.old_possible_states_violated_specStr_with_no_specText_match = copy.copy(self.possible_states_violated_spec_list_with_no_specText_match)
+                            # self.old_possible_states_violated_spec_line_no = copy.copy(self.possible_states_violated_spec_line_no)
+
+                    # save a copy
+                    self.old_violated_specStr = copy.copy(self.violated_spec_list)
+                    self.old_violated_specStr_with_no_specText_match = copy.copy(self.violated_spec_list_with_no_specText_match)
+                    self.old_violated_spec_line_no = copy.copy(self.violated_spec_line_no)
+
+                    self.old_possible_states_violated_specStr_with_no_specText_match = copy.copy(self.possible_states_violated_spec_list_with_no_specText_match)
+                    self.old_possible_states_violated_spec_line_no = copy.copy(self.possible_states_violated_spec_line_no)
                         # ---------------------------------------------- #
 
                 #self.currentViolationLineNo = self.LTLViolationCheck.violated_spec_line_no[:]
