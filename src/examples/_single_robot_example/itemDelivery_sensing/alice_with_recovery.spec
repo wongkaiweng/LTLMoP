@@ -18,7 +18,7 @@ multi_robot_mode: negotiation
 cooperative_gr1: True
 fastslow: True
 only_realizability: False
-recovery: False
+recovery: True
 include_heading: False
 winning_livenesses: False
 synthesizer: slugs
@@ -64,13 +64,10 @@ others =
 Spec: # Specification in structured English
 Robot starts in library
 
-always (not blockTop and not blockMiddle and blockBottom) or  (not blockTop and blockMiddle and not blockBottom) or (not blockTop and not blockMiddle and not blockBottom) or ( blockTop and not blockMiddle and not blockBottom)
-
+always (not blockTop and not blockMiddle and blockBottom) or  (not blockTop and blockMiddle and not blockBottom) or (not blockTop and not blockMiddle and not blockBottom) or (blockTop and not blockMiddle and not blockBottom)
 always not blockTop
 #always not blockMiddle
 #always not blockBottom
-
-#infinitely often not blockTop and finished storageTop
 
 # don't go to hallways when they are blocked
 if you are sensing blockTop then do not hallwayTop
@@ -82,6 +79,7 @@ if you have finished hallwayCentral then do not blockMiddle
 if you have finished hallwayBottom then do not blockBottom
 
 # pick up and deliver things
+#if you are sensing itemRequest then do pickup
 do pickup if and only if you are sensing itemRequest and you have finished library
 if you are sensing itemReceived then visit office
 do deliver if and only if you are sensing itemReceived and you have finished office

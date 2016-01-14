@@ -29,7 +29,7 @@ basicSim
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-../../../../../../../../../home/catherine/LTLMoP/src/examples/FStwo_robot_negotiation/delivery/threeCorridorsShort.regions
+../threeCorridorsShort.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 bob_hallwayTop, 1
