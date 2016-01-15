@@ -191,6 +191,12 @@ class RobotClient:
             
                     # change region props with our name to region bits (parseEnglishToLTL?)              
                     specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow, self.proj.compile_options['include_heading'])
+
+        # replace actuator names
+        # e.robotName_Act(actuatorName) = sys prop
+        # e.robotName_(actuatorName_ac) = _ac prop
+        specToAppend = specToAppend.replace('e.'+self.robotName+'_Act','s.').replace('e.'+self.robotName+'_','e.')
+
         return specToAppend 
         
     def requestRegionInfo(self):

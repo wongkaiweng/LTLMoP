@@ -492,8 +492,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 if firstRun:
                     self.robClient = negotiationMonitor.robotClient.RobotClient(self.hsub, self.proj)
                 self.robClient.updateRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
-                self.robClient.updateRobotSensors(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors\
-                    if not x.startswith(tuple(self.proj.otherRobot)) and not x.endswith('_rc')])) # also update sensors
+                tempDict = self.hsub.getSensorValue([x for x in self.proj.enabled_sensors\
+                    if not x.startswith(tuple(self.proj.otherRobot)) and not x.endswith('_rc')])
+                tempDict.update(self.current_outputs)
+                self.robClient.updateRobotSensors(tempDict) # also update sensors
                 if self.proj.compile_options['include_heading']:
                     self.robClient.updateCompletedRobotRegion(self.proj.rfi.regions[self._getCurrentRegionFromPose()])
                 # check negotiation statue only for two robot nego

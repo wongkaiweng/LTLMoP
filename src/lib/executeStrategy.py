@@ -156,8 +156,10 @@ class ExecutorStrategyExtensions(object):
                     self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
 
                 # also update sensors
-                self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
-                    if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
+                tempDict = {k: v for k, v in sensor_state.iteritems()\
+                    if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')}
+                tempDict.update(self.strategy.current_state.getOutputs(expand_domains=True))
+                self.robClient.updateRobotSensors(tempDict)
 
                 if len(next_states) == 0:
                     # Well darn!
@@ -195,8 +197,10 @@ class ExecutorStrategyExtensions(object):
                         self.robClient.updateRobotRegion(sensor_state['regionCompleted'])
 
                     # also update sensors
-                    self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
-                        if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
+                    tempDict = {k: v for k, v in sensor_state.iteritems()\
+                        if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')}
+                    tempDict.update(self.strategy.current_state.getOutputs(expand_domains=True))
+                    self.robClient.updateRobotSensors(tempDict)
 
             return
 
@@ -229,8 +233,10 @@ class ExecutorStrategyExtensions(object):
                     self.robClient.updateRobotRegion(self.next_region)
 
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
-                    self.robClient.updateRobotSensors({k: v for k, v in sensor_state.iteritems()\
-                        if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')})
+                tempDict = {k: v for k, v in sensor_state.iteritems()\
+                    if k != 'regionCompleted' and not k.startswith(tuple(self.proj.otherRobot)) and not k.endswith('_rc')}
+                tempDict.update(self.next_state.getOutputs(expand_domains=True))
+                self.robClient.updateRobotSensors(tempDict)
             # ------------------------------- #
 
             # See what we, as the system, need to do to get to this new state

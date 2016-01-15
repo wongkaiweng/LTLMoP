@@ -927,7 +927,7 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             return formulaInfo
 
         if (prop in sensorList and formulaInfo['type'] == 'SysTrans') or \
-           (prop in allRobotProp and formulaInfo['type'] == 'EnvTrans'):
+           (prop in allRobotProp and formulaInfo['type'] == 'EnvTrans' and not CompletionFlag):
             print 'ERROR(3): Could not parse the sentence in line '+ str(lineInd)+' containing:'
             print sentence
             print 'because both environment and robot propositions are used \n'
@@ -935,15 +935,16 @@ def parseSafety(sentence,sensorList,regionList,actuatorList,customsList,lineInd,
             return formulaInfo
 
         originalPropPattern = originalProp.replace('(','\(').replace(')','\)')
-        if prop in sensorList and formulaInfo['type'] == '':
-            formulaInfo['type'] = 'EnvTrans'
+        if prop in sensorList:
+            if formulaInfo['type'] == '':
+                formulaInfo['type'] = 'EnvTrans'
             # replace every occurrence of the proposition with next(proposition)
             # it is written this way to prevent nesting of 'next' (as with the .replace method)
             tempFormula = re.sub('(next\('+prop+'\)|((?<=[! &|(\t\n])|^)'+originalPropPattern+'((?=[ &|)\t\n])|$)|\\b'+originalPropPattern+'\\b)', 'next('+ prop +')',tempFormula)
 
-        elif prop in allRobotProp and formulaInfo['type'] == '':
+        elif prop in allRobotProp:
             # make sure finished prop is not in here
-            if originalProp == prop:
+            if originalProp == prop and formulaInfo['type'] == '':
                 formulaInfo['type'] = 'SysTrans'
 
             # replace every occurrence of the proposition with next(proposition)
