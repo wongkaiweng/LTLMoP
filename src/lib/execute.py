@@ -20,7 +20,7 @@
 
 import sys, os, getopt, textwrap
 import threading, subprocess, time
-
+import pdb, traceback
 
 # Climb the tree to find out where we are
 p = os.path.abspath(__file__)
@@ -1156,42 +1156,48 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
     else:
         xmlrpc_server = SimpleXMLRPCServer(("127.0.0.1", listen_port), logRequests=False, allow_none=True)
 
-    # Create the execution context object
-    e = LTLMoPExecutor()
+    try:
+        # Create the execution context object
+        e = LTLMoPExecutor()
 
-    # Register functions with the XML-RPC server
-    xmlrpc_server.register_instance(e)
+        # Register functions with the XML-RPC server
+        xmlrpc_server.register_instance(e)
 
-    # Kick off the XML-RPC server thread
-    XMLRPCServerThread = threading.Thread(target=xmlrpc_server.serve_forever)
-    XMLRPCServerThread.daemon = True
-    XMLRPCServerThread.start()
-    logging.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
+        # Kick off the XML-RPC server thread
+        XMLRPCServerThread = threading.Thread(target=xmlrpc_server.serve_forever)
+        XMLRPCServerThread.daemon = True
+        XMLRPCServerThread.start()
+        logging.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
 
-    # Start the GUI if necessary
-    if show_gui:
-        # Create a subprocess
-        logging.info("Starting GUI window...")
-        p_gui = subprocess.Popen([sys.executable, "-u", "-m", "lib.simGUI", str(listen_port)])
+        # Start the GUI if necessary
+        if show_gui:
+            # Create a subprocess
+            logging.info("Starting GUI window...")
+            p_gui = subprocess.Popen([sys.executable, "-u", "-m", "lib.simGUI", str(listen_port)])
 
-        # Wait for GUI to fully load, to make sure that
-        # to make sure all messages are redirected
-        e.externalEventTargetRegistered.wait()
+            # Wait for GUI to fully load, to make sure that
+            # to make sure all messages are redirected
+            e.externalEventTargetRegistered.wait()
 
-    if spec_file is not None:
-        # Tell executor to load spec & aut
-        #if aut_file is None:
-        #    aut_file = spec_file.rpartition('.')[0] + ".aut"
-        e.initialize(spec_file, aut_file, firstRun=True)
+        if spec_file is not None:
+            # Tell executor to load spec & aut
+            #if aut_file is None:
+            #    aut_file = spec_file.rpartition('.')[0] + ".aut"
+            e.initialize(spec_file, aut_file, firstRun=True)
 
-    # Start the executor's main loop in this thread
-    e.run()
-    
-    # Clean up on exit
-    logging.info("Waiting for XML-RPC server to shut down...")
-    xmlrpc_server.shutdown()
-    XMLRPCServerThread.join()
-    logging.info("XML-RPC server shutdown complete.  Goodbye.")
+        # Start the executor's main loop in this thread
+        e.run()
+
+        # Clean up on exit
+        logging.info("Waiting for XML-RPC server to shut down...")
+        xmlrpc_server.shutdown()
+        XMLRPCServerThread.join()
+        logging.info("XML-RPC server shutdown complete.  Goodbye.")
+    except:
+        print "Exception !!!:"
+        traceback.print_exc(file=sys.stdout)
+        traceback.print_stack()
+        pdb.post_mortem()
 
 
 ### Command-line argument parsing ###

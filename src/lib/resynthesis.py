@@ -932,7 +932,7 @@ class ExecutorResynthesisExtensions(object):
         "simplified version of that in specEditor.py"
 
         # instantiate if necessary (instantiate everytime since we are using showModal here
-        Editor = wx.PySimpleApp(0)
+        Editor = wx.App(False) #wx.PySimpleApp(0)
         self.analysisDialog = livenessEditor.AnalysisResultsDialog(self,None)  #parent as resynthesis now
 
         # Clear dialog to make way for new info
