@@ -127,6 +127,7 @@ class RobotClient:
         
         #spec = spec.replace('\t',"").replace(' ','').replace('\n','')
         spec = spec.replace(' ','').replace('\n','')
+        logging.log(1,'spec:' + str(spec))
 
         # first replace our region bits to original region name with our robot name
         if fastslow:

@@ -37,7 +37,7 @@ def setupLogging(loggerLevel=None):
 #                 # Only try to colorize if outputting to a terminal 
 #                 return string
             else:
-                colors = {'ERROR': 91, 'WARNING': 93, 'INFO': 97, 'DEBUG': 94}
+                colors = {'ERROR': 91, 'WARNING': 93, 'INFO': 97, 'DEBUG': 94, 'Level 1': 96, 'Level 2': 98, 'Level 4': 100, 'Level 6': 102, 'Level 8': 104}
                 return "\033[{0}m{1}\033[0m".format(colors[level], string)
 
         def format(self, record):
@@ -75,6 +75,10 @@ def setupLogging(loggerLevel=None):
         logger.setLevel(logging.INFO)
     elif loggerLevel == 'debug':
         logger.setLevel(logging.DEBUG)
+    elif loggerLevel == 'notset':
+        logger.setLevel(logging.NOTSET)
+    else:
+        logger.setLevel(int(loggerLevel))
 
 # Choose the timer func with maximum accuracy for given platform
 if sys.platform in ['win32', 'cygwin']:

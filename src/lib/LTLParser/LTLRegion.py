@@ -36,7 +36,9 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
     OUTPUT:
     targetRegionOrig: the original name of the region 
     """
-    
+
+    logging.log(1,'regionBitStr:' + str(regionBitStr))
+
     # figure out if the regionBitStr contains "next"
     if 'next' in regionBitStr:
         nextTimeStep = True
@@ -48,6 +50,7 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
         pattern_bit = "!?(next\()?e.sbit[0-9]\)?"
     else:
         pattern_bit = "!?(next\()?s.bit[0-9]\)?"
+
     individualBitsList = [x.group() for x in re.finditer(pattern_bit, regionBitStr)]
 
     regionProps = {}
@@ -64,6 +67,9 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
                 regionProps[bit.replace('s.bit','region_b')] = True
             else:
                 regionProps[bit.replace('!s.bit','region_b')] = False
+
+    logging.log(1,'individualBitsList:' + str(individualBitsList))
+    logging.log(1,'regionProps:' + str(regionProps))
 
     # find region in new name
     targetRegionNew = regions[region_domain.propAssignmentsToNumericValue(regionProps)]
@@ -146,10 +152,12 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     
     # make a copy of the string
     ltlFormulaReplaced = ltlFormula
+    logging.log(1,'ltlFormulaReplaced:' + str(ltlFormulaReplaced))
 
     # find the list of bit regions
     regionBitsList = findRegionBits(ltlFormula, fastslow)
-    
+    logging.log(1,'regionBitsList:' + str(regionBitsList))
+
     for regionBitStr in regionBitsList:
         # find original region name 
         regionName = matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, robotName, fastslow, include_heading, patching)
