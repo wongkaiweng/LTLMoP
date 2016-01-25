@@ -82,7 +82,8 @@ Environment starts with bob_emergencyExit
 #if you are sensing blockBottm then do not hallwayBottom
 
 # pick up and deliver things
-if you are sensing itemRequest and you have finished library then do pickup
+#if you are sensing itemRequest and you have finished library then do pickup
+do pickup if and only if you are sensing itemRequest and you have finished library
 if you are sensing itemReceived then visit office
 do deliver if and only if you are sensing itemReceived and you have finished office
 if you are activating deliver then stay there
@@ -107,14 +108,30 @@ if you have finished emergencyExit then do not (bob_emergencyExit or bob_recepti
 if you have finished reception then do not (bob_emergencyExit or bob_cafe or bob_hallwayTop or bob_hallwayBottom)
 
 
+# after nego sysTrans (new)
+#if you are sensing bob_atrium then do not (finished atrium or finished storageTop)
+#if you are sensing bob_storageTop then do not (finished storageTop or finished hallwayTop)
+#if you are sensing bob_hallwayTop then do not (finished hallwayTop or finished emergencyExit)
+#if you are sensing bob_emergencyExit then do not (finished reception or finished emergencyExit)
+#if you are sensing bob_reception then do not (finished reception or finished cafe)
+#if you are sensing bob_cafe then do not (finished hallwayBottom or finished cafe)
+#if you are sensing bob_hallwayBottom then do not (finished hallwayBottom or finished cafe)
+#if you are sensing bob_storageBottom then do not (finished storageBottom or finished atrium)
+
+#infinitely often bob_hallwayTop
+#infinitely often bob_hallwayBottom
+
+
+
+#### sysTrans added for --- restricting bob to be only on top --- ####
 #if you are sensing bob_atrium then do not (atrium or storageTop or storageBottom)
 #if you are sensing bob_reception then do not (reception or emergencyExit or cafe)
-if you are sensing bob_storageBottom then do not (storageBottom or hallwayBottom or atrium)
-if you are sensing bob_hallwayBottom then do not (hallwayBottom or storageBottom or cafe)
-if you are sensing bob_cafe then do not (cafe or hallwayBottom or reception)
-if you are sensing bob_emergencyExit then do not (emergencyExit or hallwayTop or reception)
-if you are sensing bob_hallwayTop then do not (storageTop or hallwayTop or emergencyExit)
-if you are sensing bob_storageTop then do not (storageTop or hallwayTop or atrium)
+#if you are sensing bob_storageBottom then do not (storageBottom or hallwayBottom or atrium)
+#if you are sensing bob_hallwayBottom then do not (hallwayBottom or storageBottom or cafe)
+#if you are sensing bob_cafe then do not (cafe or hallwayBottom or reception)
+#if you are sensing bob_emergencyExit then do not (emergencyExit or hallwayTop or reception)
+#if you are sensing bob_hallwayTop then do not (storageTop or hallwayTop or emergencyExit)
+#if you are sensing bob_storageTop then do not (storageTop or hallwayTop or atrium)
 
 ###------------------------------------------------------ ###
 ###-- restricting bob to be only on top--------- ###
@@ -174,18 +191,4 @@ if you are sensing bob_storageTop then do not (storageTop or hallwayTop or atriu
 ######if you are sensing bob_cafe then do (hallwayCentral or library or office or storageTop or hallwayTop or atrium)
 #if you are sensing bob_hallwayBottom then do (hallwayCentral or library or office or storageTop or hallwayTop or emergencyExit)#
 #if you are sensing bob_storageBottom then do (hallwayCentral or library or office or reception or hallwayTop or emergencyExit)
-
-
-# after nego sysTrans (new)
-#if you are sensing bob_atrium then do not (finished atrium or finished storageTop)
-#if you are sensing bob_storageTop then do not (finished storageTop or finished hallwayTop)
-#if you are sensing bob_hallwayTop then do not (finished hallwayTop or finished emergencyExit)
-#if you are sensing bob_emergencyExit then do not (finished reception or finished emergencyExit)
-#if you are sensing bob_reception then do not (finished reception or finished cafe)
-#if you are sensing bob_cafe then do not (finished hallwayBottom or finished cafe)
-#if you are sensing bob_hallwayBottom then do not (finished hallwayBottom or finished cafe)
-#if you are sensing bob_storageBottom then do not (finished storageBottom or finished atrium)
-
-#infinitely often bob_hallwayTop
-#infinitely often bob_hallwayBottom
 

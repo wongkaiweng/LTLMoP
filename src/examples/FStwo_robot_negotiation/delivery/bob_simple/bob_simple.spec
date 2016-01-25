@@ -24,12 +24,12 @@ decompose: True
 interactive: True
 
 CurrentConfigName:
-basicSim
+mac_basicSim
 
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-../../../../../../../../../home/catherine/LTLMoP/src/examples/FStwo_robot_negotiation/delivery/threeCorridorsShort.regions
+../threeCorridorsShort.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 alice_hallwayTop, 1
@@ -68,7 +68,7 @@ cafe = p12
 others = 
 
 Spec: # Specification in structured English
-Robot starts in hallwayTop
+Robot starts in emergencyExit
 Environment starts with alice_library
 
 visit hallwayTop

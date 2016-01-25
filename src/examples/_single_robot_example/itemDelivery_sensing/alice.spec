@@ -85,6 +85,7 @@ if you have finished hallwayBottom then do not blockBottom
 do pickup if and only if you are sensing itemRequest and you have finished library
 if you are sensing itemReceived then visit office
 do deliver if and only if you are sensing itemReceived and you have finished office
+if you are activating deliver then stay there
 
 # system goals
 if you are not sensing itemReceived then visit library
