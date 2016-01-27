@@ -41,6 +41,14 @@ def filterRelatedRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
 
     return ltlListFiltered
 
+def filterRelatedOneRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
+    """
+    removes ltl involving only rlatedRobots (it is possible to have only one robot in relatedRobots)
+    """
+    ltlListFiltered, ltlListExcluded = filterSpecList(ltlList, allRobotsList, relatedRobots, one_robot_mode=True, myName=myName)
+    logging.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
+
+    return ltlListFiltered
 
 def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myName=""):
     """
@@ -168,8 +176,11 @@ def ltlStrToList(ltlFormula):
     LTLlist = []
     tree = LTLFormula.parseLTL(ltlFormula)
 
-    for x in tree[1:]:
-        LTLlist.append(LTLFormula.treeToString(x))
+    if not (ltlFormula.count('[]') == 1 or ltlFormula.count('[]<>') == 1):
+        for x in tree[1:]:
+            LTLlist.append(LTLFormula.treeToString(x))
+    else:
+        LTLlist = [ltlFormula]
 
     return LTLlist
 

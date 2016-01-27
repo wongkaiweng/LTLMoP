@@ -20,7 +20,7 @@ class RobotClient:
     """
     def __init__(self, hsub, proj):
         ADDR = ("localhost",6501)
-        self.BUFSIZE = 20000
+        self.BUFSIZE = 2000000
 
         # check if we are using fastslow:
         self.fastslow = proj.compile_options['fastslow']
@@ -158,6 +158,12 @@ class RobotClient:
                     for otherRobot in self.proj.otherRobot:
                         spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])','e.'+otherRobot+'_'+region+'_rc',spec)
 
+            #elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+            #    if fastslow and specType == 'EnvTrans':
+            #        logging.log(1, 'came in to rewrite spec EnvTrans')
+            #        for otherRobot in self.proj.otherRobot:
+            #        spec = LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(spec, otherRobot)
+
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
 
@@ -184,12 +190,28 @@ class RobotClient:
         while not len(specToAppend):
             self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
 
-            #receive info
-            SpecDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
+            #receive info (also check if msg is complete)
+            bufferData = self.clientObject.recv(self.BUFSIZE)
+            fullMsg = bufferData
+            obtainFullMsg = False
+            while not obtainFullMsg:
+                try:
+                    ast.literal_eval(fullMsg)
+                    obtainFullMsg = True
+                except:
+                    bufferData = self.clientObject.recv(self.BUFSIZE)
+                    fullMsg += bufferData
+                    logging.log(2, "MSG is not completed. Getting more parts.")
+
+            logging.log(2, specType + ":" + fullMsg)
+            SpecDict = ast.literal_eval(fullMsg)
+
+            requestingRobot = self.getNegotiationInitiatingRobot()
+            joiningRobot    = self.checkNegotiationStatus()
             for robot, spec in SpecDict.iteritems():
                 #self.robotName = 'alice' #TODO: remove this later
-                if self.robotName  != robot:
-            
+                if self.robotName != robot and (robot == requestingRobot or robot == joiningRobot):
+
                     # change region props with our name to region bits (parseEnglishToLTL?)              
                     specToAppend += LTLParser.LTLRegion.replaceRobotNameWithRegionToBits(spec, self.bitEncode, self.robotName, self.regionList, self.fastslow, self.proj.compile_options['include_heading'])
 
@@ -244,6 +266,21 @@ class RobotClient:
         #receive info
         self.specRequestFromOther = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         #logging.debug(self.specRequestFromOther)
+
+    def getNegotiationInitiatingRobot(self):
+        """
+        This function gets the robot that initiates negotiation.
+        """
+        self.clientObject.send(self.robotName + '-' + 'negotiationStatus = ' + "''" + '\n')
+
+        #receive info
+        originalStr = self.clientObject.recv(self.BUFSIZE)
+        bufferData = originalStr.split(';').pop()
+        logging.log(2,"negotiationStatus:" + str(bufferData.split('-')[0]))
+        bufferData = bufferData.split('-')[1]
+        logging.log(2,"negotiationInitiator:" + str(bufferData))
+        negotiationInitiator = ast.literal_eval(bufferData)
+        return negotiationInitiator
    
     def checkNegotiationStatus(self):
         """
@@ -258,6 +295,7 @@ class RobotClient:
         #receive info
         originalStr = self.clientObject.recv(self.BUFSIZE)
         bufferData = originalStr.split(';').pop()
+        bufferData = bufferData.split('-')[0]
         negotiationStatus = ast.literal_eval(bufferData)
         return negotiationStatus
         

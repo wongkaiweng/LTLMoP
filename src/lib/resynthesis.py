@@ -457,7 +457,22 @@ class ExecutorResynthesisExtensions(object):
         self.old_possible_states_violated_specStr = []
         self.old_possible_states_violated_specStr_with_no_specText_match = []
 
-    def synthesizeWithExchangedSpec(self, level = False):
+    def getConflictingRobots(self):
+        """
+        This function search in violated LTL list about which robot is in conflict with the system robot.
+        conflictingRobots: list of robots in conflict with the system robot
+        """
+        conflictingRobots = []
+        for ltlSpec in self.violated_spec_list: # list
+            for robot in self.proj.otherRobot:
+                robotInFormula = LTLParser.LTLcheck.checkIfKeyInFormula(ltlSpec, robot)
+
+                if robotInFormula and robot not in conflictingRobots:
+                    conflictingRobots.append(robot)
+
+        return conflictingRobots
+
+    def synthesizeWithExchangedSpec(self, level = False, conflictingRobot=""):
         """
         spec negotiation in execute.py
         """
@@ -469,7 +484,18 @@ class ExecutorResynthesisExtensions(object):
         # obtain SysGoals, EnvTrans of the other robot 
         # may not have anything the other robot have not sent info. (dealt with inside requestSpec) -- may move the check here.
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
-        otherRobotEnvTrans = self.robClient.requestSpec('EnvTrans').replace('[]','\n\t\t\t[]')
+
+        ALLotherRobotEnvTrans = self.robClient.requestSpec('EnvTrans').replace('[]','\n\t\t\t[]')
+        logging.log(2,'OLD-otherRobotsEnvTrans:' + str(ALLotherRobotEnvTrans))
+        # here we need to filter it to with only conflicting robots
+        if not conflictingRobot:
+            conflictingRobot = self.robClient.getNegotiationInitiatingRobot()
+
+        ALLotherRobotEnvTransList = LTLParser.LTLcheck.ltlStrToList(ALLotherRobotEnvTrans)
+        otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedOneRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, conflictingRobot, self.robClient.robotName)
+        otherRobotEnvTrans = '&\n'.join(otherRobotEnvTransList)
+        logging.log(2,'NEW-otherRobotsEnvTrans:' + str(otherRobotEnvTrans))
+
         self.receivedSpec = True
 
         # see if we can take the other robot's actions into account. 
@@ -513,21 +539,27 @@ class ExecutorResynthesisExtensions(object):
         self.postEvent('NEGO','-- NEGOTIATION STARTED --')
         # send SysGoals, EnvTrans and EnvGoals
         self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-        if self.proj.compile_options["fastslow"]:
-            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-        else:
-            self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+        self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
         #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
         self.sentSpec = True
 
-        self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+        # first need to find out who the other robot is
+        conflictingRobots = self.getConflictingRobots()
+
+        if len(conflictingRobots) == 1:
+            self.robClient.setNegotiationStatus("'" + conflictingRobots[0] + "'")
+        else:
+            logging.error('Currently not support negotiation with more than two robots!' + str(conflictingRobots))
+
+        #self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+
 
         # here we have an extra step to synthesize with exchanged spec too
         self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
         self.postEvent("NEGO",'Adding system guarantees with environment goals.')
-        realizable, _, _ = self.synthesizeWithExchangedSpec(False)
+        realizable, _, _ = self.synthesizeWithExchangedSpec(False, conflictingRobots[0])
 
-        while self.robClient.checkNegotiationStatus() == self.proj.otherRobot[0]:
+        while self.robClient.checkNegotiationStatus() == conflictingRobots[0]:
             # wait for the actions of the other robot
             time.sleep(2)
 
@@ -601,11 +633,11 @@ class ExecutorResynthesisExtensions(object):
             # prepare for conservative step of the sender (send him/her specs)
             # send our spec to the other robot
             self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-            if self.proj.compile_options["fastslow"]:
-                self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, self.proj.otherRobot[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-            else:
-                self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+            self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
             #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
+
+            # obtain robot initiating negotiation
+            conflictingRobot = [self.robClient.getNegotiationInitiatingRobot()]
 
             # make resynthesis with recovery
             #self.recovery = True
@@ -643,7 +675,7 @@ class ExecutorResynthesisExtensions(object):
             elif not self.sentSpec:
                 self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
                 self.sentSpec = True
-                self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
+                self.robClient.setNegotiationStatus("'" + conflictingRobot[0] + "'")
 
                 # wait until the other robot resynthesize its controller
                 while not isinstance(self.robClient.checkNegotiationStatus(), bool): #self.robClient.checkNegotiationStatus() != (True or False):
@@ -739,7 +771,16 @@ class ExecutorResynthesisExtensions(object):
                                 if self.proj.compile_options["multi_robot_mode"] == "negotiation":
                                     # ------ two_robot_negotiation  -------- #
                                     # see if the other robot has violation before us
-                                    otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(self.proj.otherRobot[0])
+
+                                    # check which robot we are in conflict with
+                                    conflictingRobots = self.getConflictingRobots()
+
+                                    if len(conflictingRobots) == 1:
+                                        otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(conflictingRobots[0])
+                                    else:
+                                        otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(conflictingRobots[0])
+                                        logging.error('Currently not support negotiation with more than two robots! Get violation time stamp from first robot in the list' + str(conflictingRobots))
+
                                     logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
                                     logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
 

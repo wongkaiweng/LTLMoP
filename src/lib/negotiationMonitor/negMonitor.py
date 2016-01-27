@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 ##let's set up some constants
 HOST = ''    #we are the host
 ADDR = ("localhost",6501)    #we need a tuple for the address
-BUFSIZE = 20000    #reasonably sized buffer for data
+BUFSIZE = 2000000    #reasonably sized buffer for data
  
 ## now we create a new socket object (serv)
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
@@ -37,6 +37,7 @@ spec       = {'SysTrans':{},'SysGoals':{},'EnvTrans':{},'EnvGoals':{}}
 strategyStatus = {} #tracking strategy status of each robot (true for realizable. False otherwise.)
 requestSpecStatus = {} # track what spec is being requested
 negotiationStatus = None # track the negotiation status
+negotiationInitiator = None # track who initiated negotiation
 violationTimeStamp = {} # track the time stamp that safety violation is detected
 robotSensors = {} # track list of sensors, esp after negotiation
 
@@ -176,9 +177,10 @@ while keepConnection:
                         if ast.literal_eval(item.group("packageValue")) or ast.literal_eval(item.group("packageValue")) == False:
                             # We got set negotiationStatus from robotClient
                             negotiationStatus = item.group("packageValue")
+                            negotiationInitiator = "'"+item.group('robotName')+"'"
                         else:
                             # send negotiationStatus back to the robot
-                            x.send(";" + str(negotiationStatus))
+                            x.send(";" + str(negotiationStatus)+'-'+str(negotiationInitiator))
                     
                     elif item.group('packageType') == "violationTimeStamp":
                         if ast.literal_eval(item.group("packageValue")) != '':
