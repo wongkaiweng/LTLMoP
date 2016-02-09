@@ -18,11 +18,14 @@ from copy import deepcopy
 import ast
 import json
 import traceback
-import globalConfig, logging
+import globalConfig
 import importlib
 import handlers.handlerTemplates as ht
 from hsubParsingUtils import parseCallString
 
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 ###################################################
 # Define individual objects for handler subsystem #
@@ -291,7 +294,7 @@ class HandlerConfig(object):
         for m in self.methods:
             if m.name == name:
                 return m
-        logging.error("Could not find method of name '{0}' in handler '{1}'".format(name, self.name))
+        ltlmop_logger.error("Could not find method of name '{0}' in handler '{1}'".format(name, self.name))
         raise ValueError
 
     def toString(self):
@@ -337,13 +340,13 @@ class HandlerConfig(object):
         if not handler_module_path.startswith('lib.'): handler_module_path = 'lib.' + handler_module_path
         handler_module_name = handler_module_path.rpartition('.')[2]
         # Try to load the handler file
-        logging.debug("Inspecting handler: {}".format(handler_module_name))
+        ltlmop_logger.debug("Inspecting handler: {}".format(handler_module_name))
         try:
             handler_module = importlib.import_module(handler_module_path)
         except Exception as e:
-            logging.warning("Failed to import handler {0} : {1}".format(handler_module_name, e))
+            ltlmop_logger.warning("Failed to import handler {0} : {1}".format(handler_module_name, e))
             if not isinstance(e, ImportError):
-                logging.debug(traceback.format_exc())
+                ltlmop_logger.debug(traceback.format_exc())
             raise ImportError
 
 
@@ -354,14 +357,14 @@ class HandlerConfig(object):
 
         # Raise error if there are no handler_class found in the handler file
         if len(handler_class) < 1:
-            logging.warning("No handler class found in file {}. Abort importing.".format(handler_module_name))
+            ltlmop_logger.warning("No handler class found in file {}. Abort importing.".format(handler_module_name))
             raise ImportError
         # Warn if there are multiple handler classes in one handler file
         if len(handler_class) > 1:
-            logging.warning("Multiple handler classes found in file {}. Randomly choose one to import.".format(handler_module_name))
+            ltlmop_logger.warning("Multiple handler classes found in file {}. Randomly choose one to import.".format(handler_module_name))
         handler_class = handler_class[0][1]
         if handler_class.__name__.lower() != handler_module_name.lower():
-            logging.warning("File name: {0} mismatch with class name: {1}.".format(handler_class.__name__, handler_module_name))
+            ltlmop_logger.warning("File name: {0} mismatch with class name: {1}.".format(handler_class.__name__, handler_module_name))
 
         name = handler_module_name
         h_type = inspect.getmro(handler_class)[1] # direct parent
@@ -401,7 +404,7 @@ class HandlerConfig(object):
                     method_config.fromMethod(method, self)
                 except SyntaxError as e:
 #                     raise ht.LoadingError("Error while inspecting method {!r} of handler {!r}: {}".format(method_name, handler_module_path, e))
-                    logging.warning("Error while inspecting method {!r} of handler {!r}: {}".format(method_name, handler_module_path, e))
+                    ltlmop_logger.warning("Error while inspecting method {!r} of handler {!r}: {}".format(method_name, handler_module_path, e))
 
                 # add this method into the method list of the handler
                 self.methods.append(method_config)
@@ -448,7 +451,7 @@ class RobotConfig(object):
             if handler_config.name == name:
                 return handler_config
 
-        logging.error("Cannot find handler {!r} for robot {!r}.".format(name, self.name))
+        ltlmop_logger.error("Cannot find handler {!r} for robot {!r}.".format(name, self.name))
         return None
 
     def getHandlerOfRobot(self, h_type):
@@ -458,7 +461,7 @@ class RobotConfig(object):
         if h_type in self.handlers.keys():
             return self.handlers[h_type]
         # if cannot find the specified handler, then return None
-        logging.debug('Cannot find the specified handler type {!r} in robot {!r}({}).'\
+        ltlmop_logger.debug('Cannot find the specified handler type {!r} in robot {!r}({}).'\
                 .format(h_type, self.name, self.r_type))
         return None
 
@@ -468,14 +471,14 @@ class RobotConfig(object):
         """
 
         if self.calibration_matrix is None:
-            logging.warning("Robot {} has no calibration data.  Using identity matrix.".format(self.name))
+            ltlmop_logger.warning("Robot {} has no calibration data.  Using identity matrix.".format(self.name))
             T = eye(3)
         else:
             T = self.calibration_matrix
 
         # Check for singular matrix
         if abs(linalg.det(T)) < finfo(float).eps:
-            logging.warning("Singular calibration matrix.  Ignoring, and using identity matrix.")
+            ltlmop_logger.warning("Singular calibration matrix.  Ignoring, and using identity matrix.")
             T = eye(3)
 
         #### Create the coordmap functions
@@ -497,7 +500,7 @@ class RobotConfig(object):
         The file_path needs to be the path starting from lib/
         """
 
-        logging.debug("Loading robot file {!r}".format(os.path.basename(file_path).split('.')[0]))
+        ltlmop_logger.debug("Loading robot file {!r}".format(os.path.basename(file_path).split('.')[0]))
         try:
             # try to load the robot file
             robot_data = fileMethods.readFromFile(file_path)
@@ -562,7 +565,7 @@ class RobotConfig(object):
             try:
                 handler_type = ht.getHandlerTypeClass(key)
             except KeyError:
-                logging.warning('Cannot recognize handler type {!r} for robot {}({})'.format(key, self.name, self.r_type))
+                ltlmop_logger.warning('Cannot recognize handler type {!r} for robot {}({})'.format(key, self.name, self.r_type))
                 self._setLoadFailureFlag()
                 continue
 
@@ -573,7 +576,7 @@ class RobotConfig(object):
                     call_descriptors, _ = parseCallString(handler_config_str, mode="single")
                 except SyntaxError:
                     # This is an invalid handler config description
-                    logging.exception('Cannot recognize handler config description: \n \t {!r} \n \
+                    ltlmop_logger.exception('Cannot recognize handler config description: \n \t {!r} \n \
                                     for handler type {!r} of robot {}({})'.format(handler_config_str, key, self.name, self.r_type))
                     self._setLoadFailureFlag()
                     continue
@@ -594,7 +597,7 @@ class RobotConfig(object):
                 # specified if we're only going to let it be one value...)
                 if (robot_type != 'share') and (robot_type.lower() != self.r_type.lower()):
                     # this is a handler for a wrong robot
-                    logging.warning('The handler config description: \n \t {!r} \n \
+                    ltlmop_logger.warning('The handler config description: \n \t {!r} \n \
                                     is for robot {}, but is located in data for robot {}({})' \
                                     .format(handler_config_str, robot_type, self.name, self.r_type))
                     self._setLoadFailureFlag()
@@ -607,14 +610,14 @@ class RobotConfig(object):
                     try:
                         handler_type_from_str = ht.getHandlerTypeClass(h_type)
                     except KeyError:
-                        logging.warning('Cannot recognize handler type {!r} in config description: \n \t {!r} \n \
+                        ltlmop_logger.warning('Cannot recognize handler type {!r} in config description: \n \t {!r} \n \
                                         for robot {}({})'.format(h_type, handler_config_str, self.name, self.r_type))
                         self._setLoadFailureFlag()
                         continue
 
                     if handler_type_from_str != handler_type:
                         # the handler type from the description does not match the one from section name
-                        logging.warning('Misplaced handler description: \n \t {!r} \n \
+                        ltlmop_logger.warning('Misplaced handler description: \n \t {!r} \n \
                                         in handler type {!r} for robot {}({})' \
                                         .format(handler_config_str, handler_type, self.name, self.r_type))
                         # we still want to put this handler config into the right type
@@ -622,7 +625,7 @@ class RobotConfig(object):
 
                 if robot_type == 'share' and h_type is None:
                     # This is a shared handler but no handler type information is given
-                    logging.warning('Handler type info missing for {!r} handler in config description: \n \t {!r} \n \
+                    ltlmop_logger.warning('Handler type info missing for {!r} handler in config description: \n \t {!r} \n \
                                     for robot {}({})'.format(robot_type, handler_config_str, self.name, self.r_type))
                     self._setLoadFailureFlag()
                     continue
@@ -639,7 +642,7 @@ class RobotConfig(object):
                 try:
                     init_method_config = handler_config.getMethodByName('__init__')
                 except ValueError:
-                    logging.warning('Cannot update default parameters of default handler config {!r}'.format(handler_config.name))
+                    ltlmop_logger.warning('Cannot update default parameters of default handler config {!r}'.format(handler_config.name))
                 else:
                     init_method_config.updateParaFromDict(call_descriptors[0].args)
 
@@ -650,7 +653,7 @@ class RobotConfig(object):
                 else:
                     # This type of handler has been loaded, for now, we will NOT overwrite it with new entry
                     # A warning will be shown
-                    logging.warning('Multiple handler configs are detected for handler type {!r} of robot {}({}). \
+                    ltlmop_logger.warning('Multiple handler configs are detected for handler type {!r} of robot {}({}). \
                             Will only load the first one.'.format(key, self.name, self.r_type))
                     break
 
@@ -711,7 +714,7 @@ class ExperimentConfig(object):
         for r in self.robots:
             if r.name == name:
                 return r
-        logging.error("Could not find robot of name '{0}' in config '{1}'.".format(name, self.name))
+        ltlmop_logger.error("Could not find robot of name '{0}' in config '{1}'.".format(name, self.name))
         return None
 
     def normalizePropMapping(self, default_prop_mapping):
@@ -737,7 +740,7 @@ class ExperimentConfig(object):
         if not file_path.endswith('.config'):
             file_path = file_path + '.config'
 
-        logging.debug("Loading config file: {!r}".format(os.path.basename(file_path).split('.')[0]))
+        ltlmop_logger.debug("Loading config file: {!r}".format(os.path.basename(file_path).split('.')[0]))
         try:
             # try to load the config file
             config_data = fileMethods.readFromFile(file_path)
@@ -787,13 +790,13 @@ class ExperimentConfig(object):
             try:
                 self.region_tags = json.loads("".join(config_data['General Config']['Region_Tags']))
             except ValueError:
-                logging.warning("Wrong region tags")
+                ltlmop_logger.warning("Wrong region tags")
 
         # Load main robot name
         try:
             self.main_robot = config_data['General Config']['Main_Robot'][0]
         except (IndexError, KeyError):
-            logging.warning("Cannot find main robot name in config file {}".format(self.file_name))
+            ltlmop_logger.warning("Cannot find main robot name in config file {}".format(self.file_name))
 
         # load robot configs
         robot_data = []
@@ -802,7 +805,7 @@ class ExperimentConfig(object):
                 robot_data.append(config_value)
 
         if robot_data == []:
-            logging.warning("Missing robot data in config file {}".format(self.file_name))
+            ltlmop_logger.warning("Missing robot data in config file {}".format(self.file_name))
         else:
             # using the parsing function to parse the data
             for data in robot_data:
@@ -810,7 +813,7 @@ class ExperimentConfig(object):
                 try:
                     robot_config.fromData(data, hsub)
                 except ht.LoadingError, msg:
-                    logging.warning(str(msg) + ' in robot data .')
+                    ltlmop_logger.warning(str(msg) + ' in robot data .')
                     continue
                 except TypeError:
                     # missing hsub
@@ -855,7 +858,7 @@ class ExperimentConfig(object):
                 actuatorMapping = prop + ' = ' + fun
                 actuatorMappingList.append(actuatorMapping)
             else:
-                logging.warning("Cannot recognize prop mapping: {}".format(prop+" = "+fun))
+                ltlmop_logger.warning("Cannot recognize prop mapping: {}".format(prop+" = "+fun))
 
         data['General Config']['Sensor_Proposition_Mapping'] = sensorMappingList
         data['General Config']['Actuator_Proposition_Mapping'] = actuatorMappingList
@@ -877,7 +880,7 @@ class ExperimentConfig(object):
                     if handler_type_class in robot.handlers.keys():
                         data[header][handler_type_name] = robot.handlers[handler_type_class].toString()
             except AttributeError:
-                logging.warning("Cannot save handlers for robot {}({}). Please make sure they are all successfully loaded. Aborting saving."\
+                ltlmop_logger.warning("Cannot save handlers for robot {}({}). Please make sure they are all successfully loaded. Aborting saving."\
                         .format(robot.name, robot.r_type))
                 return False
 
@@ -910,7 +913,7 @@ if __name__ == '__main__':
     try:
         m.parseHandler('handlers.basicSim.basicSimLocomotionCommand')
     except ImportError:
-        logging.warning('Cannot import file {}'.format('init'))
+        ltlmop_logger.warning('Cannot import file {}'.format('init'))
     print m
     for method in m.methods:
         print method

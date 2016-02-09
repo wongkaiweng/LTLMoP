@@ -39,6 +39,17 @@ from copy import deepcopy
 
 import logging
 import globalConfig
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
+ltlmop_logger.log(1,'ltlmop_logger: Level 1. Put number 1 in global.cfg')
+ltlmop_logger.log(2,'ltlmop_logger: Level 2. Put number 2 in global.cfg')
+ltlmop_logger.log(4,'ltlmop_logger: Level 4. Put number 4 in global.cfg')
+ltlmop_logger.log(6,'ltlmop_logger: Level 6. Put number 6 in global.cfg')
+ltlmop_logger.log(8,'ltlmop_logger: Level 8. Put number 8 in global.cfg')
+ltlmop_logger.debug('ltlmop_logger: DEBUG. Put str DEBUG in global.cfg')
+ltlmop_logger.info('ltlmop_logger: INFO. Put str INFO in global.cfg')
+ltlmop_logger.warning('ltlmop_logger: WARNING. Put str WARN in global.cfg')
+ltlmop_logger.error('ltlmop_logger: ERROR. Put str ERROR in global.cfg')
 
 ######################### WARNING! ############################
 #         DO NOT EDIT GUI CODE BY HAND.  USE WXGLADE.         #

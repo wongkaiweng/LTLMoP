@@ -2,11 +2,14 @@
 """
 This python file contains functions related to region bits and normal region names in LTL.
 """
-import logging
 import ast                  # for parsing spec dict from negtiation monitor
 import re                   # for parsing specstr
 import parseEnglishToLTL    # for replacing original region name to region bits
 import math                 # for adding parentheses around region bits
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 def findRegionBits(ltlFormula, fastslow=False):
     """
@@ -37,7 +40,7 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
     targetRegionOrig: the original name of the region 
     """
 
-    logging.log(1,'regionBitStr:' + str(regionBitStr))
+    ltlmop_logger.log(1,'regionBitStr:' + str(regionBitStr))
 
     # figure out if the regionBitStr contains "next"
     if 'next' in regionBitStr:
@@ -68,8 +71,8 @@ def matchRegionNumber(regionBitStr, regions, region_domain, newRegionNameToOld, 
             else:
                 regionProps[bit.replace('!s.bit','region_b')] = False
 
-    logging.log(1,'individualBitsList:' + str(individualBitsList))
-    logging.log(1,'regionProps:' + str(regionProps))
+    ltlmop_logger.log(1,'individualBitsList:' + str(individualBitsList))
+    ltlmop_logger.log(1,'regionProps:' + str(regionProps))
 
     # find region in new name
     targetRegionNew = regions[region_domain.propAssignmentsToNumericValue(regionProps)]
@@ -152,11 +155,11 @@ def replaceAllRegionBitsToOriginalName(ltlFormula, regions, region_domain, newRe
     
     # make a copy of the string
     ltlFormulaReplaced = ltlFormula
-    logging.log(1,'ltlFormulaReplaced:' + str(ltlFormulaReplaced))
+    ltlmop_logger.log(1,'ltlFormulaReplaced:' + str(ltlFormulaReplaced))
 
     # find the list of bit regions
     regionBitsList = findRegionBits(ltlFormula, fastslow)
-    logging.log(1,'regionBitsList:' + str(regionBitsList))
+    ltlmop_logger.log(1,'regionBitsList:' + str(regionBitsList))
 
     for regionBitStr in regionBitsList:
         # find original region name 

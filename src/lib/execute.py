@@ -46,14 +46,17 @@ import traceback
 from resynthesis import ExecutorResynthesisExtensions
 from executeStrategy import ExecutorStrategyExtensions
 from executeModes import ExecutorModesExtensions
-import globalConfig, logging
+import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 ###### ENV VIOLATION CHECK ######
 import copy
 import specCompiler
 
 import LTLParser.LTLcheck
-import logging
 import LTLParser.LTLFormula 
 #################################
 
@@ -189,8 +192,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             try:
                 self.externalEventTarget.handleEvent(eventType, eventData)
             except socket.error as e:
-                logging.warning("Could not send event to remote event target: %s", e)
-                logging.warning("Forcefully unsubscribing target.")
+                ltlmop_logger.warning("Could not send event to remote event target: %s", e)
+                ltlmop_logger.warning("Forcefully unsubscribing target.")
                 self.externalEventTarget = None
 
     def loadSpecFile(self, filename):
@@ -267,18 +270,18 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         r.objectContainsPoint(*pose)), None)
 
         if region is None:
-            logging.warning("Pose of {} not inside any region!".format(pose))
+            ltlmop_logger.warning("Pose of {} not inside any region!".format(pose))
 
         return region
 
     def shutdown(self):
         self.runStrategy.clear()
-        logging.info("QUITTING.")
+        ltlmop_logger.info("QUITTING.")
 
         all_handler_types = ['init', 'pose', 'locomotionCommand', 'drive', 'motionControl', 'sensor', 'actuator']
 
         for htype in all_handler_types:
-            logging.info("Terminating {} handler...".format(htype))
+            ltlmop_logger.info("Terminating {} handler...".format(htype))
             if htype in self.proj.h_instance:
                 if isinstance(self.proj.h_instance[htype], dict):
                     handlers = [v for k,v in self.proj.h_instance[htype].iteritems()]
@@ -287,12 +290,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                 for h in handlers:
                     if hasattr(h, "_stop"):
-                        logging.debug("Calling _stop() on {}".format(h.__class__.__name__))
+                        ltlmop_logger.debug("Calling _stop() on {}".format(h.__class__.__name__))
                         h._stop()
                     else:
-                        logging.debug("{} does not have _stop() function".format(h.__class__.__name__))
+                        ltlmop_logger.debug("{} does not have _stop() function".format(h.__class__.__name__))
             else:
-                logging.debug("{} handler not found in h_instance".format(htype))
+                ltlmop_logger.debug("{} handler not found in h_instance".format(htype))
                 
         # ----------------------------- #
         # -- two_robot_negotiation  --- #
@@ -353,11 +356,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             self.proj.rfi = self.proj.loadRegionFile(decomposed=True)
 
         if self.proj.current_config == "":
-            logging.error("Can not simulate without a simulation configuration.")
-            logging.error("Please create one by going to [Run] > [Configure Simulation...] in SpecEditor and then try again.")
+            ltlmop_logger.error("Can not simulate without a simulation configuration.")
+            ltlmop_logger.error("Please create one by going to [Run] > [Configure Simulation...] in SpecEditor and then try again.")
             sys.exit(2)
 
-        logging.info("Setting current executing config...")
+        ltlmop_logger.info("Setting current executing config...")
         self.hsub.setExecutingConfig(self.proj.current_config)
 
         # make sure the coord transformation function is ready
@@ -371,10 +374,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         # Import the relevant handlers
         if firstRun:
             # Instantiate all handlers
-            logging.info("Instantiate all handlers...")
+            ltlmop_logger.info("Instantiate all handlers...")
             self.hsub.instantiateAllHandlers()
 
-            logging.info("Preparing proposition mapping...")
+            ltlmop_logger.info("Preparing proposition mapping...")
             self.hsub.prepareMapping()
 
             # synthesize our controller again just to see if it's realizable and replace spec if FALSE
@@ -397,7 +400,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         if firstRun:
             ### Wait for the initial start command
-            logging.info("Ready.  Press [Start] to begin...")
+            ltlmop_logger.info("Ready.  Press [Start] to begin...")
             self.runStrategy.wait()
 
         ######## ENV Assumption Learning ###########
@@ -462,10 +465,10 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
         init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
         if init_region is None:
-            logging.error("Initial pose not inside any region!")
+            ltlmop_logger.error("Initial pose not inside any region!")
             sys.exit(-1)
 
-        logging.info("Starting from initial region: " + init_region.name)
+        ltlmop_logger.info("Starting from initial region: " + init_region.name)
         # include initial regions in picking states
         if self.proj.compile_options['fastslow']:
             init_prop_assignments = {"regionCompleted": init_region}
@@ -474,7 +477,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             init_prop_assignments = {"region": init_region}
 
         # initialize all sensor and actuator methods
-        logging.info("Initializing sensor and actuator methods...")
+        ltlmop_logger.info("Initializing sensor and actuator methods...")
         self.hsub.initializeAllMethods()
 
         ## outputs
@@ -514,13 +517,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                     # set global sensors
                     self.dPatchingExecutor.globalSensors = self.proj.global_sensors
-                    logging.debug('self.dPatchingExecutor.globalSensors:' + str(self.dPatchingExecutor.globalSensors))
+                    ltlmop_logger.debug('self.dPatchingExecutor.globalSensors:' + str(self.dPatchingExecutor.globalSensors))
                     self.checkDataThread = threading.Thread(target=self.dPatchingExecutor.runCheckData, args=())
                     self.checkDataThread.daemon = True  # Daemonize thread
                     self.checkDataThread.start()
                 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
             else:
-                logging.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
+                ltlmop_logger.error('You have selected the neighbour_robot option but the multi_robot_mode should be defined!')
                 sys.exit(3)
 
         # update GUI
@@ -532,11 +535,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         if self.proj.compile_options['neighbour_robot']:
             # Wait until the other robot is ready
             # Make sure the other robot is loaded
-            logging.info('Waiting for other robots to be ready')
+            ltlmop_logger.info('Waiting for other robots to be ready')
             otherRobotsReady = False
 
             while not otherRobotsReady:
-                logging.debug('Current Sensors:' + str(self.hsub.getSensorValue(self.proj.enabled_sensors)))
+                ltlmop_logger.debug('Current Sensors:' + str(self.hsub.getSensorValue(self.proj.enabled_sensors)))
                 if not None in self.hsub.getSensorValue(self.proj.enabled_sensors).values():
                     otherRobotsReady = True
                 time.sleep(2)
@@ -549,7 +552,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         #search for initial state in the strategy
         if firstRun:
-            logging.debug("init_prop_assignments:" + str(init_prop_assignments))
+            ltlmop_logger.debug("init_prop_assignments:" + str(init_prop_assignments))
             init_state = new_strategy.searchForOneState(init_prop_assignments)
         else:
             # ------- patching ----------#
@@ -557,7 +560,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 (self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["multi_robot_mode"] == "d-patching"):
                 if not self.spec['SysGoals'].count('[]<>') == 1: # LTLParser doesn't parse single formula with []<> correctly.
                     specLen = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
-                    logging.debug('Old goal number is:' + str(self.prev_z))
+                    ltlmop_logger.debug('Old goal number is:' + str(self.prev_z))
                     current_goal_id = str((int(self.prev_z) + 1) % specLen)
                 else:
                     current_goal_id = str(0)
@@ -577,8 +580,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             else:
                 current_goal_id = self.prev_z
 
-            logging.debug('init_prop_assignments:' + str(init_prop_assignments))
-            logging.debug("Current goal number is:" + current_goal_id)
+            ltlmop_logger.debug('init_prop_assignments:' + str(init_prop_assignments))
+            ltlmop_logger.debug("Current goal number is:" + current_goal_id)
 
             init_state = new_strategy.searchForOneState(init_prop_assignments, goal_id=current_goal_id)
 
@@ -602,7 +605,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     pass
 
 
-            logging.debug('Finding init state failed.')
+            ltlmop_logger.debug('Finding init state failed.')
             for prop_name, value in self.hsub.getSensorValue(self.proj.enabled_sensors).iteritems():
                 if self.proj.compile_options['fastslow'] and prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)):
                     continue
@@ -619,31 +622,31 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         if self.violationTimeStamp == 0:
                             self.violationTimeStamp = time.clock()
                             self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                            logging.debug('Setting violation timeStamp')
+                            ltlmop_logger.debug('Setting violation timeStamp')
                             time.sleep(1)
 
             init_state, new_strategy  = self.addStatetoEnvSafety(self.sensor_strategy, firstRun)            
         #############################################
         if init_state is None:
-            logging.error("No suitable initial state found; unable to execute. Quitting...")
+            ltlmop_logger.error("No suitable initial state found; unable to execute. Quitting...")
             sys.exit(-1)
         else:
-            logging.info("Starting from state %s." % init_state.state_id)
+            ltlmop_logger.info("Starting from state %s." % init_state.state_id)
             if self.strategy is None or init_state.state_id != self.strategy.current_state.state_id:
                 self.postEvent('INFO', "Starting from state %s." % init_state.state_id)
 
         self.strategy = new_strategy
         self.strategy.current_state = init_state
-        logging.debug("self.strategy.current_state:" + str(self.strategy.current_state))
+        ltlmop_logger.debug("self.strategy.current_state:" + str(self.strategy.current_state))
         self.last_sensor_state = self.strategy.current_state.getInputs()
 
         if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive']:
             self.envTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'EnvTrans')
             self.sysTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'SysTrans')
             if self.proj.compile_options['symbolic']:
-                logging.debug('We came here')
+                ltlmop_logger.debug('We came here')
                 self.strategy.envTransBDD, term1, term2 = self.strategy.evaluateBDD(self.envTransCheck.ltl_tree, LTLParser.LTLFormula.p.terminals)
-                logging.debug('We finished')
+                ltlmop_logger.debug('We finished')
 
         # start checkViolation thread
         if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation":
@@ -670,7 +673,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             self.totalSysGoals = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
         else:
             self.totalSysGoals = 1
-        logging.debug("totalSysGoals:" + str(self.totalSysGoals))
+        ltlmop_logger.debug("totalSysGoals:" + str(self.totalSysGoals))
 
         # FIXME: don't crash if no spec file is loaded initially
         while self.alive.isSet():
@@ -750,9 +753,9 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.robClient.loadProjectAndRegions(self.proj) #update regions and proj in robClient
                             self.robClient.setRestartStatus()
                             while not self.robClient.checkRestartStatus():
-                                logging.debug('Waiting for the other robot to restart')
+                                ltlmop_logger.debug('Waiting for the other robot to restart')
                                 time.sleep(1) #wait for the other robot to get ready
-                            logging.debug('Running again ...')
+                            ltlmop_logger.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
 
                             continue
@@ -768,11 +771,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.runCentralizedStrategy = False
                             self.hsub.setVelocity(0,0)
                             self.runRuntimeMonitoring.clear()
-                            logging.debug("stopped runRuntimeMonitoring...")
+                            ltlmop_logger.debug("stopped runRuntimeMonitoring...")
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
                             self.initialize(spec_file, aut_file, firstRun=False)
-                            logging.debug("finished initializing")
+                            ltlmop_logger.debug("finished initializing")
                             self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
 
                             # updated regions
@@ -780,12 +783,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.dPatchingExecutor.loadProjectAndRegions()
 
                             while not self.dPatchingExecutor.checkRestartStatus():
-                                logging.debug('Waiting for the other robot to restart')
+                                ltlmop_logger.debug('Waiting for the other robot to restart')
                                 self.dPatchingExecutor.sendRestartStatusToAllCoordinatingRobots()
                                 self.dPatchingExecutor.runIterationNotCentralExecution()
-                                logging.debug("RestartStatus:" + str(self.dPatchingExecutor.readyToRestart))
+                                ltlmop_logger.debug("RestartStatus:" + str(self.dPatchingExecutor.readyToRestart))
                                 time.sleep(0.2) #wait for the other robot to get ready
-                            logging.debug('Running again ...')
+                            ltlmop_logger.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
 
                             # also restarts the other robots operating
@@ -794,7 +797,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             continue
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
                         else:
-                            logging.warning('runCentralizedStrategy should not be true!')
+                            ltlmop_logger.warning('runCentralizedStrategy should not be true!')
 
                     # %%%%%%%%%%% d-patching  %%%%%%%%%%% #
                     # get latest info from the other robots.
@@ -859,7 +862,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # stop the robot from moving
                             self.hsub.setVelocity(0,0)
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
-                            logging.info("We are asked to join a centralized strategy")
+                            ltlmop_logger.info("We are asked to join a centralized strategy")
                             self.runRuntimeMonitoring.clear()
                             if self.runCentralizedStrategy:
                                 self.initiateDPatchingCentralizedMode(received_request=True)
@@ -867,12 +870,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 self.initiateDPatching(received_request=True)
                             self.resumeRuntimeMonitoring()
                             #TODO: need to take care of cases where mulptiple requests are received
-                            logging.error('Decentralized Patching is not completed yet!')
-                            logging.info("Start executing centralized strategy")
+                            ltlmop_logger.error('Decentralized Patching is not completed yet!')
+                            ltlmop_logger.info("Start executing centralized strategy")
                             continue
                         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
-                        logging.error("Mulit robot mode is incorrect. This is impossible.")
+                        ltlmop_logger.error("Mulit robot mode is incorrect. This is impossible.")
 
                 #######################################################
                 ######### ASSUMPTIONS DIDN'T HOLD ACTIONS #############
@@ -902,7 +905,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.initiateDPatchingCentralizedMode()
                             self.resumeRuntimeMonitoring()
                             self.postEvent("D-PATCH","Resuming centralized strategy ...")
-                            logging.warning("centralized repatch done... restarting")
+                            ltlmop_logger.warning("centralized repatch done... restarting")
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
                         elif self.proj.compile_options["multi_robot_mode"] == "patching":
@@ -920,7 +923,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 if self.violationTimeStamp == 0:
                                     self.violationTimeStamp = time.clock()
                                     self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                                    logging.debug('Setting violation timeStamp')
+                                    ltlmop_logger.debug('Setting violation timeStamp')
                                     time.sleep(1)
                             # ---------------------------------------------- #
 
@@ -932,17 +935,17 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                         elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
                             # %%%%%%%%%%%%% d-patching %%%%%%%%%%%%%%%% #
-                            logging.error('Decentralized Patching is not completed yet!')
+                            ltlmop_logger.error('Decentralized Patching is not completed yet!')
                             pass
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
                         else:
-                            logging.error("Mulit robot mode is incorrect. This is impossible.")
+                            ltlmop_logger.error("Mulit robot mode is incorrect. This is impossible.")
 
                     # count the number of next state changes
                     if last_next_states != current_next_states or str(self.strategy.current_state.state_id) not in [x.state_id for x in last_next_states]:
                         self.envViolationCount += 1
-                        logging.debug("No of env violations:"+ str(self.envViolationCount))
+                        ltlmop_logger.debug("No of env violations:"+ str(self.envViolationCount))
                         if self.proj.compile_options['recovery']:
                             self.runRuntimeMonitoring.set()
 
@@ -1005,7 +1008,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
                         self.runRuntimeMonitoring.clear()
-                        logging.info("Initiating patching...")
+                        ltlmop_logger.info("Initiating patching...")
                         self.initiateDPatching()
                         self.resumeRuntimeMonitoring()
                         continue
@@ -1056,7 +1059,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     #self.LTLViolationCheck.append_state_to_LTL(self.strategy.current_state, self.sensor_strategy)
 
                     if env_assumption_hold == False:
-                        logging.debug("Value should be True: " + str(env_assumption_hold))
+                        ltlmop_logger.debug("Value should be True: " + str(env_assumption_hold))
 
                     # For print violated safety in the log (update lines violated in every iteration)
                     if len(self.violated_spec_line_no) == 0 and self.old_violated_spec_line_no !=self.violated_spec_line_no and (self.recovery or self.disableEnvChar):
@@ -1070,7 +1073,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.postEvent("RESOLVED", "The specification violation is resolved.")
                             self.violationTimeStamp = 0
                             self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                            logging.debug('Resetting violation timeStamp')
+                            ltlmop_logger.debug('Resetting violation timeStamp')
 
                             # # save a copy
                             # self.old_violated_specStr = copy.copy(self.violated_spec_list)
@@ -1112,7 +1115,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
             last_gui_update_time = self.timer_func()
 
-        logging.debug("execute.py quitting...")
+        ltlmop_logger.debug("execute.py quitting...")
 
     # This function is necessary to prevent xmlrpcserver from catching
     # exceptions and eating the tracebacks
@@ -1140,7 +1143,7 @@ class RedirectText:
 ####################################################
 
 def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False):
-    logging.info("Hello. Let's do this!")
+    ltlmop_logger.info("Hello. Let's do this!")
 
     # Create the XML-RPC server
     if listen_port is None:
@@ -1167,12 +1170,12 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
         XMLRPCServerThread = threading.Thread(target=xmlrpc_server.serve_forever)
         XMLRPCServerThread.daemon = True
         XMLRPCServerThread.start()
-        logging.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
+        ltlmop_logger.info("Executor listening for XML-RPC calls on http://127.0.0.1:{} ...".format(listen_port))
 
         # Start the GUI if necessary
         if show_gui:
             # Create a subprocess
-            logging.info("Starting GUI window...")
+            ltlmop_logger.info("Starting GUI window...")
             p_gui = subprocess.Popen([sys.executable, "-u", "-m", "lib.simGUI", str(listen_port)])
 
             # Wait for GUI to fully load, to make sure that
@@ -1189,10 +1192,10 @@ def execute_main(listen_port=None, spec_file=None, aut_file=None, show_gui=False
         e.run()
 
         # Clean up on exit
-        logging.info("Waiting for XML-RPC server to shut down...")
+        ltlmop_logger.info("Waiting for XML-RPC server to shut down...")
         xmlrpc_server.shutdown()
         XMLRPCServerThread.join()
-        logging.info("XML-RPC server shutdown complete.  Goodbye.")
+        ltlmop_logger.info("XML-RPC server shutdown complete.  Goodbye.")
     except:
         print "Exception !!!:"
         traceback.print_exc(file=sys.stdout)
@@ -1213,7 +1216,7 @@ if __name__ == "__main__":
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hnp:a:s:", ["help", "no-gui", "xmlrpc-listen-port=", "aut-file=", "spec-file="])
     except getopt.GetoptError:
-        logging.exception("Bad arguments")
+        ltlmop_logger.exception("Bad arguments")
         usage(sys.argv[0])
         sys.exit(2)
 
@@ -1227,7 +1230,7 @@ if __name__ == "__main__":
             try:
                 listen_port = int(arg)
             except ValueError:
-                logging.error("Invalid port '{}'".format(arg))
+                ltlmop_logger.error("Invalid port '{}'".format(arg))
                 sys.exit(2)
         elif opt in ("-a", "--aut-file"):
             aut_file = arg

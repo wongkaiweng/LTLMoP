@@ -5,8 +5,11 @@ HexapodSensorHandler.py - The Hexapod's Sensor Handler
 """
 
 import time
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -20,7 +23,7 @@ class HexapodSensorHandler(handlerTemplates.SensorHandler):
         try:
             self.hexapodSer = shared_data["hexapodSer"]
         except:
-            logging.exception("Couldn't connect to Hexapod")
+            ltlmop_logger.exception("Couldn't connect to Hexapod")
             exit(-1)
 
     def _sendCommand(self, cmd):
@@ -35,7 +38,7 @@ class HexapodSensorHandler(handlerTemplates.SensorHandler):
             byte0 = byte1                                        #if true, then read in analog value from force sensor
             byte1 = self.hexapodSer.read()
             if not byte1:                                        #if false, then sending has failed and keep looping
-                logging.debug('failed')
+                ltlmop_logger.debug('failed')
                 return -1
         reading = self.hexapodSer.read(2)                    #read analog value from force sensors
         return reading

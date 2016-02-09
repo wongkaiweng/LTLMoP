@@ -13,8 +13,11 @@
 import os, sys
 import fileMethods, regions
 from numpy import *
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class Project:
     """
@@ -72,17 +75,17 @@ class Project:
         """
 
         if self.spec_data is None:
-            logging.error("Cannot load region mapping data before loading a spec file")
+            ltlmop_logger.error("Cannot load region mapping data before loading a spec file")
             return None
 
         try:
             mapping_data = self.spec_data['SPECIFICATION']['RegionMapping']
         except KeyError:
-            logging.warning("Region mapping data undefined")
+            ltlmop_logger.warning("Region mapping data undefined")
             return None
 
         if len(mapping_data) == 0:
-            logging.warning("Region mapping data is empty")
+            ltlmop_logger.warning("Region mapping data is empty")
             return None
 
         regionMapping = {}
@@ -105,20 +108,20 @@ class Project:
             try:
                 regf_name = os.path.join(self.project_root, self.spec_data['SETTINGS']['RegionFile'][0])
             except (IndexError, KeyError):
-                logging.warning("Region file undefined")
+                ltlmop_logger.warning("Region file undefined")
                 return None
 
-        logging.info("Loading region file %s..." % regf_name)
+        ltlmop_logger.info("Loading region file %s..." % regf_name)
         rfi = regions.RegionFileInterface()
 
         if not rfi.readFile(regf_name):
             if not self.silent:
-                logging.error("Could not load region file %s!"  % regf_name)
+                ltlmop_logger.error("Could not load region file %s!"  % regf_name)
                 if decomposed:
-                    logging.error("Are you sure you compiled your specification?")
+                    ltlmop_logger.error("Are you sure you compiled your specification?")
             return None
 
-        logging.info("Found definitions for %d regions." % len(rfi.regions))
+        ltlmop_logger.info("Found definitions for %d regions." % len(rfi.regions))
 
         return rfi
 
@@ -129,28 +132,28 @@ class Project:
 
 
         ### Load in the specification file
-        logging.info("Loading specification file %s..." % spec_file)
+        ltlmop_logger.info("Loading specification file %s..." % spec_file)
         spec_data = fileMethods.readFromFile(spec_file)
 
         if spec_data is None:
-            logging.warning("Failed to load specification file")
+            ltlmop_logger.warning("Failed to load specification file")
             return None
 
         try:
             self.specText = '\n'.join(spec_data['SPECIFICATION']['Spec'])
         except KeyError:
-            logging.warning("Specification text undefined")
+            ltlmop_logger.warning("Specification text undefined")
 
         # ------ two_robot_negotiation ------#
         try:
             self.otherRobot = spec_data['SPECIFICATION']['OtherRobot']
         except KeyError:
-            logging.warning("other robot undefined")
+            ltlmop_logger.warning("other robot undefined")
 
         try:
             self.global_sensors = spec_data['SPECIFICATION']['GlobalSensors']
         except KeyError:
-            logging.warning("global sensors undefined")
+            ltlmop_logger.warning("global sensors undefined")
         # ---------------------------------- #
         
         if 'CompileOptions' in spec_data['SETTINGS']:
@@ -228,7 +231,7 @@ class Project:
         try:
             self.current_config = self.spec_data['SETTINGS']['CurrentConfigName'][0]
         except (KeyError, IndexError):
-            logging.warning("No experiment configuration defined")
+            ltlmop_logger.warning("No experiment configuration defined")
 
         self.regionMapping = self.loadRegionMapping()
         self.rfi = self.loadRegionFile()

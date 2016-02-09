@@ -9,9 +9,12 @@ import ast
 import re
 import types
 from collections import namedtuple
-import logging
 import globalConfig
 from itertools import chain
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class CallDescriptor(namedtuple("CallDescriptor",
                                 "name, args, start_pos, end_pos")):
@@ -66,7 +69,7 @@ def parseCallString(text, mode="single", make_call_function=None):
     try:
         call_list, f = parseCallTree(tree.body[0].value, mode, make_call_function)
     except SyntaxError:
-        logging.error("Error while parsing line {!r}".format(text))
+        ltlmop_logger.error("Error while parsing line {!r}".format(text))
         raise
 
     if f is not None and isinstance(f, types.LambdaType):
@@ -170,11 +173,11 @@ def parseCallTree(tree, mode, make_call_function):
         raise SyntaxError("Encountered unexpected node of type {}".format(type(tree)))
 
 if __name__ == "__main__":
-    logging.info("Running doctests...")
+    ltlmop_logger.info("Running doctests...")
     import doctest
     doctest.testmod()
 
-    logging.info("Running other tests...")
+    ltlmop_logger.info("Running other tests...")
     def make_fake_function(cd):
         print "making {}".format(cd.name)
         def fake_function(**kwargs):

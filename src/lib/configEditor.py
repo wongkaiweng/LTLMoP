@@ -27,6 +27,11 @@ from hsubParsingUtils import parseCallString
 import lib.handlers.handlerTemplates as ht
 import lib.globalConfig
 from lib.hsubConfigObjects import ExperimentConfig, RobotConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
 # begin wxGlade: extracode
 # end wxGlade
 
@@ -1077,7 +1082,7 @@ class addRobotDialog(wx.Dialog):
 
             if self.handler_combos[handler_type_class].GetStringSelection() == "":
                 # when neither the robot or the share folder has the handler loaded
-                logging.warning('Cannot find and handler config in the options for handler type {!r}'\
+                ltlmop_logger.warning('Cannot find and handler config in the options for handler type {!r}'\
                         .format(handler_type_class))
                 self.handler_buttons[handler_type_class].Enable(False)
 
@@ -1132,7 +1137,7 @@ class addRobotDialog(wx.Dialog):
                 if handler_config_changed is not None:
                     self.robot.handlers[htype] = handler_config_changed
                 else:
-                    logging.warning('Cannot find the selected handler config.')
+                    ltlmop_logger.warning('Cannot find the selected handler config.')
 
                 break
 

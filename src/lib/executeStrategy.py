@@ -1,8 +1,12 @@
 import fsa
 import sys
-import logging,random
+import random
 import project
 import copy
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class ExecutorStrategyExtensions(object):
     """ Extensions to Executor to allow for the strategy structure.
@@ -59,7 +63,7 @@ class ExecutorStrategyExtensions(object):
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            logging.error("Could not find a suitable state to transition to!")
+            ltlmop_logger.error("Could not find a suitable state to transition to!")
             return
 
         # See if we're beginning a new transition
@@ -134,7 +138,7 @@ class ExecutorStrategyExtensions(object):
             decomposed_region_names = self.proj.regionMapping[sensor_region_name]
             self.prev_decomposed_region_names = decomposed_region_names
         else:
-            logging.info('not inside any region!')
+            ltlmop_logger.info('not inside any region!')
             decomposed_region_names  = self.prev_decomposed_region_names
 
         sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
@@ -163,13 +167,13 @@ class ExecutorStrategyExtensions(object):
 
                 if len(next_states) == 0:
                     # Well darn!
-                    logging.error("Could not find a suitable state to transition to!")
+                    ltlmop_logger.error("Could not find a suitable state to transition to!")
                 return
 
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            logging.error("Could not find a suitable state to transition to!")
+            ltlmop_logger.error("Could not find a suitable state to transition to!")
 
             if self.proj.compile_options['recovery']:
                 # set violationCount to be violationThres such that envChar is triggered
@@ -186,7 +190,7 @@ class ExecutorStrategyExtensions(object):
 
                     # also update sensors
                     enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
-                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    ltlmop_logger.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
                     self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
 
                 elif self.proj.compile_options["multi_robot_mode"] == "negotiation":
@@ -218,7 +222,7 @@ class ExecutorStrategyExtensions(object):
             # find next region
             self.next_region = self.next_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
-            logging.info("Currently at state %s." % self.next_state.state_id)
+            ltlmop_logger.info("Currently at state %s." % self.next_state.state_id)
 
             # ------------------------------- #
             # --- two_robot_negotiation ----- #
@@ -259,10 +263,10 @@ class ExecutorStrategyExtensions(object):
                     possible_next_states = self.strategy.findTransitionableNextStates(from_state=self.next_state)
                     """
                     statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
-                    #logging.debug('statesToConsider:' + str(statesToConsider))
+                    #ltlmop_logger.debug('statesToConsider:' + str(statesToConsider))
                     possible_next_states = []
                     for state in statesToConsider:
-                        logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
+                        ltlmop_logger.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
                     """
                 else:
                     possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
@@ -285,18 +289,18 @@ class ExecutorStrategyExtensions(object):
                    possible_next_states = self.strategy.findTransitionableNextStates(from_state=self.next_state)
 
                    statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
-                   #logging.debug('statesToConsider:' + str(statesToConsider))
+                   #ltlmop_logger.debug('statesToConsider:' + str(statesToConsider))
                    possible_next_states = []
                    for state in statesToConsider:
                        envTrans_hold = self.envTransCheck.checkViolation(self.next_state, state)
                        sysTrans_hold = self.sysTransCheck.checkViolation(self.next_state, state)
                        if envTrans_hold and sysTrans_hold:
-                           logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
+                           ltlmop_logger.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
                 else:
                     try:
                         possible_next_states = self.strategy.findTransitionableStates({}, from_state=self.next_state)
                         for state in possible_next_states:
-                            logging.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
+                            ltlmop_logger.warning([k for k, v in state.getAll(expand_domains=True).iteritems() if v])
                     except:
                         pass
             """
@@ -329,8 +333,8 @@ class ExecutorStrategyExtensions(object):
             if not self.proj.compile_options['interactive']:
                 self.postEvent("INFO", "Now in state %s (z = %s)" % (self.strategy.current_state.state_id, self.strategy.current_state.goal_id))
             else:
-                logging.info(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
-                logging.info('---------------------------------------------------------')
+                ltlmop_logger.info(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
+                ltlmop_logger.info('---------------------------------------------------------')
 
         if self.strategy.current_state.getAll(expand_domains=True) == self.next_state.getAll(expand_domains=True):
             ##########################################
@@ -365,7 +369,7 @@ class ExecutorStrategyExtensions(object):
             decomposed_region_names = self.proj.regionMapping[sensor_region_name]
             self.prev_decomposed_region_names = decomposed_region_names
         else:
-            logging.info('not inside any region!')
+            ltlmop_logger.info('not inside any region!')
             decomposed_region_names  = self.prev_decomposed_region_names
 
         sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
@@ -388,7 +392,7 @@ class ExecutorStrategyExtensions(object):
         # Make sure we have somewhere to go
         if len(sysOutputs) == 0:
             # Well darn!
-            logging.error("Could not find a suitable state to transition to in centralized strategy!")
+            ltlmop_logger.error("Could not find a suitable state to transition to in centralized strategy!")
 
             # %%%%%%%%%%%%  d-patching %%%%%%%%%%% #
             # update current region even though no next state is found.
@@ -401,7 +405,7 @@ class ExecutorStrategyExtensions(object):
 
                     # also update sensors
                     enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
-                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    ltlmop_logger.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
                     self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
 
                 elif self.proj.compile_options["multi_robot_mode"] == "negotiation":
@@ -441,7 +445,7 @@ class ExecutorStrategyExtensions(object):
 
                     # also update sensors
                     enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
-                    logging.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
+                    ltlmop_logger.warning('{x:sensor_state[x] for x in enabled_sensors}:' + str({x:sensor_state[x] for x in enabled_sensors}))
                     self.dPatchingExecutor.updateRobotSensorsWithAllClients({x:sensor_state[x] for x in enabled_sensors})
                 else:
                     if self.proj.compile_options['include_heading']:
@@ -459,7 +463,7 @@ class ExecutorStrategyExtensions(object):
                     possible_next_states = self.dPatchingExecutor.strategy.findTransitionableNextStates(from_state=self.dPatchingExecutor.strategy.current_state)
                     """
                     statesToConsider = self.strategy.findTransitionableNextStates(from_state=self.next_state)
-                    #logging.debug('statesToConsider:' + str(statesToConsider))
+                    #ltlmop_logger.debug('statesToConsider:' + str(statesToConsider))
                     possible_next_states = []
                     for state in statesToConsider:
                         # also checks if states satisfy phi_e^t and phi_s^t

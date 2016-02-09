@@ -5,8 +5,11 @@ import fsa
 from collections import OrderedDict
 import re
 import strategy
-import logging
 import copy
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 """ ======================================
     LTLcheck.py - LTL violation checking module
@@ -37,7 +40,7 @@ def filterRelatedRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
     removes ltl involving only rlatedRobots
     """
     ltlListFiltered, ltlListExcluded = filterSpecList(ltlList, allRobotsList, relatedRobots, one_robot_mode=False, myName=myName)
-    logging.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
+    ltlmop_logger.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
 
     return ltlListFiltered
 
@@ -46,7 +49,7 @@ def filterRelatedOneRobotSpec(ltlList, allRobotsList, relatedRobots, myName ="")
     removes ltl involving only rlatedRobots (it is possible to have only one robot in relatedRobots)
     """
     ltlListFiltered, ltlListExcluded = filterSpecList(ltlList, allRobotsList, relatedRobots, one_robot_mode=True, myName=myName)
-    logging.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
+    ltlmop_logger.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))
 
     return ltlListFiltered
 
@@ -58,9 +61,9 @@ def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myNa
 
     keyList: cannot be empty. Should be list of robots coordinating (including myself)
     """
-    logging.debug("keyList:" + str(keyList))
-    logging.debug("keyListMatch:" + str(keyListMatch))
-    logging.debug("myName:" + str(myName))
+    ltlmop_logger.debug("keyList:" + str(keyList))
+    ltlmop_logger.debug("keyListMatch:" + str(keyListMatch))
+    ltlmop_logger.debug("myName:" + str(myName))
 
     ltlKept = []
     ltlExcluded = []
@@ -69,27 +72,27 @@ def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myNa
         for key in keyList:
             if checkIfKeyInFormula(ltl, key):
                 keyFound.append(key)
-        #logging.debug("keyFound:" + str(keyFound))
+        #ltlmop_logger.debug("keyFound:" + str(keyFound))
         if len(keyFound) == 1 and one_robot_mode: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
-            #logging.debug(str(ltl) + " is excluded because of one_robot_mode and only ony key is found")
+            #ltlmop_logger.debug(str(ltl) + " is excluded because of one_robot_mode and only ony key is found")
             ltlExcluded.append(ltl)
             continue
         elif len(keyFound) == 1 and myName in keyFound:
             # we will never remove spec about only ourselves
             ltlKept.append(ltl)
-            #logging.debug(str(ltl) + " is kept because of one key is Found and is my name")
+            #ltlmop_logger.debug(str(ltl) + " is kept because of one key is Found and is my name")
         elif not len(keyListMatch): # don't care. just match everything except spec of one robot
             ltlKept.append(ltl)
-            #logging.debug(str(ltl) + " is kept because in keyListMatch is not provided.")
+            #ltlmop_logger.debug(str(ltl) + " is kept because in keyListMatch is not provided.")
 
         elif set(keyFound).issubset(set(keyListMatch)) and keyFound:
             # if list is provided, and matches, then ignore this ltl.
             #** now exclude subsets as well. also make sure list is not empty
-            #logging.debug(str(ltl) + " is excluded with keyFound in keyListMatch.")
+            #ltlmop_logger.debug(str(ltl) + " is excluded with keyFound in keyListMatch.")
             ltlExcluded.append(ltl)
             continue
         else:
-            #logging.debug(str(ltl) + " is kept because no option is matched.")
+            #ltlmop_logger.debug(str(ltl) + " is kept because no option is matched.")
             ltlKept.append(ltl)
 
     return ltlKept, ltlExcluded
@@ -130,7 +133,7 @@ def excludeSpecFromList(specList, toExcludeSpecList):
                 toRemoveSpec.append(spec)
                 break
         else:
-            logging.error("This spec is not found in the specList:" + str(toExcludeSpec))
+            ltlmop_logger.error("This spec is not found in the specList:" + str(toExcludeSpec))
 
     # remove spec from list
     for x in toRemoveSpec:
@@ -257,8 +260,8 @@ class LTL_Check:
         self.replaceLTLTree(self.spec[specType])
 
         if debug_tree_terminal == True: 
-            logging.debug("Here's the ltl of the environment assumptions from spec:")
-            logging.debug(LTLFormula.printTree(self.ltl_tree,LTLFormula.p.terminals))
+            ltlmop_logger.debug("Here's the ltl of the environment assumptions from spec:")
+            ltlmop_logger.debug(LTLFormula.printTree(self.ltl_tree,LTLFormula.p.terminals))
 
         self.violated_spec_line_no = [] # storing lineNo found in the violations
         self.violated_specStr = [] # storing all violations LTL
@@ -353,18 +356,18 @@ class LTL_Check:
         # for printing original spec violated
         if not self.ltl_treeEnvTrans is None:
             valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, LTLFormula.p.terminals, self.violated_spec_line_no, envTransTree = True)
-            #logging.debug('self.ltl_tree:' + str(self.ltl_tree))
-            #logging.debug('getInputs:' + str(self.sensor_state.getInputs()))
-            #logging.debug("valueEnvTrans:" + str(valueEnvTrans))
-            #logging.debug("value:" + str(value))
-            #logging.debug("self.violated_spec_line_no:" + str(self.violated_spec_line_no))
+            #ltlmop_logger.debug('self.ltl_tree:' + str(self.ltl_tree))
+            #ltlmop_logger.debug('getInputs:' + str(self.sensor_state.getInputs()))
+            #ltlmop_logger.debug("valueEnvTrans:" + str(valueEnvTrans))
+            #ltlmop_logger.debug("value:" + str(value))
+            #ltlmop_logger.debug("self.violated_spec_line_no:" + str(self.violated_spec_line_no))
 
         if debug_proposition_values == True:
-            logging.debug( "self.current_state:")
-            logging.debug(self.current_state.getAll(expand_domains = True))
+            ltlmop_logger.debug( "self.current_state:")
+            ltlmop_logger.debug(self.current_state.getAll(expand_domains = True))
 
         if not value and not self.violated_spec_line_no and not self.violated_specStr and not self.violated_specStr_with_no_specText_match:
-            logging.error('Violation value should be true but it\'s false here!')
+            ltlmop_logger.error('Violation value should be true but it\'s false here!')
             value = True
 
         # Environment Violations are removed
@@ -396,7 +399,7 @@ class LTL_Check:
             valueEnvTrans, negateEnvTrans, nextEnvTrans = self.evaluate_subtree(self.ltl_treeEnvTrans, LTLFormula.p.terminals, self.violated_spec_line_no, envTransTree = True)
 
         if not value and not self.violated_spec_line_no and not self.violated_specStr and not self.violated_specStr_with_no_specText_match:
-            logging.error('Violation value should be true but it\'s false here!')
+            ltlmop_logger.error('Violation value should be true but it\'s false here!')
             value = True
 
         # Environment Violations are removed
@@ -692,15 +695,15 @@ class LTL_Check:
                     
                     if value == False:
                         if debug_false_ltl:
-                            logging.debug('--------------------------------------')
+                            ltlmop_logger.debug('--------------------------------------')
                         try:
                             if not self.LTLMoP:
-                                logging.debug("violated line:" +  str(LTLFormula.treeToString(x)))
+                                ltlmop_logger.debug("violated line:" +  str(LTLFormula.treeToString(x)))
                             treeNo = self.ltlTree_to_lineNo[LTLFormula.treeToString(x)]
                             if self.LTLMoP and debug_false_ltl:
-                                logging.debug("violated line "+ str(treeNo)+" in English:" +  str(LTLFormula.treeToString(x)))
-                                logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                                logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
+                                ltlmop_logger.debug("violated line "+ str(treeNo)+" in English:" +  str(LTLFormula.treeToString(x)))
+                                ltlmop_logger.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                                ltlmop_logger.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             if (treeNo not in violated_spec_line_no) and treeNo > 0: 
                                 violated_spec_line_no.append(treeNo)
                         except:  
@@ -709,9 +712,9 @@ class LTL_Check:
                                 if LTLFormula.treeToString(x) not in self.violated_specStr_with_no_specText_match:
                                     self.violated_specStr_with_no_specText_match.append(LTLFormula.treeToString(x))
                                     if debug_false_ltl:
-                                        logging.debug("no text match violation:" +  str(LTLFormula.treeToString(x)))
-                                        logging.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                                        logging.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
+                                        ltlmop_logger.debug("no text match violation:" +  str(LTLFormula.treeToString(x)))
+                                        ltlmop_logger.debug('self.sensor_state:' + str([key for key, v in self.sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                                        ltlmop_logger.debug('self.current_state:' + str([key for key, v in self.current_state.getAll(expand_domains=True).iteritems() if v]))
                             else:
                                 if 0 not in violated_spec_line_no:
                                     treeNo = 0
@@ -720,10 +723,10 @@ class LTL_Check:
                             to_be_added_violated_specStr = LTLFormula.treeToString(x)
                             if to_be_added_violated_specStr not in self.violated_specStr:
                                 if debug_false_ltl:
-                                    logging.debug('Adding specStr to self.violated_specStr....')
+                                    ltlmop_logger.debug('Adding specStr to self.violated_specStr....')
                                 self.violated_specStr.append(LTLFormula.treeToString(x))
                         if debug_false_ltl:
-                            logging.debug('--------------------------------------')
+                            ltlmop_logger.debug('--------------------------------------')
                     else:
                         if debug_true_ltl == True:                        
                             print "-----------------------------------------------"

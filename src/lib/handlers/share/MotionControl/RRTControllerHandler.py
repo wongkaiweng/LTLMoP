@@ -24,15 +24,19 @@ from math import sqrt, fabs , pi
 import random
 import thread
 import threading
+
+# logger for ltlmop
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
 # importing matplotlib to show the path if possible
 try:
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
     import_matplotlib = True
-    logging.warning("matplotlib is successfully imported")
+    ltlmop_logger.warning("matplotlib is successfully imported")
 except:
-    logging.error("matplotlib is not imported. Plotting is disabled")
+    ltlmop_logger.error("matplotlib is not imported. Plotting is disabled")
     import_matplotlib = False
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -184,7 +188,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         # Check if Vicon has cut out
         # TODO: this should probably go in posehandler?
         if math.isnan(pose[2]) or sum(pose) == 0:
-            logging.warning("WARNING: No Vicon data! Pausing.")
+            ltlmop_logger.warning("WARNING: No Vicon data! Pausing.")
             self.drive_handler.setVelocity(0, 0)  # So let's stop
             time.sleep(1)
             return False
@@ -415,7 +419,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         while not path:
             #step -1: try connection to q_goal (generate path to goal)
             i = 0
-            logging.debug("finding RRT Path...")
+            ltlmop_logger.debug("finding RRT Path...")
             if self.system_print == True:
                 print "Try Connection to the goal points"
 

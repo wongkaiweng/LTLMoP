@@ -2,8 +2,11 @@
 
 import sys
 import LTLParser
-import logging
 import re
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # Allocate global parser
 p = LTLParser.Parser()
@@ -78,7 +81,7 @@ class LTLFormula(object):
         elif temporal_operators == 'GF':
             return LTLFormulaType.LIVENESS
         else:
-            logging.warning("Unknown tree type: %r", temporal_operators)
+            ltlmop_logger.warning("Unknown tree type: %r", temporal_operators)
             return LTLFormulaType.OTHER
 
     def getOutermostTemporalOperators(self, tree=None):
@@ -104,7 +107,7 @@ class LTLFormula(object):
     def getConjuncts(self):
         if not self.tree[0] == "Conjunction":
             # This can happen if there is only one conjunct in the spec, for example
-            logging.warning("Highest level not conjunction")
+            ltlmop_logger.warning("Highest level not conjunction")
             return [self]
         
         return [LTLFormula(t) for t in self.tree[1:]]
@@ -196,16 +199,16 @@ def parseLTL(ltlTxt):
     except p.ParseErrors as exc:
         for t, e in exc.errors:
             if t[0] == p.EOF:
-                logging.error("Formula end not expected here")
+                ltlmop_logger.error("Formula end not expected here")
                 continue
 
             if len(e) == 1:
-                logging.error("Error in LTL formula: %r", ltlTxt)
-                logging.error("Expected %r, but found %r", e[0], t[0])
+                ltlmop_logger.error("Error in LTL formula: %r", ltlTxt)
+                ltlmop_logger.error("Expected %r, but found %r", e[0], t[0])
             else:
-                logging.error("Error in LTL formula: %r", ltlTxt)
-                logging.error("Could not parse %r: ", t[0])
-                logging.error("Wanted a token of one of the following forms: %r", e)
+                ltlmop_logger.error("Error in LTL formula: %r", ltlTxt)
+                ltlmop_logger.error("Could not parse %r: ", t[0])
+                ltlmop_logger.error("Wanted a token of one of the following forms: %r", e)
         raise
 
     # Post-process

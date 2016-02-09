@@ -5,8 +5,11 @@ HexapodActuatorHandler.py - The Hexapod's Actuator Handler
 """
 
 import time
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -20,7 +23,7 @@ class HexapodActuatorHandler(handlerTemplates.ActuatorHandler):
         try:
             self.hexapodSer = shared_data["hexapodSer"]
         except:
-            logging.exception("Couldn't connect to Hexapod")
+            ltlmop_logger.exception("Couldn't connect to Hexapod")
             exit(-1)
 
     def _sendCommand(self, cmd):
@@ -31,7 +34,7 @@ class HexapodActuatorHandler(handlerTemplates.ActuatorHandler):
         self.hexapodSer.write(cmd)
         x = self.hexapodSer.read()
         while x != 'q':
-            logging.debug("received invalid ack: {}".format(x))
+            ltlmop_logger.debug("received invalid ack: {}".format(x))
             self.hexapodSer.write(cmd)
             x = self.hexapodSer.read()
         self.hexapodSer.flush()

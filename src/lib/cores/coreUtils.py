@@ -9,8 +9,11 @@ from logic import to_cnf
 from multiprocessing import Pool
 import threading
 import itertools
-import logging
 import random
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 
 ''' UTILS FOR CONVERTING TO AND FROM DIMACS FORMAT '''
@@ -266,38 +269,38 @@ def findGuiltyLTLConjuncts(cmd, depth, numProps, init, trans, goals, mapping,  c
 #        satFileName = "debug"+str(random.randint(0,1000))+".sat"
 #        outputFile = open(satFileName,'w')
 #        outputFile.write("\n".join(output))
-#        logging.debug("wrote {}".format(satFileName))
+#        ltlmop_logger.debug("wrote {}".format(satFileName))
 #        outputFile.close()
 #        
 #        #Write input to file (mainly for debugging purposes)
 #        satFileName = "input"+str(random.randint(0,1000))+".sat"
 #        inputFile = open(satFileName,'w')
 #        inputFile.write("\n".join(input))
-#        logging.debug("wrote {}".format(satFileName))
+#        ltlmop_logger.debug("wrote {}".format(satFileName))
 #        inputFile.close()
             
         if any(["WARNING: core extraction disabled" in s for s in output]):
             # never again
-            logging.error("************************************************")
-            logging.error("*** ERROR: picomus needs to be compiled with ***")
-            logging.error("*** trace support, or things will misbehave. ***")
-            logging.error("***                                          ***")
-            logging.error("*** Recompile with ./configure --trace       ***")
-            logging.error("************************************************")
+            ltlmop_logger.error("************************************************")
+            ltlmop_logger.error("*** ERROR: picomus needs to be compiled with ***")
+            ltlmop_logger.error("*** trace support, or things will misbehave. ***")
+            ltlmop_logger.error("***                                          ***")
+            ltlmop_logger.error("*** Recompile with ./configure --trace       ***")
+            ltlmop_logger.error("************************************************")
             return []
 
         
         if any(["UNSATISFIABLE" in s for s in output]):
-            logging.info("Unsatisfiable core found at depth {}".format(depth))
+            ltlmop_logger.info("Unsatisfiable core found at depth {}".format(depth))
         elif any(["SATISFIABLE" in s for s in output]):
-            logging.info("Satisfiable at depth {}".format(depth))
+            ltlmop_logger.info("Satisfiable at depth {}".format(depth))
             if depth==maxDepth:
                 print output
             return []
         elif timing & any(["real" in s for s in output]):
-            logging.info([l for l in output if "real" in l])
+            ltlmop_logger.info([l for l in output if "real" in l])
         else:
-            logging.error("Picosat error: {!r}".format(output))
+            ltlmop_logger.error("Picosat error: {!r}".format(output))
         
         """cnfIndices = []
         for line in output.split('\n'):
@@ -349,7 +352,7 @@ def unsatCoreCases(cmd, propList, topo, badInit, conjuncts, maxDepth, initDepth,
         
         init.extend(extra)
         
-        logging.info("Trying to find core without topo or init") 
+        ltlmop_logger.info("Trying to find core without topo or init")
 
         #for each depth, find the conjuncts that prevent the goal(if anhy)
         guiltyList = runMap(findGuiltyLTLConjunctsWrapper, itertools.izip(itertools.repeat(cmd),
@@ -372,17 +375,17 @@ def unsatCoreCases(cmd, propList, topo, badInit, conjuncts, maxDepth, initDepth,
         if all(guiltyList): # goal unsat at all depths
             # return the set of all guilty conjuncts (across all depths)    
             allGuilty = set([item for sublist in guiltyList for item in sublist])
-            logging.info("Unsat core found without topo or init")
+            ltlmop_logger.info("Unsat core found without topo or init")
             return trans, allGuilty
         else:
             # ignoreDepth = len([g for g in guiltyList if g])
             ignoreDepth += next((i for i, x in enumerate(guiltyList) if x), 0) #find first unsat depth
         
-        logging.info("ignore depth {}".format(ignoreDepth))
+        ltlmop_logger.info("ignore depth {}".format(ignoreDepth))
         
             
         #then try just topo and init and see if it is unsatisfiable. If so, return core.
-        logging.info("Trying to find core with just topo and init")
+        ltlmop_logger.info("Trying to find core with just topo and init")
         mapping,  cnfMapping, init, trans, goals = conjunctsToCNF([badInit,topo], propList)
        
         guilty = findGuiltyLTLConjuncts(cmd,maxDepth,numProps,init,trans,goals,mapping,cnfMapping,[badInit,topo],maxDepth,0,cyc_enc,True)
@@ -391,7 +394,7 @@ def unsatCoreCases(cmd, propList, topo, badInit, conjuncts, maxDepth, initDepth,
             #print "ENDING PICO MAP"
  
         if guilty:
-            logging.info("Unsat core found with just topo and init")
+            ltlmop_logger.info("Unsat core found with just topo and init")
             return trans, guilty
         
         
@@ -400,7 +403,7 @@ def unsatCoreCases(cmd, propList, topo, badInit, conjuncts, maxDepth, initDepth,
 
         init.extend(extra)
         
-        logging.info("Trying to find core with everything")
+        ltlmop_logger.info("Trying to find core with everything")
         
         #for liveness, initial depth is set to at least the number of regions.
         # This ensures that we unroll as far as needed to physically get to the goal
@@ -451,9 +454,9 @@ def unsatCoreCases(cmd, propList, topo, badInit, conjuncts, maxDepth, initDepth,
             ##guilty = cnfToConjuncts(allIndices, mapping)
         
         if guilty:
-            logging.info("Unsat core found with all parts")
+            ltlmop_logger.info("Unsat core found with all parts")
         else:
-            logging.info("Unsat core not found")
+            ltlmop_logger.info("Unsat core not found")
 
         return trans, guilty
     
@@ -601,7 +604,7 @@ def runMap(function, inputs):
         it easy to disable multiprocessing for debugging purposes
     """
 
-    logging.debug("Starting map ({}-threaded): {}".\
+    ltlmop_logger.debug("Starting map ({}-threaded): {}".\
                   format("multi" if USE_MULTIPROCESSING else "single", function.__name__))
 
     if USE_MULTIPROCESSING:
@@ -611,7 +614,7 @@ def runMap(function, inputs):
     else:
         outputs = map(function, inputs)   
 
-    logging.debug("Finished map: {}".format(function.__name__))
+    ltlmop_logger.debug("Finished map: {}".format(function.__name__))
 
     return outputs
 
@@ -619,7 +622,7 @@ def subprocessReadThread(fd, out):
     for line in fd:
         out.append(line)
         if "expected" in line:
-            logging.error(line)
+            ltlmop_logger.error(line)
             
 ''' FORMATTING UTILS '''
 

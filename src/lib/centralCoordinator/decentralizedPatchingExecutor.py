@@ -3,7 +3,6 @@
 This module handles communication among robots and also the execution of global automaton.
 """
 import socket #import the socket library
-import logging
 import select #for multiple robot client connections
 import re     #for parsing msg from client
 import ast    #for parsing msg from client
@@ -35,7 +34,10 @@ import strategy
 import LTLParser.LTLcheck
 
 # recursionlimits
-logging.debug("recursion limits:" + str(sys.getrecursionlimit()))
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+ltlmop_logger.debug("recursion limits:" + str(sys.getrecursionlimit()))
 sys.setrecursionlimit(10**6)
 
 from decentralizedPatchingMSGHelper import MsgHandlerExtensions #also inherit other functions
@@ -47,7 +49,7 @@ def printRegionInfo(robotLocations):
     """
     This function prints the current region information of each robot
     """
-    logging.info('----------------------------------------------')
+    ltlmop_logger.info('----------------------------------------------')
     for region, robots in robotLocations.iteritems():
         table = ""
         for rob, status in robots.iteritems():
@@ -55,8 +57,8 @@ def printRegionInfo(robotLocations):
                 table = table + "-{0:10}: {1:6} ".format(rob, status)
                 table = "{0:13}".format(region) + table
         if table:
-            logging.info(table)
-    logging.info('----------------------------------------------')
+            ltlmop_logger.info(table)
+    ltlmop_logger.info('----------------------------------------------')
 
 def printSpec(specType, specStr, robotName):
     """
@@ -65,17 +67,17 @@ def printSpec(specType, specStr, robotName):
     specStr : specification string
     robotName: name of the robot that has this specification
     """
-    logging.info('===============================================')
-    logging.info('==== ' + specType + ' of ' + robotName + ' ====')
-    logging.info('===============================================')
-    logging.info(specStr)
-    logging.info('===============================================')
+    ltlmop_logger.info('===============================================')
+    ltlmop_logger.info('==== ' + specType + ' of ' + robotName + ' ====')
+    ltlmop_logger.info('===============================================')
+    ltlmop_logger.info(specStr)
+    ltlmop_logger.info('===============================================')
 
 def printActionInfo(actionStatus, robot):
     """
     This function prints action status:
     """
-    logging.info('True Actions:' + str([x for x,v in actionStatus[robot].iteritems() if v]))
+    ltlmop_logger.info('True Actions:' + str([x for x,v in actionStatus[robot].iteritems() if v]))
 
 
 class PatchingExecutor(MsgHandlerExtensions, object):
@@ -117,9 +119,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # no one minute timeout for reconnection
         self.serv.bind((ADDR))    #the double parens are to create a tuple with one element
         self.serv.listen(listenConn)
-        logging.info('CONNECTION: Listening...')
-        logging.debug('sockName:' + str(self.serv.getsockname())) # client's connection addr
-        logging.debug('ADDR:' + str(ADDR))
+        ltlmop_logger.info('CONNECTION: Listening...')
+        ltlmop_logger.debug('sockName:' + str(self.serv.getsockname())) # client's connection addr
+        ltlmop_logger.debug('ADDR:' + str(ADDR))
 
         self.clients = {}
         self.clients[self.robotName] = self.serv    #self.clients = [self.serv]
@@ -129,10 +131,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         for robot, robotADDR in self.robotAddresses.iteritems():
             if robot != self.robotName:
                 try:
-                    logging.info('CONNECTION: Connecting to ' + robot + ' with address ' + str(robotADDR))
+                    ltlmop_logger.info('CONNECTION: Connecting to ' + robot + ' with address ' + str(robotADDR))
                     csock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   # Create a TCP/IP socket
                     csock.connect(robotADDR)
-                    logging.info('CONNECTION: Connection to '+ robot + ' is successful!')
+                    ltlmop_logger.info('CONNECTION: Connection to '+ robot + ' is successful!')
                     self.clients[robot] = csock
 
                     # for tempMsg
@@ -150,7 +152,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     self.initializeActionStatusExchange(csock, [x.replace('_ac','') for x in self.proj.enabled_sensors if x.endswith('_ac')])
 
                 except:
-                    logging.error('CONNECTION: Cannot connect to ' + robot + ' with address ' + str(robotADDR))
+                    ltlmop_logger.error('CONNECTION: Cannot connect to ' + robot + ' with address ' + str(robotADDR))
 
         # save current regions of the robot
         self.current_region = current_region
@@ -264,16 +266,16 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             if x == self.serv:
                 csock, addr = self.serv.accept()
                 csock.setblocking(0)
-                logging.debug('peerName:' + str(csock.getpeername())) # my local connection addr
-                logging.debug('sockName:' + str(csock.getsockname())) # client's connection addr
+                ltlmop_logger.debug('peerName:' + str(csock.getpeername())) # my local connection addr
+                ltlmop_logger.debug('sockName:' + str(csock.getsockname())) # client's connection addr
                 if csock.getpeername() in self.robotAddresses.values():
                     acceptedRobotName = self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())]
-                    logging.info('CONNECTION: Accepted connection from ' + acceptedRobotName + ' with address '+ str(csock.getpeername()))
+                    ltlmop_logger.info('CONNECTION: Accepted connection from ' + acceptedRobotName + ' with address '+ str(csock.getpeername()))
                     self.clients[acceptedRobotName] = csock
                 else:
                     self.tempNonameSock.append(csock)
                     self.clients[csock] = csock
-                    logging.info('CONNECTION: Accepted connection with address '+ str(csock.getpeername()) + '. Need to figure out robot name.')
+                    ltlmop_logger.info('CONNECTION: Accepted connection with address '+ str(csock.getpeername()) + '. Need to figure out robot name.')
 
                 # for tempMsg
                 self.tempMsg[csock] = ""
@@ -434,7 +436,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         x.close()
                         # first find key in clients and then delete it
                         del self.clients[self.robotAddresses.keys()[self.robotAddresses.values().index(x.getsockname())]]
-                        logging.info('PATCHING_EXECUTOR: client ' + str(x) + 'is removed.')
+                        ltlmop_logger.info('PATCHING_EXECUTOR: client ' + str(x) + 'is removed.')
 
                         # stop the checkData thread from running
                         self.keepConnection = False
@@ -451,14 +453,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 except Queue.Empty:
                     # No messages waiting so stop checking for writability.
                     queueEmpty = True
-                    #logging.warning('output queue for' + str(x.getpeername()) +  'is empty')
+                    #ltlmop_logger.warning('output queue for' + str(x.getpeername()) +  'is empty')
                 else:
-                    #logging.info('sending {0} to {1}'.format(repr(next_msg), x.getpeername()))
+                    #ltlmop_logger.info('sending {0} to {1}'.format(repr(next_msg), x.getpeername()))
                     x.send(next_msg)
 
         # Handle "exceptional conditions"
         for x in exceptReady:
-            logging.warning('handling exceptional condition for' + str(x.getpeername()))
+            ltlmop_logger.warning('handling exceptional condition for' + str(x.getpeername()))
             # Stop listening for input on the connection
             del self.clients[self.robotAddresses.keys()[self.robotAddresses.values().index(x.getsockname())]]
             x.close()
@@ -485,7 +487,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #self.updateCoordinatingRobots(self.otherRobotsWithSelf, [])
 
         if self.readyToRestart and (not False in self.readyToRestart.values()):
-            logging.debug("We are now cleaning variables.")
+            ltlmop_logger.debug("We are now cleaning variables.")
             #clean all necessary variables when done
             self.checkedRestartStatus = True
             self.cleanVariables(first_time=False)
@@ -498,7 +500,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # start patching (check if we get all the necessary spec and props)
         if self.coordinationRequest.values().count(True) and self.checkIfNecessaryPartsObtained():
 
-            logging.info('We will start patching')
+            ltlmop_logger.info('We will start patching')
 
             # first update centralized execution status
             self.centralizedExecutionStatus = False
@@ -536,7 +538,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         This function runs one iteration of centralized execution
         when self.centralizedExecutionStatus is True
         """
-        #logging.debug('Now executing the centralized strategy...')
+        #ltlmop_logger.debug('Now executing the centralized strategy...')
         #self.checkData()
 
         # check if need to drag neighbour robots in
@@ -548,7 +550,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #     self.tic = time.time()
         # check if goals are satisfied
         if self.goalsSatisfied: #checkIfGoalsAreSatisfied():
-            logging.debug('The centralized system goal is satisfied.')
+            ltlmop_logger.debug('The centralized system goal is satisfied.')
             # reset status
             self.centralizedExecutionStatus = None
             # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
@@ -570,7 +572,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     #         # start patching (check if we get all the necessary spec and props)
     #         if self.coordinationRequest.values().count(True) and self.checkIfNecessaryPartsObtained():
 
-    #             logging.info('We will start patching')
+    #             ltlmop_logger.info('We will start patching')
 
     #             # first update centralized execution status
     #             self.centralizedExecutionStatus = False
@@ -590,7 +592,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     #             # TODO: here run the centralized aut. also need to checkData
     #             tic = time.time()
     #             while self.centralizedExecutionStatus is not None:
-    #                 #logging.debug('Now executing the centralized strategy...')
+    #                 #ltlmop_logger.debug('Now executing the centralized strategy...')
     #                 self.checkData()
 
     #                 #TODO: to remove for real execution
@@ -602,7 +604,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     #                     tic = time.time()
     #                     # check if goals are satisfied
     #                     if self.checkIfGoalsAreSatisfied():
-    #                         logging.debug('The centralized system goal is satisfied.')
+    #                         ltlmop_logger.debug('The centralized system goal is satisfied.')
     #                         # reset status
     #                         self.centralizedExecutionStatus = None
     #                         # TODO: what if we have two instances of patching in parallel? Can't deal with it now.
@@ -618,7 +620,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
     #             pass
 
     #         if self.readyToRestart and (not False in self.readyToRestart.values()):
-    #             logging.debug("We are now cleaning variables.")
+    #             ltlmop_logger.debug("We are now cleaning variables.")
     #             #clean all necessary variables when done
     #             self.checkedRestartStatus = True
     #             self.cleanVariables(first_time=False)
@@ -633,7 +635,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             x.close()
         self.serv.close()
 
-        logging.info("PATCHING_EXECUTOR: Closing Connection.")
+        ltlmop_logger.info("PATCHING_EXECUTOR: Closing Connection.")
         #sys.exit()
 
 
@@ -645,18 +647,18 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         for robot in self.coordinatingRobots:
             for specType in self.spec.keys():
                 if not robot in self.spec[specType]:
-                    logging.warning("specType:" + str(specType))
-                    logging.warning('We have not recevied specs from ' + str(robot))
+                    ltlmop_logger.warning("specType:" + str(specType))
+                    ltlmop_logger.warning('We have not recevied specs from ' + str(robot))
                     time.sleep(1)
                     return False
 
             if not (robot in self.sysPropList and robot in self.envPropList):
-                logging.warning('We have not recevied all propositions from ' + str(robot))
+                ltlmop_logger.warning('We have not recevied all propositions from ' + str(robot))
                 time.sleep(1)
                 return False
 
         # receive all props + values
-        logging.info('We got all the parts!')
+        ltlmop_logger.info('We got all the parts!')
         time.sleep(1)
         return True
 
@@ -747,23 +749,23 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         store env props
         """
         for robot, ePropList in self.envPropList.iteritems():
-            logging.debug("#--------propMapping---------")
-            logging.debug("robot:" + str(robot))
-            logging.debug("self.coordinatingRobots:" + str(self.coordinatingRobots))
-            logging.debug("self.old_coordinatingRobots:" + str(self.old_coordinatingRobots))
-            logging.debug("self.robotInRange:" + str(self.robotInRange))
+            ltlmop_logger.debug("#--------propMapping---------")
+            ltlmop_logger.debug("robot:" + str(robot))
+            ltlmop_logger.debug("self.coordinatingRobots:" + str(self.coordinatingRobots))
+            ltlmop_logger.debug("self.old_coordinatingRobots:" + str(self.old_coordinatingRobots))
+            ltlmop_logger.debug("self.robotInRange:" + str(self.robotInRange))
             for eProp, eValue in ePropList.iteritems():
 
                 # about ourselves (note that we never have otherRobot_reg_rc here from original list)
                 if eProp in [robot +'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
-                    logging.debug("our own eProp:" + str(eProp))
+                    ltlmop_logger.debug("our own eProp:" + str(eProp))
                     self.smvEnvPropList.append(eProp)
                     self.propMappingNewToOld[robot][eProp] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp
 
                 # for the case of global sensors
                 elif eProp in self.globalSensors:
-                    logging.debug("global sensors:" + str(eProp))
+                    ltlmop_logger.debug("global sensors:" + str(eProp))
                     if eProp not in self.smvEnvPropList:
                         self.smvEnvPropList.append(eProp)
                     self.propMappingNewToOld[robot][eProp] = eProp
@@ -772,7 +774,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 # about otherRobot_reg for otherRobot not coorindating
                 #(not that we don't have myRobot_reg here from original list)
                 elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
-                    logging.debug("not coordinating robots:" + str(eProp))
+                    ltlmop_logger.debug("not coordinating robots:" + str(eProp))
                     # keep original name
                     self.propMappingNewToOld[robot][eProp] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp
@@ -783,7 +785,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 # we are now keeping alice_r4 as alice_r4_rc for example
                 elif eProp in [otherRobot+'_'+reg for reg in self.robotLocations.keys() for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]:
                     # store and update prop mapping
-                    logging.debug("rc eProp:" + str(eProp))
+                    ltlmop_logger.debug("rc eProp:" + str(eProp))
                     self.propMappingNewToOld[robot][eProp+'_rc'] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp+'_rc'
 
@@ -792,7 +794,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                     [otherRobot for otherRobot in self.robotInRange + [self.robotName] if otherRobot in self.coordinatingRobots]\
                     for act in self.actionStatus[otherRobot].keys()]:
                     # store and update prop mapping
-                    logging.debug("ac eProp:" + str(eProp))
+                    ltlmop_logger.debug("ac eProp:" + str(eProp))
                     self.propMappingNewToOld[robot][eProp+'_ac'] = eProp
                     self.propMappingOldToNew[robot][eProp] = eProp+'_ac'
 
@@ -802,7 +804,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
                 else:
                     # store and update prop mapping
-                    logging.debug("adding robot: " + str(eProp))
+                    ltlmop_logger.debug("adding robot: " + str(eProp))
                     self.propMappingNewToOld[robot][robot+'_'+eProp] = eProp
                     self.propMappingOldToNew[robot][eProp] = robot+'_'+eProp
                     self.smvEnvPropList.append(robot+'_'+eProp)
@@ -814,31 +816,31 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 if not robot in self.old_coordinatingRobots: # not in centralized mode
                     # about ourselves (note that we never have otherRobot_reg_rc here from original list)
                     if eProp in [robot +'_'+reg+'_rc' for reg in self.robotLocations.keys()]:
-                        logging.debug("AS-our own eProp:" + str(eProp))
+                        ltlmop_logger.debug("AS-our own eProp:" + str(eProp))
                         self.currentAssignment.update({eProp: eValue})
 
                     # about ourselves (note that we never have otherRobot_act_ac here from original list)
                     elif eProp in [robot +'_'+act+'_rc' for act in self.actionStatus[robot].keys()]:
-                        logging.debug("AS-our own AC eProp:" + str(eProp))
+                        ltlmop_logger.debug("AS-our own AC eProp:" + str(eProp))
                         self.currentAssignment.update({eProp: eValue})
 
                     # for the case of global sensors
                     elif eProp in self.globalSensors:
-                        logging.debug("AS-global sensors:" + str(eProp))
+                        ltlmop_logger.debug("AS-global sensors:" + str(eProp))
                         if eProp not in self.currentAssignment.keys():
                             self.currentAssignment.update({eProp: eValue})
 
                     # about otherRobot_reg for otherRobot not coorindating (not that we don't have myRobot_reg here from original list)
                     elif eProp in [x+'_'+reg for reg in self.robotLocations.keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots] or\
                          eProp in [x+'_'+act for act in self.actionStatus[robot].keys() for x in self.robotInRange + [self.robotName] if x not in self.coordinatingRobots]:
-                        logging.debug("AS-not coordinating robots:" + str(eProp))
+                        ltlmop_logger.debug("AS-not coordinating robots:" + str(eProp))
                         # keep original name
                         if eProp not in self.currentAssignment.keys():
                             self.currentAssignment.update({eProp: eValue})
                         else:
                             # sanity check on value when there's duplicate
                             if self.currentAssignment[eProp] != eValue:
-                                logging.warning(str(eProp) + 'has different values. With' + str(robot) + ':' + str(eValue) + \
+                                ltlmop_logger.warning(str(eProp) + 'has different values. With' + str(robot) + ':' + str(eValue) + \
                                 ', In self.currentAssignment:' + str(self.currentAssignment[eProp]))
 
                     # we are not keeping alice_r4 as alice_r4
@@ -857,7 +859,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
                     else:
                         # store and update prop mapping
-                        logging.debug("AS-adding robot: " + str(eProp))
+                        ltlmop_logger.debug("AS-adding robot: " + str(eProp))
                         self.currentAssignment.update({robot+'_'+eProp: eValue})
                 else: # robot in centralized mode.
                     if eProp not in self.currentAssignment.keys() and eProp in self.sensor_state.getInputs(expand_domains=True).keys():
@@ -867,7 +869,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                         # update assignments only
                         self.currentAssignment.update({robot+'_'+eProp: self.sensor_state.getInputs(expand_domains=True)[robot+'_'+eProp]})
                     else:
-                        logging.debug('CURRENT ASSIGNMENT: This prop is not added: ' + str(eProp))
+                        ltlmop_logger.debug('CURRENT ASSIGNMENT: This prop is not added: ' + str(eProp))
 
         # add input props to states collection
         states.addInputPropositions(self.smvEnvPropList)
@@ -916,9 +918,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # add input props to states collection
         states.addOutputPropositions(self.smvSysPropList)
 
-        logging.warning("self.propMappingOldToNew:" + str(self.propMappingOldToNew))
-        logging.warning("self.propMappingNewToOld:" + str(self.propMappingNewToOld))
-        logging.warning("self.currentAssignment:" + str(self.currentAssignment))
+        ltlmop_logger.warning("self.propMappingOldToNew:" + str(self.propMappingOldToNew))
+        ltlmop_logger.warning("self.propMappingNewToOld:" + str(self.propMappingNewToOld))
+        ltlmop_logger.warning("self.currentAssignment:" + str(self.currentAssignment))
         # store current state
         self.currentState = states.addNewState(self.currentAssignment)
 
@@ -941,14 +943,14 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         Compile centralized spec.
         """
-        logging.debug("Compling centralized Spec")
+        ltlmop_logger.debug("Compling centralized Spec")
         # synthesize our new centralized controller again
         self.compiler = specCompiler.SpecCompiler()
         self.compiler.proj.compile_options['synthesizer'] = 'slugs' # use slugs
         self.compiler.proj.project_root = os.path.dirname(os.path.realpath(__file__)) #set directory to save slugsin
         self.compiler.proj.project_basename = self.filePath
         createSMVfile(self.filePath, sorted(self.smvEnvPropList), sorted(self.smvSysPropList)) # create a new SMV file
-        logging.debug("Finished smv file")
+        ltlmop_logger.debug("Finished smv file")
         # create a new LTL file
         LTLspec_envList = []
         LTLspec_sysList = []
@@ -992,7 +994,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         #     sysGoalsList.append("[]<>(" + " &\n ".join(filter(None, [x.strip().lstrip('[]<>')] + self.winPos.values())) + ")")
 
         # specSysGoals = " &\n ".join(filter(None, sysGoalsList))
-        # logging.debug("specSysGoals:" + str(specSysGoals))
+        # ltlmop_logger.debug("specSysGoals:" + str(specSysGoals))
         # LTLspec_sysList.append(specSysGoals)
 
         # ---- []<>(goal1) & []<>(goal2) & []<>(winPos) ---- #
@@ -1000,11 +1002,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values())))
         else:
             LTLspec_sysList.append(" &\n ".join(filter(None, self.spec['SysGoals'].values() + ["[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"])))
-        logging.debug("Finished LTL file")
+        ltlmop_logger.debug("Finished LTL file")
         # set up violation check object
         # ------ OLD ------- #
         # specSysGoalsOld = " &\n ".join(filter(None, [x.strip().lstrip('[]<>') for x in self.sysGoalsOld.values()]))
-        # logging.debug("specSysGoalsOld:" + str(specSysGoalsOld))
+        # ltlmop_logger.debug("specSysGoalsOld:" + str(specSysGoalsOld))
         # if specSysGoalsOld:
         #     self.sysGoalsCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'sysGoals':specSysGoalsOld}, 'sysGoals')
         # ------ check winning positions and each goal ------ #
@@ -1012,7 +1014,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             self.sysGoalsCheck[robot] = LTLParser.LTLcheck.LTL_Check(None, {}, {'SysGoals':self.spec['SysGoals'][robot]}, 'SysGoals')
             self.sysGoalsCheckStatus[robot] = False
         specWinPos = "[]<>(" + " &\n ".join(filter(None, self.winPos.values())) + ")"
-        logging.debug("Setting up winPosCheck...")
+        ltlmop_logger.debug("Setting up winPosCheck...")
         startTime = time.time()
         if not self.testDPatchingMode:
             #we will do this differently
@@ -1020,7 +1022,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
                 #self.winPosCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'WinPos':specWinPos}, 'WinPos')
                 self.winPosCheck = LTLParser.LTLcheck.LTL_Check_slugsWinPos(specWinPos) # should shorten the time
 
-        logging.debug("WinPosCheck finished in " + str(time.time()-startTime) + 's.')
+        ltlmop_logger.debug("WinPosCheck finished in " + str(time.time()-startTime) + 's.')
 
         createLTLfile(self.filePath, " &\n".join(filter(None, LTLspec_envList)), " &\n".join(filter(None, LTLspec_sysList)))
 
@@ -1036,30 +1038,30 @@ class PatchingExecutor(MsgHandlerExtensions, object):
 
         #self.compiler.proj.compile_options["interactive"] = True
         #self.compiler.proj.compile_options["only_realizability"] = True
-        logging.debug('SYNTHESIZING NOW..')
+        ltlmop_logger.debug('SYNTHESIZING NOW..')
         realizable, realizableFS, output = self.compiler._synthesize()
         endTime = time.time()
-        logging.info(output)
+        ltlmop_logger.info(output)
 
         """
         If realizable, load AUT and return status to each robot. The execution of each robot resumes.
         """
         if realizable:
-            logging.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
+            ltlmop_logger.info('Strategy synthesized in ' + str(endTime-startTime)+' s.')
             # load strategy and initial state
             if not self.compiler.proj.compile_options["symbolic"] and not self.compiler.proj.compile_options["interactive"]: # explicit strategy
                 self.strategy = strategy.createStrategyFromFile(self.filePath + '.aut', self.smvEnvPropList, self.smvSysPropList)
             elif self.compiler.proj.compile_options["interactive"]:
                 self.strategy = strategy.createStrategyFromFile(self.filePath + '.slugsin', self.smvEnvPropList, self.smvSysPropList)
             else:
-                logging.warning("Please note that bdd is not tested yet.")
+                ltlmop_logger.warning("Please note that bdd is not tested yet.")
                 self.strategy = strategy.createStrategyFromFile(self.filePath + '.bdd', self.smvEnvPropList, self.smvSysPropList)
 
             # search for init state.
             self.strategy.current_state = self.strategy.searchForOneState(self.currentAssignment)
-            logging.info('Starting at State ' + str(self.strategy.current_state.state_id))
+            ltlmop_logger.info('Starting at State ' + str(self.strategy.current_state.state_id))
         else:
-            logging.error('cannot synthesize a centralized patch')
+            ltlmop_logger.error('cannot synthesize a centralized patch')
             if self.testDPatchingMode:
                 return
             else:
@@ -1094,11 +1096,11 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         currentInputs.update(nextInputs)
 
         # now updates robot sensors
-        #logging.warning("self.robotSensors:" + str(self.robotSensors))
+        #ltlmop_logger.warning("self.robotSensors:" + str(self.robotSensors))
         for coR in self.coordinatingRobots:
             if coR != self.robotName:
                 nextRobotSensors = {self.propMappingOldToNew[coR][k]:v for k, v in self.robotSensors[coR].iteritems()}
-                #logging.warning('nextRobotSensors:' + str(nextRobotSensors))
+                #ltlmop_logger.warning('nextRobotSensors:' + str(nextRobotSensors))
                 currentInputs.update(nextRobotSensors)
 
         # update sensor_state with the latest information
@@ -1113,9 +1115,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         # Make sure we have somewhere to go
         if len(next_states) == 0:
             # Well darn!
-            logging.error("Could not find a suitable state to transition to!")
-            logging.debug("nextInputs:" + str([k for k, v in nextInputs.iteritems() if v]))
-            logging.debug("currentInputs:" + str([k for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if v]))
+            ltlmop_logger.error("Could not find a suitable state to transition to!")
+            ltlmop_logger.debug("nextInputs:" + str([k for k, v in nextInputs.iteritems() if v]))
+            ltlmop_logger.debug("currentInputs:" + str([k for k, v in self.strategy.current_state.getInputs(expand_domains=True).iteritems() if v]))
             return
 
         # See if we're beginning a new transition
@@ -1133,9 +1135,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             if next_state.getAll(expand_domains=True) != self.strategy.current_state.getAll(expand_domains=True):
                 self.strategy.current_state = next_state
                 self.last_next_states = []  # reset
-                logging.info('Currently at State ' + str(self.strategy.current_state.state_id))
-                logging.debug(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
-                logging.debug('---------------------------------------------------------')
+                ltlmop_logger.info('Currently at State ' + str(self.strategy.current_state.state_id))
+                ltlmop_logger.debug(str([prop for prop, value in self.strategy.current_state.getAll(expand_domains=True).iteritems() if value]))
+                ltlmop_logger.debug('---------------------------------------------------------')
 
             # check if state is satisified
             if not self.checkSysGoalsThread or not self.checkSysGoalsThread.isAlive():
@@ -1189,9 +1191,9 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             for robot in self.sysGoalsCheck.keys():
                 if not self.sysGoalsCheckStatus[robot]:
                     self.sysGoalsCheckStatus[robot] = self.sysGoalsCheck[robot].checkViolation(current_state_copy, current_state_copy)
-                    logging.debug("Is sysGoals of " + robot + " satisfied? " + str(self.sysGoalsCheckStatus[robot]))
-                    logging.debug("System goal:" + str(self.sysGoalsCheck[robot].env_safety_assumptions))
-                    logging.debug("current_state:" + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
+                    ltlmop_logger.debug("Is sysGoals of " + robot + " satisfied? " + str(self.sysGoalsCheckStatus[robot]))
+                    ltlmop_logger.debug("System goal:" + str(self.sysGoalsCheck[robot].env_safety_assumptions))
+                    ltlmop_logger.debug("current_state:" + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
 
         if not False in self.sysGoalsCheckStatus.values(): # now we can check winning positions
             # replace sys and env to be the same
@@ -1201,10 +1203,10 @@ class PatchingExecutor(MsgHandlerExtensions, object):
             #            current_state_winPose_copy.setPropValues({eProp.replace('_rc', ''):eValue})
 
             winPosStatus = self.winPosCheck.checkViolation(current_state_copy, current_state_copy)
-            logging.debug("Are we in winning positions?:" + str(winPosStatus))
-            logging.debug("current_state: no-" + str(current_state_copy.state_id) + "," + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
+            ltlmop_logger.debug("Are we in winning positions?:" + str(winPosStatus))
+            ltlmop_logger.debug("current_state: no-" + str(current_state_copy.state_id) + "," + str([k for k, v in current_state_copy.getAll(expand_domains=True).iteritems() if v]))
 
-        logging.debug("time taken:" + str(time.time() - startTime))
+        ltlmop_logger.debug("time taken:" + str(time.time() - startTime))
 
         self.goalsSatisfied = (False if False in self.sysGoalsCheckStatus.values() else winPosStatus)
         return (False if False in self.sysGoalsCheckStatus.values() else winPosStatus)
@@ -1257,7 +1259,7 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         """
         if self.coordinationRequest.values().count(True) or self.coordinationRequestSent:
             # also make sure there are no duplicates
-            #logging.debug('robots coordinating:' + str(list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))))
+            #ltlmop_logger.debug('robots coordinating:' + str(list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))))
             return list(set([robot for robot, status in self.coordinationRequest.iteritems() if status] + [self.robotName] + self.coordinationRequestSent))
         else:
             return []
@@ -1290,4 +1292,4 @@ class PatchingExecutor(MsgHandlerExtensions, object):
         return specNewStr
 
 if __name__ == "__main__":
-    logging.info('Please run testDPatching in helperFns to test the module.')
+    ltlmop_logger.info('Please run testDPatching in helperFns to test the module.')

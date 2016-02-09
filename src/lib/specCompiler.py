@@ -6,7 +6,6 @@ import subprocess
 import numpy
 import glob
 import StringIO
-import logging
 
 from multiprocessing import Pool
 
@@ -25,6 +24,10 @@ from asyncProcesses import AsynchronousProcessThread
 
 import strategy
 import copy
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # Hack needed to ensure there's only one
 _SLURP_SPEC_GENERATOR = None
@@ -45,14 +48,14 @@ class SpecCompiler(object):
 
         # Check to make sure this project is complete
         if self.proj.rfi is None:
-            logging.warning("Please define regions before compiling.")
+            ltlmop_logger.warning("Please define regions before compiling.")
             return
 
         # Remove comments
         self.specText = re.sub(r"#.*$", "", self.proj.specText, flags=re.MULTILINE)
 
         if self.specText.strip() == "":
-            logging.warning("Please write a specification before compiling.")
+            ltlmop_logger.warning("Please write a specification before compiling.")
             return
 
     def loadSimpleSpec(self,text="", regionList=[], sensors=[], actuators=[], customs=[], adj=[], outputfile=""):
@@ -66,7 +69,7 @@ class SpecCompiler(object):
         """
 
         if outputfile == "":
-            logging.error("Need to specify output filename")
+            ltlmop_logger.error("Need to specify output filename")
             return
 
         self.proj.compile_options['decompose'] = False
@@ -213,7 +216,7 @@ class SpecCompiler(object):
 
             for ln, result in enumerate(results):
                 if not result:
-                    logging.warning("Could not parse the sentence in line {0}".format(ln))
+                    ltlmop_logger.warning("Could not parse the sentence in line {0}".format(ln))
 
             # Abort compilation if there were any errors
             if not all(results):
@@ -388,7 +391,7 @@ class SpecCompiler(object):
             LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"], spec["SysGoals"]]))
             ####################################################
         else:
-            logging.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
+            ltlmop_logger.error("Parser type '{0}' not currently supported".format(self.proj.compile_options["parser"]))
             return None, None, None
 
         if self.proj.compile_options["decompose"]:
@@ -517,7 +520,7 @@ class SpecCompiler(object):
         # This creates a mirrored copy of topological constraints for the target we are following
         if "FOLLOW_SENSOR_CONSTRAINTS" in text:
             if not self.proj.compile_options["use_region_bit_encoding"]:
-                logging.warning("Currently, bit encoding must be enabled for follow sensor")
+                ltlmop_logger.warning("Currently, bit encoding must be enabled for follow sensor")
             else:
                 env_topology = self.spec['Topo'].replace("s.bit", "e.sbit")
                 initreg_formula = createInitialRegionFragment(self.parser.proj.rfi.regions, use_bits=True).replace("s.bit", "e.sbit")
@@ -620,7 +623,7 @@ class SpecCompiler(object):
                 #print config
                 if type(config) == type(None):
                     err_message = "No config-gait pair for actuator T_" + act + "\n"
-                    logging.warning(err_message)
+                    ltlmop_logger.warning(err_message)
                     err = 1
 
     def _getSlugsCommand(self, execution=False, analysis=False):
@@ -634,33 +637,33 @@ class SpecCompiler(object):
 
         if analysis:
             cmd.append("--unrealizabilityAnalysis")
-            logging.debug('Analyzing specification')
+            ltlmop_logger.debug('Analyzing specification')
 
         else:
             if self.proj.compile_options["recovery"] and (execution or not self.proj.compile_options['interactive']):
                 cmd.extend(["--simpleRecovery", "--optimisticRecovery"])
-                logging.debug('Synthesizing strategy with recovery')
+                ltlmop_logger.debug('Synthesizing strategy with recovery')
 
             if (self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution)):
                 cmd.append("--onlyRealizability")
-                logging.debug('Only checking realizability')
+                ltlmop_logger.debug('Only checking realizability')
 
             if self.proj.compile_options["symbolic"]:
                 cmd.append("--symbolicStrategy")
-                logging.debug('Synthesizing strategy with bdd')
+                ltlmop_logger.debug('Synthesizing strategy with bdd')
 
             if self.proj.compile_options['interactive'] and execution:
                 cmd.append("--interactiveStrategy")
-                logging.debug('Using interacitve strategy mode')
+                ltlmop_logger.debug('Using interacitve strategy mode')
 
             if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" or self.proj.compile_options["winning_livenesses"]:
                 #cmd = [slugs_path, "--withWinningLiveness", "--sysInitRoboticsSemantics", self.proj.getFilenamePrefix() + ".slugsin", self.proj.getFilenamePrefix() + ".aut"]
                 cmd.append("--withWinningLiveness")
-                logging.debug('Synthesizing strategy which also outputs livenesses')
+                ltlmop_logger.debug('Synthesizing strategy which also outputs livenesses')
 
         if self.proj.compile_options["cooperative_gr1"]:
             cmd.append("--cooperativeGR1Strategy")
-            logging.debug('Synthesizing strategy with cooperative strategy')
+            ltlmop_logger.debug('Synthesizing strategy with cooperative strategy')
 
         if self.proj.compile_options["only_realizability"] or self.proj.compile_options['interactive'] or analysis:
             cmd.extend([self.proj.getFilenamePrefix() + ".slugsin"])
@@ -747,7 +750,7 @@ class SpecCompiler(object):
             regionCompleted_domain = []
 
         if self.proj.compile_options["symbolic"] or self.proj.compile_options['interactive'] or self.proj.compile_options['only_realizability']:
-            logging.info("We will not check if the strategy is trivial or load the strategy with symbolic/interactive strategy or only realizability option.")
+            ltlmop_logger.info("We will not check if the strategy is trivial or load the strategy with symbolic/interactive strategy or only realizability option.")
             return True
 
         strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
@@ -772,7 +775,7 @@ class SpecCompiler(object):
         elif self.proj.compile_options["synthesizer"].lower() == "slugs":
             cmd = self._getSlugsCommand(analysis=True)
 
-        logging.debug(cmd)
+        ltlmop_logger.debug(cmd)
         if cmd is None:
             return (False, False, [], "")
 
@@ -900,7 +903,7 @@ class SpecCompiler(object):
             rank_str = strat.findTransitionableStates({}, from_state = s)[0].goal_id #originally rank
             m = re.search(r"\(\d+,(-?\d+)\)", rank_str)
             if m is None:
-                logging.error("Error parsing jx in automaton.  Are you sure the spec is unrealizable?")
+                ltlmop_logger.error("Error parsing jx in automaton.  Are you sure the spec is unrealizable?")
                 return
             jx = int(m.group(1))
             return (jx == desiredGoal)
@@ -1055,11 +1058,11 @@ class SpecCompiler(object):
 
         paths = [p for p in glob.glob(os.path.join(self.proj.ltlmop_root,"lib","cores","picosat-*")) if os.path.isdir(p)]
         if len(paths) == 0:
-            logging.error("Where is your sat solver? We use Picosat.")
+            ltlmop_logger.error("Where is your sat solver? We use Picosat.")
             # TODO: automatically compile for the user
             return None
         else:
-            logging.debug("Found Picosat in " + paths[0])
+            ltlmop_logger.debug("Found Picosat in " + paths[0])
 
         if os.name == "nt":
             cmd = os.path.join(paths[0],"picomus.exe")
@@ -1161,7 +1164,7 @@ class SpecCompiler(object):
             #    raise RuntimeError("Slugs does not currently support symbolic compilation options.")
 
             # Create proper input for Slugs
-            logging.info("Preparing Slugs input...")
+            ltlmop_logger.info("Preparing Slugs input...")
             self.prepareSlugsInput()
 
             REALIZABLE_MESSAGE = "RESULT: Specification is realizable"
@@ -1196,7 +1199,7 @@ class SpecCompiler(object):
             self.synthesis_subprocess = None
 
         # Kick off the subprocess
-        logging.info("Synthesizing a strategy...")
+        ltlmop_logger.info("Synthesizing a strategy...")
 
         self.synthesis_subprocess = AsynchronousProcessThread(cmd, onSubprocessComplete, onLog)
 
@@ -1204,26 +1207,26 @@ class SpecCompiler(object):
         """ Kill any running synthesis process. """
 
         if self.synthesis_subprocess is not None:
-            logging.warning("Aborting synthesis!")
+            ltlmop_logger.warning("Aborting synthesis!")
             self.synthesis_subprocess.kill()
             self.synthesis_complete = None
             self.synthesis_subprocess = None
 
     def compile(self):
         if self.proj.compile_options["decompose"]:
-            logging.info("Decomposing...")
+            ltlmop_logger.info("Decomposing...")
             self._decompose()
-        logging.info("Writing LTL file...")
+        ltlmop_logger.info("Writing LTL file...")
         spec, tb, resp = self._writeLTLFile()
-        logging.info("Writing SMV file...")
+        ltlmop_logger.info("Writing SMV file...")
         self._writeSMVFile()
 
         if tb is None:
-            logging.error("Compilation aborted")
+            ltlmop_logger.error("Compilation aborted")
             return
 
         #self._checkForEmptyGaits()
-        logging.info("Synthesizing a strategy...")
+        ltlmop_logger.info("Synthesizing a strategy...")
 
         return self._synthesize()
 

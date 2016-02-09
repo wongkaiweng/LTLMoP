@@ -12,7 +12,11 @@ import numpy, math
 import sys
 
 # ---- two_robot_negotiation  --- #
+
+# logger for ltlmop
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
 import random
 import Polygon, Polygon.IO, Polygon.Utils, Polygon.Shapes
 from copy import deepcopy
@@ -25,7 +29,7 @@ while t != "share":
     if p == "":
         print "I have no idea where I am; this is ridiculous"
         sys.exit(1)
-logging.debug(p)
+ltlmop_logger.debug(p)
 sys.path.append(os.path.join(p,"share","Pose"))
 sys.path.append(os.path.join(p,"share","MotionControl"))
 import _pyvicon
@@ -53,7 +57,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         
         # --- two_robot_negotiation --- #
         self.robClient = None # fetch negMonitor from executor 
-        logging.debug(executor.robClient)
+        ltlmop_logger.debug(executor.robClient)
         self.robotRegionStatus  = {} # for keeping track of robot locations
         self.viconServer = {} # dict of vicon poses
         self.prev_pose = [] # storing prev pose
@@ -223,7 +227,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         # make sure the pose is valid
         if sum(pose) == 0:
             pose = self.prev_pose # maybe do interpolation later?
-            logging.warning("Losing pose... Using old one.")
+            ltlmop_logger.warning("Losing pose... Using old one.")
         else:
             self.prev_pose = pose
 
@@ -235,11 +239,11 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             if self.polyRegionList[regionName].covers(RobotPoly):
                 self.currentRegionPoly = self.polyRegionList[regionName]
                 if regionName != self.prev_current_region:
-                    logging.debug("Dummy SENSOR: current region changed to:" + str(regionName))
+                    ltlmop_logger.debug("Dummy SENSOR: current region changed to:" + str(regionName))
                 self.prev_current_region = regionName
 
         if not self.currentRegionPoly.overlaps(RobotPoly):
-            logging.warning("not inside next region or overlaps current region?!")
+            ltlmop_logger.warning("not inside next region or overlaps current region?!")
 
         # also lock locations of environment robots
         if self.executor.proj.compile_options['neighbour_robot'] and self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
@@ -263,10 +267,10 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             if self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
                 return self.actionStatusCopy[robot_name][action]
             else:
-                logging.warning('not matching any mode in dummy. returning None.')
+                ltlmop_logger.warning('not matching any mode in dummy. returning None.')
                 return None
         except:
-            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            #ltlmop_logger.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
 
     def inRegion(self, regionName, radius, initial=False):
@@ -312,7 +316,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             # make sure the pose is valid
             if sum(pose) == 0:
                 pose = self.prev_pose # maybe do interpolation later?
-                logging.warning("Losing pose... Using old one.")
+                ltlmop_logger.warning("Losing pose... Using old one.")
             else:
                 self.prev_pose = pose
 
@@ -320,10 +324,10 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
             pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
             vertices = numpy.mat(pointArray).T
-            #logging.debug('self.proj.rfiold.regions:' + str(self.proj.rfiold.regions))
-            #logging.debug("pose:" + str(pose))
-            #logging.debug("vertices:" + str(vertices))
-            #logging.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
+            #ltlmop_logger.debug('self.proj.rfiold.regions:' + str(self.proj.rfiold.regions))
+            #ltlmop_logger.debug("pose:" + str(pose))
+            #ltlmop_logger.debug("vertices:" + str(vertices))
+            #ltlmop_logger.debug(self.proj.rfiold.regions[regionNo].name +": " +  str(is_inside([pose[0], pose[1]], vertices)))
             return is_inside([pose[0], pose[1]], vertices)
 
     def otherRobotSensorStatus(self, robot_name, sensor_name, initial=False):
@@ -336,12 +340,12 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             if self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation":
                 return self.robotSensorInfo[robot_name][sensor_name]
             elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
-                logging.warning('This function is not supported for d-patching')
+                ltlmop_logger.warning('This function is not supported for d-patching')
             else:
-                logging.warning('not matching any mode in dummy. returning None.')
+                ltlmop_logger.warning('not matching any mode in dummy. returning None.')
                 return None
         except:
-            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            #ltlmop_logger.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
 
     def otherRobotLocation(self, robot_name, region, initial = False):
@@ -352,15 +356,15 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         """
         try:
             if self.executor.proj.compile_options["multi_robot_mode"] == "patching" or self.executor.proj.compile_options["multi_robot_mode"] == "negotiation":
-                #logging.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
+                #ltlmop_logger.info(robot_name + '-' + region + ': ' + str(self.robotRegionStatus[region][robot_name]))
                 return self.robotRegionStatus[region][robot_name]
             elif self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
                 return self.robotLocationsCopy[region][robot_name]
             else:
-                logging.warning('not matching any mode in dummy. returning None.')
+                ltlmop_logger.warning('not matching any mode in dummy. returning None.')
                 return None
         except:
-            #logging.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
+            #ltlmop_logger.info('Variable' + region + ',' +  robot_name + ' is not initialized yet!')
             return None
 
 

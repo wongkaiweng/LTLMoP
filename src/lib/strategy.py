@@ -9,13 +9,16 @@
 
 import math
 import re
-import logging
 import textwrap
 import regions
 import sys
 import collections
 import copy
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # TODO: make sure this works with mopsy
 # TODO: generalize notion of sets of states in a way transparent to both BDD and
@@ -42,7 +45,7 @@ def createStrategyFromFile(filename, input_propositions, output_propositions, sl
             new_strategy = bdd.BDDStrategy(add = True)
     elif filename.endswith(".slugsin"):
         import interactiveExecution
-        logging.debug("using interactiveStrategy")
+        ltlmop_logger.debug("using interactiveStrategy")
         new_strategy = interactiveExecution.SLUGSInteractiveStrategy(slugsOptions)
     else:
         raise ValueError("Unsupported strategy file type.  Filename must end with either '.aut' or '.bdd'.")
@@ -613,13 +616,13 @@ class Strategy(object):
     def loadFromFile(self, filename):
         """ Load a strategy from a file. """
 
-        logging.info("Loading strategy from file '{}'...".format(filename))
+        ltlmop_logger.info("Loading strategy from file '{}'...".format(filename))
 
         tic = globalConfig.best_timer()
         self._loadFromFile(filename)
         toc = globalConfig.best_timer()
 
-        logging.info("Loaded in {} seconds.".format(toc-tic))
+        ltlmop_logger.info("Loaded in {} seconds.".format(toc-tic))
 
     def _loadFromFile(self, filename):
         """ The inner function that actually performs file loading
@@ -800,10 +803,10 @@ def TestLoadAndDump(spec_filename):
     strat.exportAsDotFile("strategy_test.dot", starting_states = [start_state])
 
 if __name__ == "__main__":
-    logging.info("Running doctests...")
+    ltlmop_logger.info("Running doctests...")
     import doctest
     doctest.testmod()
 
     if len(sys.argv) > 1:
-        logging.info("Running file load/dump test for {!r}...".format(sys.argv[1]))
+        ltlmop_logger.info("Running file load/dump test for {!r}...".format(sys.argv[1]))
         TestLoadAndDump(sys.argv[1])

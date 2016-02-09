@@ -5,8 +5,11 @@ HexapodDriveHandler.py - The Hexapod's Drive Handler
 """
 
 import math
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -22,7 +25,7 @@ class HexapodDriveHandler(handlerTemplates.DriveHandler):
         try:
             self.hexapodSer = shared_data["hexapodSer"]
         except:
-            logging.exception("Couldn't connect to Hexapod")
+            ltlmop_logger.exception("Couldn't connect to Hexapod")
             exit(-1)
 
         # Get reference to locomotion command handler, since

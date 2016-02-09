@@ -2,7 +2,6 @@ import itertools
 import project
 import re
 import fsa
-import logging
 from LTLParser.LTLFormula import LTLFormula, LTLFormulaType
 from createJTLVinput import createLTLfile
 import specCompiler
@@ -18,7 +17,6 @@ import numpy
 import executeStrategy
 ######################################
 # -------- two_robot_negotiation ----#
-import logging
 import copy
 # -----------------------------------#
 # ******** patching ********* #
@@ -28,13 +26,17 @@ import sets # make sure there's no duplicates of elements
 import LTLParser.LTLRegion # for adding region parentheses
 # *************************** #
 
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
 class ExecutorResynthesisExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
         This class is not meant to be instantiated. """
 
     def __init__(self):
         super(ExecutorResynthesisExtensions, self).__init__()
-        logging.info("Initializing resynthesis extensions...")
+        ltlmop_logger.info("Initializing resynthesis extensions...")
 
         # `next_proj` will store the temporary project we modify leading up to resynthesis
         self.next_proj = None
@@ -109,7 +111,7 @@ class ExecutorResynthesisExtensions(object):
             if self.next_proj is not None:
                 self.resynthesizeFromProject(self.next_proj)
             else:
-                logging.error("Resynthesis was triggered before any spec rewrites.  Skipping.")
+                ltlmop_logger.error("Resynthesis was triggered before any spec rewrites.  Skipping.")
 
             # Clear the resynthesis flag
             self.needs_resynthesis = False
@@ -157,10 +159,10 @@ class ExecutorResynthesisExtensions(object):
         # Cast the referent to a list (there may be more than one in the case of new region detection)
         referents = [response]
 
-        logging.debug("Resolved referents to {}.".format(referents))
+        ltlmop_logger.debug("Resolved referents to {}.".format(referents))
 
         if m.group('action').lower() == "add_to":
-            logging.info("Added item(s) %s to group %s.", ", ".join(referents), m.group('groupName'))
+            ltlmop_logger.info("Added item(s) %s to group %s.", ", ".join(referents), m.group('groupName'))
 
             # Rewrite the group definition in the specification text
             self._updateSpecGroup(m.group('groupName'), 'add', referents)
@@ -177,13 +179,13 @@ class ExecutorResynthesisExtensions(object):
                     continue
 
                 # Assume all new user-added props are sensors for now.
-                logging.debug("Adding new sensor proposition {!r}".format(ref))
+                ltlmop_logger.debug("Adding new sensor proposition {!r}".format(ref))
                 self.next_proj.enabled_sensors.append(ref)
                 self.next_proj.all_sensors.append(ref)
             
             # Figure out if there are any corresponding groups which we will also need to update
             corresponding_groups = self._findGroupsInCorrespondenceWithGroup(m.group('groupName'))
-            logging.debug("Need to also update corresponding groups: {}".format(corresponding_groups))
+            ltlmop_logger.debug("Need to also update corresponding groups: {}".format(corresponding_groups))
 
             # Process each corresponding group
             for corr_group_name in corresponding_groups:
@@ -196,19 +198,19 @@ class ExecutorResynthesisExtensions(object):
 
                 # Rewrite the spec
                 self._updateSpecGroup(corr_group_name, 'add', [new_prop_name])
-                logging.info("Added corresponding item %s to group %s.", new_prop_name, corr_group_name)
+                ltlmop_logger.info("Added corresponding item %s to group %s.", new_prop_name, corr_group_name)
 
                 # Assume the new prop is either a region or an actuator, and add to actuators if necessary
                 if new_prop_name not in self.next_proj.enabled_actuators + self.next_proj.all_customs + region_names:
                     self.next_proj.enabled_actuators.append(new_prop_name)
                     self.next_proj.all_actuators.append(new_prop_name)
-                    logging.debug("Adding new actuator proposition {!r}".format(new_prop_name))
+                    ltlmop_logger.debug("Adding new actuator proposition {!r}".format(new_prop_name))
 
         elif m.group('action').lower() == "remove_from":
             # TODO: Removal from groups has not been tested and is likely not to work correctly
 
             # Rewrite the group definition in the specification text
-            logging.info("Removed item(s) %s from group %s.", ", ".join(referents), m.group('groupName'))
+            ltlmop_logger.info("Removed item(s) %s from group %s.", ", ".join(referents), m.group('groupName'))
             self._updateSpecGroup(m.group('groupName'), 'remove', referents)
 
     def _updateSpecGroup(self, group_name, operator, operand):
@@ -238,7 +240,7 @@ class ExecutorResynthesisExtensions(object):
             elif operator == "remove":
                 propositions = [p for p in propositions if p not in operand]
             else:
-                logging.error("Unknown group modification operator {!r}".format(operator))
+                ltlmop_logger.error("Unknown group modification operator {!r}".format(operator))
 
             # Re-add the "empty" placeholder if the result of the operation is now empty
             if not propositions:
@@ -284,7 +286,7 @@ class ExecutorResynthesisExtensions(object):
         # Save the file
         new_proj.writeSpecFile(newSpecName)
 
-        logging.info("Created new spec file: %s", newSpecName)
+        ltlmop_logger.info("Created new spec file: %s", newSpecName)
 
         return new_proj
 
@@ -305,7 +307,7 @@ class ExecutorResynthesisExtensions(object):
         # Get a conjunct expressing the current state
         ltl_current_state = self.getCurrentStateAsLTL() # TODO: Constrain to props in new spec
 
-        logging.debug("Constraining new initial conditions to: " + ltl_current_state)
+        ltlmop_logger.debug("Constraining new initial conditions to: " + ltl_current_state)
 
         # TODO: Do we need to remove pre-exisiting constraints too? What about env?
         # Add in current system state to make strategy smaller
@@ -349,22 +351,22 @@ class ExecutorResynthesisExtensions(object):
 
         # Synthesize a strategy
         (realizable, realizableFS, output) = c._synthesize()
-        logging.debug(output)
+        ltlmop_logger.debug(output)
 
         # Check if synthesis succeeded
         if not (realizable or realizableFS):
-            logging.error("Specification for resynthesis was unsynthesizable!")
+            ltlmop_logger.error("Specification for resynthesis was unsynthesizable!")
             self.postEvent("INFO", "ERROR: Resynthesis failed.  Please check the terminal log for more information.")
             self.pause()
             return False
 
-        logging.info("New automaton has been created.")
+        ltlmop_logger.info("New automaton has been created.")
 
         # Load in the new strategy
 
         self.proj = new_proj
 
-        logging.info("Reinitializing execution...")
+        ltlmop_logger.info("Reinitializing execution...")
 
         spec_file = self.proj.getFilenamePrefix() + ".spec"
         aut_file = self.proj.getFilenamePrefix() + ".aut"
@@ -434,7 +436,7 @@ class ExecutorResynthesisExtensions(object):
     def processUserQueryResponse(self, answer):
         """ Callback function to receive a response to a user query. """
 
-        logging.debug("Got user query response {!r}".format(answer))
+        ltlmop_logger.debug("Got user query response {!r}".format(answer))
 
         # Save the response
         self.user_query_response = answer
@@ -486,7 +488,7 @@ class ExecutorResynthesisExtensions(object):
         otherRobotSysGoals = self.robClient.requestSpec('SysGoals')
 
         ALLotherRobotEnvTrans = self.robClient.requestSpec('EnvTrans').replace('[]','\n\t\t\t[]')
-        logging.log(2,'OLD-otherRobotsEnvTrans:' + str(ALLotherRobotEnvTrans))
+        ltlmop_logger.log(2,'OLD-otherRobotsEnvTrans:' + str(ALLotherRobotEnvTrans))
         # here we need to filter it to with only conflicting robots
         if not conflictingRobot:
             conflictingRobot = self.robClient.getNegotiationInitiatingRobot()
@@ -494,7 +496,7 @@ class ExecutorResynthesisExtensions(object):
         ALLotherRobotEnvTransList = LTLParser.LTLcheck.ltlStrToList(ALLotherRobotEnvTrans)
         otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedOneRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, conflictingRobot, self.robClient.robotName)
         otherRobotEnvTrans = '&\n'.join(otherRobotEnvTransList)
-        logging.log(2,'NEW-otherRobotsEnvTrans:' + str(otherRobotEnvTrans))
+        ltlmop_logger.log(2,'NEW-otherRobotsEnvTrans:' + str(otherRobotEnvTrans))
 
         self.receivedSpec = True
 
@@ -505,7 +507,7 @@ class ExecutorResynthesisExtensions(object):
 
         # conjunct the spec of the other robots
         self.spec['SysTrans'] = ' &\n'.join(filter(None, [otherRobotEnvTrans, oldSpecSysTrans]))
-        #logging.debug('SysTrans:' + self.spec['SysTrans'])
+        #ltlmop_logger.debug('SysTrans:' + self.spec['SysTrans'])
         
         if level:
             # with only systrans
@@ -514,8 +516,8 @@ class ExecutorResynthesisExtensions(object):
             self.spec['EnvGoals'] = otherRobotSysGoals
         else:
             self.spec['EnvGoals'] = otherRobotSysGoals + '&' +  oldSpecEnvGoals
-        #logging.debug('EnvGoals:' + self.spec['EnvGoals'])
-        
+        #ltlmop_logger.debug('EnvGoals:' + self.spec['EnvGoals'])
+
         # resynthesize
         self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
         self.recreateLTLfile(self.proj)
@@ -549,7 +551,7 @@ class ExecutorResynthesisExtensions(object):
         if len(conflictingRobots) == 1:
             self.robClient.setNegotiationStatus("'" + conflictingRobots[0] + "'")
         else:
-            logging.error('Currently not support negotiation with more than two robots!' + str(conflictingRobots))
+            ltlmop_logger.error('Currently not support negotiation with more than two robots!' + str(conflictingRobots))
 
         #self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
 
@@ -579,7 +581,7 @@ class ExecutorResynthesisExtensions(object):
                 self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                 self.recreateLTLfile(self.proj, spec = self.spec)
                 realizable, _, _ = self.compiler._synthesize()
-                logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
+                ltlmop_logger.debug("Original spec with new env/sys init realizable?" + str(realizable))
                 self.disableEnvChar = True # env characterization disabled
                 self.postEvent('NEGO','The other robot has incorporated our actions. We will use the original spec')
                 self.postEvent('NEGO','-- NEGOTIATION ENDED --')
@@ -613,7 +615,7 @@ class ExecutorResynthesisExtensions(object):
         # reset violtion timestamp
         self.violationTimeStamp = 0
         self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-        logging.debug('Resetting violation timeStamp')
+        ltlmop_logger.debug('Resetting violation timeStamp')
         time.sleep(1)
 
         return realizable
@@ -662,7 +664,7 @@ class ExecutorResynthesisExtensions(object):
                 # reset violtion timestamp
                 self.violationTimeStamp = 0
                 self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                logging.debug('Resetting violation timeStamp')
+                ltlmop_logger.debug('Resetting violation timeStamp')
                 time.sleep(1)
 
                 self.sentSpec = True
@@ -690,7 +692,7 @@ class ExecutorResynthesisExtensions(object):
                     self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
                     self.recreateLTLfile(self.proj, spec = self.spec)
                     realizable, _, _ = self.compiler._synthesize()
-                    logging.debug("Original spec with new env/sys init realizable?" + str(realizable))
+                    ltlmop_logger.debug("Original spec with new env/sys init realizable?" + str(realizable))
                     self.disableEnvChar = True # env characterization disabled
                     self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
@@ -699,7 +701,7 @@ class ExecutorResynthesisExtensions(object):
                     # reset violtion timestamp
                     self.violationTimeStamp = 0
                     self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                    logging.debug('Resetting violation timeStamp')
+                    ltlmop_logger.debug('Resetting violation timeStamp')
                     time.sleep(1)
 
                 else:
@@ -779,10 +781,10 @@ class ExecutorResynthesisExtensions(object):
                                         otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(conflictingRobots[0])
                                     else:
                                         otherRobotViolationTimeStamp = self.robClient.getViolationTimeStamp(conflictingRobots[0])
-                                        logging.error('Currently not support negotiation with more than two robots! Get violation time stamp from first robot in the list' + str(conflictingRobots))
+                                        ltlmop_logger.error('Currently not support negotiation with more than two robots! Get violation time stamp from first robot in the list' + str(conflictingRobots))
 
-                                    logging.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
-                                    logging.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
+                                    ltlmop_logger.debug("otherRobotViolationTimeStamp:" + str(otherRobotViolationTimeStamp))
+                                    ltlmop_logger.debug('self.violationTimeStamp:' + str(self.violationTimeStamp))
 
                                     # exchange info with the other robot and see if it is realizable.
                                     # later time can exchange spec
@@ -802,22 +804,22 @@ class ExecutorResynthesisExtensions(object):
                                     #self.postEvent("RESOLVED","")
                                     #self.postEvent("PATCH","We will now ask for a centralized strategy to be executed.")
                                     #self.initiatePatching()
-                                    logging.error("Patching is now done in excute.py. We should not have got here!")
+                                    ltlmop_logger.error("Patching is now done in excute.py. We should not have got here!")
                                     # return and continue execution
                                     return
                                     # **************************************** #
 
                                 else:
-                                    logging.error("Mulit robot mode is incorrect. This is impossible.")
+                                    ltlmop_logger.error("Mulit robot mode is incorrect. This is impossible.")
 
             # only update ltl_tree in LTLcheck if the spec is realizable
             if realizable:
                 checker.updateEnvTransTree("")
 
         else:
-            logging.debug('Waiting for the other robot to yield our way.')
-            #logging.debug(self.lastSensorState.getInputs())
-            #logging.debug(sensor_state.getInputs())
+            ltlmop_logger.debug('Waiting for the other robot to yield our way.')
+            #ltlmop_logger.debug(self.lastSensorState.getInputs())
+            #ltlmop_logger.debug(sensor_state.getInputs())
 
             # only append new init state if there's no request of negotiation
             if not self.receiveRequestFromEnvRobot():
@@ -858,7 +860,7 @@ class ExecutorResynthesisExtensions(object):
                 if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
                     self.violationTimeStamp = 0
                     self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                    logging.debug('Resetting violation timeStamp')
+                    ltlmop_logger.debug('Resetting violation timeStamp')
                 # ---------------------------------------------- #
                 #######################
                 # Load automaton file #
@@ -992,7 +994,7 @@ class ExecutorResynthesisExtensions(object):
         self.analyzeCores()
         self.analysisDialog.populateTreeStructured(self.proj.specText.split('\n'),self.compiler.LTL2SpecLineNumber, self.tracebackTree, [], self.spec,self.to_highlight,self.spec["EnvTrans"].replace('\t','\n')) # [] was self.EnvTransRemoved
         
-        logging.debug('toHighlight in analyze cores'+ str(self.to_highlight))
+        ltlmop_logger.debug('toHighlight in analyze cores'+ str(self.to_highlight))
         self.analysisDialog.ShowModal()
         
     def onMenuResynthesize(self, envLiveness, checker=None):
@@ -1043,7 +1045,7 @@ class ExecutorResynthesisExtensions(object):
                 spec["EnvGoals"] = parseEnglishToLTL.replaceRegionName(spec["EnvGoals"], bitEncode, regionListCompleted)
 
         except:
-            logging.debug('envLiveness:' + str(envLiveness))
+            ltlmop_logger.debug('envLiveness:' + str(envLiveness))
             self.analysisDialog.appendLog("\nERROR: Aborting compilation due to syntax error. \nPlease enter environment liveness with correct grammar\n", "RED")
             return
         else:
@@ -1155,13 +1157,13 @@ class ExecutorResynthesisExtensions(object):
             otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
             robotNameList = list(set([self.dPatchingExecutor.robotName] + self.dPatchingExecutor.coordinatingRobots))
         else:
-            logging.warning('not in a valid mode - ' + str(self.proj.compile_options["multi_robot_mode"]))
+            ltlmop_logger.warning('not in a valid mode - ' + str(self.proj.compile_options["multi_robot_mode"]))
 
         # first verify that we won't be skipping th check
         if list(set(otherEnvPropDict.keys()+[self.dPatchingExecutor.robotName])) != robotNameList:
-            logging.debug("we are checking propCombination")
+            ltlmop_logger.debug("we are checking propCombination")
             for propCombination in itertools.product(*[v for k,v in otherEnvPropDict.iteritems() if k not in robotNameList]):
-                #logging.debug("propCombination:" + str(propCombination))
+                #ltlmop_logger.debug("propCombination:" + str(propCombination))
                 # assignments to sensor_strategy for each combination
                 for propDict in propCombination:
                     for propKey, propValue in propDict.iteritems():
@@ -1172,19 +1174,19 @@ class ExecutorResynthesisExtensions(object):
                     # the current state stays the same but checks with differnt next possible states
                     env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
                     if not env_assumption_hold:
-                        logging.debug("POSSIBLE STATES - asssumptions violated!")
-                        logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
-                        logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                        logging.debug("checker.violated_specStr:" + str(checker.violated_specStr))
+                        ltlmop_logger.debug("POSSIBLE STATES - asssumptions violated!")
+                        ltlmop_logger.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
+                        ltlmop_logger.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                        ltlmop_logger.debug("checker.violated_specStr:" + str(checker.violated_specStr))
                         return False
         else:
-            logging.debug("we have all the robots. doing only once")
+            ltlmop_logger.debug("we have all the robots. doing only once")
             env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
             if not env_assumption_hold:
-                logging.debug("POSSIBLE STATES - asssumptions violated!")
-                logging.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
-                logging.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                logging.debug("checker.violated_specStr:" + str(checker.violated_specStr))
+                ltlmop_logger.debug("POSSIBLE STATES - asssumptions violated!")
+                ltlmop_logger.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
+                ltlmop_logger.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
+                ltlmop_logger.debug("checker.violated_specStr:" + str(checker.violated_specStr))
                 return False
         return True
 
@@ -1230,7 +1232,7 @@ class ExecutorResynthesisExtensions(object):
 
             # tell robClient the current goal we are pursuing
             if specType == 'SysGoals':
-                logging.warning("SLUGS does not output bddLivenesses now and this will fail.")
+                ltlmop_logger.warning("SLUGS does not output bddLivenesses now and this will fail.")
                 specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id) #FIXIT: no bddLivenesses now.
                 self.robClient.sendSpec(specType, specNewStr, fastslow=True, include_heading=True)
                 #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
@@ -1248,7 +1250,7 @@ class ExecutorResynthesisExtensions(object):
         # send prop
         self.robClient.sendProp('env', self.sensor_strategy.getInputs(expand_domains = True))
         #self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        logging.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
+        ltlmop_logger.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
         # TODO: Here we assume we are using bits
         # replace sys init with env init for regions
         sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
@@ -1301,14 +1303,14 @@ class ExecutorResynthesisExtensions(object):
                 # added in region_rc with the decomposed region names
                 sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
-        #logging.debug("sensorList:" + str(sensorList))
+        #ltlmop_logger.debug("sensorList:" + str(sensorList))
         # convert formula from slugs to our format
         sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
-        #logging.debug(sysGoalsLTLList)
+        #ltlmop_logger.debug(sysGoalsLTLList)
 
         # replace with normal region bits (like actual regions)
         sysGoalsLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
-        #logging.debug(sysGoalsLTL)
+        #ltlmop_logger.debug(sysGoalsLTL)
 
         return "[]<>("+sysGoalsLTL+")"
 
@@ -1339,7 +1341,7 @@ class ExecutorResynthesisExtensions(object):
                 # added in region_rc with the decomposed region names
                 sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
 
-        #logging.debug("sensorList:" + str(sensorList))
+        #ltlmop_logger.debug("sensorList:" + str(sensorList))
         # convert formula from slugs to our format
         sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
 
@@ -1470,7 +1472,7 @@ class ExecutorResynthesisExtensions(object):
                 # OR
                 # remove spec relating the coordinating robots
                 #specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
-                #logging.debug("specNewStr:" + str(specNewStr))
+                #ltlmop_logger.debug("specNewStr:" + str(specNewStr))
                 specNewStr = specStr
                 for csock in csockList:
                     self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
@@ -1487,7 +1489,7 @@ class ExecutorResynthesisExtensions(object):
             self.dPatchingExecutor.sendProp(csock, 'env', self.sensor_strategy.getInputs(expand_domains=True))
 
         #self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        logging.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
+        ltlmop_logger.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
         # TODO: Here we assume we are using bits
         # replace sys init with env init for regions
         sysProps = self.strategy.current_state.getOutputs(expand_domains=True)
@@ -1577,7 +1579,7 @@ class ExecutorResynthesisExtensions(object):
         for prop in self.dPatchingExecutor.envPropList[self.dPatchingExecutor.robotName].keys() + self.dPatchingExecutor.sysPropList[self.dPatchingExecutor.robotName].keys():
             self.dPatchingExecutor.propMappingNewToOld[self.dPatchingExecutor.robotName].update({prop:prop})
             self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName].update({prop:prop})
-        logging.debug("we should have finished setting up things for ourselves")
+        ltlmop_logger.debug("we should have finished setting up things for ourselves")
 
     def initiateDPatching(self, received_request=False):
         """
@@ -1594,21 +1596,21 @@ class ExecutorResynthesisExtensions(object):
         # then send spec and props to the robot requesting cooridination
         # now only send requests to robots violating the spec
         robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
-        logging.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
-        logging.debug("robotsInConflict:" + str(robotsInConflict))
+        ltlmop_logger.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
+        ltlmop_logger.debug("robotsInConflict:" + str(robotsInConflict))
         if robotsInConflict: # list not empty. Some robots is in conflict with us
             #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
             self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
             self.postEvent("D-PATCH","We will now ask for a centralized strategy be executed.")
             self.runCentralizedStrategy = True
         elif received_request:
-            logging.info("We are asked to join patching")
+            ltlmop_logger.info("We are asked to join patching")
             self.runCentralizedStrategy = True
 
         else:
-            logging.warning("we need to trigger env characterization instead. This is not checked yet!")
+            ltlmop_logger.warning("we need to trigger env characterization instead. This is not checked yet!")
             self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
-            logging.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
+            ltlmop_logger.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
             self.addStatetoEnvSafety(self.sensor_strategy)
 
         if robotsInConflict or received_request:
@@ -1647,7 +1649,7 @@ class ExecutorResynthesisExtensions(object):
 
         # update sensor info too
         enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
-        logging.warning('self.hsub.getSensorValue(enabled_sensors):' + str(self.hsub.getSensorValue(enabled_sensors)))
+        ltlmop_logger.warning('self.hsub.getSensorValue(enabled_sensors):' + str(self.hsub.getSensorValue(enabled_sensors)))
         self.dPatchingExecutor.updateRobotSensorsWithAllClients(self.hsub.getSensorValue(enabled_sensors))
 
     def setupGlobalEnvTransCheck(self):
@@ -1660,7 +1662,7 @@ class ExecutorResynthesisExtensions(object):
         globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.dPatchingExecutor.spec['EnvTrans'][robot], robot)\
                                                      for robot in self.dPatchingExecutor.coordinatingRobots]))
 
-        logging.debug('globalEnvTrans:' + str(globalEnvTrans))
+        ltlmop_logger.debug('globalEnvTrans:' + str(globalEnvTrans))
         # globalEnvTransList = []
         # for robot in self.dPatchingExecutor.coordinatingRobots:
         #     globalEnvTransList.append(self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.spec['EnvTrans'][robot], robot))
@@ -1668,7 +1670,7 @@ class ExecutorResynthesisExtensions(object):
 
         self.globalEnvTransCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'EnvTrans': globalEnvTrans}, 'EnvTrans')
         self.globalEnvTransCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(globalEnvTrans)
-        logging.debug('finished setupGlobalEnvTransCheck')
+        ltlmop_logger.debug('finished setupGlobalEnvTransCheck')
     def checkRobotsInConflict(self, violatedEnvTransList):
         """
         This function checks the robots involved in the conflict.
@@ -1715,13 +1717,13 @@ class ExecutorResynthesisExtensions(object):
         violatedList: violated EnvTrans list
         specStr: EnvTrans spec string
         """
-        logging.debug("violatedList:" + str(violatedList))
+        ltlmop_logger.debug("violatedList:" + str(violatedList))
         violatedListFiltered = LTLParser.LTLcheck.filterOneRobotViolatedSpec(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
-        logging.debug("violatedListFiltered:" + str(violatedListFiltered))
+        ltlmop_logger.debug("violatedListFiltered:" + str(violatedListFiltered))
 
         specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedListFiltered)
         #specNewStr = "&\n".join(filter(None,violatedListFiltered))
-        logging.debug("specNewStr:" + specNewStr)
+        ltlmop_logger.debug("specNewStr:" + specNewStr)
         return specNewStr
 
     def synthesizeGlobalStrategyAndWaitForOthersToResume(self):
@@ -1731,16 +1733,16 @@ class ExecutorResynthesisExtensions(object):
         """
         # then wait till all surrounding robots are ready as well
         while not self.dPatchingExecutor.prepareForCentralizedExecution():
-            logging.warning('we are still waiting parts from the other robots')
+            ltlmop_logger.warning('we are still waiting parts from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
-            logging.debug("self.dPatchingExecutor.coordinatingRobots:" + str(self.dPatchingExecutor.coordinatingRobots))
+            ltlmop_logger.debug("self.dPatchingExecutor.coordinatingRobots:" + str(self.dPatchingExecutor.coordinatingRobots))
             time.sleep(0.2)
 
         # now wait till the other robot has synthesized an automaton
         # TODO: what if it's unrealizable? We should know that as well.
         while not self.dPatchingExecutor.checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy():
-            logging.warning('we are still waiting completion of synthesis from the other robots')
+            ltlmop_logger.warning('we are still waiting completion of synthesis from the other robots')
 
             self.dPatchingExecutor.runIterationNotCentralExecution()
             time.sleep(0.2)
@@ -1769,10 +1771,10 @@ class ExecutorResynthesisExtensions(object):
 
             # remove violated envTrans from list.
             #for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
-            #    logging.debug("Robot Under consideration:" + str(robot))
+            #    ltlmop_logger.debug("Robot Under consideration:" + str(robot))
             #    self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)), self.dPatchingExecutor.spec['EnvTrans'][robot])
             #    self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
-            #    logging.debug("-------------------------------------------")
+            #    ltlmop_logger.debug("-------------------------------------------")
 
             # add violations of local spec to LTL violated_str list
             for specStr in list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):
@@ -1783,7 +1785,7 @@ class ExecutorResynthesisExtensions(object):
                 self.LTLViolationCheck.violated_specStr.append(specStr)
                 self.LTLViolationCheckPossibleStates.violated_specStr.append(specStr)
 
-            logging.debug("self.LTLViolationCheck.violated_specStr (also LTLViolationCheckPossibleStates):" + str(self.LTLViolationCheck.violated_specStr))
+            ltlmop_logger.debug("self.LTLViolationCheck.violated_specStr (also LTLViolationCheckPossibleStates):" + str(self.LTLViolationCheck.violated_specStr))
 
             #################################################
             #### CHECK IF NEW ROBOTS ARE INVOLVED #########
@@ -1794,12 +1796,12 @@ class ExecutorResynthesisExtensions(object):
                 self.dPatchingExecutor.resetRobotStatusOnCentralizedStrategyExecution()
 
                 # all the robots in conflicts are already coorindating. Just remove violated line and resynthesize.
-                logging.warning("in conflict robots are the same. just remove envTrans and resynthesize")
+                ltlmop_logger.warning("in conflict robots are the same. just remove envTrans and resynthesize")
                 self.postEvent("RESOLVED","Current coordinating robots only. Removing violated environment assumptions and resynthesize.")
 
             else:
                 # some new robots are joining, we should ask them to join centralized strategy.
-                logging.warning("invite other robots to join the centralized execution")
+                ltlmop_logger.warning("invite other robots to join the centralized execution")
 
                 # send spec to request received and also violated robots
                 csockNewRobotsToCoordinate = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict if not robot in self.dPatchingExecutor.old_coordinatingRobots]
@@ -1812,11 +1814,11 @@ class ExecutorResynthesisExtensions(object):
                 self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
 
         elif received_request:
-            logging.info("We are asked to coordinate with more robots!")
+            ltlmop_logger.info("We are asked to coordinate with more robots!")
         else:
             self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
             self.addStatetoEnvSafety(self.dPatchingExecutor.sensor_state, checker=self.globalEnvTransCheck)
-            logging.warning("we need to trigger env characterization instead. This is not checked!")
+            ltlmop_logger.warning("we need to trigger env characterization instead. This is not checked!")
 
         if robotsInConflict or received_request:
             # make sure all sensors are the latest

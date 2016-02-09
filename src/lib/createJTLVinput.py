@@ -11,7 +11,10 @@ import math
 import parseEnglishToLTL
 import textwrap
 from LTLParser.LTLFormula import LTLFormula, LTLFormulaType, treeToString
+
+# logger for ltlmop
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 onDebugMode = False
 
@@ -122,7 +125,7 @@ def createIASysPropImpliesEnvPropLivenessFragment(sysProp, regions, envProp, adj
         adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug(" & \n".join(adjFormulas))
+        ltlmop_logger.debug(" & \n".join(adjFormulas))
 
     return " & \n".join(adjFormulas)
 
@@ -165,8 +168,8 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
         adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug("[]( next(regionProp1_rc) -> (next(regionProp1) | next(regionProp2))")
-        logging.debug(adjFormulas)
+        ltlmop_logger.debug("[]( next(regionProp1_rc) -> (next(regionProp1) | next(regionProp2))")
+        ltlmop_logger.debug(adjFormulas)
 
     """
     []regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')
@@ -189,8 +192,8 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
         adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug("[]regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')")
-        logging.debug(adjFormula)
+        ltlmop_logger.debug("[]regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')")
+        ltlmop_logger.debug(adjFormula)
 
     """
     [] regionProp1' | regionProp2' | regionProp3'
@@ -200,8 +203,8 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
     adjFormulas.append("[]"+createInitialRegionFragment(regions, use_bits))
 
     if onDebugMode:
-        logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-        logging.debug("[]"+createInitialRegionFragment(regions, use_bits))
+        ltlmop_logger.debug("[] regionProp1' | regionProp2' | regionProp3'")
+        ltlmop_logger.debug("[]"+createInitialRegionFragment(regions, use_bits))
 
     return " & \n".join(adjFormulas)
 
@@ -237,8 +240,8 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
-        logging.debug(adjFormulas)
+        ltlmop_logger.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
+        ltlmop_logger.debug(adjFormulas)
 
     """
     Obtain []( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))
@@ -262,8 +265,8 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
                 adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
-        logging.debug(adjFormula)
+        ltlmop_logger.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
+        ltlmop_logger.debug(adjFormula)
 
     """
     []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
@@ -285,8 +288,8 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         adjFormulas.append(adjFormula)
 
     if onDebugMode:
-        logging.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
-        logging.debug(adjFormula)
+        ltlmop_logger.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
+        ltlmop_logger.debug(adjFormula)
 
     """
     [](action_ac & action) -> action_ac'
@@ -306,8 +309,8 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     if onDebugMode:
-        logging.debug("[] regionProp1' | regionProp2' | regionProp3'")
-        logging.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
+        ltlmop_logger.debug("[] regionProp1' | regionProp2' | regionProp3'")
+        ltlmop_logger.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     return " & \n".join(adjFormulas)
 
@@ -371,7 +374,7 @@ def createEnvTopologyFragmentNoHeading(adjData, regions, use_bits=True, other_ro
     adjFormulas = []
 
     if not other_robot_names_list:
-        logging.info('robot_name not provided!')
+        ltlmop_logger.info('robot_name not provided!')
         return
 
     for other_robot_name in other_robot_names_list:
@@ -417,7 +420,7 @@ def createEnvTopologyFragment(adjData, regions, use_bits=True, other_robot_names
     other_robot_names_list: a tuple
     """
     if not other_robot_names_list:
-        logging.info('robot_name not provided!')
+        ltlmop_logger.info('robot_name not provided!')
         return
 
     # The topological relation (adjacency)
@@ -606,7 +609,7 @@ def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_
     adjFormulas = []
     
     if not other_robot_name:
-        logging.info('robot_name not provided!')
+        ltlmop_logger.info('robot_name not provided!')
         return
 
     # retrieve only the region names
@@ -835,7 +838,7 @@ def createIAMaintainDistanceSysTopologyFragment(regionMapping, regions, adjData,
     adjFormulas = []
 
     if not other_robot_names_list:
-        logging.info('robot_name not provided!')
+        ltlmop_logger.info('robot_name not provided!')
         return
 
     # retrieve only the region names
@@ -865,7 +868,7 @@ def createIAMaintainDistanceSysTopologyFragment(regionMapping, regions, adjData,
                     if adjData[regionNames.index(subReg)][destIdx]:
                         toExcludeList.append(regionNames[destIdx])
 
-            #logging.debug("toExcludeList:" + str(toExcludeList))
+            #ltlmop_logger.debug("toExcludeList:" + str(toExcludeList))
             # 1st time
             for excludedSubReg in toExcludeList:
                 for destIdx in range(len(adjData)):
@@ -889,7 +892,7 @@ def createIAMaintainDistanceSysTopologyFragment(regionMapping, regions, adjData,
                         toIncludeListNew.append(regionNames[destIdx])
 
             toIncludeList = list(set(toIncludeList + toIncludeListNew))
-            #logging.debug("toIncludeList:" + str(toIncludeList))
+            #ltlmop_logger.debug("toIncludeList:" + str(toIncludeList))
 
             adjFormula = '\t\t\t []( next(e.'+ robot + '_' + reg + ') -> (' +\
                                     ' ! (' + '|'.join(filter(None, list(set([envNextBitEnc[regionNames.index(x)] if use_bits else "next(s."+ x + ")" for x in toExcludeList])))) + ') & ' +\

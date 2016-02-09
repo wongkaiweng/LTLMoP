@@ -10,7 +10,10 @@ import re
 import copy
 import numpy
 import math
+
+# logger for ltlmop
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 #nextify = lambda x: " next(%s) " % x
 

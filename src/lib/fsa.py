@@ -3,10 +3,14 @@
 
 import re
 import strategy
-import logging
 import sys
 import time
 from collections import defaultdict
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
 
 ############ ENV ASSUMPTION LEARNING ##############
 from copy import deepcopy
@@ -127,7 +131,7 @@ class FSAStrategy(strategy.Strategy):
                 self.transitions[state_by_id[start]][state_by_id[end]] = True
 
         # All done, hooray!
-        logging.info("Loaded %d states.", len(self.states))
+        ltlmop_logger.info("Loaded %d states.", len(self.states))
 
     def searchForStates(self, prop_assignments, state_list=None, goal_id=None):
         """ Returns an iterator for the subset of all known states (or a subset

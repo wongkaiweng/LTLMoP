@@ -3,7 +3,6 @@
 This is a helper module for decentralizedPatchingExecutor, handling all the set/get methods.
 """
 import socket               # for communication with negotiation monitor
-import logging
 import LTLParser.LTLRegion  # from replace region names in ltl
 import LTLParser.LTLcheck   # for retrieve one goal from the group of sysGoals
 import ast                  # for parsing spec dict from negtiation monitor
@@ -12,6 +11,10 @@ import numpy                # for generating bit encoding
 import parseEnglishToLTL    # for parsing original region name to region bits
 import re                   # for parsing regionCompleted_b and region_b to sbit and bit
 import copy                 # for making deepcopy of propDict to check envTrans violations for next possible states
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class MsgHandlerExtensions(object):
 
@@ -61,7 +64,7 @@ class MsgHandlerExtensions(object):
             self.message_queues[csock].put(self.robotName +'-' + 'regionNames = ' + str({k:False for k in self.regionList}) + '\n')
         else:
             self.message_queues[csock].put(self.robotName +'-' + 'regionNames = ' + str({k:True if self.newRegionNameToOld[current_region.name] == k else False for k in self.regionList}) + '\n')
-        logging.info("MSG-Put-region: initialize region info from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: initialize region info from " + str(self.robotName))
 
     def updateRobotRegion(self, csock, current_region):
         """
@@ -72,7 +75,7 @@ class MsgHandlerExtensions(object):
         # send current region to the othe robot (csock)
         self.current_region = current_region
         self.message_queues[csock].put(self.robotName + '-' + 'robotLocation = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
-        logging.info("MSG-Put-region: update region info from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: update region info from " + str(self.robotName))
 
     def updateRobotRegionWithAllClients(self, current_region):
         """
@@ -91,7 +94,7 @@ class MsgHandlerExtensions(object):
         """
         # send action info to the other robot
         self.message_queues[csock].put(self.robotName +'-' + 'actionNames = ' + str(actionList) + '\n')
-        logging.info("MSG-Put-region: initialize action sensor info from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: initialize action sensor info from " + str(self.robotName))
 
     def updateRobotActionStatus(self, csock, actionSensorDict):
         """
@@ -100,7 +103,7 @@ class MsgHandlerExtensions(object):
         """
         # send current region to the othe robot (csock)
         self.message_queues[csock].put(self.robotName + '-' + 'updateActionStatus = ' + str(actionSensorDict) + '\n')
-        logging.info("MSG-Put-region: update action sensor dict from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: update action sensor dict from " + str(self.robotName))
 
     def updateRobotActionStatusWithAllClients(self, actionSensorDict):
         """
@@ -118,7 +121,7 @@ class MsgHandlerExtensions(object):
         """
         # send current region to the othe robot (csock)
         self.message_queues[csock].put(self.robotName + '-' + 'robotSensors = ' + str(sensorDict) + '\n')
-        logging.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
 
     def updateRobotSensorsWithAllClients(self, sensorDict):
         """
@@ -140,7 +143,7 @@ class MsgHandlerExtensions(object):
             self.message_queues[csock].put(self.robotName +'-' + 'regionNames = ' + str({k:False for k in [reg+'_rc' for reg in self.regionList]}) + '\n')
         else:
             self.message_queues[csock].put(self.robotName +'-' + 'regionNames = ' + str({k:True if self.newRegionNameToOld[current_region_completed.name] == k else False for k in [reg+'_rc' for reg in self.regionList]}) + '\n')
-        logging.info("MSG-Put-region: initialize regionCompletion info from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: initialize regionCompletion info from " + str(self.robotName))
 
     def updateCompletedRobotRegion(self, csock, current_region):
         """
@@ -151,7 +154,7 @@ class MsgHandlerExtensions(object):
         # send current region to the othe robot (csock)
         self.current_region_completed = current_region
         self.message_queues[csock].put(self.robotName + '-' + 'robotLocation = ' + str(self.newRegionNameToOld[current_region.name]+'_rc') + '\n')
-        logging.info("MSG-Put-region: update region info from " + str(self.robotName))
+        ltlmop_logger.info("MSG-Put-region: update region info from " + str(self.robotName))
 
     def updateCompletedRobotRegionWithAllClients(self, current_region):
         """
@@ -172,7 +175,7 @@ class MsgHandlerExtensions(object):
         spec = self.sendSpecHelper(specType, spec, fastslow, include_heading, current_goal_id)
         # send sysSafety to negotiation monitor
         self.message_queues[csock].put(self.robotName + "-" + specType + " = '" + spec + "'\n")
-        logging.info('MSG-Put-spec: send '+ specType +' from ' + str(self.robotName))
+        ltlmop_logger.info('MSG-Put-spec: send '+ specType +' from ' + str(self.robotName))
 
     def sendSpecHelper(self, specType, spec, fastslow=False, include_heading=False, current_goal_id=0):
         """
@@ -252,7 +255,7 @@ class MsgHandlerExtensions(object):
            self.message_queues[csock].put(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
         else:
            self.message_queues[csock].put(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
-        logging.info('MSG-Put-prop: sent '+propListType+'propositions list with value')
+        ltlmop_logger.info('MSG-Put-prop: sent '+propListType+'propositions list with value')
 
     def sendPropHelper(self, propListType, propDict):
         """
@@ -271,9 +274,9 @@ class MsgHandlerExtensions(object):
         *Currently we send robotName_region_rc (in the form of robotName_region) to the other robots
         """
         stateArray = []
-        #logging.debug('00000000000000')
+        #ltlmop_logger.debug('00000000000000')
         for nextState in nextStatesArray:
-            #logging.debug("next state includes " + str(nextState.state_id))
+            #ltlmop_logger.debug("next state includes " + str(nextState.state_id))
             propDict = {}
             propDict.update(self.convertFromRegionBitsToRegionNameInDict('env', nextState.getInputs(expand_domains=True)))
             # we are not sending sysProps anymore
@@ -294,11 +297,11 @@ class MsgHandlerExtensions(object):
             if propDict not in stateArray:
                 stateArray.append(copy.deepcopy(propDict))
 
-        #logging.debug("stateArray:" + str(stateArray))
+        #ltlmop_logger.debug("stateArray:" + str(stateArray))
 
-        #logging.debug("stateArray:" + str(stateArray))
+        #ltlmop_logger.debug("stateArray:" + str(stateArray))
         self.message_queues[csock].put(self.robotName + '-' + 'nextPossibleStates = ' + str(stateArray) + '\n')
-        #logging.info('MSG-Put-nextStates: sent next possible states prop dict')
+        #ltlmop_logger.info('MSG-Put-nextStates: sent next possible states prop dict')
 
     def sendNextPossibleEnvStatesToOtherRobotToAllClients(self, nextStatesArray):
         """
@@ -324,8 +327,8 @@ class MsgHandlerExtensions(object):
             if ourProps not in possible_next_states_dict_array:
                 possible_next_states_dict_array.append(copy.deepcopy(ourProps))
 
-        #logging.debug("nextStatesArray:" + str(nextStatesArray))
-        #logging.debug("possible_next_states_dict_array:" + str(possible_next_states_dict_array))
+        #ltlmop_logger.debug("nextStatesArray:" + str(nextStatesArray))
+        #ltlmop_logger.debug("possible_next_states_dict_array:" + str(possible_next_states_dict_array))
 
         for csock in self.clients.values():
             if csock != self.serv:
@@ -345,7 +348,7 @@ class MsgHandlerExtensions(object):
         propDict    : {propName:propValue}
         """
         if propListType not in ['sys', 'env']:
-            logging.error('Please specify your propListType correctly!')
+            ltlmop_logger.error('Please specify your propListType correctly!')
             return
 
         if propListType == 'sys':
@@ -407,12 +410,12 @@ class MsgHandlerExtensions(object):
             # append the region object into the outputs dict
             if not sys_region:
                 #temporarily use the old one
-                logging.warning('sys_region outputs are not correct.Using old one:' + str(sys_region))
+                ltlmop_logger.warning('sys_region outputs are not correct.Using old one:' + str(sys_region))
                 outputs['region'] = self.prev_outputs['region']
             elif len(self.proj.regionMapping[sys_region[0]]) == 1:
                 outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
             else:
-                logging.warning('The regions are decomposed. We might want to do this differently')
+                ltlmop_logger.warning('The regions are decomposed. We might want to do this differently')
 
             self.prev_outputs = outputs
 
@@ -430,7 +433,7 @@ class MsgHandlerExtensions(object):
         #if self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())] not in self.coordinationRequestSent:
         #    self.coordinationRequestSent.append(self.robotAddresses.keys()[self.robotAddresses.values().index(csock.getpeername())])
 
-        logging.info('MSG-Put-Status: set coorindation status to ' + str(coordinationRequest) + ' to ' + str(csock))
+        ltlmop_logger.info('MSG-Put-Status: set coorindation status to ' + str(coordinationRequest) + ' to ' + str(csock))
 
     # def getCoordinationRequest(self):
     #     """
@@ -449,7 +452,7 @@ class MsgHandlerExtensions(object):
         This function sends restart status to all robots coordinating.
         """
         for robot in self.readyToRestart.keys(): #keys of readyToRestart are robots in the cooridination
-            logging.debug("self.clients[robot]:" + " robot:" + str(robot) + ' csock:' + str(self.clients[robot]))
+            ltlmop_logger.debug("self.clients[robot]:" + " robot:" + str(robot) + ' csock:' + str(self.clients[robot]))
             self.setRestartStatusToTrue(self.clients[robot])
 
     def setRestartStatusToTrue(self, csock):
@@ -458,7 +461,7 @@ class MsgHandlerExtensions(object):
         csock: client socket object
         """
         self.message_queues[csock].put(self.robotName + '-' + 'restartStatus = ' + str(True) +  '\n')
-        logging.info('MSG-Put-Status: set restart status to ' + str(True))
+        ltlmop_logger.info('MSG-Put-Status: set restart status to ' + str(True))
 
     def checkRestartStatus(self):
         """
@@ -474,7 +477,7 @@ class MsgHandlerExtensions(object):
         csock: client socket object
         """
         self.message_queues[csock].put(self.robotName + '-' + 'centralizedExecutionStatus = ' + str(self.centralizedExecutionStatus) +  '\n')
-        logging.info('MSG-Put-Status: set coodination status to ' + str(self.centralizedExecutionStatus))
+        ltlmop_logger.info('MSG-Put-Status: set coodination status to ' + str(self.centralizedExecutionStatus))
 
     def checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy(self):
         """

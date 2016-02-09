@@ -4,6 +4,9 @@
 naoSensors.py - Sensor handler for the Aldebaran Nao
 ====================================================
 """
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 

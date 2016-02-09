@@ -1,6 +1,5 @@
 #robotClient.py
 import socket               # for communication with negotiation monitor
-import logging
 import LTLParser.LTLRegion  # from replace region names in ltl
 import LTLParser.LTLcheck   # for retrieve one goal from the group of sysGoals
 import ast                  # for parsing spec dict from negtiation monitor
@@ -10,6 +9,9 @@ import parseEnglishToLTL    # for parsing original region name to region bits
 import re                   # for parsing regionCompleted_b and region_b to sbit and bit
 import copy                 # for making deepcopy of propDict to check envTrans violations for next possible states
 
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
@@ -77,7 +79,7 @@ class RobotClient:
         
         # send region info to negotiation monitor
         self.clientObject.send(self.robotName +'-' + 'regionList = ' + str(self.regionList) + '\n')
-        logging.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
+        ltlmop_logger.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
         
     def updateRobotRegion(self, current_region):
         """
@@ -86,7 +88,7 @@ class RobotClient:
         """
         # send current region to negotiation monitor       
         self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]) + '\n')
-        logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
+        ltlmop_logger.info("ROBOTCLIENT: update region info from " + str(self.robotName))
 
     def initializeCompletedRegionExchange(self):
         """
@@ -95,7 +97,7 @@ class RobotClient:
         """
         # send region info to negotiation monitor
         self.clientObject.send(self.robotName +'-' + 'regionList = ' + str([reg+'_rc' for reg in self.regionList]) + '\n')
-        logging.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
+        ltlmop_logger.info("ROBOTCLIENT: initialize region info from " + str(self.robotName))
 
     def updateCompletedRobotRegion(self, current_region):
         """
@@ -104,14 +106,14 @@ class RobotClient:
         """
         # send current region to negotiation monitor
         self.clientObject.send(self.robotName + '-' + 'regionName = ' + str(self.newRegionNameToOld[current_region.name]+'_rc') + '\n')
-        logging.info("ROBOTCLIENT: update region info from " + str(self.robotName))
+        ltlmop_logger.info("ROBOTCLIENT: update region info from " + str(self.robotName))
 
     def closeConnection(self):
         """
         This function closes the connection with the negotiation monitor.
         """    
         self.clientObject.close()
-        logging.info('ROBOTCLIENT: connection to the negotiation monitor is now closed')
+        ltlmop_logger.info('ROBOTCLIENT: connection to the negotiation monitor is now closed')
    
     def sendSpec(self, specType, spec, fastslow=False, include_heading=False, current_goal_id=0):
         """
@@ -127,7 +129,7 @@ class RobotClient:
         
         #spec = spec.replace('\t',"").replace(' ','').replace('\n','')
         spec = spec.replace(' ','').replace('\n','')
-        logging.log(1,'spec:' + str(spec))
+        ltlmop_logger.log(1,'spec:' + str(spec))
 
         # first replace our region bits to original region name with our robot name
         if fastslow:
@@ -160,7 +162,7 @@ class RobotClient:
 
             #elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
             #    if fastslow and specType == 'EnvTrans':
-            #        logging.log(1, 'came in to rewrite spec EnvTrans')
+            #        ltlmop_logger.log(1, 'came in to rewrite spec EnvTrans')
             #        for otherRobot in self.proj.otherRobot:
             #        spec = LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(spec, otherRobot)
 
@@ -169,7 +171,7 @@ class RobotClient:
 
         # send sysSafety to negotiation monitor
         self.clientObject.send(self.robotName + "-" + specType + " = '" + spec + "'\n")
-        logging.info('ROBOTCLIENT: send '+ specType +' from ' + str(self.robotName))
+        ltlmop_logger.info('ROBOTCLIENT: send '+ specType +' from ' + str(self.robotName))
         
     
     def requestSpec(self, specType):
@@ -186,7 +188,7 @@ class RobotClient:
         specToAppend = ""
         
         #TODO: need to get full picture of all robots. The current solution only deals with two robots
-        logging.info('ROBOTCLIENT: request '+ specType + ' of other robots')
+        ltlmop_logger.info('ROBOTCLIENT: request '+ specType + ' of other robots')
         while not len(specToAppend):
             self.clientObject.send(self.robotName + '-' + specType +' = ' + "''" '\n')
 
@@ -201,9 +203,9 @@ class RobotClient:
                 except:
                     bufferData = self.clientObject.recv(self.BUFSIZE)
                     fullMsg += bufferData
-                    logging.log(2, "MSG is not completed. Getting more parts.")
+                    ltlmop_logger.log(2, "MSG is not completed. Getting more parts.")
 
-            logging.log(2, specType + ":" + fullMsg)
+            ltlmop_logger.log(2, specType + ":" + fullMsg)
             SpecDict = ast.literal_eval(fullMsg)
 
             requestingRobot = self.getNegotiationInitiatingRobot()
@@ -248,11 +250,11 @@ class RobotClient:
         realizable: dict of boolean. realizable['rob1'] = True
         """
         self.clientObject.send(self.robotName + '-' + 'requestStrategyStatus = ' + "''" + '\n')
-        logging.info('ROBOTCLIENT: request strategy status of other robots')
+        ltlmop_logger.info('ROBOTCLIENT: request strategy status of other robots')
 
         #receive info
         realizable = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        logging.debug(realizable)
+        ltlmop_logger.debug(realizable)
         
         return realizable
     
@@ -261,11 +263,11 @@ class RobotClient:
         This function check if our specification is currently requested by the other robot
         """
         self.clientObject.send(self.robotName + '-' + 'requestSpecStatus = ' + "''" +  '\n')
-        #logging.info('ROBOTCLIENT: check request spec status of other robots')
+        #ltlmop_logger.info('ROBOTCLIENT: check request spec status of other robots')
         
         #receive info
         self.specRequestFromOther = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
-        #logging.debug(self.specRequestFromOther)
+        #ltlmop_logger.debug(self.specRequestFromOther)
 
     def getNegotiationInitiatingRobot(self):
         """
@@ -276,9 +278,9 @@ class RobotClient:
         #receive info
         originalStr = self.clientObject.recv(self.BUFSIZE)
         bufferData = originalStr.split(';').pop()
-        logging.log(2,"negotiationStatus:" + str(bufferData.split('-')[0]))
+        ltlmop_logger.log(2,"negotiationStatus:" + str(bufferData.split('-')[0]))
         bufferData = bufferData.split('-')[1]
-        logging.log(2,"negotiationInitiator:" + str(bufferData))
+        ltlmop_logger.log(2,"negotiationInitiator:" + str(bufferData))
         negotiationInitiator = ast.literal_eval(bufferData)
         return negotiationInitiator
    
@@ -309,7 +311,7 @@ class RobotClient:
         """
 
         self.clientObject.send(self.robotName + '-' + 'negotiationStatus = ' + str(status) + '\n')
-        logging.info('ROBOTCLIENT: negotiation status set')
+        ltlmop_logger.info('ROBOTCLIENT: negotiation status set')
         
     def getViolationTimeStamp(self, otherRobotName):
         """
@@ -338,16 +340,16 @@ class RobotClient:
             self.clientObject.send(self.robotName + '-' + 'envPropList = ' + str(propDict) + '\n')
         else:
             self.clientObject.send(self.robotName + '-' + 'sysPropList = ' + str(propDict) + '\n')
-        logging.info('ROBOTCLIENT: sent '+propListType+'propositions list with value')
+        ltlmop_logger.info('ROBOTCLIENT: sent '+propListType+'propositions list with value')
 
     def sendNextPossibleEnvStatesToOtherRobot(self, nextStatesArray):
         """
         This function converts possible next states to dict. To be sent to the other robots.
         """
         stateArray = []
-        #logging.debug('00000000000000')
+        #ltlmop_logger.debug('00000000000000')
         for nextState in nextStatesArray:
-            #logging.debug("next state includes " + str(nextState.state_id))
+            #ltlmop_logger.debug("next state includes " + str(nextState.state_id))
             propDict = {}
             propDict.update(self.convertFromRegionBitsToRegionNameInDict('env', nextState.getInputs(expand_domains=True)))
             # we are not sending sysProps anymore
@@ -361,16 +363,16 @@ class RobotClient:
             # append robot name to all props
             stateArray.append(copy.deepcopy(propDict))
 
-        #logging.debug("stateArray:" + str(stateArray))
+        #ltlmop_logger.debug("stateArray:" + str(stateArray))
         self.clientObject.send(self.robotName + '-' + 'nextPossibleStates = ' + str(stateArray) + '\n')
-        #logging.info('ROBOTCLIENT: sent next possible states prop dict')
+        #ltlmop_logger.info('ROBOTCLIENT: sent next possible states prop dict')
 
     def requestNextPossibleEnvStatesFromOtherRobot(self):
         """
         This function requests next possible states from the other robots
         """
         self.clientObject.send(self.robotName + '-' + 'nextPossibleStates = ' + "''" + '\n')
-        #logging.info('ROBOTCLIENT: requested next possible states prop dict')
+        #ltlmop_logger.info('ROBOTCLIENT: requested next possible states prop dict')
 
         #receive info
         msg = ""
@@ -382,7 +384,7 @@ class RobotClient:
                 nextPossibleStates = ast.literal_eval(msg)
             except:
                 pass
-        #logging.debug("nextPossibleStates:" + str(nextPossibleStates))
+        #ltlmop_logger.debug("nextPossibleStates:" + str(nextPossibleStates))
         return nextPossibleStates
 
 
@@ -394,7 +396,7 @@ class RobotClient:
         propDict    : {propName:propValue}
         """
         if propListType not in ['sys','env']:
-            logging.error('Please specify your propListType correctly!')
+            ltlmop_logger.error('Please specify your propListType correctly!')
             return
 
         if propListType == 'sys':
@@ -458,12 +460,12 @@ class RobotClient:
             # append the region object into the outputs dict
             if not sys_region:
                 #temporarily use the old one
-                logging.warning('sys_region outputs are not correct.Using old one:' + str(sys_region))
+                ltlmop_logger.warning('sys_region outputs are not correct.Using old one:' + str(sys_region))
                 outputs['region'] = self.prev_outputs['region']
             elif len(self.proj.regionMapping[sys_region[0]]) == 1:
                 outputs['region'] = self.regions[self.proj.rfi.indexOfRegionWithName(self.proj.regionMapping[sys_region[0]][0])]
             else:
-                logging.warning('The regions are decomposed. We might want to do this differently')
+                ltlmop_logger.warning('The regions are decomposed. We might want to do this differently')
 
             self.prev_outputs = copy.deepcopy(outputs)
             return outputs
@@ -473,7 +475,7 @@ class RobotClient:
         This function sets the patching status.
         """
         self.clientObject.send(self.robotName + '-' + 'patchingStatus = ' + str(patchingStatus) +  '\n')
-        logging.info('ROBOTCLIENT: set coorindation status to ' + str(patchingStatus))
+        ltlmop_logger.info('ROBOTCLIENT: set coorindation status to ' + str(patchingStatus))
 
     def checkCoordinationRequest(self):
         """
@@ -489,7 +491,7 @@ class RobotClient:
         This function sets the restart status.
         """
         self.clientObject.send(self.robotName + '-' + 'restartStatus = ' + str(True) +  '\n')
-        logging.info('ROBOTCLIENT: set restart status to ' + str(True))
+        ltlmop_logger.info('ROBOTCLIENT: set restart status to ' + str(True))
 
     def checkRestartStatus(self):
         """
@@ -517,12 +519,12 @@ class RobotClient:
         """
         # send current region to the othe robot (csock)
         self.clientObject.send(self.robotName + '-' + 'robotSensors = ' + str(sensorDict) + '\n')
-        #logging.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
+        #ltlmop_logger.info("MSG-Put-region: update sensor dict from " + str(self.robotName))
 
     def getRobotSensorsStatus(self):
         # send current region to the othe robot (csock)
         self.clientObject.send(self.robotName + '-' + 'robotSensors = ' + "''" + '\n')
-        #logging.info("MSG-Put-region: get sensor dict for " + str(self.robotName))
+        #ltlmop_logger.info("MSG-Put-region: get sensor dict for " + str(self.robotName))
         sensorDict = ast.literal_eval(self.clientObject.recv(self.BUFSIZE))
         return sensorDict
 

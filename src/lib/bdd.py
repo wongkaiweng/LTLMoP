@@ -3,7 +3,10 @@ import re
 import time
 import pycudd
 import strategy
+
+# logger for ltlmop
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # NOTE: This module requires a modified version of pycudd!!
 # See src/etc/patches/README_PYCUDD for instructions.
@@ -73,7 +76,7 @@ class BDDStrategy(strategy.Strategy):
 
             # Convert from a binary (0/1) ADD to a BDD
             self.strategy = self.mgr.addBddPattern(a[0])
-            logging.debug('ADD loaded')
+            ltlmop_logger.debug('ADD loaded')
         else:
             #try loading as BDD (input from SLUGS) instead of ADD (input from JTLV)
             self.strategy  = self.mgr.BddLoad(pycudd.DDDMP_VAR_MATCHIDS,
@@ -82,7 +85,7 @@ class BDDStrategy(strategy.Strategy):
                                   None,
                                   pycudd.DDDMP_MODE_TEXT,
                                   filename, None)
-            logging.debug('BDD loaded')
+            ltlmop_logger.debug('BDD loaded')
 
         # Load in meta-data
         with open(filename, 'r') as f:
@@ -269,7 +272,7 @@ class BDDStrategy(strategy.Strategy):
         candidates = self._getNextStateBDD(from_state, prop_assignments, "Z")
         if candidates:
             candidate_states = list(self.BDDToStates(candidates))
-            #logging.debug('candidate_statesZ:' + str(candidate_states))
+            #ltlmop_logger.debug('candidate_statesZ:' + str(candidate_states))
             for s in candidate_states:
                 # add 1 to jx
                 s.goal_id = (s.goal_id + 1) % self.num_goals
@@ -280,7 +283,7 @@ class BDDStrategy(strategy.Strategy):
         candidates = self._getNextStateBDD(from_state, prop_assignments, "Y")
         if candidates:
             #candidate_states = list(self.BDDToStates(candidates))
-            #logging.debug('candidate_statesY:' + str(candidate_states))
+            #ltlmop_logger.debug('candidate_statesY:' + str(candidate_states))
             return list(self.BDDToStates(candidates))
 
         # If we've gotten here, something's terribly wrong
@@ -296,12 +299,12 @@ class BDDStrategy(strategy.Strategy):
 
         # Get possible valid next states
         next_state_restrictions = self.propAssignmentToBDD(prop_assignments, use_next=True)
-        logging.debug('we did come and check')
+        ltlmop_logger.debug('we did come and check')
         candidates = self.unprime(self.stateToBDD(from_state)
                                   & self.strategy
                                   & self.envTransBDD
                                   & next_state_restrictions)
-        logging.debug('we did finish')
+        ltlmop_logger.debug('we did finish')
 
         statesToKeep = []
         if candidates:
@@ -313,14 +316,14 @@ class BDDStrategy(strategy.Strategy):
                     statesToKeep.append(state)
                 except:
                     pass
-                    #logging.debug('State contains invalid assignments. proping state')
-                    #logging.debug(state.getAll(expand_domains=True))
+                    #ltlmop_logger.debug('State contains invalid assignments. proping state')
+                    #ltlmop_logger.debug(state.getAll(expand_domains=True))
 
-            #logging.debug('statesToKeep:' + str(statesToKeep))
+            #ltlmop_logger.debug('statesToKeep:' + str(statesToKeep))
             return statesToKeep
         else:
             # If we've gotten here, something's terribly wrong
-            logging.error("No next state could be found.")
+            ltlmop_logger.error("No next state could be found.")
             return []
 
     def _getNextStateBDD(self, from_state, prop_assignments, strat_type):
@@ -418,7 +421,7 @@ class BDDStrategy(strategy.Strategy):
                 if level == 0 :
                     pass
                 value = None
-                logging.debug(x)
+                ltlmop_logger.debug(x)
                 value, negate_in_loop, next_in_loop = self.evaluateBDD(x, terminals, level+1, next_in_loop, disjunction)
 
                 # for negating value returned in the ltl

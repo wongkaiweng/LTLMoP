@@ -6,8 +6,11 @@ Johnny5ActuatorHandler.py - Johnny 5 Robot Actuator Handler
 """
 import os
 import time
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -21,7 +24,7 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
         try:
             self.johnny5Serial = shared_data["Johnny5Serial"]
         except:
-            logging.exception("No connection to Johnny 5")
+            ltlmop_logger.exception("No connection to Johnny 5")
             sys.exit(-1)
 
         # load config info

@@ -5,8 +5,11 @@ HexapodInitHandler.py - The Hexapod's Init Handler
 """
 
 import serial
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -36,11 +39,11 @@ class HexapodInitHandler(handlerTemplates.InitHandler):
             while init_response == '':
                 init_response = self.hexapodSer.read()
         except:
-            logging.exception("Couldn't connect to Hexapod")
+            ltlmop_logger.exception("Couldn't connect to Hexapod")
             exit(-1)
 
     def _stop(self):
-        logging.info("Shutting down serial port!")
+        ltlmop_logger.info("Shutting down serial port!")
         self.hexapodSer.close()
 
     def getSharedData(self):

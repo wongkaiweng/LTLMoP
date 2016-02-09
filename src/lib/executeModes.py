@@ -1,7 +1,10 @@
-import logging
 import time
 import copy
 import LTLParser.LTLcheck
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class ExecutorModesExtensions(object):
     """ Extensions to Executor to allow for specification rewriting and resynthesis.
@@ -9,7 +12,7 @@ class ExecutorModesExtensions(object):
 
     def __init__(self):
         super(ExecutorModesExtensions, self).__init__()
-        logging.info("Initializing modes extensions...")
+        ltlmop_logger.info("Initializing modes extensions...")
 
         self.env_assumption_hold = True # keeping track if env trans holds with/without possible next states.
         self.violated_spec_list = [] # keep track of specs violated
@@ -60,11 +63,11 @@ class ExecutorModesExtensions(object):
                     self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
 
                 # now updates robot sensors
-                #logging.warning("self.robotSensors:" + str(self.robotSensors))
+                #ltlmop_logger.warning("self.robotSensors:" + str(self.robotSensors))
                 for coR in self.dPatchingExecutor.coordinatingRobots:
                     if coR != self.dPatchingExecutor.robotName:
                         nextRobotSensors = {self.dPatchingExecutor.propMappingOldToNew[coR][k]:v for k, v in self.dPatchingExecutor.robotSensors[coR].iteritems()}
-                        #logging.warning('nextRobotSensors:' + str(nextRobotSensors))
+                        #ltlmop_logger.warning('nextRobotSensors:' + str(nextRobotSensors))
                         self.dPatchingExecutor.sensor_state.setPropValues(nextRobotSensors)
 
                 deepcopy_sensor_state = copy.deepcopy(self.dPatchingExecutor.sensor_state)
@@ -79,7 +82,7 @@ class ExecutorModesExtensions(object):
                             break
                     else:
                         env_assumption_hold = True
-                        logging.debug("no violations as it's only about one robot (later should change to only topology)")
+                        ltlmop_logger.debug("no violations as it's only about one robot (later should change to only topology)")
             else:
                 env_assumption_hold, self.violated_spec_line_no, self.violated_spec_list, self.violated_spec_list_with_no_specText_match = \
                     self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
@@ -90,10 +93,10 @@ class ExecutorModesExtensions(object):
                 self.LTLViolationCheck.checkViolationWithListReturned(deepcopy_current_state, deepcopy_sensor_state)
 
         if not env_assumption_hold:
-            logging.debug("======== envTrans violations ============")
-            logging.debug("ACTUAL-current_state:" + str([x for x, value in deepcopy_current_state.getAll(expand_domains=True).iteritems() if value]))
-            logging.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if value]))
-            logging.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))
+            ltlmop_logger.debug("======== envTrans violations ============")
+            ltlmop_logger.debug("ACTUAL-current_state:" + str([x for x, value in deepcopy_current_state.getAll(expand_domains=True).iteritems() if value]))
+            ltlmop_logger.debug("ACTUAL-sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if value]))
+            ltlmop_logger.debug("ACTUAL-env_assumption_hold:" + str(env_assumption_hold))
 
         return env_assumption_hold
 
@@ -145,18 +148,18 @@ class ExecutorModesExtensions(object):
                         #    self.violated_spec_line_no = copy.deepcopy(self.LTLViolationCheck.violated_spec_line_no)
 
                         if not self.env_assumption_hold:
-                            logging.debug("**self.violated_spec_list:" + str(self.violated_spec_list))
-                            logging.debug("**self.violated_spec_list_with_no_specText_match:" + str(self.violated_spec_list_with_no_specText_match))
-                            logging.debug("**self.violated_spec_line_no:" + str(self.violated_spec_line_no))
-                            logging.debug("**self.env_assumption_hold:" + str(self.env_assumption_hold))
+                            ltlmop_logger.debug("**self.violated_spec_list:" + str(self.violated_spec_list))
+                            ltlmop_logger.debug("**self.violated_spec_list_with_no_specText_match:" + str(self.violated_spec_list_with_no_specText_match))
+                            ltlmop_logger.debug("**self.violated_spec_line_no:" + str(self.violated_spec_line_no))
+                            ltlmop_logger.debug("**self.env_assumption_hold:" + str(self.env_assumption_hold))
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
                     old_current_state = copy.deepcopy(current_state)
-                    #logging.debug("seemed like we did not exit")
+                    #ltlmop_logger.debug("seemed like we did not exit")
         except:
             import traceback
-            logging.error(traceback.format_exc())
+            ltlmop_logger.error(traceback.format_exc())
 
     def check_envTrans_violations(self):
         """
@@ -202,9 +205,9 @@ class ExecutorModesExtensions(object):
                     current_state=deepcopy_current_state, sensor_state=deepcopy_sensor_state)
 
                 if not env_assumption_hold:
-                    logging.debug("======== envTrans violations detected ============")
-                    logging.debug("sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs().iteritems() if value]))
-                    logging.debug("env_assumption_hold:" + str(env_assumption_hold))
+                    ltlmop_logger.debug("======== envTrans violations detected ============")
+                    ltlmop_logger.debug("sensor_state:" + str([x for x, value in deepcopy_sensor_state.getInputs().iteritems() if value]))
+                    ltlmop_logger.debug("env_assumption_hold:" + str(env_assumption_hold))
 
                     # now checks if it's only about one coordinating robot
                     for x in self.globalEnvTransCheck.violated_specStr:
@@ -212,14 +215,14 @@ class ExecutorModesExtensions(object):
                             break
                     else:
                         env_assumption_hold = True
-                        logging.debug("no violations as it's only about one robot (later should change to only topology)")
+                        ltlmop_logger.debug("no violations as it's only about one robot (later should change to only topology)")
             else:
                 env_assumption_hold = self.checkEnvTransViolationWithNextPossibleStates(self.LTLViolationCheckPossibleStates)
             #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
         else:
             # Check for environment violation - change the env_assumption_hold to int again
             env_assumption_hold = self.LTLViolationCheckPossibleStates.checkViolation(copy.deepcopy(self.strategy.current_state), copy.deepcopy(self.sensor_strategy))
-        logging.warning("checked all possible states")
+        ltlmop_logger.warning("checked all possible states")
 
         return env_assumption_hold
 
@@ -239,7 +242,7 @@ class ExecutorModesExtensions(object):
                 if self.runStrategy.isSet() and self.runRuntimeMonitoring.isSet():
                     # only run check violation if sensor or possible next states has changed
                     runCheck = False
-                    #logging.warning("how often do we come.....possible states")
+                    #ltlmop_logger.warning("how often do we come.....possible states")
                     sensor_state = copy.deepcopy(self.hsub.getSensorValue(self.proj.enabled_sensors))
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
@@ -271,8 +274,8 @@ class ExecutorModesExtensions(object):
                             self.possible_states_violated_spec_list_with_no_specText_match = copy.deepcopy(self.LTLViolationCheckPossibleStates.violated_specStr_with_no_specText_match)
                             self.possible_states_violated_spec_line_no = copy.deepcopy(self.LTLViolationCheckPossibleStates.violated_spec_line_no)
 
-                        logging.debug("**self.possible_states_violated_spec_list:" + str(self.possible_states_violated_spec_list))
-                        logging.debug("self.possible_states_env_assumption_hold:" + str(self.possible_states_env_assumption_hold))
+                        ltlmop_logger.debug("**self.possible_states_violated_spec_list:" + str(self.possible_states_violated_spec_list))
+                        ltlmop_logger.debug("self.possible_states_env_assumption_hold:" + str(self.possible_states_env_assumption_hold))
 
                     old_sensor_state = copy.deepcopy(sensor_state)
                     old_otherEnvPropDict = copy.deepcopy(otherEnvPropDict)
@@ -280,7 +283,7 @@ class ExecutorModesExtensions(object):
 
         except:
             import traceback
-            logging.error(traceback.format_exc())
+            ltlmop_logger.error(traceback.format_exc())
 
     def resumeRuntimeMonitoring(self):
         """

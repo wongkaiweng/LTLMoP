@@ -14,8 +14,11 @@ import numpy as np
 import time
 import strategy
 import re
-import logging
 from collections import defaultdict
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class SLUGSInteractiveStrategy(strategy.Strategy):
     """
@@ -42,12 +45,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             filename = filename.replace('C:', '/cygdrive/c')  # .replace("\\", '/')
         else:
             slugs_path = os.path.join("etc", "slugs", "src", "slugs")
-        logging.debug(slugs_path)
+        ltlmop_logger.debug(slugs_path)
         """
 
         #command = " --interactiveStrategy --cooperativeGR1Strategy --sysInitRoboticsSemantics " # copy of old options in patching
-        #logging.debug("slugs" + command + filename)
-        logging.debug(self.slugsOptions)
+        #ltlmop_logger.debug("slugs" + command + filename)
+        ltlmop_logger.debug(self.slugsOptions)
 
         # Open Slugs
         self.slugsProcess = subprocess.Popen(' '.join(self.slugsOptions), shell=True, bufsize=1048000, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -63,7 +66,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             if lastLine!="" and lastLine != ">":
                 lastLine = re.sub(r'^sbit(\d+)$', r'regionCompleted_b\1', lastLine)
                 self.inputAPs.append(lastLine)
-        logging.debug( "inputAPs:" + str(self.inputAPs))
+        ltlmop_logger.debug( "inputAPs:" + str(self.inputAPs))
 
         # Get output APs
         self.slugsProcess.stdin.write("XPRINTOUTPUTS\n")
@@ -76,7 +79,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             if lastLine!="":
                 lastLine = re.sub(r'^bit(\d+)$', r'region_b\1', lastLine)
                 self.outputAPs.append(lastLine)
-        logging.debug( "outputAPs:" + str(self.outputAPs))
+        ltlmop_logger.debug( "outputAPs:" + str(self.outputAPs))
 
     def getInitState(self):
         """
@@ -87,7 +90,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdout.readline() # Skip the prompt
 
         currentState = self.slugsProcess.stdout.readline().strip()
-        logging.debug( "currentState:" + str(currentState))
+        ltlmop_logger.debug( "currentState:" + str(currentState))
 
         # create state with the current state prop assignments
         prop_assignments = {}
@@ -97,7 +100,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
                 prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
                 prop_assignments[self.inputAPs[idx]] = value
-        logging.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
+        ltlmop_logger.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
         curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
 
         # set current state id
@@ -112,7 +115,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         # first expand all domains
         prop_assignments = self.states.expandDomainsInPropAssignment(prop_assignments)
 
-        logging.debug("prop_assignments for searching states:" + str([k for k, v in prop_assignments.iteritems() if v]))
+        ltlmop_logger.debug("prop_assignments for searching states:" + str([k for k, v in prop_assignments.iteritems() if v]))
         initInputsOutputs = ""
         for prop in self.inputAPs:
             if prop in prop_assignments.keys():
@@ -125,7 +128,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
             else:
                 initInputsOutputs += "."
 
-        logging.debug("initInputsOutputs:" + str(initInputsOutputs))
+        ltlmop_logger.debug("initInputsOutputs:" + str(initInputsOutputs))
         self.slugsProcess.stdin.write("XCOMPLETEINIT\n" + initInputsOutputs)
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # Skip the prompt
@@ -133,7 +136,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
 
         # iterate until we actually get our state
         while re.search('[^aAgGsS01]',prompt):
-            logging.debug("prompt:" + str(prompt))
+            ltlmop_logger.debug("prompt:" + str(prompt))
             if 'FORCEDNONWINNING' in prompt:
                 return []
             prompt = self.slugsProcess.stdout.readline().strip()
@@ -142,7 +145,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         # in the form of AaGa
         # A: given true value,    a:given false value
         # G: possible true value, g:possible false value
-        logging.debug( "currentState:" + str(currentState))
+        ltlmop_logger.debug( "currentState:" + str(currentState))
 
         # create state with the current state prop assignments
         prop_assignments = {}
@@ -152,7 +155,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
                 prop_assignments[self.outputAPs[idx-len(self.inputAPs)]] = value
             else:
                 prop_assignments[self.inputAPs[idx]] = value
-        logging.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
+        ltlmop_logger.debug("init_state:" + str([k for k, v in prop_assignments.iteritems() if v]))
         curStateObject = self.states.addNewState(prop_assignments = prop_assignments)
 
         # set position in slugs
@@ -162,9 +165,9 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # only read Position:
 
-        logging.debug('goal_id:' + str(goal_id))
+        ltlmop_logger.debug('goal_id:' + str(goal_id))
         if goal_id is not None:
-            logging.debug('rewriting goals... ')
+            ltlmop_logger.debug('rewriting goals... ')
             self.slugsProcess.stdin.write("XMAKEGOAL\n" + str(goal_id) + "\n")
             self.slugsProcess.stdin.flush()
             self.slugsProcess.stdout.readline() # only read Position:
@@ -173,7 +176,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.write("XGETCURRENTGOAL\n")
         self.slugsProcess.stdin.flush()
         currentGoal = self.slugsProcess.stdout.readline().partition(">")[2] #strip("> ")
-        logging.debug("currentGoal:" + str(currentGoal))
+        ltlmop_logger.debug("currentGoal:" + str(currentGoal))
         curStateObject.goal_id = currentGoal # it's a string
 
         return (x for x in [curStateObject])
@@ -199,12 +202,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
         else:
-            logging.debug("nextLine:" + str(nextLine))
-            logging.debug("next inputs:" + str([k for k, v in prop_assignments.iteritems() if v]))
-            logging.error("No next state!")
+            ltlmop_logger.debug("nextLine:" + str(nextLine))
+            ltlmop_logger.debug("next inputs:" + str([k for k, v in prop_assignments.iteritems() if v]))
+            ltlmop_logger.error("No next state!")
             return []
 
-        #logging.debug("currentState:" + str(currentState))
+        #ltlmop_logger.debug("currentState:" + str(currentState))
         # create state with the current state prop assignments
         prop_assignments = {}
         for idx,element in enumerate(currentState.partition(",")[0]):
@@ -233,12 +236,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         nextLine = self.slugsProcess.stdout.readline().strip()
         if "ERROR" in nextLine:
-            logging.debug("nextLine:" + str(nextLine))
-            logging.error("No next states!")
+            ltlmop_logger.debug("nextLine:" + str(nextLine))
+            ltlmop_logger.error("No next states!")
             return []
 
         nextPossibleStates = nextLine.split(':')[1].strip()
-        #logging.debug("nextPossibleStates:" + str(nextPossibleStates))
+        #ltlmop_logger.debug("nextPossibleStates:" + str(nextPossibleStates))
         stateList = []
 
         # create state with the current state prop assignments

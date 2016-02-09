@@ -7,9 +7,12 @@
     ================================================
 """
 import re
-import logging
 from collections import OrderedDict
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 class Handler(object):
     """
@@ -23,7 +26,7 @@ class Handler(object):
         """
         Properly terminates all threads/computations in the handler. Leave no trace behind.
         """
-        logging.debug("WARNING: No _stop() function implemented, may cause problems on shutdown")
+        ltlmop_logger.debug("WARNING: No _stop() function implemented, may cause problems on shutdown")
 
     def _onProjectUpdated(self, newPrject):
         """

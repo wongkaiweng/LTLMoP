@@ -16,11 +16,14 @@
 
 import wx, sys, os, socket
 import fileMethods, regions, project, execute, handlerSubsystem
-import logging
 import globalConfig
 from numpy import *
 import mapRenderer
 from _transformations import affine_matrix_from_points
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # begin wxGlade: extracode
 # end wxGlade
@@ -61,11 +64,11 @@ class CalibrateFrame(wx.Frame):
             print "(ERROR) Calibration can only be run on a specification file with a calibration configuration.\nPlease use ConfigEditor to calibrate a configuration."
             sys.exit(3)
 
-        logging.info("Setting current executing config...")
+        ltlmop_logger.info("Setting current executing config...")
         self.executor.hsub.setExecutingConfig(self.executor.proj.current_config)
 
         # Initialize handlers
-        logging.info("Instantiate all handlers...")
+        ltlmop_logger.info("Instantiate all handlers...")
         self.executor.hsub.instantiateAllHandlers()
 
         self.panel_map.SetBackgroundColour(wx.WHITE)

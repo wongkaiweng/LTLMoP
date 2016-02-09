@@ -26,15 +26,15 @@ import time
 import fileMethods
 from copy import deepcopy
 import project
-import globalConfig, logging
+import globalConfig
 from hsubConfigObjects import MethodParameterConfig,HandlerMethodConfig,\
                                 HandlerConfig,RobotConfig,ExperimentConfig
 import handlers.handlerTemplates as ht
 from hsubParsingUtils import parseCallString
 
-# ---- two_robot_negotiation -------- #
+# logger for ltlmop
 import logging
-# ----------------------------------- #
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 # TODO: Get rid of this todo list
 # TODO: Move testing code to doctest
@@ -99,7 +99,7 @@ class HandlerSubsystem:
         try:
             handler_folders.remove(os.path.join(self.handler_path, 'share'))
         except ValueError:
-            logging.warning('No shared handler directory found in {!r}'.format(self.handler_path))
+            ltlmop_logger.warning('No shared handler directory found in {!r}'.format(self.handler_path))
         else:
             handler_folders.extend(self._getSubdirectories(os.path.join(self.handler_path, 'share')))
 
@@ -149,7 +149,7 @@ class HandlerSubsystem:
                 handler_files = [f for f in os.listdir(temp_folder) if f.endswith('.py')]
                 if handler_name + ".py" in handler_files:
                     return handler_type_string
-        logging.error("Cannot find the type of handler with name {} in folds in handlers/share".format(handler_name))
+        ltlmop_logger.error("Cannot find the type of handler with name {} in folds in handlers/share".format(handler_name))
         return None
 
     def loadHandler(self, r_type, h_type, h_name):
@@ -200,10 +200,10 @@ class HandlerSubsystem:
             # fetch it from the exiting handler_configs dictionary
             if r_type not in self.handler_configs.keys():
                 # robot type is not recognized
-                logging.warning("Cannot find handler config with robot type {!r}.".format(r_type))
+                ltlmop_logger.warning("Cannot find handler config with robot type {!r}.".format(r_type))
             elif h_type not in self.handler_configs[r_type].keys():
                 # handler type is not recognized
-                logging.warning("Cannot find handler config with handler type {!r} for robot {!r}.\n \
+                ltlmop_logger.warning("Cannot find handler config with handler type {!r} for robot {!r}.\n \
                                 It is possible the handler config was not successfully loaded." \
                                 .format(ht.getHandlerTypeName(h_type), r_type))
             else:
@@ -215,7 +215,7 @@ class HandlerSubsystem:
 
                 if default_handler_config is None:
                     # Cannot find handler config object with given name
-                    logging.warning("Cannot find handler config with handler name {!r}.".format(h_name))
+                    ltlmop_logger.warning("Cannot find handler config with handler name {!r}.".format(h_name))
 
         return default_handler_config
 
@@ -238,7 +238,7 @@ class HandlerSubsystem:
                 try:
                     robot_config.fromFile(os.path.join(robot_folder, robot_file), self)
                 except ht.LoadingError, msg:
-                    logging.warning(str(msg) + ' in robot file {!r}.'.format(os.path.join(robot_folder, robot_file)))
+                    ltlmop_logger.warning(str(msg) + ' in robot file {!r}.'.format(os.path.join(robot_folder, robot_file)))
                     continue
                 except TypeError:
                     continue
@@ -261,7 +261,7 @@ class HandlerSubsystem:
                 self.configs.append(config)
                 self.setExecutingConfig(config_object_name)
             else:
-                logging.error("Cannot find the config with name {}".format(config_object_name))
+                ltlmop_logger.error("Cannot find the config with name {}".format(config_object_name))
 
     def loadAllConfigFiles(self):
         """
@@ -293,11 +293,11 @@ class HandlerSubsystem:
         try:
             experiment_config.fromFile(os.path.join(self.config_path,file_name), self)
         except ht.LoadingError, msg:
-            logging.warning(str(msg) + ' in experiment config file {!r}.'\
+            ltlmop_logger.warning(str(msg) + ' in experiment config file {!r}.'\
                             .format(os.path.join(self.config_path, file_name)))
             return os.path.join(self.config_path,file_name), False
         except TypeError as e:
-            logging.error(e)
+            ltlmop_logger.error(e)
             return os.path.join(self.config_path,file_name), False
         else:
             return experiment_config, True
@@ -309,7 +309,7 @@ class HandlerSubsystem:
         for r in self.robot_configs:
             if r.r_type == t:
                 return r
-        logging.error("Could not find robot of type '{0}'".format(t))
+        ltlmop_logger.error("Could not find robot of type '{0}'".format(t))
         return None
 
     def getHandlerInstanceByName(self, handler_name):
@@ -437,7 +437,7 @@ class HandlerSubsystem:
         initialize all method in self.prop2func mapping with initial=True
         """
 
-        logging.info("Initializing sensor/actuator methods...")
+        ltlmop_logger.info("Initializing sensor/actuator methods...")
         # initialize all sensor and actuators
         # since we cannot distinguish the method for sensor and actuator
         # we will pass in arguments for both types of methods
@@ -490,7 +490,7 @@ class HandlerSubsystem:
             try:
                 h = handler_class(**arg_dict)
             except Exception:
-                logging.exception("Failed during handler {} instantiation".format(handler_module_path))
+                ltlmop_logger.exception("Failed during handler {} instantiation".format(handler_module_path))
             else:
                 self.handler_instance.append(h)
         return h
@@ -582,8 +582,8 @@ class HandlerSubsystem:
 
         # we did not find the correct handler config
         if handler_config is None:
-            logging.error("Cannot recognize handler {!r} of robot {!r}".format(handler_name, robot_name))
-            logging.error("Please make sure it is correctly loaded")
+            ltlmop_logger.error("Cannot recognize handler {!r} of robot {!r}".format(handler_name, robot_name))
+            ltlmop_logger.error("Please make sure it is correctly loaded")
             return None
 
         # try to find the method config
@@ -616,7 +616,7 @@ class HandlerSubsystem:
         """
 
         if not self.handler_configs:
-            logging.error("Cannot find handler_configs dictionary, please load all handlers first.")
+            ltlmop_logger.error("Cannot find handler_configs dictionary, please load all handlers first.")
             return None
 
         try:
@@ -624,7 +624,7 @@ class HandlerSubsystem:
             if len(call_descriptors[0].name) != 3:
                 raise SyntaxError("Name must be in form of '<robot_name>.<handler_name>.<method_name>'")
         except SyntaxError:
-            logging.exception("Cannot parse setting {!r}".format(method_string))
+            ltlmop_logger.exception("Cannot parse setting {!r}".format(method_string))
             return None
 
         robot_name, handler_name, method_name = call_descriptors[0].name
@@ -648,8 +648,8 @@ class HandlerSubsystem:
 
         # we did not find the correct handler config
         if handler_config is None:
-            logging.error("Cannot recognize handler {!r} of robot {!r}".format(handler_name, robot_name))
-            logging.error("Please make sure it is correctly loaded")
+            ltlmop_logger.error("Cannot recognize handler {!r} of robot {!r}".format(handler_name, robot_name))
+            ltlmop_logger.error("Please make sure it is correctly loaded")
             return None
 
         # try to find the method config
@@ -669,15 +669,15 @@ class HandlerSubsystem:
         Return the string representation according to the input method config
         """
         if not self.handler_configs:
-            logging.error("Cannot find handler dictionary, please load all handler first.")
+            ltlmop_logger.error("Cannot find handler dictionary, please load all handler first.")
             return
 
         if not isinstance(method_config,HandlerMethodConfig):
-            logging.error("Input is not a valid method config.")
+            ltlmop_logger.error("Input is not a valid method config.")
             return
 
         if robot_name=='':
-            logging.error("Needs robot name for method2String")
+            ltlmop_logger.error("Needs robot name for method2String")
             return
 
         handler_name = method_config.handler.name
@@ -731,13 +731,13 @@ class HandlerSubsystem:
         # save all config object
         saved_file_name = []
         for experiment_config in self.configs:
-            logging.debug("Saving config file {0}".format(experiment_config.file_name))
+            ltlmop_logger.debug("Saving config file {0}".format(experiment_config.file_name))
             if experiment_config.saveConfig():
                 # successfully saved
-                logging.debug("Config file {0} successfully saved.".format(experiment_config.file_name))
+                ltlmop_logger.debug("Config file {0} successfully saved.".format(experiment_config.file_name))
                 saved_file_name.append(experiment_config.file_name)
             else:
-                logging.error("Could not save config file {0}".format(experiment_config.file_name))
+                ltlmop_logger.error("Could not save config file {0}".format(experiment_config.file_name))
 
         # remove deleted files
         # do not delete unsuccessfully loaded configs
@@ -753,14 +753,14 @@ if __name__ == '__main__':
     filename = os.path.join(globalConfig.get_ltlmop_root(), "examples", "firefighting", "firefighting.spec")
     e.proj.loadProject(filename)
     e.hsub = HandlerSubsystem(e, e.proj.project_root)
-    logging.info("Setting current executing config...")
+    ltlmop_logger.info("Setting current executing config...")
     config, success = e.hsub.loadConfigFile(e.proj.current_config)
     if success: e.hsub.configs.append(config)
     e.hsub.setExecutingConfig(e.proj.current_config)
 
-    logging.info("Importing handler functions...")
+    ltlmop_logger.info("Importing handler functions...")
     e.hsub.prepareMapping()
-    logging.info("Initializing all functions...")
+    ltlmop_logger.info("Initializing all functions...")
     e.hsub.initializeAllMethods()
 
     while True:

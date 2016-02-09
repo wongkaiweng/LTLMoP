@@ -8,8 +8,11 @@ Send commands to Johnny 5.
 """
 import sys
 import math
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -30,7 +33,7 @@ class Johnny5LocomotionCommandHandler(handlerTemplates.LocomotionCommandHandler)
         try:
             self.johnny5Serial = shared_data["Johnny5Serial"]
         except:
-            logging.exception("No connection to Johnny 5")
+            ltlmop_logger.exception("No connection to Johnny 5")
             sys.exit(-1)
 
         # set upper bound and lower bound for velocity
@@ -68,8 +71,8 @@ class Johnny5LocomotionCommandHandler(handlerTemplates.LocomotionCommandHandler)
 
 
         # print debugging message
-        #logging.debug("Angular Velocity: {}".format(cmd[1]))
-        #logging.debug("Forward Velocity: {}".format(cmd[0]))
+        #ltlmop_logger.debug("Angular Velocity: {}".format(cmd[1]))
+        #ltlmop_logger.debug("Forward Velocity: {}".format(cmd[0]))
 
         # Send command to johnny5
         self.johnny5Serial.write('#15 P%d\r' % (self.ang_servo_neutral-self.ang_vel_gain*cmd[1]))

@@ -27,8 +27,11 @@ Some notes about Johnny 5:
 import sys
 import os
 import serial
-import logging
 import globalConfig
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -49,7 +52,7 @@ class Johnny5InitHandler(handlerTemplates.InitHandler):
             self.johnny5Serial = serial.Serial(port = comPort, baudrate =
                                            self.baud, timeout = self.timeout)
         except:
-            logging.exception("Couldn't connect to Johnny 5")
+            ltlmop_logger.exception("Couldn't connect to Johnny 5")
             sys.exit(-1)
 
         # save .cfg file in folder ConfigFile under Johnny5 folder
@@ -57,7 +60,7 @@ class Johnny5InitHandler(handlerTemplates.InitHandler):
         self.setDefaultPosition()
 
     def _stop(self):
-        logging.info("Shutting down serial port!")
+        ltlmop_logger.info("Shutting down serial port!")
         self.johnny5Serial.close()
 
     def initConfig(self, cfgFileName):
