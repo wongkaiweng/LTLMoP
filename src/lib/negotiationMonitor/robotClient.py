@@ -1,5 +1,6 @@
 #robotClient.py
 import socket               # for communication with negotiation monitor
+import logging
 import LTLParser.LTLRegion  # from replace region names in ltl
 import LTLParser.LTLcheck   # for retrieve one goal from the group of sysGoals
 import ast                  # for parsing spec dict from negtiation monitor
@@ -160,11 +161,11 @@ class RobotClient:
                     for otherRobot in self.proj.otherRobot:
                         spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])','e.'+otherRobot+'_'+region+'_rc',spec)
 
-            #elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
-            #    if fastslow and specType == 'EnvTrans':
-            #        ltlmop_logger.log(1, 'came in to rewrite spec EnvTrans')
-            #        for otherRobot in self.proj.otherRobot:
-            #        spec = LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(spec, otherRobot)
+	    # FIXIT!!!!!!
+            elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
+                if fastslow and specType == 'EnvTrans':
+                    ltlmop_logger.log(1, 'came in to rewrite spec EnvTrans')
+                    spec = LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(spec, otherRobot)
 
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)

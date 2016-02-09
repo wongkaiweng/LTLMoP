@@ -2,6 +2,7 @@ import itertools
 import project
 import re
 import fsa
+import logging
 from LTLParser.LTLFormula import LTLFormula, LTLFormulaType
 from createJTLVinput import createLTLfile
 import specCompiler
@@ -17,6 +18,7 @@ import numpy
 import executeStrategy
 ######################################
 # -------- two_robot_negotiation ----#
+import logging
 import copy
 # -----------------------------------#
 # ******** patching ********* #
@@ -70,13 +72,18 @@ class ExecutorResynthesisExtensions(object):
         #executeStrategy.runStrategyIteration = runIterationWithResynthesisChecks
         
         # ---two_robot_negotiation ------ #
-        self.exchangedSpec = False #track if we have exchanged spec with the other robot
+        #self.exchangedSpec = False #track if we have exchanged spec with the other robot
+        self.exchangedSpec = {} #track if we have exchanged spec with the other robot
+
         self.disableEnvChar = None #track if we are prioritized. False: env Characterization enabled. True: env Char disabled. None: no negotiation
         self.lastSensorState  = None
         self.negotiationStatus= None #track who is appending spec
-        self.receivedSpec = False #track if we have recevied request from the other robot
-        self.sentSpec = False #track if we have sent spec to the other robot
+        self.receivedSpec = {} #track if we have recevied request from the other robot
+        self.sentSpec = {} #track if we have sent spec to the other robot
+        #self.receivedSpec = False #track if we have recevied request from the other robot
+        #self.sentSpec = False #track if we have sent spec to the other robot
         self.violationTimeStamp = 0
+
         # ------------------------------- #
 
     def _checkForNewInternalFlags(self):
@@ -494,11 +501,18 @@ class ExecutorResynthesisExtensions(object):
             conflictingRobot = self.robClient.getNegotiationInitiatingRobot()
 
         ALLotherRobotEnvTransList = LTLParser.LTLcheck.ltlStrToList(ALLotherRobotEnvTrans)
-        otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedOneRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, conflictingRobot, self.robClient.robotName)
-        otherRobotEnvTrans = '&\n'.join(otherRobotEnvTransList)
+
+        # you will not find system robot in the ALLotherRobotEnvTrans
+        robotsNotInConflict = copy.deepcopy(self.proj.otherRobot)
+        robotsNotInConflict.remove(conflictingRobot)
+        if len(robotsNotInConflict):
+            otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedOneRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, robotsNotInConflict, self.robClient.robotName)
+            otherRobotEnvTrans = '&\n'.join(otherRobotEnvTransList)
+        else:
+            otherRobotEnvTrans = '&\n'.join(ALLotherRobotEnvTransList)
         ltlmop_logger.log(2,'NEW-otherRobotsEnvTrans:' + str(otherRobotEnvTrans))
 
-        self.receivedSpec = True
+        self.receivedSpec[conflictingRobot] = True
 
         # see if we can take the other robot's actions into account. 
         # first we safe a copy of our SysTrans and EnvGoals before modification
@@ -552,6 +566,13 @@ class ExecutorResynthesisExtensions(object):
             self.robClient.setNegotiationStatus("'" + conflictingRobots[0] + "'")
         else:
             ltlmop_logger.error('Currently not support negotiation with more than two robots!' + str(conflictingRobots))
+
+        if self.proj.compile_options["fastslow"]:
+            self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, conflictingRobots[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
+        else:
+           self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+        #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
+        self.sentSpec[conflictingRobots[0]] = True
 
         #self.robClient.setNegotiationStatus("'" + self.proj.otherRobot[0] + "'")
 
@@ -629,72 +650,40 @@ class ExecutorResynthesisExtensions(object):
         self.negotiationStatus = self.robClient.checkNegotiationStatus()
         if (not self.exchangedSpec or not self.receivedSpec) and self.negotiationStatus == self.robClient.robotName:
 
-            # also reset env characterization
-            self.resetEnvCharacterization() # reset env characterization both ways
-
-            # prepare for conservative step of the sender (send him/her specs)
-            # send our spec to the other robot
-            self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
-            self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
-            #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
-
+        if self.negotiationStatus == self.robClient.robotName:
             # obtain robot initiating negotiation
-            conflictingRobot = [self.robClient.getNegotiationInitiatingRobot()]
+            conflictingRobots = [self.robClient.getNegotiationInitiatingRobot()]
 
-            # make resynthesis with recovery
-            #self.recovery = True
-            #self.proj.compile_options['recovery'] = True
-            #self.compiler.proj.compile_options['recovery'] = True
+            if (not self.exchangedSpec[conflictingRobots[0]] or not self.receivedSpec[conflictingRobots[0]]):
+                # also reset env characterization
+                self.resetEnvCharacterization() # reset env characterization both ways
 
-            self.postEvent('NEGO','-- NEGOTIATION STARTED --')
-            self.postEvent('NEGO','Received request to coordinate.')
-            self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
-            self.postEvent("NEGO",'Adding system guarantees with environment goals.')
-            # synthesize a new controller to incorporate the actions of the other robot.
-            ###### ONE STEP ######
-            realizable, _, _ = self.synthesizeWithExchangedSpec(False)
+                # prepare for conservative step of the sender (send him/her specs)
+                # send our spec to the other robot
+                self.robClient.sendSpec('SysGoals',self.spec['SysGoals'], self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
+                if self.proj.compile_options["fastslow"]:
+                    self.robClient.sendSpec('EnvTrans', LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(self.oriEnvTrans, conflictingRobots[0]), self.proj.compile_options["fastslow"], self.proj.compile_options["include_heading"])
+                else:
+                    self.robClient.sendSpec('EnvTrans',self.spec['EnvTrans'])
+                #self.robClient.sendSpec('EnvGoals',self.spec['EnvGoals'])
 
-            if realizable:
-                self.robClient.setNegotiationStatus(True)
-                self.disableEnvChar = False
-                self.postEvent('NEGO','Using exchanged specification.')
-                self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                self.postEvent('RESOLVED','')
+                # make resynthesis with recovery
+                #self.recovery = True
+                #self.proj.compile_options['recovery'] = True
+                #self.compiler.proj.compile_options['recovery'] = True
 
-                # reset violtion timestamp
-                self.violationTimeStamp = 0
-                self.robClient.setViolationTimeStamp(self.violationTimeStamp)
-                ltlmop_logger.debug('Resetting violation timeStamp')
-                time.sleep(1)
+                self.postEvent('NEGO','-- NEGOTIATION STARTED --')
+                self.postEvent('NEGO','Received request to coordinate.')
+                self.postEvent('NEGO','Both of us try to incorporate the requirements of the other.')
+                self.postEvent("NEGO",'Adding system guarantees with environment goals.')
+                # synthesize a new controller to incorporate the actions of the other robot.
+                ###### ONE STEP ######
+                realizable, _, _ = self.synthesizeWithExchangedSpec(False)
 
-                self.sentSpec = True
-                self.exchangedSpec = True
-                # reinitialize automaton
-                spec_file = self.proj.getFilenamePrefix() + ".spec"
-                aut_file = self.proj.getFilenamePrefix() + ".aut"
-                self.initialize(spec_file, aut_file, firstRun=False)
-
-            elif not self.sentSpec:
-                self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
-                self.sentSpec = True
-                self.robClient.setNegotiationStatus("'" + conflictingRobot[0] + "'")
-
-                # wait until the other robot resynthesize its controller
-                while not isinstance(self.robClient.checkNegotiationStatus(), bool): #self.robClient.checkNegotiationStatus() != (True or False):
-                    time.sleep(2)
-
-                if self.robClient.checkNegotiationStatus() == True:
-                    # remove spec from other robots and resynthesize
-                    self.spec = copy.deepcopy(self.originalSpec)
-                    self.spec['EnvTrans'] = self.oriEnvTrans
-
-                    #convert to the original specification
-                    self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
-                    self.recreateLTLfile(self.proj, spec = self.spec)
-                    realizable, _, _ = self.compiler._synthesize()
-                    ltlmop_logger.debug("Original spec with new env/sys init realizable?" + str(realizable))
-                    self.disableEnvChar = True # env characterization disabled
-                    self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
+                if realizable:
+                    self.robClient.setNegotiationStatus(True)
+                    self.disableEnvChar = False
+                    self.postEvent('NEGO','Using exchanged specification.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
                     self.postEvent('RESOLVED','')
 
@@ -704,7 +693,52 @@ class ExecutorResynthesisExtensions(object):
                     ltlmop_logger.debug('Resetting violation timeStamp')
                     time.sleep(1)
 
-                else:
+                    self.sentSpec[conflictingRobots[0]] = True
+                    self.exchangedSpec[conflictingRobots[0]] = True
+                    # reinitialize automaton
+                    spec_file = self.proj.getFilenamePrefix() + ".spec"
+                    aut_file = self.proj.getFilenamePrefix() + ".aut"
+                    self.initialize(spec_file, aut_file, firstRun=False)
+
+                elif not self.sentSpec[conflictingRobots[0]]:
+                    self.postEvent('NEGO','Unrealizable with exchanged info. Asking the other robot to incorporate our actions instead.')
+                    self.sentSpec[conflictingRobots[0]] = True
+                    self.robClient.setNegotiationStatus("'" + conflictingRobot[0] + "'")
+
+                    # wait until the other robot resynthesize its controller
+                    while not isinstance(self.robClient.checkNegotiationStatus(), bool): #self.robClient.checkNegotiationStatus() != (True or False):
+                        time.sleep(2)
+
+                    if self.robClient.checkNegotiationStatus() == True:
+                        # remove spec from other robots and resynthesize
+                        self.spec = copy.deepcopy(self.originalSpec)
+                        self.spec['EnvTrans'] = self.oriEnvTrans
+
+                        #convert to the original specification
+                        self._setSpecificationInitialConditionsToCurrentInDNF(self.proj,False, self.sensor_strategy)
+                        self.recreateLTLfile(self.proj, spec = self.spec)
+                        realizable, _, _ = self.compiler._synthesize()
+                        ltlmop_logger.debug("Original spec with new env/sys init realizable?" + str(realizable))
+                        self.disableEnvChar = True # env characterization disabled
+                        self.postEvent('NEGO','The other robot has incorporated our action. Using original specification.')
+                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+                        self.postEvent('RESOLVED','')
+
+                        # reset violtion timestamp
+                        self.violationTimeStamp = 0
+                        self.robClient.setViolationTimeStamp(self.violationTimeStamp)
+                        ltlmop_logger.debug('Resetting violation timeStamp')
+                        time.sleep(1)
+
+                    else:
+                        #TODO: spec analysis needed.
+                        self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
+                        self.postEvent('NEGO','-- NEGOTIATION ENDED --')
+                        self.robClient.setNegotiationStatus(False)
+                        sys.exit()
+                        #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
+
+                else: # sent spec before
                     #TODO: spec analysis needed.
                     self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
                     self.postEvent('NEGO','-- NEGOTIATION ENDED --')
@@ -712,18 +746,10 @@ class ExecutorResynthesisExtensions(object):
                     sys.exit()
                     #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
 
-            else: # sent spec before
-                #TODO: spec analysis needed.
-                self.postEvent('NEGO','Negotiation Failed. Spec Analysis is needed.')
-                self.postEvent('NEGO','-- NEGOTIATION ENDED --')
-                self.robClient.setNegotiationStatus(False)
-                sys.exit()
-                #self.onMenuAnalyze(enableResynthesis = False, exportSpecification = True)
-
-            self.exchangedSpec = True
-            return True
-        else:
-            return False
+                self.exchangedSpec[conflictingRobots[0]] = True
+                return True
+            else:
+                return False
     # ------------------------------# 
     
     ########### ENV Assumption Mining ####################
@@ -788,11 +814,11 @@ class ExecutorResynthesisExtensions(object):
 
                                     # exchange info with the other robot and see if it is realizable.
                                     # later time can exchange spec
-                                    if ((not self.exchangedSpec) or (not self.sentSpec and self.receivedSpec)) and otherRobotViolationTimeStamp < self.violationTimeStamp:
+                                    if ((not self.exchangedSpec[conflictingRobots[0]]) or (not self.sentSpec[conflictingRobots[0]] and self.receivedSpec[conflictingRobots[0]])) and otherRobotViolationTimeStamp < self.violationTimeStamp:
                                         # exchange spec
                                         realizable = self.appendSpecFromEnvRobots()
-                                        self.exchangedSpec = True
-                                    elif self.sentSpec and self.receivedSpec:
+                                        self.exchangedSpec[conflictingRobots[0]] = True
+                                    elif self.sentSpec[conflictingRobots[0]] and self.receivedSpec[conflictingRobots[0]]:
                                         pass
                                     else:
                                         return
@@ -1133,708 +1159,3 @@ class ExecutorResynthesisExtensions(object):
         return slugsEnvSafetyCNF, normalEnvSafetyCNF
         
     #########################################################################
-
-    # ************** patching **************** #
-    def checkEnvTransViolationWithNextPossibleStates(self, checker=None, current_state=None, sensor_state=None):
-        """
-        This function obtains all possible next states and check if they will violate the environment assumptions.
-        """
-        # set to default if no value is given
-        if checker is None:
-            checker =self.LTLViolationCheck
-        if current_state is None:
-            current_state=self.strategy.current_state
-        if sensor_state is None:
-            sensor_state=self.sensor_strategy
-
-        deepcopy_current_state = copy.deepcopy(current_state)
-        deepcopy_sensor_state = copy.deepcopy(sensor_state)
-
-        if self.proj.compile_options["multi_robot_mode"] == "patching":
-            otherEnvPropDict = self.robClient.requestNextPossibleEnvStatesFromOtherRobot()
-            robotNameList = [self.robClient.robotName]
-        elif self.proj.compile_options["multi_robot_mode"] == "d-patching":
-            otherEnvPropDict = self.dPatchingExecutor.getNextPossibleEnvStatesFromOtherRobots()
-            robotNameList = list(set([self.dPatchingExecutor.robotName] + self.dPatchingExecutor.coordinatingRobots))
-        else:
-            ltlmop_logger.warning('not in a valid mode - ' + str(self.proj.compile_options["multi_robot_mode"]))
-
-        # first verify that we won't be skipping th check
-        if list(set(otherEnvPropDict.keys()+[self.dPatchingExecutor.robotName])) != robotNameList:
-            ltlmop_logger.debug("we are checking propCombination")
-            for propCombination in itertools.product(*[v for k,v in otherEnvPropDict.iteritems() if k not in robotNameList]):
-                #ltlmop_logger.debug("propCombination:" + str(propCombination))
-                # assignments to sensor_strategy for each combination
-                for propDict in propCombination:
-                    for propKey, propValue in propDict.iteritems():
-                        # check if key exist in sensor strategy?
-                        if propKey in deepcopy_sensor_state.getInputs(expand_domains=True).keys():
-                            deepcopy_sensor_state.setPropValue(propKey, propValue)
-
-                    # the current state stays the same but checks with differnt next possible states
-                    env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
-                    if not env_assumption_hold:
-                        ltlmop_logger.debug("POSSIBLE STATES - asssumptions violated!")
-                        ltlmop_logger.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
-                        ltlmop_logger.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                        ltlmop_logger.debug("checker.violated_specStr:" + str(checker.violated_specStr))
-                        return False
-        else:
-            ltlmop_logger.debug("we have all the robots. doing only once")
-            env_assumption_hold = checker.checkViolation(deepcopy_current_state, deepcopy_sensor_state)
-            if not env_assumption_hold:
-                ltlmop_logger.debug("POSSIBLE STATES - asssumptions violated!")
-                ltlmop_logger.debug("current_state:" + str([k for k, v in deepcopy_current_state.getAll(expand_domains=True).iteritems() if v]))
-                ltlmop_logger.debug("sensor_state" + str([k for k, v in deepcopy_sensor_state.getInputs(expand_domains=True).iteritems() if v]))
-                ltlmop_logger.debug("checker.violated_specStr:" + str(checker.violated_specStr))
-                return False
-        return True
-
-    def loadSpecObjectFromFile(self, spec_file = ""):
-        """
-        spec_file: path to specification
-        """
-
-        if not spec_file:
-            spec_file = os.path.join(self.proj.project_root, self.proj.getFilenamePrefix() + ".spec")
-
-        compiler = specCompiler.SpecCompiler(spec_file)
-        compiler._decompose()
-        spec, tracebackTree, response = compiler._writeLTLFile()
-        # replace EnvTrans check to make sure it's not empty
-        spec['EnvTrans'] = '&\n '.join(filter(None, [spec['EnvTrans'], spec["EnvTopo"]]))
-
-        # replace EnvInit and SysInit to just init topology for centralized synthesis
-        spec['EnvInit'] = spec['InitEnvRegionSanityCheck']
-        spec['SysInit'] = spec['InitRegionSanityCheck']
-
-        # replace SysTrans
-        spec['SysTrans'] = '&\n '.join(filter(None, [spec['SysTrans'], spec["Topo"]]))
-
-        # replace EnvGoals
-        spec['EnvGoals'] = '&\n '.join(filter(None, [spec['EnvGoals'], spec["SysImplyEnv"]]))
-
-        return spec
-
-    def prepareForCentralizedStrategy(self):
-        """
-        This function prepares for the synthesis of centralized strategy.
-        (Same as testRobClient.py)
-        """
-
-        # load spec
-        mySpec = self.loadSpecObjectFromFile()
-
-        # send spec
-        for specType, specStr in mySpec.iteritems():
-            if specType not in ['SysInit','SysTrans','SysGoals','EnvInit','EnvTrans','EnvGoals']:
-                continue
-
-            # tell robClient the current goal we are pursuing
-            if specType == 'SysGoals':
-                ltlmop_logger.warning("SLUGS does not output bddLivenesses now and this will fail.")
-                specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id) #FIXIT: no bddLivenesses now.
-                self.robClient.sendSpec(specType, specNewStr, fastslow=True, include_heading=True)
-                #self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.strategy.current_state.goal_id))
-
-                # print current goal pursuing
-                #currentGoalLTL = (str(LTLParser.LTLcheck.ltlStrToList(specStr)[int(self.strategy.current_state.goal_id)]) if not specStr.count('[]<>') == 1 else specStr)
-                self.postEvent("PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.strategy.current_state.goal_id)]-1])
-
-            else:
-                self.robClient.sendSpec(specType, specStr, fastslow=True, include_heading=True)
-
-        # send also the old sysGoals
-        self.robClient.sendSpec('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True,current_goal_id=int(self.strategy.current_state.goal_id))
-
-        # send prop
-        self.robClient.sendProp('env', self.sensor_strategy.getInputs(expand_domains = True))
-        #self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        ltlmop_logger.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
-        # TODO: Here we assume we are using bits
-        # replace sys init with env init for regions
-        sysProps = self.strategy.current_state.getOutputs(expand_domains = True)
-        sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp,sValue in sysProps.iteritems() }
-
-        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains = True).iteritems():
-            if 'regionCompleted_b' in eProp and eValue:
-                sysProps[eProp.replace('regionCompleted_b','region_b')] = eValue
-
-        self.robClient.sendProp('sys', sysProps)
-
-        # send cooridination status
-        self.robClient.setCoordinationStatus(True)
-
-    def initiatePatching(self):
-        """
-        This function takes care of the procedure for switching from individual strategy to centralized strategy
-        """
-        # first prepare for centralized execution
-        self.prepareForCentralizedStrategy()
-
-        # then wait till all surrounding robots are ready as well
-        while not self.robClient.getCentralizedExecutionStatus():
-            time.sleep(2)
-
-    def extractCurrentLivenessWithWinningPositions(self,sysGoalsId):
-        """
-        This function obtains the conjunction of the current liveness with winning positions.
-        sysGoalsId: current system goal number
-        """
-
-        # first read sysGoals LTL with winning positions preComputed.
-        if self.proj.compile_options['symbolic']:
-            with open(self.proj.getFilenamePrefix()+".bddliveness"+ str(sysGoalsId), 'r') as f:
-                slugsStr = f.read()
-        else:
-            with open(self.proj.getFilenamePrefix()+".autliveness"+ str(sysGoalsId), 'r') as f:
-                slugsStr = f.read()
-        f.closed
-
-        # modify sensor list to parse region props properly
-        sensorList = self.proj.enabled_sensors
-        if self.proj.compile_options['fastslow']:
-            # remove _rc props from sensor_list
-            sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
-            if self.proj.compile_options["use_region_bit_encoding"]:
-                #add in sbit for region completion
-                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(len(self.proj.rfi.regions)))))])
-            else:
-                # added in region_rc with the decomposed region names
-                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
-
-        #ltlmop_logger.debug("sensorList:" + str(sensorList))
-        # convert formula from slugs to our format
-        sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
-        #ltlmop_logger.debug(sysGoalsLTLList)
-
-        # replace with normal region bits (like actual regions)
-        sysGoalsLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
-        #ltlmop_logger.debug(sysGoalsLTL)
-
-        return "[]<>("+sysGoalsLTL+")"
-
-
-    def extractWinningPositions(self):
-        """
-        This function obtains the conjunction of the current liveness with winning positions.
-        sysGoalsId: current system goal number
-        """
-        # first read sysGoals LTL with winning positions preComputed.
-        if self.proj.compile_options['symbolic']:
-            with open(self.proj.getFilenamePrefix()+".bddWinPos", 'r') as f:
-                slugsStr = f.read()
-        else:
-            with open(self.proj.getFilenamePrefix()+".autWinPos", 'r') as f:
-                slugsStr = f.read()
-        f.closed
-
-        # modify sensor list to parse region props properly
-        sensorList = self.proj.enabled_sensors
-        if self.proj.compile_options['fastslow']:
-            # remove _rc props from sensor_list
-            sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
-            if self.proj.compile_options["use_region_bit_encoding"]:
-                #add in sbit for region completion
-                sensorList.extend(["sbit"+str(i) for i in range(0,int(numpy.ceil(numpy.log2(len(self.proj.rfi.regions)))))])
-            else:
-                # added in region_rc with the decomposed region names
-                sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
-
-        #ltlmop_logger.debug("sensorList:" + str(sensorList))
-        # convert formula from slugs to our format
-        sysGoalsLTLList = LTLParser.translateFromSlugsLTLFormatToLTLFormat.parseSLUGSCNFtoLTLList(slugsStr,sensorList)
-
-        # replace with normal region bits (like actual regions)
-        sysWinningPosLTL = self.replaceIndividualSbitsToGroupSbits(sysGoalsLTLList)
-
-        return "("+sysWinningPosLTL+")"
-
-    def replaceIndividualSbitsToGroupSbits(self, LTLList):
-        """
-        This function takes in an LTL list, extract sbits and put in the right bits afterwards
-        """
-        numBits = int(math.ceil(math.log(len(self.proj.rfi.regions),2)))
-        # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(self.proj.rfi.regions), numBits)
-        currBitEnc = bitEncode['current']
-        nextBitEnc = bitEncode['next']
-        envBitEnc = bitEncode['env']
-        envNextBitEnc = bitEncode['envNext']
-
-        newLTLList = sets.Set([])
-        #newLTLList = []
-
-        for LTLStr in LTLList: # LTLStr are of the form  a | b | c
-            propList = sets.Set(LTLStr.split(' | '))
-            # run four times
-            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?next\(s.bit(?P<bitNo>\d+)\)', nextBitEnc, propList)
-            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?s.bit(?P<bitNo>\d+)', currBitEnc, propList)
-            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?next\(e.sbit(?P<bitNo>\d+)\)', envNextBitEnc, propList)
-            propList = self.replaceIndividualSbitsToGroupSbitsForTypeOfBits(numBits, '!?e.sbit(?P<bitNo>\d+)', envBitEnc, propList)
-
-            #newLTLList.append(' | '.join(propList))
-            newLTLList.add(propList)
-
-        #return '&\n'.join(['('+x+')' for x in newLTLList])
-        return '&\n'.join(['('+' | '.join(x)+')' for x in newLTLList])
-
-
-    def replaceIndividualSbitsToGroupSbitsForTypeOfBits(self, numBits, strPattern, bitsList, propList):
-        """
-        This function is one iteration to replace bits
-        numBits: no. of bits in consideration
-        strPattern: pattern to match
-        bitsList: one of the lists in the bitEncoding
-        propList = set of props
-        """
-        regionPropList = []
-        validRegionPropList = sets.Set([])
-        # first extract all ebits
-        for prop in propList:
-            if re.match(strPattern, prop) is not None:
-                regionPropList.append(prop)
-
-        for regionProp in regionPropList:
-            bitInConsideration = int(re.match(strPattern,regionProp).group('bitNo'))
-            numBitsToEnumerate = numBits-1
-            bitStrList = []
-            # if we have three bits, then only enumerate 2
-            if numBitsToEnumerate:
-                for x in range(2**numBitsToEnumerate):
-                    # also reverse bit so that we have bits 0 1 2 ...
-                    tempBitStr = "{0:0{width}b}".format(x, width=numBitsToEnumerate)
-                    # add the missing bit at the right position
-                    bitStrList.append(tempBitStr[:bitInConsideration] + ('0' if '!' in regionProp else'1') + tempBitStr[bitInConsideration:])
-            else:
-                # only one bit
-                bitStrList.append(('0' if '!' in regionProp else'1'))
-
-            # find all region bit str now
-            for regionIdx in [int(x,2) for x in bitStrList]:
-                if regionIdx < len(self.proj.rfi.regions):
-                    validRegionPropList.add(bitsList[regionIdx])
-
-            # remove regionProp from propList and append validRegionPropList to propList
-            propList.remove(regionProp)
-            propList.update(validRegionPropList)
-
-        return propList
-    # **************************************** #
-
-    # %%%%%%%%%% d-patching %%%%%%%%%%%%%%%%% #
-    def prepareForCentralizedStrategySnippetToOtherRobots(self, csockList):
-        """
-        This function prepares for the synthesis of centralized strategy.
-        (modified from as prepareForCentralizedStrategy function)
-        csockList: list of sockets to send snippets to
-        """
-
-        # send cooridination status
-        for csock in csockList:
-            self.dPatchingExecutor.sendCoordinationRequest(csock, True)
-
-        # load spec
-        mySpec = self.loadSpecObjectFromFile()
-
-        # send winning positions
-        winPosStr = self.extractWinningPositions()
-        for csock in csockList:
-            self.dPatchingExecutor.sendSpec(csock, 'WinPos', winPosStr, fastslow=True, include_heading=True)
-
-        # send spec
-        for specType, specStr in mySpec.iteritems():
-            if specType not in ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals']:
-                continue
-
-            # tell robClient the current goal we are pursuing
-            if specType == 'SysGoals':
-                #specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
-                for csock in csockList:
-                    #self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
-                    self.dPatchingExecutor.sendSpec(csock, specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
-
-                # print current goal pursuing
-                #currentGoalLTL = (str(LTLParser.LTLcheck.ltlStrToList(specStr)[int(self.strategy.current_state.goal_id)]) if not specStr.count('[]<>') == 1 else specStr)
-                #self.postEvent("D-PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.strategy.current_state.goal_id)]-1])
-
-            elif specType == 'EnvTrans':
-                # remove violated lines. Can be changed to doing sth else
-                #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
-                specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-
-                # first make sure all bits can be parsed in violated list
-                violatedList = LTLParser.LTLRegion.addParenthesisToBitsGroupInLTLList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)),\
-                                self.proj.rfi.regions)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(violatedList)
-                # remove violated spec
-                #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
-                # OR
-                # remove spec relating the coordinating robots
-                #specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
-                #ltlmop_logger.debug("specNewStr:" + str(specNewStr))
-                specNewStr = specStr
-                for csock in csockList:
-                    self.dPatchingExecutor.sendSpec(csock, specType, specNewStr, fastslow=True, include_heading=True)
-
-            else:
-                for csock in csockList:
-                    self.dPatchingExecutor.sendSpec(csock, specType, specStr, fastslow=True, include_heading=True)
-
-        # send also the old sysGoals
-        for csock in csockList:
-            self.dPatchingExecutor.sendSpec(csock, 'SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
-
-            # send prop
-            self.dPatchingExecutor.sendProp(csock, 'env', self.sensor_strategy.getInputs(expand_domains=True))
-
-        #self.robClient.sendProp('env', self.strategy.current_state.getInputs(expand_domains = True))
-        ltlmop_logger.debug("Using sensor state. Should be the violation one" + str(self.sensor_strategy.getInputs()))
-        # TODO: Here we assume we are using bits
-        # replace sys init with env init for regions
-        sysProps = self.strategy.current_state.getOutputs(expand_domains=True)
-        sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp, sValue in sysProps.iteritems()}
-
-        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains=True).iteritems():
-            if 'regionCompleted_b' in eProp and eValue:
-                sysProps[eProp.replace('regionCompleted_b', 'region_b')] = eValue
-
-        for csock in csockList:
-            self.dPatchingExecutor.sendProp(csock, 'sys', sysProps)
-
-    def prepareForCentralizedStrategySnippetToSelf(self):
-        """
-        This function prepares for the synthesis of centralized strategy.
-        (modified from as prepareForCentralizedStrategy function)
-        """
-
-        # load spec
-        mySpec = self.loadSpecObjectFromFile()
-
-        # send winning positions
-        winPosStr = self.extractWinningPositions()
-        self.dPatchingExecutor.winPos[self.dPatchingExecutor.robotName] = \
-            self.dPatchingExecutor.sendSpecHelper('WinPos', winPosStr, fastslow=True, include_heading=True)
-
-        # send spec
-        for specType, specStr in mySpec.iteritems():
-            if specType not in ['SysInit', 'SysTrans', 'SysGoals', 'EnvInit', 'EnvTrans', 'EnvGoals']:
-                continue
-
-            # tell robClient the current goal we are pursuing
-            if specType == 'SysGoals':
-                #specNewStr = self.extractCurrentLivenessWithWinningPositions(self.strategy.current_state.goal_id)
-                #self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
-                #    self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
-                self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
-                    self.dPatchingExecutor.sendSpecHelper(specType, specStr, fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
-
-                # print current goal pursuing
-                self.postEvent("D-PATCH", "Current goal is " + self.proj.specText.split('\n')[self.tracebackTree['SysGoals'][int(self.prev_z)]-1])
-
-            elif specType == 'EnvTrans':
-                # remove violated lines. Can be changed to doing sth else
-                #HACK: converting to global names here. should be done in sendSpecHelper but parsing is not quite right for regions
-                specStr = self.dPatchingExecutor.parseLocalSpecToGlobalSpec(specStr)
-                violatedList = LTLParser.LTLRegion.addParenthesisToBitsGroupInLTLList(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)),\
-                                self.proj.rfi.regions)
-                violatedList = self.dPatchingExecutor.parseLocalSpecListToGlobalSpecList(violatedList)
-                # remove violated spec
-                #specNewStr = self.filterAndExcludeSpec(violatedList, specStr)
-                # OR
-                # remove spec relating the coordinating robots
-                #specNewStr = self.filterAndExcludeSpecOfCoordinatingRobots(violatedList, specStr)
-                specNewStr = specStr
-                self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
-                    self.dPatchingExecutor.sendSpecHelper(specType, specNewStr, fastslow=True, include_heading=True)
-
-            else:
-                self.dPatchingExecutor.spec[specType][self.dPatchingExecutor.robotName] = \
-                    self.dPatchingExecutor.sendSpecHelper(specType, specStr, fastslow=True, include_heading=True)
-
-        # send also the old sysGoals
-        self.dPatchingExecutor.sysGoalsOld[self.dPatchingExecutor.robotName] = \
-            self.dPatchingExecutor.sendSpecHelper('SysGoalsOld', mySpec['SysGoals'], fastslow=True, include_heading=True, current_goal_id=int(self.prev_z))
-
-        # send prop
-        self.dPatchingExecutor.envPropList[self.dPatchingExecutor.robotName] = \
-            self.dPatchingExecutor.sendPropHelper('env', self.sensor_strategy.getInputs(expand_domains=True))
-
-
-        # TODO: Here we assume we are using bits
-        # replace sys init with env init for regions
-        sysProps = self.strategy.current_state.getOutputs(expand_domains=True)
-        sysProps = {sProp:False if 'region_b' in sProp else sValue for sProp, sValue in sysProps.iteritems()}
-
-        for eProp, eValue in self.sensor_strategy.getInputs(expand_domains=True).iteritems():
-            if 'regionCompleted_b' in eProp and eValue:
-                sysProps[eProp.replace('regionCompleted_b', 'region_b')] = eValue
-
-        self.dPatchingExecutor.sysPropList[self.dPatchingExecutor.robotName] = self.dPatchingExecutor.sendPropHelper('sys', sysProps)
-
-        # save proposition mapping
-        self.dPatchingExecutor.propMappingNewToOld[self.dPatchingExecutor.robotName] = {}
-        self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName] = {}
-
-        for prop in self.dPatchingExecutor.envPropList[self.dPatchingExecutor.robotName].keys() + self.dPatchingExecutor.sysPropList[self.dPatchingExecutor.robotName].keys():
-            self.dPatchingExecutor.propMappingNewToOld[self.dPatchingExecutor.robotName].update({prop:prop})
-            self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName].update({prop:prop})
-        ltlmop_logger.debug("we should have finished setting up things for ourselves")
-
-    def initiateDPatching(self, received_request=False):
-        """
-        This function prepares for dencentralized global strategy with the other robots.
-        received_request: False if we initiate patching. True if we received request
-        """
-        # update the other robots with the latest location of us
-        self.updateLatestRegionInfoWithAllRobots()
-
-        # also stops the other robots operating
-        for robot in self.dPatchingExecutor.robotInRange:
-            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], True)
-
-        # then send spec and props to the robot requesting cooridination
-        # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
-        ltlmop_logger.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
-        ltlmop_logger.debug("robotsInConflict:" + str(robotsInConflict))
-        if robotsInConflict: # list not empty. Some robots is in conflict with us
-            #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
-            self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
-            self.postEvent("D-PATCH","We will now ask for a centralized strategy be executed.")
-            self.runCentralizedStrategy = True
-        elif received_request:
-            ltlmop_logger.info("We are asked to join patching")
-            self.runCentralizedStrategy = True
-
-        else:
-            ltlmop_logger.warning("we need to trigger env characterization instead. This is not checked yet!")
-            self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
-            ltlmop_logger.debug("list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):" + str(list(set(self.violated_spec_list + self.possible_states_violated_spec_list))))
-            self.addStatetoEnvSafety(self.sensor_strategy)
-
-        if robotsInConflict or received_request:
-            # send spec to request received and also violated robots
-            csockRequestReceived = [self.dPatchingExecutor.clients[x] for x in [robot for robot, status in self.dPatchingExecutor.coordinationRequest.iteritems() if status]]
-            csockRobotsInConflict = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict]
-            self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(csockRobotsInConflict) | set(csockRequestReceived)))
-            #self.prepareForCentralizedStrategySnippetToOtherRobots(list(set(self.dPatchingExecutor.clients.values()) - set([self.dPatchingExecutor.serv])))
-
-            # first put together our spec
-            self.prepareForCentralizedStrategySnippetToSelf()
-            # taking care all the synthesis and wait till everyone is ready.
-            self.synthesizeGlobalStrategyAndWaitForOthersToResume()
-
-            # set up global envTrans check
-            self.setupGlobalEnvTransCheck()
-
-        # update locations and sensors once more
-        self.updateLatestRegionInfoWithAllRobots()
-
-        # allows the other robots to move again
-        for robot in self.dPatchingExecutor.robotInRange:
-            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], False)
-
-    def updateLatestRegionInfoWithAllRobots(self):
-        """
-        This function updates all region info (including heading if necessary to all robots)
-        """
-        # update the other robots with the latest location of us
-        if self.proj.compile_options['include_heading']:
-            # update region info for all connected robots.
-            self.dPatchingExecutor.updateRobotRegionWithAllClients(self.strategy.current_state.getPropValue('region'))
-            self.dPatchingExecutor.updateCompletedRobotRegionWithAllClients(self.sensor_strategy.getPropValue('regionCompleted'))
-        else:
-            self.dPatchingExecutor.updateRobotRegionWithAllClients(self.sensor_strategy.getPropValue('regionCompleted'))
-
-        # update sensor info too
-        enabled_sensors = [x for x in self.proj.enabled_sensors if not (x.endswith('_rc') or x.startswith(tuple(self.dPatchingExecutor.robotInRange)))]
-        ltlmop_logger.warning('self.hsub.getSensorValue(enabled_sensors):' + str(self.hsub.getSensorValue(enabled_sensors)))
-        self.dPatchingExecutor.updateRobotSensorsWithAllClients(self.hsub.getSensorValue(enabled_sensors))
-
-    def setupGlobalEnvTransCheck(self):
-        """
-        This function setup the checkviolation object with the global envTrans used in the global strategy
-        """
-        # set up global envTrans check
-        #globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.spec['EnvTrans'][robot] for robot in self.dPatchingExecutor.coordinatingRobots])) # OLD
-        # (also filter coordinating robot EnvTrans)
-        globalEnvTrans = " &\n".join(filter(None, [self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.dPatchingExecutor.spec['EnvTrans'][robot], robot)\
-                                                     for robot in self.dPatchingExecutor.coordinatingRobots]))
-
-        ltlmop_logger.debug('globalEnvTrans:' + str(globalEnvTrans))
-        # globalEnvTransList = []
-        # for robot in self.dPatchingExecutor.coordinatingRobots:
-        #     globalEnvTransList.append(self.dPatchingExecutor.filterAndExcludeSpecOfCoordinatingRobots(self.spec['EnvTrans'][robot], robot))
-        # globalEnvTrans = " &\n".join(filter(None, ))
-
-        self.globalEnvTransCheck = LTLParser.LTLcheck.LTL_Check(None, {}, {'EnvTrans': globalEnvTrans}, 'EnvTrans')
-        self.globalEnvTransCheck.ltl_treeEnvTrans = LTLParser.LTLFormula.parseLTL(globalEnvTrans)
-        ltlmop_logger.debug('finished setupGlobalEnvTransCheck')
-    def checkRobotsInConflict(self, violatedEnvTransList):
-        """
-        This function checks the robots involved in the conflict.
-        There could be no robots but just abnormal sensors.
-        return list of robots in conflict, not including myself.
-        """
-        robotNameCoordinating = []
-        for ltlSpec in violatedEnvTransList: # list
-            for robot in self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName]:
-                robotInFormula = LTLParser.LTLcheck.checkIfKeyInFormula(ltlSpec, robot)
-
-                if robotInFormula and robot not in robotNameCoordinating:
-                    robotNameCoordinating.append(robot)
-
-        return robotNameCoordinating
-
-    def filterAndExcludeSpecOfCoordinatingRobots(self, violatedList, specStr):
-        """
-        This function takes in the violated envTrans, first figure out the robots in conflict, then remove spec relating the robots from specStr if the specStr contains it.
-        violatedList: violated EnvTrans list
-        specStr: EnvTrans spec string
-        """
-        # first find out robots coordinating
-        robotsInConflict = self.checkRobotsInConflict(violatedList)
-
-        #then send in the list of coordinating robots to remove spec (need to pass in str list)
-        specStrList = LTLParser.LTLcheck.ltlStrToList(specStr)
-
-        coordinatingRobots = list(set(robotsInConflict + [self.dPatchingExecutor.robotName]  + [k for k, v in self.dPatchingExecutor.coordinationRequest.iteritems() if v]))
-        # keylist = all robots, keymatch = conflicting robots
-        specFilteredList = LTLParser.LTLcheck.filterRelatedRobotSpec(specStrList, \
-            self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName],
-            coordinatingRobots, self.dPatchingExecutor.robotName)
-
-
-        #specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, specToExclude)
-        specNewStr = "&\n".join(filter(None, specFilteredList))
-
-        return specNewStr
-
-    def filterAndExcludeSpec(self, violatedList, specStr):
-        """
-        This function takes in the violated envTrans, first filter those with only one robot, then remove in from specStr if the specStr contains it.
-        violatedList: violated EnvTrans list
-        specStr: EnvTrans spec string
-        """
-        ltlmop_logger.debug("violatedList:" + str(violatedList))
-        violatedListFiltered = LTLParser.LTLcheck.filterOneRobotViolatedSpec(violatedList, self.dPatchingExecutor.robotInRange + [self.dPatchingExecutor.robotName])
-        ltlmop_logger.debug("violatedListFiltered:" + str(violatedListFiltered))
-
-        specNewStr = LTLParser.LTLcheck.excludeSpecFromFormula(specStr, violatedListFiltered)
-        #specNewStr = "&\n".join(filter(None,violatedListFiltered))
-        ltlmop_logger.debug("specNewStr:" + specNewStr)
-        return specNewStr
-
-    def synthesizeGlobalStrategyAndWaitForOthersToResume(self):
-        """
-        This function asks the dPatchingExecutor to synthesize global strategy.
-        After that it waits till all coorindating robots are ready to restart.
-        """
-        # then wait till all surrounding robots are ready as well
-        while not self.dPatchingExecutor.prepareForCentralizedExecution():
-            ltlmop_logger.warning('we are still waiting parts from the other robots')
-
-            self.dPatchingExecutor.runIterationNotCentralExecution()
-            ltlmop_logger.debug("self.dPatchingExecutor.coordinatingRobots:" + str(self.dPatchingExecutor.coordinatingRobots))
-            time.sleep(0.2)
-
-        # now wait till the other robot has synthesized an automaton
-        # TODO: what if it's unrealizable? We should know that as well.
-        while not self.dPatchingExecutor.checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy():
-            ltlmop_logger.warning('we are still waiting completion of synthesis from the other robots')
-
-            self.dPatchingExecutor.runIterationNotCentralExecution()
-            time.sleep(0.2)
-
-    def initiateDPatchingCentralizedMode(self, received_request=False):
-        """
-        This function is to trigger coordination when we are already coordinating.
-        received_request: False if we initiate patching. True if we received request
-        """
-        # update the other robots with the latest location of us
-        self.updateLatestRegionInfoWithAllRobots()
-
-        # also stops the other robots operating
-        for robot in self.dPatchingExecutor.robotInRange:
-            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], True)
-
-        # then send spec and props to the robot requesting cooridination
-        # now only send requests to robots violating the spec
-        robotsInConflict = self.checkRobotsInConflict(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)))
-        if robotsInConflict: # list not empty. Some robots is in conflict with us
-            ################################
-            ########## PREPARATION #########
-            ################################
-            # save old copy of coordinating robots
-            self.dPatchingExecutor.old_coordinatingRobots = copy.deepcopy(self.dPatchingExecutor.coordinatingRobots)
-
-            # remove violated envTrans from list.
-            #for robot in self.dPatchingExecutor.spec['EnvTrans'].keys():
-            #    ltlmop_logger.debug("Robot Under consideration:" + str(robot))
-            #    self.dPatchingExecutor.spec['EnvTrans'][robot] = self.filterAndExcludeSpec(list(set(self.violated_spec_list + self.possible_states_violated_spec_list)), self.dPatchingExecutor.spec['EnvTrans'][robot])
-            #    self.setupGlobalEnvTransCheck() # update EnvTrans globel by setting up a new object
-            #    ltlmop_logger.debug("-------------------------------------------")
-
-            # add violations of local spec to LTL violated_str list
-            for specStr in list(set(self.violated_spec_list + self.possible_states_violated_spec_list)):
-                # replace e.g. alice_r1_rc to alice_r1 as the meaning changes in the central strategy
-                for region in self.dPatchingExecutor.regionList:
-                    for otherRobot in list(set(self.dPatchingExecutor.coordinationRequestSent) | set([robot for robot in self.dPatchingExecutor.coordinationRequest.keys()])):
-                        specStr = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'_rc'+'(?=[ &|)\t\n])', 'e.'+otherRobot+'_'+region, specStr)
-                self.LTLViolationCheck.violated_specStr.append(specStr)
-                self.LTLViolationCheckPossibleStates.violated_specStr.append(specStr)
-
-            ltlmop_logger.debug("self.LTLViolationCheck.violated_specStr (also LTLViolationCheckPossibleStates):" + str(self.LTLViolationCheck.violated_specStr))
-
-            #################################################
-            #### CHECK IF NEW ROBOTS ARE INVOLVED #########
-            #################################################
-            # first checks if we are already coorindating with the robots in conflict
-            if set(robotsInConflict).issubset(self.dPatchingExecutor.coordinatingRobots):
-                # reset coordination status
-                self.dPatchingExecutor.resetRobotStatusOnCentralizedStrategyExecution()
-
-                # all the robots in conflicts are already coorindating. Just remove violated line and resynthesize.
-                ltlmop_logger.warning("in conflict robots are the same. just remove envTrans and resynthesize")
-                self.postEvent("RESOLVED","Current coordinating robots only. Removing violated environment assumptions and resynthesize.")
-
-            else:
-                # some new robots are joining, we should ask them to join centralized strategy.
-                ltlmop_logger.warning("invite other robots to join the centralized execution")
-
-                # send spec to request received and also violated robots
-                csockNewRobotsToCoordinate = [self.dPatchingExecutor.clients[robot] for robot in robotsInConflict if not robot in self.dPatchingExecutor.old_coordinatingRobots]
-
-                #only send local spec here.(Assuming the other robot coordinating find out the same problem and send its own)
-                self.prepareForCentralizedStrategySnippetToOtherRobots(csockNewRobotsToCoordinate)
-
-                #update coordination sent
-                #self.dPatchingExecutor.coordinationRequestSent = robotsInConflict
-                self.dPatchingExecutor.setCoordinationRequestSent(robotsInConflict)
-
-        elif received_request:
-            ltlmop_logger.info("We are asked to coordinate with more robots!")
-        else:
-            self.postEvent("INFO","Violation is only about our propositions. Carrying out environment characterization")
-            self.addStatetoEnvSafety(self.dPatchingExecutor.sensor_state, checker=self.globalEnvTransCheck)
-            ltlmop_logger.warning("we need to trigger env characterization instead. This is not checked!")
-
-        if robotsInConflict or received_request:
-            # make sure all sensors are the latest
-            for prop_name, value in self.dPatchingExecutor.convertFromRegionBitsToRegionNameInDict('env', self.sensor_strategy.getInputs(expand_domains = True)).iteritems():
-                self.dPatchingExecutor.sensor_state.setPropValue(self.dPatchingExecutor.propMappingOldToNew[self.dPatchingExecutor.robotName][prop_name], value)
-
-            # taking care all the synthesis and wait till everyone is ready.
-            self.synthesizeGlobalStrategyAndWaitForOthersToResume()
-
-            # set up global envTrans check
-            self.setupGlobalEnvTransCheck()
-
-        # update locations and sensors once more
-        self.updateLatestRegionInfoWithAllRobots()
-
-        # also stops the other robots operating
-        for robot in self.dPatchingExecutor.robotInRange:
-            self.dPatchingExecutor.setPauseForControllerSynthesis(self.dPatchingExecutor.clients[robot], False)
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%% #

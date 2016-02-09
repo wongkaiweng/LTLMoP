@@ -46,6 +46,8 @@ import traceback
 from resynthesis import ExecutorResynthesisExtensions
 from executeStrategy import ExecutorStrategyExtensions
 from executeModes import ExecutorModesExtensions
+from executePatching import ExecutorPatchingExtensions
+from executeDecentralizedPatching import ExecutorDecentralizedPatchingExtensions
 import globalConfig
 
 # logger for ltlmop
@@ -57,6 +59,7 @@ import copy
 import specCompiler
 
 import LTLParser.LTLcheck
+import logging
 import LTLParser.LTLFormula 
 #################################
 
@@ -95,7 +98,7 @@ def usage(script_name):
                               -s FILE, --spec-file FILE:
                                   Load experiment configuration from FILE """ % script_name)
 
-class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, ExecutorModesExtensions, object):
+class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, ExecutorModesExtensions, ExecutorPatchingExtensions, ExecutorDecentralizedPatchingExtensions, object):
     """
     This is the main execution object, which combines the synthesized discrete automaton
     with a set of handlers (as specified in a .config file) to create and run a hybrid controller
@@ -533,6 +536,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         ## inputs
         # ---- two_robot_negotiation ----- #
         if self.proj.compile_options['neighbour_robot']:
+
+            # set up dictionary tracking negotiations
+            for robot in self.proj.otherRobot:
+                self.receivedSpec[robot] = False #track if we have recevied request from the other robot
+                self.sentSpec[robot] = False #track if we have sent spec to the other robot
+                self.exchangedSpec[robot] = False #track if we have exchanged spec with the other robot
+
             # Wait until the other robot is ready
             # Make sure the other robot is loaded
             ltlmop_logger.info('Waiting for other robots to be ready')
