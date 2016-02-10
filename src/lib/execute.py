@@ -537,11 +537,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         # ---- two_robot_negotiation ----- #
         if self.proj.compile_options['neighbour_robot']:
 
-            # set up dictionary tracking negotiations
-            for robot in self.proj.otherRobot:
-                self.receivedSpec[robot] = False #track if we have recevied request from the other robot
-                self.sentSpec[robot] = False #track if we have sent spec to the other robot
-                self.exchangedSpec[robot] = False #track if we have exchanged spec with the other robot
+            if firstRun:
+                # set up dictionary tracking negotiations
+                for robot in self.proj.otherRobot:
+                    self.receivedSpec[robot] = False  #track if we have recevied request from the other robot
+                    self.sentSpec[robot] = False  #track if we have sent spec to the other robot
+                    self.exchangedSpec[robot] = False  #track if we have exchanged spec with the other robot
 
             # Wait until the other robot is ready
             # Make sure the other robot is loaded

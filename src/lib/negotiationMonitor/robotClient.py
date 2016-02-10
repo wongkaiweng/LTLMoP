@@ -27,6 +27,7 @@ class RobotClient:
 
         # check if we are using fastslow:
         self.fastslow = proj.compile_options['fastslow']
+        self.proj = proj
 
         # initialize our variable
         self.robotName = ''
@@ -142,7 +143,10 @@ class RobotClient:
                     spec = LTLParser.LTLRegion.replaceENVsbitToENVRobotNameAndRegionName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName)
             else:
                 # convert e.sbit to e.robotName_region_rc if include_heading, else to e.robotName_region
+                ltlmop_logger.log(4,'BEFORE bit Change:' + spec)
                 spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.regionCompleted_domain, self.newRegionNameToOld, self.robotName, fastslow, include_heading)
+                ltlmop_logger.log(4,'AFTER bit Change:' + spec)
+
                 if include_heading:
                     # convert s.bit to e.robotName_region or s.bit to s.robotName_region if patching
                     spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False, False, self.proj.compile_options["multi_robot_mode"] == "patching")
@@ -161,11 +165,16 @@ class RobotClient:
                     for otherRobot in self.proj.otherRobot:
                         spec = re.sub('(?<=[! &|(\t\n])e.'+otherRobot+'_'+region+'(?=[ &|)\t\n])','e.'+otherRobot+'_'+region+'_rc',spec)
 
-	    # FIXIT!!!!!!
+            ###########################
+            ## NEGOTIATION SPECIFICS ##
+            ###########################
+            # Before sending EnvTrans to nego Monitor, we need to remove
+            # spec relating only the system robot.
             elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "negotiation":
                 if fastslow and specType == 'EnvTrans':
-                    ltlmop_logger.log(1, 'came in to rewrite spec EnvTrans')
-                    spec = LTLParser.LTLcheck.removeLTLwithoutKeyFromEnvTrans(spec, otherRobot)
+                    # for more than two robots. all spec gone because it's doing one at a time
+                    spec = '&'.join(LTLParser.LTLcheck.excludeSysRobotOnlySpecList(LTLParser.LTLcheck.ltlStrToList(spec), self.robotName, [self.robotName]+ self.proj.otherRobot))
+                    ltlmop_logger.log(4, 'Removing spec about itself:' + spec)
 
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)

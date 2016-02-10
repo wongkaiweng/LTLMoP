@@ -1,4 +1,11 @@
 import os
+import re
+import itertools
+import specCompiler
+import time, math
+import numpy
+
+import parseEnglishToLTL
 import LTLParser.translateFromSlugsLTLFormatToLTLFormat
 import sets # make sure there's no duplicates of elements
 import LTLParser.LTLRegion # for adding region parentheses

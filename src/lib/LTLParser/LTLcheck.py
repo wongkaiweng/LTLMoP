@@ -28,6 +28,37 @@ debug_tree_terminal      = False # print the entire tree in terminal
 debug_false_ltl = False          # print ltl that does not hold
 
 
+
+def excludeSysRobotOnlySpecList(ltlList, myName, keyList):
+    """
+    This function removes spec with only sysRobot from ltlList
+    sysRobot: name of the robot
+    keyList: sysRobot + all other robots
+
+    keyList: cannot be empty. Should be list of robots coordinating (including myself)
+    """
+    ltlmop_logger.debug("keyList:" + str(keyList))
+    ltlmop_logger.debug("myName:" + str(myName))
+
+    ltlKept = []
+    ltlExcluded = []
+    for ltl in ltlList:
+        keyFound = []
+        for key in keyList:
+            if checkIfKeyInFormula(ltl, key):
+                keyFound.append(key)
+        #ltlmop_logger.debug("keyFound:" + str(keyFound))
+        if len(keyFound) == 1 and myName in keyFound: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
+            #ltlmop_logger.log(1, str(ltl) + " is excluded because only system robot is found")
+            ltlExcluded.append(ltl)
+            continue
+        else:
+            #ltlmop_logger.debug(str(ltl) + " is kept because no option is matched.")
+            ltlKept.append(ltl)
+
+    return ltlKept
+
+
 def filterOneRobotViolatedSpec(violatedList, allRobotsList):
     """
     takes in violatedSpecList and return the ones with one-robot-spec removed
@@ -53,6 +84,7 @@ def filterRelatedOneRobotSpec(ltlList, allRobotsList, relatedRobots, myName ="")
 
     return ltlListFiltered
 
+
 def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myName=""):
     """
     This function checks if keys in keyList are in each ltl formula
@@ -74,13 +106,13 @@ def filterSpecList(ltlList, keyList, keyListMatch=[], one_robot_mode=False, myNa
                 keyFound.append(key)
         #ltlmop_logger.debug("keyFound:" + str(keyFound))
         if len(keyFound) == 1 and one_robot_mode: # we don't keep one robot spec (assuming to be the case of varphi_e^t)
-            #ltlmop_logger.debug(str(ltl) + " is excluded because of one_robot_mode and only ony key is found")
+            #ltlmop_logger.log(1, str(ltl) + " is excluded because of one_robot_mode and only ony key is found")
             ltlExcluded.append(ltl)
             continue
         elif len(keyFound) == 1 and myName in keyFound:
             # we will never remove spec about only ourselves
             ltlKept.append(ltl)
-            #ltlmop_logger.debug(str(ltl) + " is kept because of one key is Found and is my name")
+            #ltlmop_logger.log(1, str(ltl) + " is kept because of one key is Found and is my name")
         elif not len(keyListMatch): # don't care. just match everything except spec of one robot
             ltlKept.append(ltl)
             #ltlmop_logger.debug(str(ltl) + " is kept because in keyListMatch is not provided.")
