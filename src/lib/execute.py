@@ -77,6 +77,9 @@ import itertools #for iterating props combination
 import centralCoordinator.decentralizedPatchingExecutor
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
 
+import handlers.handlerTemplates as ht
+
+
 ####################
 # HELPER FUNCTIONS #
 ####################
@@ -604,7 +607,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
             # check if execution is paused
             if not self.runStrategy.isSet():
-                self.hsub.setVelocity(0,0)
+                self.stopMotionAndAction()
 
                 ###### ENV VIOLATION CHECK ######
                 # pop up the analysis dialog
@@ -673,6 +676,31 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         return  init_state, self.strategy
 
+    def stopMotionAndAction(self):
+        # this funciton stops motion and action currently executing
+        self.hsub.setVelocity(0,0)
+
+        # pause action as well
+        for h in self.hsub.handler_instance:
+            ltlmop_logger.log(8, str(h.__class__) + str(isinstance(h,ht.ActuatorHandler)))
+            if isinstance(h,ht.ActuatorHandler):
+                ltlmop_logger.log(8, getattr(h, "_pause", None))
+                pauseFn = getattr(h, "_pause", None)
+                if callable(pauseFn):
+                    h._pause()
+        #self.postEvent("INFO","Pause all motion and actions")
+
+    def resumeMotionAndAction(self):
+        # restart action
+        for h in self.hsub.handler_instance:
+            ltlmop_logger.log(8, str(h.__class__) + str(isinstance(h,ht.ActuatorHandler)))
+            if isinstance(h,ht.ActuatorHandler):
+                ltlmop_logger.log(8, getattr(h, "_resume", None))
+                pauseFn = getattr(h, "_resume", None)
+                if callable(pauseFn):
+                    h._resume()
+        #self.postEvent("INFO","Resume all motion and actions")
+
     def run(self):
         ### Get everything moving
         # Rate limiting is approximately 20Hz
@@ -690,7 +718,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         while self.alive.isSet():
             # Idle if we're not running
             if not self.runStrategy.isSet():
-                self.hsub.setVelocity(0,0)
+                self.stopMotionAndAction()
 
                 ###### ENV VIOLATION CHECK ######
                 # pop up the analysis dialog                
@@ -700,6 +728,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 # wait for either the FSA to unpause or for termination
                 while (not self.runStrategy.wait(0.1)) and self.alive.isSet():
                     pass
+
+                self.resumeMotionAndAction()
 
             # Exit immediately if we're quitting
             if not self.alive.isSet():
@@ -756,7 +786,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             # once switched back to local strategy need to find init state again
                             self.runCentralizedStrategy = False
                             self.postEvent("PATCH","Centralized strategy ended. Resuming local strategy ...")
-                            self.hsub.setVelocity(0,0)
+                            self.stopMotionAndAction()
                             self.runRuntimeMonitoring.clear()
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
                             aut_file = self.proj.getFilenamePrefix() + ".aut"
@@ -768,7 +798,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 time.sleep(1) #wait for the other robot to get ready
                             ltlmop_logger.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
-
+                            self.resumeMotionAndAction()
                             continue
                             # *********************************** #
                         elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
@@ -780,7 +810,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
                             self.postEvent("D-PATCH","Centralized strategy ended. Resuming local strategy ...")
                             self.runCentralizedStrategy = False
-                            self.hsub.setVelocity(0,0)
+                            self.stopMotionAndAction()
                             self.runRuntimeMonitoring.clear()
                             ltlmop_logger.debug("stopped runRuntimeMonitoring...")
                             spec_file = self.proj.getFilenamePrefix() + ".spec"
@@ -801,6 +831,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 time.sleep(0.2) #wait for the other robot to get ready
                             ltlmop_logger.debug('Running again ...')
                             self.resumeRuntimeMonitoring()
+                            self.resumeMotionAndAction()
 
                             # also restarts the other robots operating
                             for robot in self.dPatchingExecutor.robotInRange:
@@ -839,7 +870,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 env_assumption_hold = self.env_assumption_hold and self.possible_states_env_assumption_hold #self.check_envTrans_violations() #
 
                 if not env_assumption_hold and not self.proj.compile_options['recovery']:
-                    self.hsub.setVelocity(0,0)
+                    self.stopMotionAndAction()
 
                 ###############################################################
                 ####### CHECK IF REQUEST FROM OTHER ROBOTS IS RECEVIED ########
@@ -849,6 +880,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         # ---------- two_robot_negotiation ------------- #
                         # resynthesis request from the other robot
                         if self.receiveRequestFromEnvRobot():
+                            self.resumeMotionAndAction()
                             continue
                         # ---------------------------------------------- #
 
@@ -857,12 +889,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         # check if centralized strategy is initialized for the current robot (also make sure the spec is only sent until centralized execution starts)
                         if self.robClient.checkCoordinationRequest() and not self.robClient.getCentralizedExecutionStatus():
                             # stop the robot from moving
-                            self.hsub.setVelocity(0,0)
+                            self.stopMotionAndAction()
                             self.postEvent("PATCH","We are asked to join a centralized strategy")
                             self.runRuntimeMonitoring.clear()
                             self.initiatePatching()
                             self.resumeRuntimeMonitoring()
-
+                            self.resumeMotionAndAction()
                             # jump to top of while loop
                             continue
                         # **************************************** #
@@ -871,7 +903,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         #TODO: !!!! REcheck.  if any other robots asked for coorindation
                         if not self.dPatchingExecutor.checkIfOtherRobotsAreReadyToExecuteCentralizedStrategy() and self.dPatchingExecutor.checkIfCoordinationRequestIsRecevied():
                             # stop the robot from moving
-                            self.hsub.setVelocity(0,0)
+                            self.stopMotionAndAction()
                             self.postEvent("D-PATCH","We are asked to join a centralized strategy")
                             ltlmop_logger.info("We are asked to join a centralized strategy")
                             self.runRuntimeMonitoring.clear()
@@ -880,6 +912,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             else:
                                 self.initiateDPatching(received_request=True)
                             self.resumeRuntimeMonitoring()
+                            self.resumeMotionAndAction()
                             #TODO: need to take care of cases where mulptiple requests are received
                             ltlmop_logger.error('Decentralized Patching is not completed yet!')
                             ltlmop_logger.info("Start executing centralized strategy")
@@ -907,7 +940,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                     self.postEvent("VIOLATION", "POSSIBLE violation:" + str(x))
                             self.old_possible_states_violated_specStr = self.possible_states_violated_spec_list
                             # stop the robot from moving
-                            self.hsub.setVelocity(0, 0)
+                            self.stopMotionAndAction()
 
                             # Take care of everything to start patching
                             #self.postEvent("RESOLVED", "")
@@ -915,6 +948,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                             self.runRuntimeMonitoring.clear()
                             self.initiateDPatchingCentralizedMode()
                             self.resumeRuntimeMonitoring()
+                            self.resumeMotionAndAction()
                             self.postEvent("D-PATCH","Resuming centralized strategy ...")
                             ltlmop_logger.warning("centralized repatch done... restarting")
                             # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
@@ -1001,7 +1035,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                     if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching":
                         # ******* patching ********** #
                         # stop the robot from moving
-                        self.hsub.setVelocity(0,0)
+                        self.stopMotionAndAction()
 
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
@@ -1009,12 +1043,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         self.runRuntimeMonitoring.clear()
                         self.initiatePatching()
                         self.resumeRuntimeMonitoring()
+                        self.resumeMotionAndAction()
                         continue
                         # *************************** #
                     elif self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "d-patching":
                         # %%%%%%%%%%% d-patching %%%%%%%%%%%% #
                                                 # stop the robot from moving
-                        self.hsub.setVelocity(0,0)
+                        self.stopMotionAndAction()
 
                         # Take care of everything to start patching
                         self.postEvent("RESOLVED","")
@@ -1022,6 +1057,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                         ltlmop_logger.info("Initiating patching...")
                         self.initiateDPatching()
                         self.resumeRuntimeMonitoring()
+                        self.resumeMotionAndAction()
                         continue
                         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% #
                     else:
@@ -1045,7 +1081,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
 
                                     # stop the robot from moving ## needs testing again
-                                    self.hsub.setVelocity(0,0)
+                                    self.stopMotionAndAction()
 
                                     # Modify the ltl file based on the enviornment change
                                     self.addStatetoEnvSafety(self.sensor_strategy)
@@ -1060,7 +1096,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 ####### FOR ONLY LEANRING #########
                                 ###################################
                                 # stop the robot from moving
-                                self.hsub.setVelocity(0,0)
+                                self.stopMotionAndAction()
 
                                 # Modify the ltl file based on the enviornment change
                                 self.addStatetoEnvSafety(self.sensor_strategy)

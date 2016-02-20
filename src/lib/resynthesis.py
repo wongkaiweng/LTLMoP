@@ -805,6 +805,7 @@ class ExecutorResynthesisExtensions(object):
                                     if otherRobotViolationTimeStamp < self.violationTimeStamp:
                                         # exchange spec
                                         realizable = self.appendSpecFromEnvRobots()
+                                        self.resumeMotionAndAction()
 
                                     # if ((not self.exchangedSpec[conflictingRobots[0]]) or (not self.sentSpec[conflictingRobots[0]] and self.receivedSpec[conflictingRobots[0]])) and otherRobotViolationTimeStamp < self.violationTimeStamp:
                                     #     # exchange spec
