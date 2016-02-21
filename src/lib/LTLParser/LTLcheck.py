@@ -52,6 +52,9 @@ def excludeSysRobotOnlySpecList(ltlList, myName, keyList):
             #ltlmop_logger.log(1, str(ltl) + " is excluded because only system robot is found")
             ltlExcluded.append(ltl)
             continue
+        elif len(keyFound) == 0: #no match on robots. could be the case of actions only
+            ltlExcluded.append(ltl)
+            continue
         else:
             #ltlmop_logger.debug(str(ltl) + " is kept because no option is matched.")
             ltlKept.append(ltl)

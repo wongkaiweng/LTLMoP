@@ -39,7 +39,7 @@ blockPresent, 1
 holdingBlock, 1
 bob_r2, 1
 bob_r1, 1
-bob_placeBlock, 1
+bob_ActplaceBlock, 1
 
 
 ======== SPECIFICATION ========
@@ -63,10 +63,10 @@ always bob_r2
 # --#infinitely often (pickupTask and finished pickup)
 # --infinitely often (holdingBlock and finished cutBlock)
 
-# --#always (holdingBlock and finished cutBlock) or (pickupTask and finished pickup) or not pickupTask or (pickupTask and blockPresent)
+#always (holdingBlock and finished cutBlock) or (pickupTask and finished pickup) or not pickupTask or (pickupTask and blockPresent)
 
 #always not bob_placeBlock and blockPresent
-always bob_placeBlock or blockPresent
+always bob_ActplaceBlock or blockPresent
 
 #and blockPresent
 
