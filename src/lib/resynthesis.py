@@ -497,7 +497,7 @@ class ExecutorResynthesisExtensions(object):
         robotsNotInConflict = copy.deepcopy(self.proj.otherRobot)
         robotsNotInConflict.remove(conflictingRobot)
         if len(robotsNotInConflict):
-            otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedOneRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, robotsNotInConflict, self.robClient.robotName)
+            otherRobotEnvTransList = LTLParser.LTLcheck.filterRelatedRobotSpec(ALLotherRobotEnvTransList, self.proj.otherRobot, robotsNotInConflict, self.robClient.robotName)
             otherRobotEnvTrans = '&\n'.join(otherRobotEnvTransList)
         else:
             otherRobotEnvTrans = '&\n'.join(ALLotherRobotEnvTransList)
@@ -531,8 +531,8 @@ class ExecutorResynthesisExtensions(object):
         # resynthesize
         self.postEvent("NEGO","Use exchanged information to synthesize new controller.")
         self.recreateLTLfile(self.proj)
-        realizable, _, _ = self.compiler._synthesize()
-
+        realizable, _, output = self.compiler._synthesize()
+        ltlmop_logger.debug(output)
         return realizable, oldSpecSysTrans, oldSpecEnvGoals
 
     def appendSpecFromEnvRobots(self):

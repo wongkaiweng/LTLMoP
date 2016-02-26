@@ -81,6 +81,7 @@ def filterRelatedRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
 def filterRelatedOneRobotSpec(ltlList, allRobotsList, relatedRobots, myName =""):
     """
     removes ltl involving only rlatedRobots (it is possible to have only one robot in relatedRobots)
+    If ltl involves only one robot, then it's removed no matter what.
     """
     ltlListFiltered, ltlListExcluded = filterSpecList(ltlList, allRobotsList, relatedRobots, one_robot_mode=True, myName=myName)
     ltlmop_logger.debug("ltlListExcluded -relatedSpec:" + str(ltlListExcluded))

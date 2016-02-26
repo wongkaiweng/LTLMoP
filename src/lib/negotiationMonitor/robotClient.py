@@ -135,6 +135,9 @@ class RobotClient:
 
         # first replace our region bits to original region name with our robot name
         if fastslow:
+            # first replace stay there instances
+            spec = LTLParser.LTLRegion.replaceBiimplicationBits(spec, self.regions, self.newRegionNameToOld, self.robotName, fastslow)
+
             if specType == 'SysGoals':
                 spec = LTLParser.LTLRegion.replaceSYSbitToENVRobotNameAndRegionName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName)
                 if include_heading:
@@ -175,6 +178,19 @@ class RobotClient:
                     # for more than two robots. all spec gone because it's doing one at a time
                     spec = '&'.join(LTLParser.LTLcheck.excludeSysRobotOnlySpecList(LTLParser.LTLcheck.ltlStrToList(spec), self.robotName, [self.robotName]+ self.proj.otherRobot))
                     ltlmop_logger.log(4, 'Removing spec about itself:' + spec)
+
+                # convert customProp from prop to robot_prop
+                for prop in self.proj.all_customs:
+                    spec = re.sub('(?<=[! &|(\t\n])s.'+prop+'(?=[ &|)\t\n])','e.'+self.robotName+'_'+prop,spec)
+                ltlmop_logger.log(6, 'Custom Prop modified:' + spec)
+
+                # convert actProp from prop to robot_Actprop
+                # convert actProp_ac from prop_ac to robot_prop
+                for prop in self.proj.enabled_actuators:
+                    spec = re.sub('(?<=[! &|(\t\n])s.'+prop+'(?=[ &|)\t\n])','e.'+self.robotName+'_Act'+prop,spec)
+                    spec = re.sub('(?<=[! &|(\t\n])e.'+prop+'_ac(?=[ &|)\t\n])','e.'+self.robotName+'_'+prop,spec)
+
+                ltlmop_logger.log(6, 'Actuator Prop modified:' + spec)
 
         else:
             spec =  LTLParser.LTLRegion.replaceAllRegionBitsToOriginalName(spec, self.regions, self.region_domain, self.newRegionNameToOld, self.robotName, False)
@@ -230,7 +246,14 @@ class RobotClient:
         # replace actuator names
         # e.robotName_Act(actuatorName) = sys prop
         # e.robotName_(actuatorName_ac) = _ac prop
-        specToAppend = specToAppend.replace('e.'+self.robotName+'_Act','s.').replace('e.'+self.robotName+'_','e.')
+        # specToAppend = specToAppend.replace('e.'+self.robotName+'_Act','s.').replace('e.'+self.robotName+'_','e.')
+        for prop in self.proj.enabled_actuators:
+            specToAppend = re.sub('(?<=[! &|(\t\n])e.'+self.robotName+'_Act'+prop+'(?=[ &|)\t\n])','s.'+prop,specToAppend)
+            specToAppend = re.sub('(?<=[! &|(\t\n])e.'+self.robotName+'_'+prop+'(?=[ &|)\t\n])','e.'+prop+'_ac',specToAppend)
+
+        # replace custom prop
+        for prop in self.proj.all_customs:
+            specToAppend = re.sub('(?<=[! &|(\t\n])e.'+self.robotName+'_'+prop+'(?=[ &|)\t\n])','s.'+prop,specToAppend)
 
         return specToAppend 
         
