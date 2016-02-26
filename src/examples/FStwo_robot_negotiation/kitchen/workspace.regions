@@ -1,0 +1,185 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                643.0, 
+                120.0
+            ], 
+            [
+                504.0, 
+                120.0
+            ], 
+            [
+                504.0, 
+                0.0
+            ], 
+            [
+                370.0, 
+                0.0
+            ], 
+            [
+                150.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                150.0, 
+                120.0
+            ], 
+            [
+                370.0, 
+                120.0
+            ], 
+            [
+                370.0, 
+                243.0
+            ], 
+            [
+                504.0, 
+                243.0
+            ], 
+            [
+                643.0, 
+                243.0
+            ]
+        ], 
+        "position": [
+            38.0, 
+            205.0
+        ], 
+        "type": "poly", 
+        "size": [
+            643.0, 
+            243.0
+        ]
+    }, 
+    {
+        "name": "company", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            38.0, 
+            205.0
+        ], 
+        "type": "rect", 
+        "size": [
+            150.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "road", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            188.0, 
+            205.0
+        ], 
+        "type": "rect", 
+        "size": [
+            220.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "preparationArea", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            408.0, 
+            325.0
+        ], 
+        "type": "rect", 
+        "size": [
+            134.0, 
+            123.0
+        ]
+    }, 
+    {
+        "name": "storage", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            408.0, 
+            205.0
+        ], 
+        "type": "rect", 
+        "size": [
+            134.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "cookingArea", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            542.0, 
+            325.0
+        ], 
+        "type": "rect", 
+        "size": [
+            139.0, 
+            123.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	company	188.0	325.0	38.0	325.0	38.0	325.0	38.0	205.0	188.0	205.0	38.0	205.0
+boundary	road	188.0	205.0	408.0	205.0	188.0	325.0	408.0	325.0
+boundary	preparationArea	408.0	448.0	408.0	325.0	408.0	448.0	542.0	448.0
+boundary	storage	542.0	205.0	542.0	325.0	408.0	205.0	542.0	205.0
+boundary	cookingArea	681.0	325.0	542.0	325.0	681.0	325.0	681.0	448.0	681.0	448.0	542.0	448.0
+company	road	188.0	205.0	188.0	325.0
+road	storage	408.0	325.0	408.0	205.0
+preparationArea	storage	408.0	325.0	542.0	325.0
+preparationArea	cookingArea	542.0	448.0	542.0	325.0
+
