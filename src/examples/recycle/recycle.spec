@@ -5,7 +5,8 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-sit, 1
+pickup, 1
+drop, 1
 
 CompileOptions:
 convexify: True
@@ -20,14 +21,17 @@ CurrentConfigName:
 nao
 
 Customs: # List of custom propositions
-sense_danger
+gotMetal
+gotGlass
+gotPaper
 
 RegionFile: # Relative path of region description file
 eight_regions.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-danger, 1
-safe, 1
+metal, 1
+glass, 1
+paper, 1
 
 
 ======== SPECIFICATION ========
@@ -47,13 +51,21 @@ Spec: # Specification in structured English
 group regions is r1,r2,r4,r5,r7
 robot starts with false
 
-sense_danger is set on danger and reset on safe
+# pickup object if you see them
+do pickup if and only if you are sensing metal or glass or paper
 
-do sit if and only if you were in r8 and you are activating sense_danger
+# remember what you have picked up
+gotMetal is set on metal and pickup and reset on r6 and drop
+gotGlass is set on glass and pickup and reset on r8 and drop
+gotPaper is set on paper and pickup and reset on r3 and drop
 
-if you are activating sit then stay there
+# drop the object at the right place
+do drop if and only if you are sensing (gotMetal and r6) or (gotGlass and r8) or (gotPaper and r3)
+#if you are activating start of drop then stay there
+#do drop if and only if you are sensing (r6 or r8 or r3)
 
-if you are activating sense_danger then visit r8
-
-if you are not activating sense_danger then visit all regions
+if you are not activating (metal or glass or paper) then visit all regions
+if you are activating gotMetal then visit r6
+if you are activating gotGlass then visit r8
+if you are activating gotPaper then visit r3
 
