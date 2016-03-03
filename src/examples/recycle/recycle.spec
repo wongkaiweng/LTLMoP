@@ -52,7 +52,8 @@ group regions is r1,r2,r4,r5,r7
 robot starts with false
 
 # pickup object if you see them
-do pickup if and only if you are sensing metal or glass or paper
+do pickup if and only if you are sensing (metal or glass or paper)
+if you are activating start of pickup then stay there
 
 # remember what you have picked up
 gotMetal is set on metal and pickup and reset on r6 and drop
@@ -60,9 +61,8 @@ gotGlass is set on glass and pickup and reset on r8 and drop
 gotPaper is set on paper and pickup and reset on r3 and drop
 
 # drop the object at the right place
-do drop if and only if you are sensing (gotMetal and r6) or (gotGlass and r8) or (gotPaper and r3)
-#if you are activating start of drop then stay there
-#do drop if and only if you are sensing (r6 or r8 or r3)
+do drop if and only if you were sensing (gotMetal and r6) or (gotGlass and r8) or (gotPaper and r3)
+if you are activating drop then stay there
 
 if you are not activating (metal or glass or paper) then visit all regions
 if you are activating gotMetal then visit r6
