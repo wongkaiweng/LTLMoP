@@ -7,6 +7,8 @@ naoSensors.py - Sensor handler for the Aldebaran Nao
 # logger for ltlmop
 import logging
 ltlmop_logger = logging.getLogger('ltlmop_logger')
+import threading
+import time
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
@@ -23,7 +25,14 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.sttProxy = None
         self.ldmProxy = None
         self.soundProxy = None
-        self.proj = executor.proj
+        self.sonarProxy = None
+        self.motionProxy = None
+        self.behaviorProxy = None
+        if executor:
+            self.proj = executor.proj
+
+        self.behaviorCompleted = {} # true if completed. False otherwise
+        self.behaviorCompletionThread = {} # store threads for updating completion
 
     ###################################
     ### Available sensor functions: ###
@@ -215,6 +224,92 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
             if bool(self.memProxy.getData('RearTactilTouched',0)):
                 self.proj.executor.postEvent("INFO","sensor.py: headTappedBack is True now!")    
             return bool(self.memProxy.getData('RearTactilTouched',0))
+
+    def handIsClosed(self, hand=True, threshold=0.1, useSensors=False):
+        """
+        UNTESTED
+        This function checks if one the the hands is closed.
+        hand (bool): True for left hand, False for right hand. (default=True)
+        threshold (float): Minimum angle that determines if the hand is closed. Hand aperture in percentage; 0 means closed, 1 means opened. (default=0.1,min=0.0,max=1.0)
+        useSensors (bool) : True to use sensor angle values. False otherwise. (default=False)
+        """
+        if initial:
+            if self.motionProxy is None:
+               self.motionProxy = self.naoInitHandler.createProxy('ALMotion')
+        else:
+            get_angle_str = 'LHand' if hand else 'RHand'
+            hand_angle = self.motionProxy.getAngles(get_angle_str, useSensors)[0]
+            ltlmop_logger.debug(get_angle_str + '-hand_angle:' + str(hand_angle))
+            if hand_angle < threshold: # adjust threshold
+                # something in hand'
+                ltlmop_logger.debug('hand closed')
+                return True
+            else:
+                # nothing in hand
+                return False
+
+    def senseObstacle(self, threshold, initial=False):
+        """
+        UNTESTED
+        Check whether the two chest sonars sense any obstacles.
+        threshold (float): Minimum distance between the robot and the obstacle in meters(default=0.5,min=0.25,max=1.0)
+        """
+        # note that under 0.25m, the robot can sense the obstacle is present but cannot return a number
+        if initial:
+            if self.memProxy is None:
+                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
+            if self.sonarProxy is None:
+                self.sonarProxy = self.naoInitHandler.createProxy('ALSonar')
+                self.sonarProxy.unsubscribe('LTLMoP') # first make sure we did unsubsribe
+                self.sonarProxy.subscribe('LTLMoP')
+            return True
+        else:
+            if self.memProxy.getData("Device/SubDeviceList/US/Left/Sensor/Value") < threshold or \
+                self.memProxy.getData("Device/SubDeviceList/US/Right/Sensor/Value") < threshold:
+                return True
+                ltlmop_logger.debug('senseObstacle')
+            else:
+                return False
+
+    def isBehaviorCompleted(self, behaviorName, initial=False):
+        """
+        Check if the behavior is currently running.
+        behaviorName (string): name of the behavior.
+        """
+        def checkCompletion(behaviorName):
+            running = False
+            while True:
+                # return true when either actuator is true and completed. Stay true till actuator is false.
+                if self.naoInitHandler.behaviorStatus[behaviorName]:
+                    if self.behaviorProxy.isBehaviorRunning(behaviorName):
+                        # behavior started
+                        running = True
+                        #ltlmop_logger.debug('behavior started.')
+
+                    elif running and not self.behaviorProxy.isBehaviorRunning(behaviorName):
+                        # ran and then stopped. Action completed.
+                        running = False
+                        self.behaviorCompleted[behaviorName] = True
+                        #ltlmop_logger.debug('behavior completed.')
+
+                    #ltlmop_logger.log(4,'behavior is true')
+                    #ltlmop_logger.log(2,self.behaviorProxy.isBehaviorRunning(behaviorName))
+                else:
+                    time.sleep(0.2)
+                    self.behaviorCompleted[behaviorName] = False
+                    #ltlmop_logger.debug('behavior completion ended.')
+
+        if initial:
+            if self.behaviorProxy is None:
+                self.behaviorProxy = self.naoInitHandler.createProxy('ALBehaviorManager')
+
+            self.behaviorCompleted[behaviorName] = False #initialize for this behavior
+            self.behaviorCompletionThread[behaviorName] = threading.Thread(target=checkCompletion, args=(behaviorName, ))
+            self.behaviorCompletionThread[behaviorName].daemon = True  # Daemonize thread. exit when exception occurs
+            self.behaviorCompletionThread[behaviorName].start()
+        else:
+            return self.behaviorCompleted[behaviorName]
+
 
     def findChief(self,  initial=False):
 

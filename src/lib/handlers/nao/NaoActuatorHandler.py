@@ -29,6 +29,7 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
         self.asyncBehaviorFlags = {}
         self.asyncBehaviorThreads = {}
 
+        self.naoInitHandler.behaviorStatus = {} # true if actuator is true, False otherwise.
 
     #####################################
     ### Available actuator functions: ###
@@ -158,19 +159,26 @@ class NaoActuatorHandler(handlerTemplates.ActuatorHandler):
 
                 self.asyncBehaviorThreads[startBehaviorName+","+endBehaviorName] = threading.Thread(target = actionThread, args = (self,))
                 self.asyncBehaviorThreads[startBehaviorName+","+endBehaviorName].start()
+
+            # initialize status tracking:
+            self.naoInitHandler.behaviorStatus[startBehaviorName] = False
         else:
             if actuatorVal:
                 if repeat:
                     self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = True
                 else:
                     self._killBehaviors()
-                    self.behaviorProxy.runBehavior(startBehaviorName)
+                    self.behaviorProxy.post.runBehavior(startBehaviorName)
+                self.naoInitHandler.behaviorStatus[startBehaviorName] = True # starting actuation
+
             else:
                 if repeat:
                     self.asyncBehaviorFlags[startBehaviorName+","+endBehaviorName] = False
 
                 self._killBehaviors()
                 if endBehaviorName != "":
-                    self.behaviorProxy.runBehavior(endBehaviorName)
+                    self.behaviorProxy.post.runBehavior(endBehaviorName)
+
+                self.naoInitHandler.behaviorStatus[startBehaviorName] = False # ending actuation
 
 

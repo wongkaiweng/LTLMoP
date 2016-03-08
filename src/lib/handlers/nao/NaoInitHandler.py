@@ -10,6 +10,18 @@ Initialize the proxies to access Nao modules
 import naoqi
 from naoqi import ALProxy
 
+import os, sys
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "src":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+
+sys.path.append(os.path.join(p,"src","lib"))
+
 import lib.handlers.handlerTemplates as handlerTemplates
 
 class NaoInitHandler(handlerTemplates.InitHandler):
@@ -41,3 +53,40 @@ class NaoInitHandler(handlerTemplates.InitHandler):
 
     def getSharedData(self):
         return {'NAO_INIT_HANDLER': self}
+
+if __name__ == "__main__":
+    import NaoActuatorHandler
+    import NaoSensorHandler
+    import time
+    import sys
+
+    init = NaoInitHandler(None,"127.0.0.1", 36566)
+    #init = NaoInitHandler("maeby.mae.cornell.edu", 9559)
+    act = NaoActuatorHandler.NaoActuatorHandler(None, init.getSharedData())
+    sen = NaoSensorHandler.NaoSensorHandler(None, init.getSharedData())
+    behaviorName = '.lastUploadedChoregrapheBehavior/testNao'
+    act.runBehavior(behaviorName, "", 0, initial=True)
+    sen.isBehaviorCompleted(behaviorName, initial=True)
+    print act.behaviorProxy.getInstalledBehaviors()
+    stop = False
+
+
+    # run pickup action
+    while not stop:
+        try:
+            act.runBehavior(behaviorName, "", 1, initial=False)
+            while not sen.isBehaviorCompleted(behaviorName):
+                print behaviorName + 'is not completed.'
+                time.sleep(0.5)
+            print behaviorName + 'COMPLETED.'
+
+            act.runBehavior(behaviorName, "", 0, initial=False)
+            while sen.isBehaviorCompleted(behaviorName):
+                print behaviorName + 'is not ended.'
+                time.sleep(0.5)
+            print behaviorName + 'ENDED.'
+
+        except KeyboardInterrupt:
+            stop = True
+            sys.exit()
+
