@@ -11,12 +11,35 @@ import subprocess, os, time, socket
 import sys
 import random
 
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "src":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+sys.path.append(os.path.join(p,"src","lib"))
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+
+import Tkinter as tk
+from PIL import Image, ImageTk
+import threading
+
 import lib.handlers.handlerTemplates as handlerTemplates
 
 class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
     def __init__(self, executor, shared_data):
-        self.proj = executor.proj
+        if executor:
+            self.proj = executor.proj
         self.p_gui = None
+
+        self.tkRootThread = None # store tk root
+        self.tkWindows = {} # dict of windows derived from root
+        self.imageDisplayCompletionStatus = {}
 
     def _stop(self):
         if self.p_gui is not None:
@@ -27,6 +50,14 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
             except IOError:
                 # Probably already closed by user
                 pass
+
+        # destroy completion windows
+        for imageWindow in self.tkWindows.values():
+            imageWindow.quit = True
+
+        if self.tkRootThread:
+            print >>sys.__stderr__, "(ACT) Killing tkRoot..."
+            self.tkRootThread.callback()
 
     def setActuator(self, name, actuatorVal,initial):
         """
@@ -74,4 +105,100 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
             self.p_gui.stdin.write("{},{}\n".format(name,int(actuatorVal)))
 
             print "(ACT) Actuator %s is now %s!" % tuple(map(str, (name, actuatorVal)))
+
+    def imageDisplay(self, actuatorName, trueImage, falseImage, actuatorVal, initial):
+        """
+        Diplay two different images depending on actuator value.
+
+        actuatorName (string): Name of the actuator whose state is interested.
+        trueImage (string): Path to image. Display image when actuator is true.
+        falseImage (string): Path to image. Display image when actuator is false.
+        """
+        if initial:
+            ltlmop_logger.log(4,'we are initializing...')
+
+            # first check if the tk root has started
+            if not self.tkRootThread:
+                self.tkRootThread = _tkRoot()
+                time.sleep(2)
+
+            # initialize window
+            self.imageDisplayCompletionStatus[actuatorName] = False
+            self.tkWindows[actuatorName] = _tkImageWindow(self.tkRootThread.root, actuatorVal, trueImage, falseImage, \
+                                                          self.imageDisplayCompletionStatus, actuatorName)
+        else:
+            # update actuator value
+            self.tkWindows[actuatorName].update_actuatorVal(actuatorVal)
+            ltlmop_logger.debug(self.imageDisplayCompletionStatus)
+
+
+class _tkImageWindow(object):
+    def __init__(self, master, actuatorVal, trueImage, falseImage, imageDisplayCompletionStatusDict, actuatorName):
+        """
+        This object opens a window from master.
+        """
+        self.master = master
+        self.trueImage = trueImage
+        self.falseImage = falseImage
+        self.actuatorVal = actuatorVal
+        self.imageDisplayCompletionStatusDict = imageDisplayCompletionStatusDict
+        self.actuatorName = actuatorName
+        self.quit = False
+
+        # set up initial display
+        #self.top = self.master
+        #ltlmop_logger.log(4,self.master)
+        self.top = tk.Toplevel(self.master)
+        img = ImageTk.PhotoImage(Image.open(self.trueImage if self.actuatorVal else self.falseImage))
+        self.panel = tk.Label(self.top, image=img)
+        self.panel.pack(side = "bottom", fill = "both", expand = "yes")
+        ltlmop_logger.debug('we have initialized')
+        # update every 0.5s
+        if not self.quit:
+            self.top.after(500, self.update_image)
+
+    def update_actuatorVal(self, actuatorVal):
+        self.actuatorVal = actuatorVal
+
+    def update_image(self):
+        # update based on actuatorVal
+        ltlmop_logger.log(2, 'we did update image')
+        img = ImageTk.PhotoImage(Image.open(self.trueImage if self.actuatorVal else self.falseImage))
+        self.panel.configure(image=img)
+        self.panel.image = img
+
+        #note: we need to update completion sensors here too!
+        self.imageDisplayCompletionStatusDict[self.actuatorName] = True if self.actuatorVal else False
+        if not self.quit:
+            self.top.after(500, self.update_image)
+
+class _tkRoot(threading.Thread):
+    def __init__(self):
+        """
+        This object starts the root tk Thread.
+        """
+        threading.Thread.__init__(self)
+        self.root = None
+        self.daemon = True
+        self.start()
+
+    def callback(self):
+        #self.root.destroy()
+        self.root.quit()
+        ltlmop_logger.info("We did destory tkRoot")
+
+    def run(self):
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    a = DummyActuatorHandler(None, None)
+    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', False, initial=True)
+    time.sleep(2)
+    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', True, initial=False)
+    time.sleep(2)
+    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', False, initial=False)
+    time.sleep(2)
+    a._stop()
 

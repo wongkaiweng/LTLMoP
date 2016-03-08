@@ -70,6 +70,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         self.robotSensorInfo = {} # sensor info dict
         # ----------------------------- #
 
+        self.dummyActuatorHandler = None
+
     def _stop(self):
         if self.p_sensorHandler is not None:
             print >>sys.__stderr__, "(SENS) Killing dummysensor GUI..."
@@ -401,3 +403,16 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                 #print >>sys.__stdout__, "See" + vicon_object_name + ": location: " + str(pose) + vicon_object_name +": " + str(x) + str(y)  + "range: " + str(math.sqrt((pose[0]-x)**2+(pose[1]-y)**2))
 
             return math.sqrt((pose[0]-x)**2+(pose[1]-y)**2) < range
+
+    def imageDisplayCompletion(self, actuatorName, initial=False):
+        """
+        check if the image display action is completed
+        actuatorName (string): name of the corresponding actuator
+        """
+        if initial:
+            if not self.dummyActuatorHandler:
+                self.dummyActuatorHandler = self.executor.hsub.getHandlerInstanceByName("DummyActuatorHandler")
+        else:
+            #if self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]:
+            #    ltlmop_logger.log(6, self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName])
+            return self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]
