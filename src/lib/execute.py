@@ -285,24 +285,30 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         ltlmop_logger.info("QUITTING.")
 
         all_handler_types = ['init', 'pose', 'locomotionCommand', 'drive', 'motionControl', 'sensor', 'actuator']
+        # for htype in all_handler_types:
+        #     ltlmop_logger.info("Terminating {} handler...".format(htype))
+        #     if htype in self.proj.h_instance:
+        #         if isinstance(self.proj.h_instance[htype], dict):
+        #             handlers = [v for k,v in self.proj.h_instance[htype].iteritems()]
+        #         else:
+        #             handlers = [self.proj.h_instance[htype]]
+        #         for h in handlers:
+        #             if hasattr(h, "_stop"):
+        #                 ltlmop_logger.debug("Calling _stop() on {}".format(h.__class__.__name__))
+        #                 h._stop()
+        #             else:
+        #                 ltlmop_logger.debug("{} does not have _stop() function".format(h.__class__.__name__))
+        #     else:
+        #         ltlmop_logger.debug("{} handler not found in h_instance".format(htype))
 
-        for htype in all_handler_types:
-            ltlmop_logger.info("Terminating {} handler...".format(htype))
-            if htype in self.proj.h_instance:
-                if isinstance(self.proj.h_instance[htype], dict):
-                    handlers = [v for k,v in self.proj.h_instance[htype].iteritems()]
-                else:
-                    handlers = [self.proj.h_instance[htype]]
-
-                for h in handlers:
-                    if hasattr(h, "_stop"):
-                        ltlmop_logger.debug("Calling _stop() on {}".format(h.__class__.__name__))
-                        h._stop()
-                    else:
-                        ltlmop_logger.debug("{} does not have _stop() function".format(h.__class__.__name__))
+        for h in self.hsub.handler_instance:
+            ltlmop_logger.info("Terminating {} handler...".format(h.__class__.__name__))
+            if hasattr(h, "_stop") and callable(getattr(h, "_stop")):
+                ltlmop_logger.debug("Calling _stop() on {}".format(h.__class__.__name__))
+                h._stop()
             else:
-                ltlmop_logger.debug("{} handler not found in h_instance".format(htype))
-                
+                ltlmop_logger.debug("{} does not have _stop() function".format(h.__class__.__name__))
+
         # ----------------------------- #
         # -- two_robot_negotiation  --- #
         # ----------------------------- #
@@ -482,12 +488,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         else:
             init_prop_assignments = {"region": init_region}
 
-        # initialize all sensor and actuator methods
-        ltlmop_logger.info("Initializing sensor and actuator methods...")
-        self.hsub.initializeAllMethods()
-
         ## outputs
         if firstRun or self.strategy is None:
+            # initialize all sensor and actuator methods
+            ltlmop_logger.info("Initializing sensor and actuator methods...")
+            self.hsub.initializeAllMethods()
+
             # save the initial values of the actuators and the custom propositions
             for prop in self.proj.enabled_actuators + self.proj.all_customs:
                 self.current_outputs[prop] = (prop in self.hsub.executing_config.initial_truths)
