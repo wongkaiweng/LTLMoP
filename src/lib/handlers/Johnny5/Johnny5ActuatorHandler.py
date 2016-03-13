@@ -7,6 +7,7 @@ Johnny5ActuatorHandler.py - Johnny 5 Robot Actuator Handler
 import os
 import time
 import globalConfig
+import threading
 
 # logger for ltlmop
 import logging
@@ -29,7 +30,11 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
 
         # load config info
         self.config = shared_data['DefaultConfig']
+        # load servo #14 and #15 neutral value
+        self.fwd_servo_neutral = self.config[14][0]
 
+        self.johnny5InitHandler = shared_data['Johnny5_INIT_HANDLER']
+        self.johnny5InitHandler.behaviorStatus = {} # true if actuator is true, False otherwise.
 
     def _runSequencer(self, FileName):
         """
@@ -96,6 +101,100 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
                 self._runSequencer('HighFive.csv')
             else:
                 self._runSequencer('StandUp.csv')
+
+    def _delayCompletionThread(self, delay, actuatorName, status):
+        """
+        This function delays actuatorName changed to false
+        """
+        time.sleep(delay)
+        self.johnny5InitHandler.behaviorStatus[actuatorName] = status
+
+    def deliverBox(self, actuatorName, actuatorVal, initial=False):
+        """
+        This function delivers a box/plate with two hands.
+        actuatorName (string): name of actuator. For finding completion status.
+        """
+        # put down designated arm
+        if initial:
+            self.johnny5InitHandler.behaviorStatus[actuatorName] = False
+        else:
+            # drop designated arm
+            if actuatorVal == True:
+                self.johnny5Serial.write('#14 P%d\r' % (self.fwd_servo_neutral))
+                time.sleep(0.5)
+                # send out servo commands
+                self.johnny5Serial.write('#7 P1100 T3000\r') # open left hand
+                time.sleep(2.0)
+                self.johnny5Serial.write('#3 P2000 T1000\r')
+                time.sleep(0.5)
+
+                # back off
+                #self.johnny5Serial.write('#15 P000')
+                self.johnny5Serial.write('#14 P%d\r' % (self.fwd_servo_neutral+170))
+                time.sleep(0.5)
+                self.johnny5Serial.write('#14 P%d\r' % (self.fwd_servo_neutral))
+                time.sleep(0.5)
+
+
+                # put down left arm
+                self.johnny5Serial.write('#3 P1576 T1000\r')
+                time.sleep(0.5)
+                self.johnny5Serial.write('#6 P1636 T1000\r')
+                time.sleep(0.5)
+                self.johnny5Serial.write('#5 P1294 T1000\r')
+                time.sleep(0.2)
+
+                # close hands
+                self.johnny5Serial.write('#7 P1700 T3000\r') # left
+
+                # Pause to let the action complete, will block the locomotion cmd
+                # TODO: make this non-blocking
+                time.sleep(3)
+                a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, True))
+                a.daemon = True
+                a.start()
+            else:
+                a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, False))
+                a.daemon = True
+                a.start()
+
+
+    def pickupBox(self, actuatorName, actuatorVal, initial=False):
+        """
+        This function picks up a box/plate with two hands.
+        actuatorName (string): name of actuator. For finding completion status.
+        """
+        if initial:
+            self.johnny5InitHandler.behaviorStatus[actuatorName] = False
+        else:
+            # lift designated arm
+            if actuatorVal == True:
+                # send out servo commands
+                self.johnny5Serial.write('#7 P1100 T3000\r') # open hand
+                time.sleep(2.5)
+
+                # lift left arm
+                self.johnny5Serial.write('#3 P2200 T1000\r')
+                time.sleep(0.2)
+                self.johnny5Serial.write('#5 P2200 T1000\r')
+                time.sleep(0.2)
+                self.johnny5Serial.write('#6 P1200 T1000\r')
+                time.sleep(0.2)
+
+                # close hands
+                self.johnny5Serial.write('#7 P1700 T3000\r') # left
+                time.sleep(0.2)
+
+                # Pause to let the action complete, will block the locomotion cmd
+                # TODO: make this non-blocking
+                time.sleep(3)
+                a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, True))
+                a.daemon = True
+                a.start()
+            else:
+                a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, False))
+                a.daemon = True
+                a.start()
 
     def liftArm(self, actuatorVal, arm, initial=False):
         """

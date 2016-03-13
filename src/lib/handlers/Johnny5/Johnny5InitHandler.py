@@ -27,6 +27,17 @@ Some notes about Johnny 5:
 import sys
 import os
 import serial
+
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "src":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+sys.path.append(os.path.join(p,"src","lib"))
+
 import globalConfig
 
 # logger for ltlmop
@@ -107,4 +118,27 @@ class Johnny5InitHandler(handlerTemplates.InitHandler):
         other handlers
         """
         return {"Johnny5Serial":self.johnny5Serial,
-                "DefaultConfig":self.config}
+                "DefaultConfig":self.config,
+                'Johnny5_INIT_HANDLER': self}
+
+if __name__ == "__main__":
+    import Johnny5ActuatorHandler
+    import Johnny5SensorHandler
+    import time
+    a = Johnny5InitHandler(None, '/dev/ttyUSB0')
+    act = Johnny5ActuatorHandler.Johnny5ActuatorHandler(None, a.getSharedData())
+    sen = Johnny5SensorHandler.Johnny5SensorHandler(None, a.getSharedData())
+
+    print "pickup Box"
+    act.pickupBox("pickup", True, initial=False)
+    print sen.isBehaviorCompleted("pickup")
+    act.pickupBox("pickup", False, initial=False)
+    time.sleep(2.0)
+    print sen.isBehaviorCompleted("pickup")
+
+    print "deliver Box"
+    act.deliverBox("deliver", True, initial=False)
+    print sen.isBehaviorCompleted("deliver")
+    act.deliverBox("deliver", False, initial=False)
+    time.sleep(2.0)
+    print sen.isBehaviorCompleted("deliver")
