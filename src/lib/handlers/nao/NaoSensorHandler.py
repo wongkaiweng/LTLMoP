@@ -279,25 +279,28 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         def checkCompletion(behaviorName):
             running = False
             while True:
-                # return true when either actuator is true and completed. Stay true till actuator is false.
-                if self.naoInitHandler.behaviorStatus[behaviorName]:
-                    if self.behaviorProxy.isBehaviorRunning(behaviorName):
-                        # behavior started
-                        running = True
-                        #ltlmop_logger.debug('behavior started.')
+                if behaviorName in self.naoInitHandler.behaviorStatus.keys():
+                    # return true when either actuator is true and completed. Stay true till actuator is false.
+                    if self.naoInitHandler.behaviorStatus[behaviorName]:
+                        if self.behaviorProxy.isBehaviorRunning(behaviorName):
+                            # behavior started
+                            running = True
+                            #ltlmop_logger.debug('behavior started.')
 
-                    elif running and not self.behaviorProxy.isBehaviorRunning(behaviorName):
-                        # ran and then stopped. Action completed.
-                        running = False
-                        self.behaviorCompleted[behaviorName] = True
-                        #ltlmop_logger.debug('behavior completed.')
+                        elif running and not self.behaviorProxy.isBehaviorRunning(behaviorName):
+                            # ran and then stopped. Action completed.
+                            running = False
+                            self.behaviorCompleted[behaviorName] = True
+                            #ltlmop_logger.debug('behavior completed.')
 
-                    #ltlmop_logger.log(4,'behavior is true')
-                    #ltlmop_logger.log(2,self.behaviorProxy.isBehaviorRunning(behaviorName))
+                        #ltlmop_logger.log(4,'behavior is true')
+                        #ltlmop_logger.log(2,self.behaviorProxy.isBehaviorRunning(behaviorName))
+                    else:
+                        time.sleep(0.2)
+                        self.behaviorCompleted[behaviorName] = False
+                        #ltlmop_logger.debug('behavior completion ended.')
                 else:
-                    time.sleep(0.2)
-                    self.behaviorCompleted[behaviorName] = False
-                    #ltlmop_logger.debug('behavior completion ended.')
+                    ltlmop_logger.warning("Behavior:" + behaviorName + " is not ready for status retrievel.")
 
         if initial:
             if self.behaviorProxy is None:

@@ -194,11 +194,16 @@ class _tkRoot(threading.Thread):
 
 if __name__ == "__main__":
     a = DummyActuatorHandler(None, None)
-    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', False, initial=True)
+
+    #falseImage = '/home/catherine/Desktop/test.jpg'
+    falseImage ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_with_door_nao-01.png'
+    trueImage  ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_without_door_nao-01.png'
+
+    a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=True)
     time.sleep(2)
-    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', True, initial=False)
+    a.imageDisplay("updateBackground", falseImage, trueImage, True, initial=False)
     time.sleep(2)
-    a.imageDisplay("updateBackground", '/home/catherine/Desktop/hello.png', '/home/catherine/Desktop/abc.jpg', False, initial=False)
+    a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=False)
     time.sleep(2)
     a._stop()
 
