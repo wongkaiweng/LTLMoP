@@ -1,0 +1,242 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	1
+boundary	7
+boundary	11
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                509.0, 
+                108.0
+            ], 
+            [
+                660.0, 
+                108.0
+            ], 
+            [
+                812.0, 
+                108.0
+            ], 
+            [
+                812.0, 
+                0.0
+            ], 
+            [
+                660.0, 
+                0.0
+            ], 
+            [
+                509.0, 
+                0.0
+            ], 
+            [
+                509.0, 
+                84.0
+            ], 
+            [
+                375.0, 
+                84.0
+            ], 
+            [
+                154.0, 
+                84.0
+            ], 
+            [
+                0.0, 
+                84.0
+            ], 
+            [
+                0.0, 
+                272.0
+            ], 
+            [
+                154.0, 
+                272.0
+            ], 
+            [
+                375.0, 
+                272.0
+            ], 
+            [
+                509.0, 
+                272.0
+            ]
+        ], 
+        "position": [
+            33.0, 
+            97.0
+        ], 
+        "type": "poly", 
+        "size": [
+            812.0, 
+            272.0
+        ]
+    }, 
+    {
+        "name": "cookingArea", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            693.0, 
+            97.0
+        ], 
+        "type": "rect", 
+        "size": [
+            152.0, 
+            108.0
+        ]
+    }, 
+    {
+        "name": "preparationArea", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                84.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                151.0, 
+                0.0
+            ], 
+            [
+                151.0, 
+                108.0
+            ], 
+            [
+                0.0, 
+                108.0
+            ]
+        ], 
+        "position": [
+            542.0, 
+            97.0
+        ], 
+        "type": "poly", 
+        "size": [
+            151.0, 
+            108.0
+        ]
+    }, 
+    {
+        "name": "storage", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                134.0, 
+                0.0
+            ], 
+            [
+                134.0, 
+                24.0
+            ], 
+            [
+                134.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                188.0
+            ]
+        ], 
+        "position": [
+            408.0, 
+            181.0
+        ], 
+        "type": "poly", 
+        "size": [
+            134.0, 
+            188.0
+        ]
+    }, 
+    {
+        "name": "road", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            187.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            221.0, 
+            188.0
+        ]
+    }, 
+    {
+        "name": "company", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            33.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            154.0, 
+            188.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	cookingArea	845.0	97.0	693.0	97.0	845.0	97.0	845.0	205.0	693.0	205.0	845.0	205.0
+boundary	preparationArea	693.0	97.0	542.0	97.0	693.0	205.0	542.0	205.0	542.0	97.0	542.0	181.0
+boundary	storage	542.0	369.0	542.0	205.0	408.0	369.0	542.0	369.0	408.0	181.0	542.0	181.0
+boundary	road	408.0	369.0	187.0	369.0	408.0	181.0	187.0	181.0
+boundary	company	33.0	181.0	33.0	369.0	187.0	369.0	33.0	369.0	33.0	181.0	187.0	181.0
+cookingArea	preparationArea	693.0	97.0	693.0	205.0
+preparationArea	storage	542.0	181.0	542.0	205.0
+storage	road	408.0	369.0	408.0	181.0
+road	company	187.0	369.0	187.0	181.0
+
