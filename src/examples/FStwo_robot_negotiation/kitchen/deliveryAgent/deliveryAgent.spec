@@ -26,13 +26,13 @@ decompose: True
 interactive: True
 
 CurrentConfigName:
-basicSim
+Johnny5
 
 Customs: # List of custom propositions
 orderDelivery
 
 RegionFile: # Relative path of region description file
-../workspace.regions
+../workspace_new.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 order, 1

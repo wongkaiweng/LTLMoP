@@ -25,13 +25,13 @@ decompose: True
 interactive: True
 
 CurrentConfigName:
-basicSim
+nao_basicSim
 
 Customs: # List of custom propositions
 receivedIngredient
 
 RegionFile: # Relative path of region description file
-../workspace.regions
+../workspace_new.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 ingredientArrived, 1
