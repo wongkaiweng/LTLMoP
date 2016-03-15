@@ -61,10 +61,12 @@ if __name__ == "__main__":
     import sys
 
     #init = NaoInitHandler(None,"127.0.0.1", 36566)
-    init = NaoInitHandler(None, "maecy.local", 9559)
+    init = NaoInitHandler(None, "maeby.local", 9559)
+    #init = NaoInitHandler(None, "maeby.local", 9559)
     act = NaoActuatorHandler.NaoActuatorHandler(None, init.getSharedData())
     sen = NaoSensorHandler.NaoSensorHandler(None, init.getSharedData())
-    behaviorName = 'cook_good-4fa848/behavior_1'
+    behaviorName = 'passitem-763a4f/behavior_1'
+    #behaviorName = 'cook_good-4fa848/behavior_1'
     act.runBehavior(behaviorName, "", 0, initial=True)
     sen.isBehaviorCompleted(behaviorName, initial=True)
     print act.behaviorProxy.getInstalledBehaviors()

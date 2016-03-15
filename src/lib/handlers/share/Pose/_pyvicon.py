@@ -1,5 +1,18 @@
-import sys, math, time
+import sys, math, time, os
 import socket, struct, threading
+
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "share":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 
 #########################################################################
 ## Simple module for retrieving data from a Vicon motion capture system
@@ -155,13 +168,13 @@ class ViconStreamer:
 if __name__ == "__main__":
 
     s = ViconStreamer()
-    s.connect("10.0.0.102", 800)
+    s.connect("128.84.189.209", 800)
 
     if len(sys.argv) > 1 and sys.argv[1] in ["-l", "--list"]:
         s.printStreamInfo()
         sys.exit(0)
 
-    streams = s.selectStreams(["Time", "Nao:Nao <t-X>", "Nao:Nao <t-Y>", "Nao:Nao <a-Z>"])
+    streams = s.selectStreams(["Time", "Johnny5:Johnny5 <t-X>", "Johnny5:Johnny5 <t-Y>", "Johnny5:Johnny5 <a-Z>"])
     
     s.startStreams(verbose=False)
 

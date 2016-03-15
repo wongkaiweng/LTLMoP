@@ -8,6 +8,7 @@ import os
 import time
 import globalConfig
 import threading
+import socket
 
 # logger for ltlmop
 import logging
@@ -153,6 +154,17 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
                 a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, True))
                 a.daemon = True
                 a.start()
+                # broadcast msg that ingredient is delivered/received
+                def _broadcastBool(value):
+                    """
+                    send either True or False.
+                    """
+                    s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                    s.sendto(str(value),('255.255.255.255',12345))
+
+                _broadcastBool(True)
+
             else:
                 a = threading.Thread(target=self._delayCompletionThread, args=(1.0, actuatorName, False))
                 a.daemon = True
@@ -174,7 +186,8 @@ class Johnny5ActuatorHandler(handlerTemplates.ActuatorHandler):
                 time.sleep(2.5)
 
                 # lift left arm
-                self.johnny5Serial.write('#3 P2200 T1000\r')
+                #self.johnny5Serial.write('#3 P2200 T1000\r')
+                self.johnny5Serial.write('#3 P3500 T1000\r')
                 time.sleep(0.2)
                 self.johnny5Serial.write('#5 P2200 T1000\r')
                 time.sleep(0.2)

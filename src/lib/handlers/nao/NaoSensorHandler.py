@@ -7,7 +7,7 @@ naoSensors.py - Sensor handler for the Aldebaran Nao
 # logger for ltlmop
 import logging
 ltlmop_logger = logging.getLogger('ltlmop_logger')
-import threading
+import threading, socket
 import time
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -291,6 +291,19 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
                             # ran and then stopped. Action completed.
                             running = False
                             self.behaviorCompleted[behaviorName] = True
+
+                            # broadcast msg that ingredient is delivered/received
+                            def _broadcastBool(value):
+                                """
+                                send either True or False.
+                                """
+                                s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                                s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                                s.sendto(str(value),('255.255.255.255',12345))
+
+                            if behaviorName == "passitem-763a4f/behavior_1":
+                                ltlmop_logger.log(4, "ingredientReceived is not set to False.")
+                                _broadcastBool(False)
                             #ltlmop_logger.debug('behavior completed.')
 
                         #ltlmop_logger.log(4,'behavior is true')

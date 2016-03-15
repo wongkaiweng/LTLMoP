@@ -130,13 +130,15 @@ if __name__ == "__main__":
     sen = Johnny5SensorHandler.Johnny5SensorHandler(None, a.getSharedData())
 
     print "pickup Box"
+    act.pickupBox("pickup", True, initial=True)
     act.pickupBox("pickup", True, initial=False)
+    time.sleep(2.0)
     print sen.isBehaviorCompleted("pickup")
     act.pickupBox("pickup", False, initial=False)
-    time.sleep(2.0)
     print sen.isBehaviorCompleted("pickup")
 
     print "deliver Box"
+    act.deliverBox("deliver", True, initial=True)
     act.deliverBox("deliver", True, initial=False)
     print sen.isBehaviorCompleted("deliver")
     act.deliverBox("deliver", False, initial=False)

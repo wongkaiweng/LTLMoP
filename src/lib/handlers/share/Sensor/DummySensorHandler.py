@@ -10,8 +10,17 @@ Displays a silly little window for faking sensor values by clicking on buttons.
 import threading, subprocess, os, time, socket
 import numpy, math
 import sys
-
+import ast, select
 # ---- two_robot_negotiation  --- #
+# Climb the tree to find out where we are
+p = os.path.abspath(__file__)
+t = ""
+while t != "src":
+    (p, t) = os.path.split(p)
+    if p == "":
+        print "I have no idea where I am; this is ridiculous"
+        sys.exit(1)
+sys.path.append(os.path.join(p,"src","lib"))
 
 # logger for ltlmop
 import logging
@@ -37,7 +46,7 @@ import _pyvicon
 
 import lib.handlers.handlerTemplates as handlerTemplates
 
-from __is_inside import *
+from __is_inside import is_inside
 
 class DummySensorHandler(handlerTemplates.SensorHandler):
     def __init__(self, executor, shared_data):
@@ -48,7 +57,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         # Since we don't want to have to poll the subwindow for each request,
         # we need a data structure to cache sensor states:
         self.sensorValue = {}
-        self.proj = executor.proj
+        if executor:
+            self.proj = executor.proj
         self.executor = executor
         self.sensorListenInitialized = False
         self._running = True
@@ -57,7 +67,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         
         # --- two_robot_negotiation --- #
         self.robClient = None # fetch negMonitor from executor 
-        ltlmop_logger.debug(executor.robClient)
+        if executor:
+            ltlmop_logger.debug(executor.robClient)
         self.robotRegionStatus  = {} # for keeping track of robot locations
         self.viconServer = {} # dict of vicon poses
         self.prev_pose = [] # storing prev pose
@@ -71,6 +82,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         # ----------------------------- #
 
         self.dummyActuatorHandler = None
+        self.sock = None
+        self.boolValue = None
 
     def _stop(self):
         if self.p_sensorHandler is not None:
@@ -416,3 +429,28 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             #if self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]:
             #    ltlmop_logger.log(6, self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName])
             return self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]
+
+    def checkBroadcast(self, initialValue, initial=False):
+        """
+        This function checks broadcasting msg.
+        initialValue (bool): initial expected bool. (default=False)
+        """
+        if initial:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind(('',12345))
+            self.sock.setblocking(0)
+            self.boolValue = False
+        else:
+            #print hasattr(self.sock, 'select')
+            ready = select.select([self.sock], [], [],0)
+            if ready[0]:
+                self.boolValue = ast.literal_eval(self.sock.recv(4096))
+                ltlmop_logger.debug("valueChanged:" + str(self.boolValue))
+            return self.boolValue
+
+if __name__ == "__main__":
+    sen = DummySensorHandler(None, None)
+    sen.checkBroadcast(False, initial=True)
+    while True:
+        sen.checkBroadcast(True, initial=False)

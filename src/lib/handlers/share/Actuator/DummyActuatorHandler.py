@@ -153,6 +153,11 @@ class _tkImageWindow(object):
         self.panel = tk.Label(self.top, image=img)
         self.panel.pack(side = "bottom", fill = "both", expand = "yes")
         ltlmop_logger.debug('we have initialized')
+
+        # for fullscreen mode
+        self.state= False
+        self.top.bind("<F11>", self.toggle_fullscreen)
+        self.top.bind("<Escape>", self.end_fullscreen)
         # update every 0.5s
         if not self.quit:
             self.top.after(500, self.update_image)
@@ -162,7 +167,7 @@ class _tkImageWindow(object):
 
     def update_image(self):
         # update based on actuatorVal
-        ltlmop_logger.log(2, 'we did update image')
+        #ltlmop_logger.log(2, 'we did update image')
         img = ImageTk.PhotoImage(Image.open(self.trueImage if self.actuatorVal else self.falseImage))
         self.panel.configure(image=img)
         self.panel.image = img
@@ -171,6 +176,16 @@ class _tkImageWindow(object):
         self.imageDisplayCompletionStatusDict[self.actuatorName] = True if self.actuatorVal else False
         if not self.quit:
             self.top.after(500, self.update_image)
+
+    def toggle_fullscreen(self, event=None):
+        self.state = not self.state  # Just toggling the boolean
+        self.top.attributes("-fullscreen", self.state)
+        return "break"
+
+    def end_fullscreen(self, event=None):
+        self.state = False
+        self.top.attributes("-fullscreen", False)
+        return "break"
 
 class _tkRoot(threading.Thread):
     def __init__(self):
