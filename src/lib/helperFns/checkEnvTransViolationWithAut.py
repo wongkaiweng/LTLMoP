@@ -254,14 +254,24 @@ if __name__ == '__main__':
                         if value is None:
                             currentStateObject.setPropValue(prop_name, False)
 
-                    # check violation
-                    logging.info('-------------------------')
-                    logging.info('Printing violations of State ' + str(stateNo))
-                    logging.info('State props:' + str([k for k, v in currentStateObject.getAll(expand_domains=True).iteritems() if v]))
-                    logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
-                    logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
-                    logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, currentStateObject, LTLMoP = False)))
-                    logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
+                    # now check with the successors
+                    for successorStateObject, validTransition in strat.transitions[stateObject].iteritems():
+                        if validTransition:
+                            # set prop to true if value is not given (In the case of counterstrategy)
+                            for prop_name, value in successorStateObject.getAll(expand_domains=True).iteritems():
+                                if value is None:
+                                    successorStateObject.setPropValue(prop_name, False)
+
+                        # check violation
+                        logging.info('-------------------------')
+                        logging.info('Printing violations of State ' + str(stateNo) + ' and transition to State ' + str(successorStateObject.state_id))
+                        logging.info('State props:' + str([k for k, v in currentStateObject.getAll(expand_domains=True).iteritems() if v]))
+                        logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, successorStateObject, LTLMoP = False)))
+                        logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
+                        logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, successorStateObject, LTLMoP = False)))
+                        logging.info("Specific line in .spec file:" + str(LTLViolationCheckSysTrans.violated_specStr))
+
+                    # old for centralized code
                     if 'centralizedSpec' in fileName:
                         for idx, checkObject in enumerate(LTLViolationCheckSysGoalslist):
                             startTime = time.time()
