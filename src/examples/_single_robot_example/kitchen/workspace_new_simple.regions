@@ -1,0 +1,156 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                509.0, 
+                188.0
+            ], 
+            [
+                375.0, 
+                188.0
+            ], 
+            [
+                154.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                154.0, 
+                0.0
+            ], 
+            [
+                375.0, 
+                0.0
+            ], 
+            [
+                509.0, 
+                0.0
+            ], 
+            [
+                509.0, 
+                24.0
+            ]
+        ], 
+        "position": [
+            33.0, 
+            181.0
+        ], 
+        "type": "poly", 
+        "size": [
+            509.0, 
+            188.0
+        ]
+    }, 
+    {
+        "name": "storage", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                134.0, 
+                0.0
+            ], 
+            [
+                134.0, 
+                24.0
+            ], 
+            [
+                134.0, 
+                188.0
+            ], 
+            [
+                0.0, 
+                188.0
+            ]
+        ], 
+        "position": [
+            408.0, 
+            181.0
+        ], 
+        "type": "poly", 
+        "size": [
+            134.0, 
+            188.0
+        ]
+    }, 
+    {
+        "name": "road", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            187.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            221.0, 
+            188.0
+        ]
+    }, 
+    {
+        "name": "company", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            33.0, 
+            181.0
+        ], 
+        "type": "rect", 
+        "size": [
+            154.0, 
+            188.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	storage	542.0	369.0	542.0	205.0	542.0	205.0	542.0	181.0	408.0	181.0	542.0	181.0	408.0	369.0	542.0	369.0
+boundary	road	408.0	369.0	187.0	369.0	408.0	181.0	187.0	181.0
+boundary	company	33.0	181.0	33.0	369.0	33.0	181.0	187.0	181.0	187.0	369.0	33.0	369.0
+storage	road	408.0	369.0	408.0	181.0
+road	company	187.0	369.0	187.0	181.0
+

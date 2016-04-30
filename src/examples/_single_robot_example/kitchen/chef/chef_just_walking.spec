@@ -5,8 +5,7 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
-passIngredient, 1
-openDoor, 1
+cooking, 1
 
 CompileOptions:
 neighbour_robot: False
@@ -29,18 +28,15 @@ CurrentConfigName:
 nao_basicSim
 
 Customs: # List of custom propositions
+receivedIngredient
 
 RegionFile: # Relative path of region description file
-../workspace.regions
+../../../../../../../../../home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/workspace_new.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 ingredientArrived, 1
-chef_receivedIngredient, 0
-chef_cooking, 0
-deliveryAgent_road, 1
-deliveryAgent_storage, 1
-deliveryAgent_orderDelivery, 0
-deliveryAgent_company, 0
+assistant_passIngredient, 1
+assistant_ActpassIngredient, 1
 
 
 ======== SPECIFICATION ========
@@ -58,27 +54,8 @@ cookingArea = p4
 road = p2
 
 Spec: # Specification in structured English
-Robot starts in preparationArea
+Robot starts in company
 
-if you are activating passIngredient then stay there
-if you were not sensing ingredientArrived and preparationArea then do not  passIngredient
-
-## added by chef in NEGO
-if you were sensing ingredientArrived then do passIngredient
-## --- goals ---- #
-#infinitely often not( ingredientArrived or chef_receivedIngredient ) or chef_cooking
-
-## added by deliveryAgent by NEGO
-if you are sensing deliveryAgent_road or deliveryAgent_storage then do openDoor
-## --- goals --- #
-#infinitely often deliveryAgent_orderDelivery or deliveryAgent_company
-#infinitely often not deliveryAgent_orderDelivery or deliveryAgent_storage
-
-
-# ---- obselete --- #
-#if you are sensing ingredientArrived then visit preparationArea
-#if you are not sensing ingredientArrived then visit storage
-
-## you can only pass ingredient in preparationArea
-#if you have finished cookingArea or storage or road or company then do not passIngredient
+visit company
+visit storage
 
