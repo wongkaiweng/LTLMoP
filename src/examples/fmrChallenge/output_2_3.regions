@@ -1,0 +1,907 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+hole0
+hole1
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "segment_0_left_intersect", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            40.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "segment_0_right_intersect", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            340.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            120.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "segment_0_top_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            100.0, 
+            100.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_0_bottom_lane", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            100.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_1_right_intersect", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            40.0, 
+            400.0
+        ], 
+        "type": "poly", 
+        "size": [
+            120.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_1_top_lane", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                240.0
+            ], 
+            [
+                60.0, 
+                240.0
+            ]
+        ], 
+        "position": [
+            40.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            240.0
+        ]
+    }, 
+    {
+        "name": "segment_1_bottom_lane", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                240.0
+            ], 
+            [
+                60.0, 
+                240.0
+            ]
+        ], 
+        "position": [
+            100.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            240.0
+        ]
+    }, 
+    {
+        "name": "segment_2_right_intersect", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            700.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "segment_2_top_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            460.0, 
+            100.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_2_bottom_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            460.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_3_right_intersect", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                0.0
+            ], 
+            [
+                120.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            340.0, 
+            340.0
+        ], 
+        "type": "poly", 
+        "size": [
+            120.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "segment_3_top_lane", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ]
+        ], 
+        "position": [
+            340.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "segment_3_bottom_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ]
+        ], 
+        "position": [
+            400.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "segment_4_top_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                180.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                180.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            160.0, 
+            400.0
+        ], 
+        "type": "poly", 
+        "size": [
+            180.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_4_bottom_lane", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                180.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                180.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            160.0, 
+            340.0
+        ], 
+        "type": "poly", 
+        "size": [
+            180.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_5_right_intersect", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                60.0, 
+                120.0
+            ]
+        ], 
+        "position": [
+            700.0, 
+            340.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "segment_5_top_lane", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            460.0, 
+            400.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_5_bottom_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                60.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                0.0
+            ], 
+            [
+                240.0, 
+                60.0
+            ]
+        ], 
+        "position": [
+            460.0, 
+            340.0
+        ], 
+        "type": "poly", 
+        "size": [
+            240.0, 
+            60.0
+        ]
+    }, 
+    {
+        "name": "segment_6_top_lane", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ], 
+            [
+                60.0, 
+                180.0
+            ]
+        ], 
+        "position": [
+            640.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "segment_6_bottom_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                60.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ], 
+            [
+                60.0, 
+                180.0
+            ]
+        ], 
+        "position": [
+            700.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            60.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "hole0", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                180.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                180.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            460.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            180.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "hole1", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                180.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                180.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                180.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            160.0, 
+            160.0
+        ], 
+        "type": "poly", 
+        "size": [
+            180.0, 
+            180.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            0, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                720.0, 
+                300.0
+            ], 
+            [
+                720.0, 
+                120.0
+            ], 
+            [
+                720.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                120.0
+            ], 
+            [
+                0.0, 
+                360.0
+            ], 
+            [
+                0.0, 
+                420.0
+            ], 
+            [
+                720.0, 
+                420.0
+            ]
+        ], 
+        "position": [
+            40.0, 
+            40.0
+        ], 
+        "type": "poly", 
+        "size": [
+            720.0, 
+            420.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+segment_0_left_intersect	segment_1_top_lane	40.0	160.0	100.0	160.0
+segment_0_left_intersect	boundary	40.0	160.0	40.0	40.0
+segment_0_top_lane	segment_0_bottom_lane	340.0	100.0	100.0	100.0
+segment_1_right_intersect	segment_4_top_lane	160.0	400.0	160.0	460.0
+segment_1_right_intersect	boundary	40.0	400.0	40.0	460.0
+segment_1_top_lane	segment_1_bottom_lane	100.0	160.0	100.0	400.0
+segment_1_top_lane	boundary	40.0	160.0	40.0	400.0
+segment_2_right_intersect	segment_6_bottom_lane	760.0	160.0	700.0	160.0
+segment_2_right_intersect	boundary	760.0	40.0	760.0	160.0
+segment_2_top_lane	segment_2_bottom_lane	460.0	100.0	700.0	100.0
+segment_3_top_lane	segment_3_bottom_lane	400.0	160.0	400.0	340.0
+segment_3_top_lane	hole1	340.0	340.0	340.0	160.0
+segment_3_bottom_lane	hole0	460.0	340.0	460.0	160.0
+segment_4_top_lane	segment_4_bottom_lane	160.0	400.0	340.0	400.0
+segment_4_bottom_lane	hole1	340.0	340.0	160.0	340.0
+segment_5_right_intersect	segment_6_bottom_lane	700.0	340.0	760.0	340.0
+segment_5_right_intersect	boundary	760.0	460.0	760.0	340.0
+segment_5_top_lane	segment_5_bottom_lane	700.0	400.0	460.0	400.0
+segment_6_top_lane	segment_6_bottom_lane	700.0	340.0	700.0	160.0
+segment_6_top_lane	hole0	640.0	160.0	640.0	340.0
+segment_6_bottom_lane	boundary	760.0	160.0	760.0	340.0
+
