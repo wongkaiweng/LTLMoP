@@ -82,8 +82,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         # ----------------------------- #
 
         self.dummyActuatorHandler = None
-        self.sock = None
-        self.boolValue = None
+        self.sock = {}
+        self.boolValue = {}
 
     def _stop(self):
         if self.p_sensorHandler is not None:
@@ -430,27 +430,28 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             #    ltlmop_logger.log(6, self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName])
             return self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]
 
-    def checkBroadcast(self, initialValue, initial=False):
+    def checkBroadcast(self, port, initialValue, initial=False):
         """
         This function checks broadcasting msg.
+        port (int): port number (default=12345)
         initialValue (bool): initial expected bool. (default=False)
         """
         if initial:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind(('',12345))
-            self.sock.setblocking(0)
-            self.boolValue = False
+            self.sock[port] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock[port].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock[port].bind(('', port))
+            self.sock[port].setblocking(0)
+            self.boolValue[port] = False
         else:
             #print hasattr(self.sock, 'select')
-            ready = select.select([self.sock], [], [],0)
+            ready = select.select([self.sock[port]], [], [],0)
             if ready[0]:
-                self.boolValue = ast.literal_eval(self.sock.recv(4096))
-                ltlmop_logger.debug("valueChanged:" + str(self.boolValue))
-            return self.boolValue
+                self.boolValue[port] = ast.literal_eval(self.sock[port].recv(4096))
+                ltlmop_logger.debug("valueChanged:" + str(self.boolValue[port]))
+            return self.boolValue[port]
 
 if __name__ == "__main__":
     sen = DummySensorHandler(None, None)
-    sen.checkBroadcast(False, initial=True)
+    sen.checkBroadcast(12345, False, initial=True)
     while True:
-        sen.checkBroadcast(True, initial=False)
+        sen.checkBroadcast(12345, True, initial=False)

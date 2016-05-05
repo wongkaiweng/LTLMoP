@@ -240,7 +240,7 @@ class BaxterActuatorHandler(handlerTemplates.ActuatorHandler):
         for j in self.jtas:
             j.clean_shutdown()
         #ltlmop_logger.info("Running. Ctrl-c to quit")
-        #rospy.spin()
+        rospy.spin()
 
     def _pause(self):
         """
