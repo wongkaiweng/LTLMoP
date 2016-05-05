@@ -407,7 +407,7 @@ class HandlerSubsystem:
 
         return pose_handler_instance.getPose(cached)
 
-    def getDefaultPropMapping(self, sensor_prop_list, actuator_prop_list):
+    def getDefaultPropMapping(self, sensor_prop_list, actuator_prop_list, regions=[]):
         """
         Return the default proposition mapping based on the propositions given
         """
@@ -418,10 +418,18 @@ class HandlerSubsystem:
 
         prop_mapping = {}
         for p in sensor_prop_list:
-            m = deepcopy(self.handler_configs["share"][ht.SensorHandler][0].getMethodByName("buttonPress"))
-            para = m.getParaByName("button_name")
-            para.setValue(p)
-            prop_mapping[p] = self.method2String(m, "share")
+
+            # do sensor region Prop differently
+            if regions and p in [x.name+'_rc' for x in regions]:
+                m = deepcopy(self.handler_configs["share"][ht.SensorHandler][0].getMethodByName("inRegion"))
+                para = m.getParaByName("regionName")
+                para.setValue(p.replace('_rc',''))
+                prop_mapping[p] = self.method2String(m, "share")
+            else:
+                m = deepcopy(self.handler_configs["share"][ht.SensorHandler][0].getMethodByName("buttonPress"))
+                para = m.getParaByName("button_name")
+                para.setValue(p)
+                prop_mapping[p] = self.method2String(m, "share")
 
         for p in actuator_prop_list:
             m = deepcopy(self.handler_configs["share"][ht.ActuatorHandler][0].getMethodByName("setActuator"))

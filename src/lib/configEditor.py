@@ -883,7 +883,7 @@ class simSetupDialog(wx.Dialog):
             return
 
         # clean up prop_mapping of the current executing config
-        default_prop_mapping = self.hsub.getDefaultPropMapping(self.proj.all_sensors, self.proj.all_actuators)
+        default_prop_mapping = self.hsub.getDefaultPropMapping(self.proj.all_sensors, self.proj.all_actuators, regions=self.proj.rfi.regions)
         self.hsub.executing_config.normalizePropMapping(default_prop_mapping)
 
         # Save the config files
@@ -1279,10 +1279,19 @@ class propMappingDialog(wx.Dialog):
         # Set defaults as necessary
         for p in self.proj.all_sensors:
             if p not in mapping or self.mapping[p].strip() == "":
-                m = deepcopy(self.hsub.handler_configs["share"][ht.SensorHandler][0].getMethodByName("buttonPress"))
-                para = m.getParaByName("button_name")
-                para.setValue(p)
-                self.mapping[p] = self.hsub.method2String(m, "share")
+
+                # do sensor region Prop differently
+                if p in [x.name+'_rc' for x in self.proj.rfi.regions]:
+                    m = deepcopy(self.hsub.handler_configs["share"][ht.SensorHandler][0].getMethodByName("inRegion"))
+                    para = m.getParaByName("regionName")
+                    para.setValue(p.replace('_rc',''))
+                    self.mapping[p] = self.hsub.method2String(m, "share")
+                else:
+                    m = deepcopy(self.hsub.handler_configs["share"][ht.SensorHandler][0].getMethodByName("buttonPress"))
+                    para = m.getParaByName("button_name")
+                    para.setValue(p)
+                    self.mapping[p] = self.hsub.method2String(m, "share")
+
 
         for p in self.proj.all_actuators:
             if p not in mapping or self.mapping[p].strip() == "":
