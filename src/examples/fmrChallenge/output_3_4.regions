@@ -21,7 +21,7 @@ Regions: # Stored as JSON string
         "name": "segment_0_left_intersect", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -57,8 +57,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_0_right_intersect", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -96,7 +96,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -133,7 +133,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -168,9 +168,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_1_right_intersect", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -206,8 +206,8 @@ Regions: # Stored as JSON string
         "name": "segment_1_top_lane", 
         "color": [
             0, 
-            0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -243,8 +243,8 @@ Regions: # Stored as JSON string
         "name": "segment_1_bottom_lane", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -281,7 +281,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            0
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -317,7 +317,7 @@ Regions: # Stored as JSON string
         "name": "segment_2_top_lane", 
         "color": [
             255, 
-            0, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -353,7 +353,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_2_bottom_lane", 
         "color": [
-            0, 
+            255, 
             0, 
             255
         ], 
@@ -390,9 +390,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_3_right_intersect", 
         "color": [
-            255, 
             0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -464,9 +464,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_3_bottom_lane", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -612,7 +612,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_5_top_lane", 
         "color": [
-            255, 
+            0, 
             255, 
             0
         ], 
@@ -651,7 +651,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -686,8 +686,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_6_right_intersect", 
         "color": [
+            0, 
             255, 
-            128, 
             0
         ], 
         "holeList": [], 
@@ -723,7 +723,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_6_top_lane", 
         "color": [
-            255, 
+            0, 
             0, 
             255
         ], 
@@ -760,7 +760,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_6_bottom_lane", 
         "color": [
-            255, 
+            0, 
             255, 
             0
         ], 
@@ -798,7 +798,7 @@ Regions: # Stored as JSON string
         "name": "segment_7_right_intersect", 
         "color": [
             255, 
-            255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -836,7 +836,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -909,7 +909,7 @@ Regions: # Stored as JSON string
         "name": "segment_8_right_intersect", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -946,7 +946,7 @@ Regions: # Stored as JSON string
         "name": "segment_8_top_lane", 
         "color": [
             255, 
-            0, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -1019,8 +1019,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_9_top_lane", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1093,8 +1093,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_10_right_intersect", 
         "color": [
+            0, 
             255, 
-            128, 
             0
         ], 
         "holeList": [], 
@@ -1167,8 +1167,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_10_bottom_lane", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1205,7 +1205,7 @@ Regions: # Stored as JSON string
         "name": "segment_11_right_intersect", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -1242,7 +1242,7 @@ Regions: # Stored as JSON string
         "name": "segment_11_top_lane", 
         "color": [
             255, 
-            0, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -1279,7 +1279,7 @@ Regions: # Stored as JSON string
         "name": "segment_11_bottom_lane", 
         "color": [
             255, 
-            255, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -1315,9 +1315,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_12_top_lane", 
         "color": [
-            255, 
-            255, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1354,7 +1354,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1389,9 +1389,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_13_top_lane", 
         "color": [
+            255, 
             0, 
-            0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1427,8 +1427,8 @@ Regions: # Stored as JSON string
         "name": "segment_13_bottom_lane", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1464,8 +1464,8 @@ Regions: # Stored as JSON string
         "name": "segment_14_right_intersect", 
         "color": [
             255, 
-            0, 
-            255
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1574,7 +1574,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_15_top_lane", 
         "color": [
-            0, 
+            255, 
             255, 
             0
         ], 
@@ -1611,8 +1611,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_15_bottom_lane", 
         "color": [
+            0, 
             255, 
-            128, 
             0
         ], 
         "holeList": [], 
@@ -1648,9 +1648,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_16_top_lane", 
         "color": [
-            255, 
-            255, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1686,7 +1686,7 @@ Regions: # Stored as JSON string
         "name": "segment_16_bottom_lane", 
         "color": [
             255, 
-            0, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -1723,7 +1723,7 @@ Regions: # Stored as JSON string
         "name": "hole0", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -1796,9 +1796,9 @@ Regions: # Stored as JSON string
     {
         "name": "hole2", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1833,9 +1833,9 @@ Regions: # Stored as JSON string
     {
         "name": "hole3", 
         "color": [
-            0, 
             255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1944,7 +1944,7 @@ Regions: # Stored as JSON string
     {
         "name": "boundary", 
         "color": [
-            255, 
+            0, 
             0, 
             255
         ], 
@@ -2013,55 +2013,112 @@ Regions: # Stored as JSON string
 ]
 
 Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
-segment_0_left_intersect	segment_1_top_lane	40.0	160.0	100.0	160.0
-segment_0_left_intersect	boundary	40.0	160.0	40.0	40.0
-segment_0_top_lane	segment_0_bottom_lane	340.0	100.0	100.0	100.0
-segment_1_right_intersect	boundary	40.0	340.0	40.0	460.0
-segment_1_top_lane	segment_1_bottom_lane	100.0	340.0	100.0	160.0
-segment_1_top_lane	boundary	40.0	160.0	40.0	340.0
-segment_1_bottom_lane	hole5	160.0	160.0	160.0	340.0
-segment_2_top_lane	segment_2_bottom_lane	160.0	400.0	340.0	400.0
-segment_2_top_lane	hole2	340.0	460.0	160.0	460.0
-segment_2_bottom_lane	hole5	340.0	340.0	160.0	340.0
-segment_3_right_intersect	segment_12_top_lane	160.0	760.0	160.0	700.0
-segment_3_right_intersect	boundary	40.0	760.0	40.0	700.0
-segment_3_top_lane	segment_3_bottom_lane	100.0	700.0	100.0	460.0
-segment_3_top_lane	boundary	40.0	460.0	40.0	700.0
-segment_4_top_lane	segment_4_bottom_lane	460.0	100.0	640.0	100.0
-segment_4_top_lane	hole4	640.0	160.0	460.0	160.0
-segment_5_top_lane	segment_5_bottom_lane	400.0	160.0	400.0	340.0
-segment_5_top_lane	hole5	340.0	340.0	340.0	160.0
-segment_5_bottom_lane	hole4	460.0	340.0	460.0	160.0
-segment_6_top_lane	segment_6_bottom_lane	640.0	400.0	460.0	400.0
-segment_6_top_lane	hole1	460.0	460.0	640.0	460.0
-segment_6_bottom_lane	hole4	460.0	340.0	640.0	340.0
-segment_7_top_lane	segment_7_bottom_lane	400.0	640.0	400.0	460.0
-segment_7_top_lane	hole2	340.0	460.0	340.0	640.0
-segment_7_bottom_lane	hole1	460.0	460.0	460.0	640.0
-segment_8_right_intersect	segment_15_bottom_lane	1000.0	160.0	1060.0	160.0
-segment_8_right_intersect	boundary	1060.0	160.0	1060.0	40.0
-segment_8_top_lane	segment_8_bottom_lane	1000.0	100.0	760.0	100.0
-segment_9_top_lane	segment_9_bottom_lane	700.0	340.0	700.0	160.0
-segment_9_top_lane	hole4	640.0	160.0	640.0	340.0
-segment_9_bottom_lane	hole3	760.0	160.0	760.0	340.0
-segment_10_right_intersect	boundary	1060.0	340.0	1060.0	460.0
-segment_10_top_lane	segment_10_bottom_lane	760.0	400.0	940.0	400.0
-segment_10_top_lane	hole0	940.0	460.0	760.0	460.0
-segment_10_bottom_lane	hole3	940.0	340.0	760.0	340.0
-segment_11_top_lane	segment_11_bottom_lane	700.0	460.0	700.0	640.0
-segment_11_top_lane	hole1	640.0	640.0	640.0	460.0
-segment_11_bottom_lane	hole0	760.0	640.0	760.0	460.0
-segment_12_top_lane	segment_12_bottom_lane	340.0	700.0	160.0	700.0
-segment_12_bottom_lane	hole2	160.0	640.0	340.0	640.0
-segment_13_top_lane	segment_13_bottom_lane	460.0	700.0	640.0	700.0
-segment_13_bottom_lane	hole1	640.0	640.0	460.0	640.0
-segment_14_right_intersect	segment_16_bottom_lane	1000.0	640.0	1060.0	640.0
-segment_14_right_intersect	boundary	1060.0	760.0	1060.0	640.0
-segment_14_top_lane	segment_14_bottom_lane	1000.0	700.0	760.0	700.0
-segment_15_top_lane	segment_15_bottom_lane	1000.0	160.0	1000.0	340.0
-segment_15_top_lane	hole3	940.0	340.0	940.0	160.0
-segment_15_bottom_lane	boundary	1060.0	340.0	1060.0	160.0
-segment_16_top_lane	segment_16_bottom_lane	1000.0	640.0	1000.0	460.0
-segment_16_top_lane	hole0	940.0	460.0	940.0	640.0
-segment_16_bottom_lane	boundary	1060.0	460.0	1060.0	640.0
+segment_0_left_intersect	segment_0_bottom_lane	100.0	100.0	100.0	40.0
+segment_0_left_intersect	segment_1_top_lane	40	160	100	160
+segment_0_left_intersect	boundary	40	160	40	40	40.0	40.0	100.0	40.0
+segment_0_right_intersect	segment_0_top_lane	340.0	100.0	340.0	160.0
+segment_0_right_intersect	segment_0_bottom_lane	340.0	100.0	340.0	40.0
+segment_0_right_intersect	segment_4_top_lane	460.0	100.0	460.0	160.0
+segment_0_right_intersect	segment_4_bottom_lane	460.0	100.0	460.0	40.0
+segment_0_right_intersect	segment_5_top_lane	400.0	160.0	340.0	160.0
+segment_0_right_intersect	segment_5_bottom_lane	400.0	160.0	460.0	160.0
+segment_0_right_intersect	boundary	460.0	40.0	340.0	40.0
+segment_0_top_lane	segment_1_bottom_lane	160.0	160.0	100.0	160.0
+segment_0_top_lane	hole5	160.0	160.0	340.0	160.0
+segment_0_bottom_lane	boundary	340.0	40.0	100.0	40.0
+segment_1_right_intersect	segment_1_top_lane	100.0	340.0	40.0	340.0
+segment_1_right_intersect	segment_1_bottom_lane	100.0	340.0	160.0	340.0
+segment_1_right_intersect	segment_2_top_lane	160.0	400.0	160.0	460.0
+segment_1_right_intersect	segment_2_bottom_lane	160.0	400.0	160.0	340.0
+segment_1_right_intersect	segment_3_top_lane	100.0	460.0	40.0	460.0
+segment_1_right_intersect	segment_3_bottom_lane	100.0	460.0	160.0	460.0
+segment_1_right_intersect	boundary	40	340	40	460
+segment_1_top_lane	boundary	40	160	40	340
+segment_1_bottom_lane	hole5	160	160	160	340
+segment_2_right_intersect	segment_2_top_lane	340.0	460.0	340.0	400.0
+segment_2_right_intersect	segment_2_bottom_lane	340.0	340.0	340.0	400.0
+segment_2_right_intersect	segment_5_top_lane	340.0	340.0	400.0	340.0
+segment_2_right_intersect	segment_5_bottom_lane	460.0	340.0	400.0	340.0
+segment_2_right_intersect	segment_6_top_lane	460.0	460.0	460.0	400.0
+segment_2_right_intersect	segment_6_bottom_lane	460.0	340.0	460.0	400.0
+segment_2_right_intersect	segment_7_top_lane	340.0	460.0	400.0	460.0
+segment_2_right_intersect	segment_7_bottom_lane	460.0	460.0	400.0	460.0
+segment_2_top_lane	hole2	340	460	160	460
+segment_2_bottom_lane	hole5	340	340	160	340
+segment_3_right_intersect	segment_3_top_lane	100.0	700.0	40.0	700.0
+segment_3_right_intersect	segment_12_top_lane	160	760	160	700
+segment_3_right_intersect	boundary	40	760	40	700	40.0	760.0	160.0	760.0
+segment_3_top_lane	boundary	40	460	40	700
+segment_3_bottom_lane	segment_12_bottom_lane	160.0	640.0	160.0	700.0
+segment_3_bottom_lane	hole2	160.0	640.0	160.0	460.0
+segment_4_right_intersect	segment_4_top_lane	640.0	160.0	640.0	100.0
+segment_4_right_intersect	segment_4_bottom_lane	640.0	40.0	640.0	100.0
+segment_4_right_intersect	segment_8_top_lane	760.0	160.0	760.0	100.0
+segment_4_right_intersect	segment_8_bottom_lane	760.0	40.0	760.0	100.0
+segment_4_right_intersect	segment_9_top_lane	640.0	160.0	700.0	160.0
+segment_4_right_intersect	segment_9_bottom_lane	760.0	160.0	700.0	160.0
+segment_4_right_intersect	boundary	760.0	40.0	640.0	40.0
+segment_4_top_lane	hole4	640	160	460	160
+segment_4_bottom_lane	boundary	640.0	40.0	460.0	40.0
+segment_5_top_lane	hole5	340	340	340	160
+segment_5_bottom_lane	hole4	460	340	460	160
+segment_6_right_intersect	segment_6_top_lane	640.0	400.0	640.0	460.0
+segment_6_right_intersect	segment_6_bottom_lane	640.0	400.0	640.0	340.0
+segment_6_right_intersect	segment_9_top_lane	700.0	340.0	640.0	340.0
+segment_6_right_intersect	segment_9_bottom_lane	700.0	340.0	760.0	340.0
+segment_6_right_intersect	segment_10_top_lane	760.0	400.0	760.0	460.0
+segment_6_right_intersect	segment_10_bottom_lane	760.0	400.0	760.0	340.0
+segment_6_right_intersect	segment_11_top_lane	700.0	460.0	640.0	460.0
+segment_6_right_intersect	segment_11_bottom_lane	700.0	460.0	760.0	460.0
+segment_6_top_lane	hole1	460	460	640	460
+segment_6_bottom_lane	hole4	460	340	640	340
+segment_7_right_intersect	segment_7_top_lane	400.0	640.0	340.0	640.0
+segment_7_right_intersect	segment_7_bottom_lane	400.0	640.0	460.0	640.0
+segment_7_right_intersect	segment_12_top_lane	340.0	700.0	340.0	760.0
+segment_7_right_intersect	segment_12_bottom_lane	340.0	700.0	340.0	640.0
+segment_7_right_intersect	segment_13_top_lane	460.0	700.0	460.0	760.0
+segment_7_right_intersect	segment_13_bottom_lane	460.0	700.0	460.0	640.0
+segment_7_right_intersect	boundary	460.0	760.0	340.0	760.0
+segment_7_top_lane	hole2	340	460	340	640
+segment_7_bottom_lane	hole1	460	460	460	640
+segment_8_right_intersect	segment_8_bottom_lane	1000.0	40.0	1000.0	100.0
+segment_8_right_intersect	segment_15_bottom_lane	1000	160	1060	160
+segment_8_right_intersect	boundary	1060	160	1060	40	1000.0	40.0	1060.0	40.0
+segment_8_top_lane	segment_15_top_lane	1000.0	160.0	940.0	160.0
+segment_8_top_lane	hole3	760.0	160.0	940.0	160.0
+segment_8_bottom_lane	boundary	1000.0	40.0	760.0	40.0
+segment_9_top_lane	hole4	640	160	640	340
+segment_9_bottom_lane	hole3	760	160	760	340
+segment_10_right_intersect	segment_10_top_lane	940.0	460.0	940.0	400.0
+segment_10_right_intersect	segment_10_bottom_lane	940.0	340.0	940.0	400.0
+segment_10_right_intersect	segment_15_top_lane	940.0	340.0	1000.0	340.0
+segment_10_right_intersect	segment_15_bottom_lane	1060.0	340.0	1000.0	340.0
+segment_10_right_intersect	segment_16_top_lane	940.0	460.0	1000.0	460.0
+segment_10_right_intersect	segment_16_bottom_lane	1060.0	460.0	1000.0	460.0
+segment_10_right_intersect	boundary	1060	340	1060	460
+segment_10_top_lane	hole0	940	460	760	460
+segment_10_bottom_lane	hole3	940	340	760	340
+segment_11_right_intersect	segment_11_top_lane	640.0	640.0	700.0	640.0
+segment_11_right_intersect	segment_11_bottom_lane	760.0	640.0	700.0	640.0
+segment_11_right_intersect	segment_13_top_lane	640.0	760.0	640.0	700.0
+segment_11_right_intersect	segment_13_bottom_lane	640.0	640.0	640.0	700.0
+segment_11_right_intersect	segment_14_top_lane	760.0	760.0	760.0	700.0
+segment_11_right_intersect	segment_14_bottom_lane	760.0	640.0	760.0	700.0
+segment_11_right_intersect	boundary	640.0	760.0	760.0	760.0
+segment_11_top_lane	hole1	640	640	640	460
+segment_11_bottom_lane	hole0	760	640	760	460
+segment_12_top_lane	boundary	160.0	760.0	340.0	760.0
+segment_12_bottom_lane	hole2	160	640	340	640
+segment_13_top_lane	boundary	640.0	760.0	460.0	760.0
+segment_13_bottom_lane	hole1	640	640	460	640
+segment_14_right_intersect	segment_14_top_lane	1000.0	760.0	1000.0	700.0
+segment_14_right_intersect	segment_16_bottom_lane	1000	640	1060	640
+segment_14_right_intersect	boundary	1060	760	1060	640	1000.0	760.0	1060.0	760.0
+segment_14_top_lane	boundary	1000.0	760.0	760.0	760.0
+segment_14_bottom_lane	segment_16_top_lane	1000.0	640.0	940.0	640.0
+segment_14_bottom_lane	hole0	760.0	640.0	940.0	640.0
+segment_15_top_lane	hole3	940	340	940	160
+segment_15_bottom_lane	boundary	1060	340	1060	160
+segment_16_top_lane	hole0	940	460	940	640
+segment_16_bottom_lane	boundary	1060	460	1060	640
 

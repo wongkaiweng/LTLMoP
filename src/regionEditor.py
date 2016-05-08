@@ -23,6 +23,8 @@ from lib.mapRenderer import DrawableRegion
 import Polygon, Polygon.Utils
 Polygon.setTolerance(0.1)
 
+import ast
+
 ####################################################################
 # TODO:
 #   - backport new pysketch bugfixes so it will work well on OS X
@@ -82,7 +84,7 @@ class DrawingFrame(wx.Frame):
     # == Initialisation and Window Management ==
     # ==========================================
 
-    def __init__(self, parent, id, title, fileName=None):
+    def __init__(self, parent, id, title, fileName=None, exclude_list_fileName=None):
         """ Standard constructor.
 
             'parent', 'id' and 'title' are all passed to the standard wx.Frame
@@ -300,6 +302,7 @@ class DrawingFrame(wx.Frame):
         self.rfi = RegionFileInterface()
         self.backgroundImage = None
         self.fileName  = fileName
+        self.exclude_list_fileName = exclude_list_fileName
         
         self.transitionFaces = {}          # The keys are faces that are shared by more than one region
 
@@ -316,6 +319,11 @@ class DrawingFrame(wx.Frame):
         self._setCurrentTool(self.selectIcon)
 
         # Load our file if necessary        
+        self.exclude_adjacency_list = []
+        if self.exclude_list_fileName != None:
+            with open(self.exclude_list_fileName, 'r') as f:
+                self.exclude_adjacency_list = ast.literal_eval(f.read())
+            f.closed
 
         if self.fileName != None:
             if self.loadContents() is False:
@@ -1020,7 +1028,7 @@ class DrawingFrame(wx.Frame):
         Call the RegionFileInterface's recalcAdjacency() method to figure out where to draw dotted transition lines
         """
 
-        self.transitionFaces = self.rfi.recalcAdjacency() # This is just a list of faces to draw dotted lines on
+        self.transitionFaces = self.rfi.recalcAdjacency(exclude_faces=self.exclude_adjacency_list) # This is just a list of faces to draw dotted lines on
         #self.transitionFaces = dict((face, None) for face in self.rfi.getExternalFaces())
 
         #self.drawPanel.Refresh()
@@ -2113,16 +2121,27 @@ class SketchApp(wx.App):
 
         # No file name was specified on the command line -> start with a
         # blank document.
-        frame = DrawingFrame(None, -1, "Untitled")
+        if len(sys.argv) > 1:
+            filename = os.path.join(os.getcwd(), sys.argv[1])
+        else:
+            filename = None
+
+        if len(sys.argv) > 2:
+            exclude_list_fileName = os.path.join(os.getcwd(), sys.argv[2])
+        else:
+            exclude_list_fileName = None
+
+        frame = DrawingFrame(None, -1, "Untitled", filename, exclude_list_fileName)
+
         frame.Centre()
         frame.Show(True)
         _docList.append(frame)
 
-        if len(sys.argv) > 1:
-            # Load the file(s) specified on the command line.
-            for arg in sys.argv[1:]:
-                fileName = os.path.join(os.getcwd(), arg)
-                frame._doOpenHelper(fileName, os.path.isfile(fileName))
+        #if len(sys.argv) > 1:
+        #    # Load the file(s) specified on the command line.
+        #    for arg in sys.argv[1:]:
+        #        fileName = os.path.join(os.getcwd(), arg)
+        #        frame._doOpenHelper(fileName, os.path.isfile(fileName))
 
         return True
 

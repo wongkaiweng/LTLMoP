@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 p = os.path.abspath(__file__)
-print os.path.join(os.path.dirname(p), "../")
+#print os.path.join(os.path.dirname(p), "../")
 sys.path.append(os.path.join(os.path.dirname(p), "../"))
 import regions
 
@@ -40,22 +40,30 @@ offset_y = 100 # pixels #100
 
 def gen_world_regions(roads, output_file):
     road_regions= []
+    lane_list = []
     map_polygon = Polygon.Polygon()
     for sindex in range(roads.number_of_segments()):
         segment = roads.get_mapped_segment(sindex)
-        new_road_regions, map_polygon = road_segment_regions((segment[0], segment[1]),
+        new_road_regions, new_road_lane, map_polygon = road_segment_regions((segment[0], segment[1]),
                                         (segment[2], segment[3]),
                                         prefix='segment_'+str(sindex)+'_',
                                         x1_intersection=roads.has_intersection_start(sindex),
                                         x2_intersection=roads.has_intersection_end(sindex),
                                         map_polygon=map_polygon)
         road_regions.extend(new_road_regions)
+        lane_list.append(new_road_lane)
 
     # add boundary
     obstacles_and_boundary_regions = make_boundary_and_obstacles(road_regions)
-
     interface = regions.RegionFileInterface(regions = road_regions+obstacles_and_boundary_regions)
-    interface.recalcAdjacency()
+
+    # here we also want to remove the lanes in the middle
+    interface.recalcAdjacency(lane_list)
+    # also output lane_list to a file
+    f_lane = open(output_file+'_lanes', 'w')
+    f_lane.write(str(lane_list))
+    f_lane.close()
+
     interface.writeFile(output_file)
     return road_regions
 
@@ -104,6 +112,7 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
     intersection_width = 0.6
     outputRegionList = []
+    outputLane = None
                                     #shift from center                                        # shifting more
     angle_adjusted_x1_0 = center[0]-length/2*cos(angle) - intersection_width*sin(angle) - intersection_width*cos(angle)
     angle_adjusted_x1_1 = center[1]-length/2*sin(angle) + intersection_width*cos(angle) - intersection_width*sin(angle)
@@ -199,7 +208,7 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
     else:
         lane_marker_center = center
-        lane_marker_length = length+0.12
+        lane_marker_length = length #+0.12
 
         # 4 regions in total (short intersection)
         # intersections
@@ -215,12 +224,12 @@ def road_segment_regions(x1, x2, prefix='straightroad',
         shiftedTop_x1_0 = angle_adjusted_x1_0+intersection_width*cos(angle)
         shiftedTop_x1_1 = angle_adjusted_x1_1+intersection_width*sin(angle)
         region_lane_top = createRect(prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
-                                             intersection_width*scale, (lane_marker_length-0.12)*scale)
+                                             intersection_width*scale, (lane_marker_length)*scale)
 
         shiftedBottom_x1_0 = shiftedTop_x1_0+intersection_width*sin(angle) #height=1.2
         shiftedBottom_x1_1 = shiftedTop_x1_1-intersection_width*cos(angle)
         region_lane_bottom = createRect(prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
-                                             intersection_width*scale, (lane_marker_length-0.12)*scale)
+                                             intersection_width*scale, (lane_marker_length)*scale)
 
     # do some round off of floating points
     round_floating_points([region_x1_intersection,region_x2_intersection,region_lane_top,region_lane_bottom])
@@ -255,6 +264,11 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
     #outputRegionList.extend([region_x1_intersection,region_x2_intersection,region_lane_top,region_lane_bottom])
 
+    # now also export lanes in the middle
+    outputLane = [[round(shiftedBottom_x1_0*scale), round(shiftedBottom_x1_1*scale)],\
+                  [round(shiftedBottom_x1_0+lane_marker_length*cos(angle))*scale,\
+                   round(shiftedBottom_x1_1+lane_marker_length*sin(angle))*scale]]
+
     # plot debugging
     if plotting:
         fig1 = plt.figure()
@@ -276,7 +290,7 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
         plt.show()
 
-    return outputRegionList, map_polygon
+    return outputRegionList, outputLane, map_polygon
 
 def make_boundary_and_obstacles(regionsList):
     """
@@ -338,6 +352,6 @@ if __name__ == '__main__':
 
     gen_world_regions(roads, args.output_region_file_dir)
 
-    #/home/catherine/Desktop/fmrbenchmark/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json
+    #Desktop/fmrbenchmark/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json
     print "Region Generation DONE!"
 

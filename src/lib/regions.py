@@ -21,6 +21,7 @@ import re, random, math
 import Polygon, Polygon.Utils, os
 import json
 from numbers import Number
+import numpy
 
 Polygon.setTolerance(0.01)
 
@@ -76,6 +77,9 @@ class Point(object):
 
     def __hash__(self):
         return hash((self.x, self.y))
+
+    def __list__(self):
+        return [self.x,self.y]
 
 class Size(Point):
     def __init__(self, w, h):
@@ -263,11 +267,12 @@ class RegionFileInterface(object):
                             clean = False
                             break
 
-    def recalcAdjacency(self):
+    def recalcAdjacency(self, exclude_faces=[]):
         """
         Calculate the region adjacency matrix and a list of shared faces
 
         Returns a list of shared faces
+        exclude_faces: remove these faces even if they are adjacent
         """
 
         # Create empty adjacency matrix
@@ -285,7 +290,7 @@ class RegionFileInterface(object):
                     if other_obj.position == obj.position and \
                        [x for x in other_obj.getPoints()] == [x for x in obj.getPoints()]:
                         ignore = True
-    
+
                 if not ignore:
                     transitionFaces[face].append(obj)
 
@@ -303,11 +308,120 @@ class RegionFileInterface(object):
                 # Otherwise mark for deletion (we can't delete it in the middle of iteration)
                 toDelete.append(face)
 
+        # save a copy of the old transitionFaces
+        transitionFaces_deleted = {}
+
         # Delete all those dudes
         for unused_face in toDelete:
-            del transitionFaces[unused_face]                    
+            transitionFaces_deleted[unused_face] = transitionFaces[unused_face]
+            del transitionFaces[unused_face]
+
+        # now check partial faces
+        for unused_face in toDelete:
+            p0, p1 = unused_face
+            for another_unused_face in toDelete:
+                if another_unused_face != unused_face:
+                    p2, p3 = another_unused_face
+
+                    if self.collinear(list(p0)+[1],list(p1)+[1],list(p2)+[1],list(p3)+[1]):
+                        #find overlap
+                        overlap = self.find_collinear_overlap(
+                                  list(p0)+[0],list(p1)+[0],list(p2)+[0],list(p3)+[0])
+
+                        if overlap and overlap[0] != overlap[1]:
+                            overlap = [overlap[0][:2], overlap[1][:2]]
+
+                            key = self.regions.index(transitionFaces_deleted[unused_face][0])
+                            key2 = self.regions.index(transitionFaces_deleted[another_unused_face][0])
+                            pt_1, pt_2 = Point(*overlap[0]), Point(*overlap[1])
+                            pt_1.x, pt_1.y, pt_2.x, pt_2.y = int(pt_1.x), int(pt_1.y), int(pt_2.x), int(pt_2.y)
+                            overlap_face = frozenset([Point(*overlap[0]),Point(*overlap[1])])
+
+                            # only add overlap_face if it's not already in the list
+                            if overlap_face not in self.transitions[key][key2]:
+                                self.transitions[key][key2].append(overlap_face)
+                            if overlap_face not in self.transitions[key2][key]:
+                                self.transitions[key2][key].append(overlap_face)
+
+                            # add to transition faces
+                            if overlap_face not in transitionFaces.keys():
+                                transitionFaces[overlap_face] = []
+
+                             # don't add if region already exists
+                            if not transitionFaces_deleted[unused_face][0] in transitionFaces[overlap_face]:
+                                transitionFaces[overlap_face].append(transitionFaces_deleted[unused_face][0])
+
+                            if not transitionFaces_deleted[another_unused_face][0] in transitionFaces[overlap_face]:
+                                transitionFaces[overlap_face].append(transitionFaces_deleted[another_unused_face][0])
+
+        # now remove exclude faces
+        transitionFaces_keys = transitionFaces.keys()
+        exclude_face_in_transitionFaces =[]
+        for face in exclude_faces:
+
+            frozen_face = frozenset([Point(*face[0]),Point(*face[1])])
+            # face is exactly the same, remove
+            if frozen_face in transitionFaces_keys:
+                if frozen_face not in exclude_face_in_transitionFaces:
+                    exclude_face_in_transitionFaces.append(frozen_face)
+
+            else:
+                # start finding partial face in this case
+                for normal_face in transitionFaces_keys:
+                    p0, p1 = normal_face
+                    p2, p3 = frozen_face
+                    if self.collinear(list(p0)+[1],list(p1)+[1],list(p2)+[1],list(p3)+[1]):
+                        overlap = self.find_collinear_overlap(list(p0)+[0],list(p1)+[0],list(p2)+[0],list(p3)+[0])
+                        if overlap and overlap[0] != overlap[1] and\
+                        normal_face not in exclude_face_in_transitionFaces:
+                            exclude_face_in_transitionFaces.append(normal_face)
+
+
+        # now remove those faces
+        for frozen_face in exclude_face_in_transitionFaces:
+            key = self.regions.index(transitionFaces[frozen_face][0])
+            key2 = self.regions.index(transitionFaces[frozen_face][1])
+            self.transitions[key][key2].remove(frozen_face)
+            self.transitions[key2][key].remove(frozen_face)
+            del transitionFaces[frozen_face]
 
         return transitionFaces
+
+
+    def collinear(self, p0, p1, p2, p3):
+        #Here say we have the points as p0,p1(1st line), p2,p3(2nd line).
+        r1=numpy.cross(numpy.array(p2)-numpy.array(p0),numpy.array(p2)-numpy.array(p1))
+        r2=numpy.cross(numpy.array(p3)-numpy.array(p0),numpy.array(p3)-numpy.array(p1))
+        # if zero, then they are collinear
+        if numpy.all(r1 == r2) and numpy.all(r1 == [0,0,0]) and numpy.all(r2 == [0,0,0]):
+            return True
+        else:
+            return False
+
+    def cross(self, o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    def find_collinear_overlap(self, p0, p1, p2, p3):
+        #Ensure p0<p1, p2<p3: p0p1 and p2p3
+        A = [p0, p1]
+        B = [p2, p3]
+        A.sort()
+        B.sort()
+        p0_numpy = numpy.array(A[0])
+        p1_numpy = numpy.array(A[1])
+        p2_numpy = numpy.array(B[0])
+        p3_numpy = numpy.array(B[1])
+
+        if numpy.all((p1_numpy - p2_numpy) >= 0) and\
+           numpy.all((p3_numpy - p0_numpy) >= 0):
+            #overlap (it could be a point [x, x])
+            overlap_interval = [max(list(p0_numpy), list(p2_numpy)), min(list(p1_numpy), list(p3_numpy))]
+        else:
+            #no overlap
+            overlap_interval = None
+
+        return overlap_interval
+
 
     def getBoundingBox(self):
         if self.regions == []:
@@ -705,6 +819,10 @@ class Region(object):
         for pt in self.getPoints():
 
             thisPt = pt
+
+            # make all floats into integers
+            thisPt.x = int(thisPt.x)
+            thisPt.y = int(thisPt.y)
 
             if lastPt is not None:
                 if lastPt != thisPt:
