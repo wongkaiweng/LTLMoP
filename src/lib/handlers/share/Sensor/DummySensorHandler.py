@@ -296,10 +296,16 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         """
         if initial:
             self.prev_pose = self.executor.hsub.getPose()
-            regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
-            pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+            if self.proj.compile_options['decompose']:
+                regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
+                pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
+            else:
+                regionNo = self.proj.rfi.indexOfRegionWithName(regionName)
+                pointArray = [x for x in self.proj.rfi.regions[regionNo].getPoints()]
+
             pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
             vertices = numpy.mat(pointArray).T
+
             if is_inside([self.prev_pose[0], self.prev_pose[1]], vertices):
                 self.prev_current_region = regionName
                 self.currentRegionPoly = Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])

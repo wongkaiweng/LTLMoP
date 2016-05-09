@@ -147,6 +147,8 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
     adjFormulas = []
 
     for Origin in range(len(adjData)):
+        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+            continue
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
         adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
@@ -156,6 +158,9 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
         adjFormula = adjFormula + ')'
 
         for dest in range(len(adjData)):
+            if regions[dest].name == 'boundary' or regions[dest].isObstacle:
+                continue
+
             if adjData[Origin][dest]:
                 # not empty, hence there is a transition
                 adjFormula = adjFormula + ' | ('
@@ -175,12 +180,18 @@ def createIASysTopologyFragment(adjData, regions, use_bits=True):
     []regionProp1' -> ! (regionProp2' | regionProp3' | regionProp4')
     """
     for Origin in range(len(adjData)):
+        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
+            continue
+
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
         adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(s."+regions[Origin].name + ")")
         adjFormula = adjFormula + ') -> ! ( '
         regProps = []
         for Others in range(len(adjData)):
+            if regions[Others].name == 'boundary' or regions[Others].isObstacle:
+                        continue
+
             if not regions[Origin].name == regions[Others].name:
                 # not empty, hence there is a transition
                 regProps.append(nextBitEnc[Others] if use_bits else "next(s."+regions[Others].name+")")
@@ -226,6 +237,9 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     adjFormulas = []
 
     for Origin in range(len(adjData)):
+        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
+            continue
+
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
         adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+regions[Origin].name + "_rc")
@@ -247,7 +261,13 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     Obtain []( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))
     """
     for Origin in range(len(adjData)):
+        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
+            continue
+
         for dest in range(len(adjData)):
+            if regions[dest].name == 'boundary' or regions[dest].isObstacle:
+                continue
+
             if adjData[Origin][dest]:
                 # from region i we can head to dest stay in Origin
                 adjFormula = '\t\t\t []( ('
@@ -272,6 +292,8 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
     """
     for Origin in range(len(adjData)):
+        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
+            continue
 
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
@@ -279,6 +301,9 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         adjFormula = adjFormula + ') <-> ! ( '
         regPropRCs = []
         for Others in range(len(adjData)):
+            if regions[Others].name == 'boundary' or regions[Others].isObstacle:
+                continue
+
             if not regions[Origin].name == regions[Others].name:
                 # not empty, hence there is a transition
                 regPropRCs.append(envNextBitEnc[Others] if use_bits else "next(e."+regions[Others].name+"_rc)")
@@ -349,10 +374,14 @@ def createIAInitialEnvRegionFragment(regions, use_bits=True, nextProp=False):
 
             initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
+        region_filtered = []
+        for r in regions:
+            if r.name != "boundary" and not r.isObstacle:
+                region_filtered.append(r)
         if nextProp:
-            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+r2.name+"_rc)" if r is r2 else "!next(e."+r2.name+"_rc)" for r2 in regions])) for r in regions]))
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["next(e."+r2.name+"_rc)" if r is r2 else "!next(e."+r2.name+"_rc)" for r2 in region_filtered])) for r in region_filtered]))
         else:
-            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in regions])) for r in regions]))
+            initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["e."+r2.name+"_rc" if r is r2 else "!e."+r2.name+"_rc" for r2 in region_filtered])) for r in region_filtered]))
 
     return initreg_formula
 
@@ -666,6 +695,8 @@ def createTopologyFragment(adjData, regions, use_bits=True):
     adjFormulas = []
 
     for Origin in range(len(adjData)):
+        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
         # from region i we can stay in region i
         adjFormula = '\t\t\t []( ('
         adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "s."+regions[Origin].name)
@@ -674,6 +705,9 @@ def createTopologyFragment(adjData, regions, use_bits=True):
         adjFormula = adjFormula + ')'
         
         for dest in range(len(adjData)):
+            if (regions[dest].name == 'boundary' or regions[dest].isObstacle):
+                continue
+
             if adjData[Origin][dest]:
                 # not empty, hence there is a transition
                 adjFormula = adjFormula + '\n\t\t\t\t\t\t\t\t\t| ('
@@ -713,7 +747,12 @@ def createInitialRegionFragment(regions, use_bits=True):
 
         initreg_formula = '('+'|\n'.join(initreg_formula_list)+')'
     else:
-        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["s."+r2.name if r is r2 else "!s."+r2.name for r2 in regions])) for r in regions]))
+        region_filtered = []
+        for r in regions:
+            if r.name != "boundary" and not r.isObstacle:
+                region_filtered.append(r)
+
+        initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["s."+r2.name if r is r2 else "!s."+r2.name for r2 in region_filtered])) for r in region_filtered]))
         
     return initreg_formula
 

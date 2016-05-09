@@ -121,11 +121,9 @@ class SpecCompiler(object):
         # FIXME: properly support obstacles in non-decomposed maps?
         if self.proj.compile_options["decompose"]:
             self.parser.proj.rfi.recalcAdjacency()
+            self.parser.proj.rfi.writeFile(filename)
+            self.proj.regionMapping = self.parser.proj.regionMapping
 
-        self.parser.proj.rfi.writeFile(filename)
-
-
-        self.proj.regionMapping = self.parser.proj.regionMapping
         self.proj.writeSpecFile()
 
     def _writeSMVFile(self):
@@ -465,7 +463,11 @@ class SpecCompiler(object):
             # Almost-CNF version
             exclusions = []
             for i, r1 in enumerate(region_list):
+                if r1.name == 'boundary' or r1.isObstacle:
+                    continue
                 for r2 in region_list[i+1:]:
+                    if r2.name == 'boundary' or r2.isObstacle:
+                        continue
                     exclusions.append("!(s.{} & s.{})".format(r1.name, r2.name))
             mutex = "\n&\n\t []({})".format(" & ".join(exclusions))
             LTLspec_sys += mutex
@@ -494,6 +496,9 @@ class SpecCompiler(object):
             if self.proj.compile_options['fastslow']:
                 for key, value in self.spec.iteritems():
                     self.spec[key] = replaceRegionName(value, bitEncode, regionListCompleted)
+        else:
+            for key, value in spec.iteritems():
+                self.spec[key] = value
 
         #only write to LTLfile with specEditor
         if createLTL == True:

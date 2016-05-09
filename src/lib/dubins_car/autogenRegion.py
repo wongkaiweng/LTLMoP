@@ -34,9 +34,9 @@ import regions
 
 plotting = False
 # scaling and offset for regionEditor.py
-scale = 100  #100
-offset_x = 100 # pixels #100
-offset_y = 100 # pixels #100
+scale = 500  #100
+offset_x = 500 # pixels #100
+offset_y = 500 # pixels #100
 
 def gen_world_regions(roads, output_file):
     road_regions= []
@@ -60,7 +60,7 @@ def gen_world_regions(roads, output_file):
     # here we also want to remove the lanes in the middle
     interface.recalcAdjacency(lane_list)
     # also output lane_list to a file
-    f_lane = open(output_file+'_lanes', 'w')
+    f_lane = open(output_file+'_transitions_to_exclude', 'w')
     f_lane.write(str(lane_list))
     f_lane.close()
 

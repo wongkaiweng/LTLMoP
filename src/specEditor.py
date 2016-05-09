@@ -1190,7 +1190,10 @@ class SpecEditorFrame(wx.Frame):
 
         compiler._decompose()
         self.proj = compiler.proj
-        self.decomposedRFI = compiler.parser.proj.rfi
+        if self.proj.compile_options['decompose']:
+            self.decomposedRFI = compiler.parser.proj.rfi
+        else:
+            self.decomposedRFI = compiler.proj.rfi
 
         # Update workspace decomposition listbox
         if self.proj.regionMapping is not None:
@@ -1351,10 +1354,10 @@ class SpecEditorFrame(wx.Frame):
     def onMenuSimulate(self, event): # wxGlade: SpecEditorFrame.<event_handler>
         """ Run the simulation with current experiment configuration. """
 
-        if not self.proj.compile_options["use_region_bit_encoding"]:
-            wx.MessageBox("Execution requires bit-vector region encoding.\nPlease enable it and recompile.", "Error",
-                        style = wx.OK | wx.ICON_ERROR)
-            return
+        #if not self.proj.compile_options["use_region_bit_encoding"]:
+        #    wx.MessageBox("Execution requires bit-vector region encoding.\nPlease enable it and recompile.", "Error",
+        #                style = wx.OK | wx.ICON_ERROR)
+        #    return
 
         # TODO: or check mtime
         if self.dirty:
@@ -1437,7 +1440,13 @@ class SpecEditorFrame(wx.Frame):
             # If we already have a region file defined, open it up for editing
             fileName = self.proj.rfi.filename
             self.lastRegionModTime = os.path.getmtime(fileName)
-            self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName], regedCallback, None)
+
+            if os.path.isfile(self.proj.rfi.filename+"_transitions_to_exclude"):
+                exclude_fileName = self.proj.rfi.filename+"_transitions_to_exclude"
+                self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName, exclude_fileName], regedCallback, None)
+            else:
+                self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName], regedCallback, None)
+
         else:
             # Otherwise let's create a new region file
             if self.proj.project_basename is None:
@@ -1852,6 +1861,7 @@ class SpecEditorFrame(wx.Frame):
 
     def onMenuSetCompileOptions(self, event):  # wxGlade: SpecEditorFrame.<event_handler>
         self.proj.compile_options["convexify"] = self.frame_1_menubar.IsChecked(MENU_CONVEXIFY)
+        self.proj.compile_options["decompose"] = self.frame_1_menubar.IsChecked(MENU_CONVEXIFY)
         self.proj.compile_options["fastslow"] = self.frame_1_menubar.IsChecked(MENU_FASTSLOW)
         self.proj.compile_options["use_region_bit_encoding"] = self.frame_1_menubar.IsChecked(MENU_BITVECTOR)
         self.proj.compile_options["only_realizability"] = self.frame_1_menubar.IsChecked(MENU_REALIZABILITY)

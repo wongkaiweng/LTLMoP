@@ -17,44 +17,44 @@ Regions: # Stored as JSON string
         "name": "segment_0_left_intersect", 
         "color": [
             255, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
                 0.0, 
-                120.0
+                600.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
-                60.0, 
-                120.0
+                300.0, 
+                600.0
             ]
         ], 
         "position": [
-            40.0, 
-            40.0
+            200.0, 
+            200.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            120.0
+            300.0, 
+            600.0
         ]
     }, 
     {
         "name": "segment_0_right_intersect", 
         "color": [
-            255, 
             0, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -62,35 +62,35 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                120.0
+                600.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                120.0, 
+                600.0, 
                 0.0
             ], 
             [
-                120.0, 
-                120.0
+                600.0, 
+                600.0
             ]
         ], 
         "position": [
-            340.0, 
-            40.0
+            1700.0, 
+            200.0
         ], 
         "type": "poly", 
         "size": [
-            120.0, 
-            120.0
+            600.0, 
+            600.0
         ]
     }, 
     {
         "name": "segment_0_top_lane", 
         "color": [
-            0, 
+            255, 
             255, 
             0
         ], 
@@ -99,29 +99,29 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                60.0
+                300.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                240.0, 
+                1200.0, 
                 0.0
             ], 
             [
-                240.0, 
-                60.0
+                1200.0, 
+                300.0
             ]
         ], 
         "position": [
-            100.0, 
-            100.0
+            500.0, 
+            500.0
         ], 
         "type": "poly", 
         "size": [
-            240.0, 
-            60.0
+            1200.0, 
+            300.0
         ]
     }, 
     {
@@ -136,36 +136,36 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                60.0
+                300.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                240.0, 
+                1200.0, 
                 0.0
             ], 
             [
-                240.0, 
-                60.0
+                1200.0, 
+                300.0
             ]
         ], 
         "position": [
-            100.0, 
-            40.0
+            500.0, 
+            200.0
         ], 
         "type": "poly", 
         "size": [
-            240.0, 
-            60.0
+            1200.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_1_right_intersect", 
         "color": [
             255, 
-            255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -176,26 +176,26 @@ Regions: # Stored as JSON string
                 0.0
             ], 
             [
-                120.0, 
+                600.0, 
                 0.0
             ], 
             [
-                120.0, 
-                60.0
+                600.0, 
+                300.0
             ], 
             [
                 0.0, 
-                60.0
+                300.0
             ]
         ], 
         "position": [
-            40.0, 
-            400.0
+            200.0, 
+            2000.0
         ], 
         "type": "poly", 
         "size": [
-            120.0, 
-            60.0
+            600.0, 
+            300.0
         ]
     }, 
     {
@@ -209,7 +209,7 @@ Regions: # Stored as JSON string
         "height": 0, 
         "points": [
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
@@ -218,35 +218,35 @@ Regions: # Stored as JSON string
             ], 
             [
                 0.0, 
-                240.0
+                1200.0
             ], 
             [
-                60.0, 
-                240.0
+                300.0, 
+                1200.0
             ]
         ], 
         "position": [
-            40.0, 
-            160.0
+            200.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            240.0
+            300.0, 
+            1200.0
         ]
     }, 
     {
         "name": "segment_1_bottom_lane", 
         "color": [
             255, 
-            255, 
+            0, 
             0
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
@@ -255,21 +255,21 @@ Regions: # Stored as JSON string
             ], 
             [
                 0.0, 
-                240.0
+                1200.0
             ], 
             [
-                60.0, 
-                240.0
+                300.0, 
+                1200.0
             ]
         ], 
         "position": [
-            100.0, 
-            160.0
+            500.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            240.0
+            300.0, 
+            1200.0
         ]
     }, 
     {
@@ -284,73 +284,73 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                120.0
+                600.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
-                60.0, 
-                120.0
+                300.0, 
+                600.0
             ]
         ], 
         "position": [
-            700.0, 
-            40.0
+            3500.0, 
+            200.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            120.0
+            300.0, 
+            600.0
         ]
     }, 
     {
         "name": "segment_2_top_lane", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
                 0.0, 
-                60.0
+                300.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                240.0, 
+                1200.0, 
                 0.0
             ], 
             [
-                240.0, 
-                60.0
+                1200.0, 
+                300.0
             ]
         ], 
         "position": [
-            460.0, 
-            100.0
+            2300.0, 
+            500.0
         ], 
         "type": "poly", 
         "size": [
-            240.0, 
-            60.0
+            1200.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_2_bottom_lane", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -358,37 +358,37 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                60.0
+                300.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                240.0, 
+                1200.0, 
                 0.0
             ], 
             [
-                240.0, 
-                60.0
+                1200.0, 
+                300.0
             ]
         ], 
         "position": [
-            460.0, 
-            40.0
+            2300.0, 
+            200.0
         ], 
         "type": "poly", 
         "size": [
-            240.0, 
-            60.0
+            1200.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_3_right_intersect", 
         "color": [
             255, 
-            0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -398,67 +398,30 @@ Regions: # Stored as JSON string
                 0.0
             ], 
             [
-                120.0, 
+                600.0, 
                 0.0
             ], 
             [
-                120.0, 
-                120.0
+                600.0, 
+                600.0
             ], 
             [
                 0.0, 
-                120.0
+                600.0
             ]
         ], 
         "position": [
-            340.0, 
-            340.0
+            1700.0, 
+            1700.0
         ], 
         "type": "poly", 
         "size": [
-            120.0, 
-            120.0
+            600.0, 
+            600.0
         ]
     }, 
     {
         "name": "segment_3_top_lane", 
-        "color": [
-            0, 
-            0, 
-            255
-        ], 
-        "holeList": [], 
-        "height": 0, 
-        "points": [
-            [
-                0.0, 
-                0.0
-            ], 
-            [
-                60.0, 
-                0.0
-            ], 
-            [
-                60.0, 
-                180.0
-            ], 
-            [
-                0.0, 
-                180.0
-            ]
-        ], 
-        "position": [
-            340.0, 
-            160.0
-        ], 
-        "type": "poly", 
-        "size": [
-            60.0, 
-            180.0
-        ]
-    }, 
-    {
-        "name": "segment_3_bottom_lane", 
         "color": [
             255, 
             128, 
@@ -472,32 +435,32 @@ Regions: # Stored as JSON string
                 0.0
             ], 
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
-                60.0, 
-                180.0
+                300.0, 
+                900.0
             ], 
             [
                 0.0, 
-                180.0
+                900.0
             ]
         ], 
         "position": [
-            400.0, 
-            160.0
+            1700.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            180.0
+            300.0, 
+            900.0
         ]
     }, 
     {
-        "name": "segment_4_top_lane", 
+        "name": "segment_3_bottom_lane", 
         "color": [
-            0, 
+            255, 
             0, 
             255
         ], 
@@ -505,44 +468,81 @@ Regions: # Stored as JSON string
         "height": 0, 
         "points": [
             [
-                180.0, 
-                0.0
-            ], 
-            [
                 0.0, 
                 0.0
             ], 
             [
-                0.0, 
-                60.0
+                300.0, 
+                0.0
             ], 
             [
-                180.0, 
-                60.0
+                300.0, 
+                900.0
+            ], 
+            [
+                0.0, 
+                900.0
             ]
         ], 
         "position": [
-            160.0, 
-            400.0
+            2000.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            180.0, 
-            60.0
+            300.0, 
+            900.0
+        ]
+    }, 
+    {
+        "name": "segment_4_top_lane", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                900.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                300.0
+            ], 
+            [
+                900.0, 
+                300.0
+            ]
+        ], 
+        "position": [
+            800.0, 
+            2000.0
+        ], 
+        "type": "poly", 
+        "size": [
+            900.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_4_bottom_lane", 
         "color": [
             255, 
-            0, 
+            255, 
             0
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
-                180.0, 
+                900.0, 
                 0.0
             ], 
             [
@@ -551,28 +551,102 @@ Regions: # Stored as JSON string
             ], 
             [
                 0.0, 
-                60.0
+                300.0
             ], 
             [
-                180.0, 
-                60.0
+                900.0, 
+                300.0
             ]
         ], 
         "position": [
-            160.0, 
-            340.0
+            800.0, 
+            1700.0
         ], 
         "type": "poly", 
         "size": [
-            180.0, 
-            60.0
+            900.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_5_right_intersect", 
         "color": [
             255, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                600.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                300.0, 
+                0.0
+            ], 
+            [
+                300.0, 
+                600.0
+            ]
+        ], 
+        "position": [
+            3500.0, 
+            1700.0
+        ], 
+        "type": "poly", 
+        "size": [
+            300.0, 
+            600.0
+        ]
+    }, 
+    {
+        "name": "segment_5_top_lane", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                0.0, 
+                300.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                1200.0, 
+                0.0
+            ], 
+            [
+                1200.0, 
+                300.0
+            ]
+        ], 
+        "position": [
+            2300.0, 
+            2000.0
+        ], 
+        "type": "poly", 
+        "size": [
+            1200.0, 
+            300.0
+        ]
+    }, 
+    {
+        "name": "segment_5_bottom_lane", 
+        "color": [
             255, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -580,117 +654,43 @@ Regions: # Stored as JSON string
         "points": [
             [
                 0.0, 
-                120.0
+                300.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                60.0, 
+                1200.0, 
                 0.0
             ], 
             [
-                60.0, 
-                120.0
+                1200.0, 
+                300.0
             ]
         ], 
         "position": [
-            700.0, 
-            340.0
+            2300.0, 
+            1700.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            120.0
-        ]
-    }, 
-    {
-        "name": "segment_5_top_lane", 
-        "color": [
-            255, 
-            0, 
-            255
-        ], 
-        "holeList": [], 
-        "height": 0, 
-        "points": [
-            [
-                0.0, 
-                60.0
-            ], 
-            [
-                0.0, 
-                0.0
-            ], 
-            [
-                240.0, 
-                0.0
-            ], 
-            [
-                240.0, 
-                60.0
-            ]
-        ], 
-        "position": [
-            460.0, 
-            400.0
-        ], 
-        "type": "poly", 
-        "size": [
-            240.0, 
-            60.0
-        ]
-    }, 
-    {
-        "name": "segment_5_bottom_lane", 
-        "color": [
-            0, 
-            0, 
-            255
-        ], 
-        "holeList": [], 
-        "height": 0, 
-        "points": [
-            [
-                0.0, 
-                60.0
-            ], 
-            [
-                0.0, 
-                0.0
-            ], 
-            [
-                240.0, 
-                0.0
-            ], 
-            [
-                240.0, 
-                60.0
-            ]
-        ], 
-        "position": [
-            460.0, 
-            340.0
-        ], 
-        "type": "poly", 
-        "size": [
-            240.0, 
-            60.0
+            1200.0, 
+            300.0
         ]
     }, 
     {
         "name": "segment_6_top_lane", 
         "color": [
             255, 
-            255, 
+            128, 
             0
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
@@ -699,35 +699,35 @@ Regions: # Stored as JSON string
             ], 
             [
                 0.0, 
-                180.0
+                900.0
             ], 
             [
-                60.0, 
-                180.0
+                300.0, 
+                900.0
             ]
         ], 
         "position": [
-            640.0, 
-            160.0
+            3200.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            180.0
+            300.0, 
+            900.0
         ]
     }, 
     {
         "name": "segment_6_bottom_lane", 
         "color": [
             255, 
-            0, 
+            255, 
             0
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
-                60.0, 
+                300.0, 
                 0.0
             ], 
             [
@@ -736,99 +736,62 @@ Regions: # Stored as JSON string
             ], 
             [
                 0.0, 
-                180.0
+                900.0
             ], 
             [
-                60.0, 
-                180.0
+                300.0, 
+                900.0
             ]
         ], 
         "position": [
-            700.0, 
-            160.0
+            3500.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            60.0, 
-            180.0
+            300.0, 
+            900.0
         ]
     }, 
     {
         "name": "hole0", 
         "color": [
             255, 
-            0, 
-            255
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
         "points": [
             [
-                180.0, 
-                180.0
+                900.0, 
+                900.0
             ], 
             [
                 0.0, 
-                180.0
+                900.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                180.0, 
+                900.0, 
                 0.0
             ]
         ], 
         "position": [
-            460.0, 
-            160.0
+            2300.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            180.0, 
-            180.0
+            900.0, 
+            900.0
         ]
     }, 
     {
         "name": "hole1", 
-        "color": [
-            255, 
-            0, 
-            255
-        ], 
-        "holeList": [], 
-        "height": 0, 
-        "points": [
-            [
-                180.0, 
-                180.0
-            ], 
-            [
-                0.0, 
-                180.0
-            ], 
-            [
-                0.0, 
-                0.0
-            ], 
-            [
-                180.0, 
-                0.0
-            ]
-        ], 
-        "position": [
-            160.0, 
-            160.0
-        ], 
-        "type": "poly", 
-        "size": [
-            180.0, 
-            180.0
-        ]
-    }, 
-    {
-        "name": "boundary", 
         "color": [
             0, 
             255, 
@@ -838,93 +801,130 @@ Regions: # Stored as JSON string
         "height": 0, 
         "points": [
             [
-                720.0, 
-                300.0
+                900.0, 
+                900.0
             ], 
             [
-                720.0, 
-                120.0
-            ], 
-            [
-                720.0, 
-                0.0
+                0.0, 
+                900.0
             ], 
             [
                 0.0, 
                 0.0
             ], 
             [
-                0.0, 
-                120.0
-            ], 
-            [
-                0.0, 
-                360.0
-            ], 
-            [
-                0.0, 
-                420.0
-            ], 
-            [
-                720.0, 
-                420.0
+                900.0, 
+                0.0
             ]
         ], 
         "position": [
-            40.0, 
-            40.0
+            800.0, 
+            800.0
         ], 
         "type": "poly", 
         "size": [
-            720.0, 
-            420.0
+            900.0, 
+            900.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0, 
+        "points": [
+            [
+                3600.0, 
+                1500.0
+            ], 
+            [
+                3600.0, 
+                600.0
+            ], 
+            [
+                3600.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                0.0, 
+                600.0
+            ], 
+            [
+                0.0, 
+                1800.0
+            ], 
+            [
+                0.0, 
+                2100.0
+            ], 
+            [
+                3600.0, 
+                2100.0
+            ]
+        ], 
+        "position": [
+            200.0, 
+            200.0
+        ], 
+        "type": "poly", 
+        "size": [
+            3600.0, 
+            2100.0
         ]
     }
 ]
 
 Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
-segment_0_left_intersect	segment_0_bottom_lane	100.0	100.0	100.0	40.0
-segment_0_left_intersect	segment_1_top_lane	40	160	100	160
-segment_0_left_intersect	boundary	40	160	40	40	40.0	40.0	100.0	40.0
-segment_0_right_intersect	segment_0_top_lane	340.0	100.0	340.0	160.0
-segment_0_right_intersect	segment_0_bottom_lane	340.0	100.0	340.0	40.0
-segment_0_right_intersect	segment_2_top_lane	460.0	100.0	460.0	160.0
-segment_0_right_intersect	segment_2_bottom_lane	460.0	100.0	460.0	40.0
-segment_0_right_intersect	segment_3_top_lane	400.0	160.0	340.0	160.0
-segment_0_right_intersect	segment_3_bottom_lane	400.0	160.0	460.0	160.0
-segment_0_right_intersect	boundary	460.0	40.0	340.0	40.0
-segment_0_top_lane	segment_1_bottom_lane	160.0	160.0	100.0	160.0
-segment_0_top_lane	hole1	160.0	160.0	340.0	160.0
-segment_0_bottom_lane	boundary	340.0	40.0	100.0	40.0
-segment_1_right_intersect	segment_1_top_lane	40.0	400.0	100.0	400.0
-segment_1_right_intersect	segment_4_top_lane	160	400	160	460
-segment_1_right_intersect	boundary	40	400	40	460	160.0	460.0	40.0	460.0
-segment_1_top_lane	boundary	40	160	40	400
-segment_1_bottom_lane	segment_4_bottom_lane	160.0	400.0	160.0	340.0
-segment_1_bottom_lane	hole1	160.0	160.0	160.0	340.0
-segment_2_right_intersect	segment_2_bottom_lane	700.0	100.0	700.0	40.0
-segment_2_right_intersect	segment_6_bottom_lane	760	160	700	160
-segment_2_right_intersect	boundary	760	40	760	160	760.0	40.0	700.0	40.0
-segment_2_top_lane	segment_6_top_lane	640.0	160.0	700.0	160.0
-segment_2_top_lane	hole0	640.0	160.0	460.0	160.0
-segment_2_bottom_lane	boundary	700.0	40.0	460.0	40.0
-segment_3_right_intersect	segment_3_top_lane	340.0	340.0	400.0	340.0
-segment_3_right_intersect	segment_3_bottom_lane	460.0	340.0	400.0	340.0
-segment_3_right_intersect	segment_4_top_lane	340.0	460.0	340.0	400.0
-segment_3_right_intersect	segment_4_bottom_lane	340.0	340.0	340.0	400.0
-segment_3_right_intersect	segment_5_top_lane	460.0	460.0	460.0	400.0
-segment_3_right_intersect	segment_5_bottom_lane	460.0	340.0	460.0	400.0
-segment_3_right_intersect	boundary	340.0	460.0	460.0	460.0
-segment_3_top_lane	hole1	340	340	340	160
-segment_3_bottom_lane	hole0	460	340	460	160
-segment_4_top_lane	boundary	340.0	460.0	160.0	460.0
-segment_4_bottom_lane	hole1	340	340	160	340
-segment_5_right_intersect	segment_5_top_lane	700.0	460.0	700.0	400.0
-segment_5_right_intersect	segment_6_bottom_lane	700	340	760	340
-segment_5_right_intersect	boundary	760	460	760	340	700.0	460.0	760.0	460.0
-segment_5_top_lane	boundary	700.0	460.0	460.0	460.0
-segment_5_bottom_lane	segment_6_top_lane	700.0	340.0	640.0	340.0
-segment_5_bottom_lane	hole0	460.0	340.0	640.0	340.0
-segment_6_top_lane	hole0	640	160	640	340
-segment_6_bottom_lane	boundary	760	160	760	340
+segment_0_left_intersect	segment_0_bottom_lane	500.0	500.0	500.0	200.0
+segment_0_left_intersect	segment_1_top_lane	200	800	500	800
+segment_0_left_intersect	boundary	200	800	200	200	200.0	200.0	500.0	200.0
+segment_0_right_intersect	segment_0_top_lane	1700.0	500.0	1700.0	800.0
+segment_0_right_intersect	segment_0_bottom_lane	1700.0	500.0	1700.0	200.0
+segment_0_right_intersect	segment_2_top_lane	2300.0	500.0	2300.0	800.0
+segment_0_right_intersect	segment_2_bottom_lane	2300.0	500.0	2300.0	200.0
+segment_0_right_intersect	segment_3_top_lane	2000.0	800.0	1700.0	800.0
+segment_0_right_intersect	segment_3_bottom_lane	2000.0	800.0	2300.0	800.0
+segment_0_right_intersect	boundary	2300.0	200.0	1700.0	200.0
+segment_0_top_lane	segment_1_bottom_lane	800.0	800.0	500.0	800.0
+segment_0_top_lane	hole1	800.0	800.0	1700.0	800.0
+segment_0_bottom_lane	boundary	1700.0	200.0	500.0	200.0
+segment_1_right_intersect	segment_1_top_lane	200.0	2000.0	500.0	2000.0
+segment_1_right_intersect	segment_4_top_lane	800	2000	800	2300
+segment_1_right_intersect	boundary	200	2000	200	2300	800.0	2300.0	200.0	2300.0
+segment_1_top_lane	boundary	200	800	200	2000
+segment_1_bottom_lane	segment_4_bottom_lane	800.0	2000.0	800.0	1700.0
+segment_1_bottom_lane	hole1	800.0	800.0	800.0	1700.0
+segment_2_right_intersect	segment_2_bottom_lane	3500.0	500.0	3500.0	200.0
+segment_2_right_intersect	segment_6_bottom_lane	3800	800	3500	800
+segment_2_right_intersect	boundary	3800	200	3800	800	3800.0	200.0	3500.0	200.0
+segment_2_top_lane	segment_6_top_lane	3200.0	800.0	3500.0	800.0
+segment_2_top_lane	hole0	3200.0	800.0	2300.0	800.0
+segment_2_bottom_lane	boundary	3500.0	200.0	2300.0	200.0
+segment_3_right_intersect	segment_3_top_lane	1700.0	1700.0	2000.0	1700.0
+segment_3_right_intersect	segment_3_bottom_lane	2300.0	1700.0	2000.0	1700.0
+segment_3_right_intersect	segment_4_top_lane	1700.0	2300.0	1700.0	2000.0
+segment_3_right_intersect	segment_4_bottom_lane	1700.0	1700.0	1700.0	2000.0
+segment_3_right_intersect	segment_5_top_lane	2300.0	2300.0	2300.0	2000.0
+segment_3_right_intersect	segment_5_bottom_lane	2300.0	1700.0	2300.0	2000.0
+segment_3_right_intersect	boundary	1700.0	2300.0	2300.0	2300.0
+segment_3_top_lane	hole1	1700	1700	1700	800
+segment_3_bottom_lane	hole0	2300	1700	2300	800
+segment_4_top_lane	boundary	1700.0	2300.0	800.0	2300.0
+segment_4_bottom_lane	hole1	1700	1700	800	1700
+segment_5_right_intersect	segment_5_top_lane	3500.0	2300.0	3500.0	2000.0
+segment_5_right_intersect	segment_6_bottom_lane	3500	1700	3800	1700
+segment_5_right_intersect	boundary	3800	2300	3800	1700	3500.0	2300.0	3800.0	2300.0
+segment_5_top_lane	boundary	3500.0	2300.0	2300.0	2300.0
+segment_5_bottom_lane	segment_6_top_lane	3500.0	1700.0	3200.0	1700.0
+segment_5_bottom_lane	hole0	2300.0	1700.0	3200.0	1700.0
+segment_6_top_lane	hole0	3200	800	3200	1700
+segment_6_bottom_lane	boundary	3800	800	3800	1700
 

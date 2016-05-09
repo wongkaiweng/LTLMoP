@@ -135,7 +135,11 @@ class ExecutorStrategyExtensions(object):
         # check we are inside any region, if not we will use the previous region detected. (timing issue)
         if sensor_region_names:
             sensor_region_name = sensor_region_names[0].replace('_rc','')
-            decomposed_region_names = self.proj.regionMapping[sensor_region_name]
+            if self.proj.compile_options["decompose"]:
+                decomposed_region_names = self.proj.regionMapping[sensor_region_name]
+            else: # use original name, not p#
+                decomposed_region_names = [sensor_region_name]
+
             self.prev_decomposed_region_names = decomposed_region_names
         else:
             ltlmop_logger.info('not inside any region!')

@@ -23,6 +23,11 @@ import json
 from numbers import Number
 import numpy
 
+import logging
+import globalConfig
+ltlmop_logger = logging.getLogger('ltlmop_logger')
+import inspect
+
 Polygon.setTolerance(0.01)
 
 class Point(object):
@@ -178,6 +183,7 @@ class RegionFileInterface(object):
                 return i
         # only show error message if it is not boundary
         if name != "boundary":
+            ltlmop_logger.log(2,"callerFrame:" + str(inspect.getouterframes(inspect.currentframe(), 2)))
             print 'WARNING: Region "' + name + '" not found.'
         return -1
 
