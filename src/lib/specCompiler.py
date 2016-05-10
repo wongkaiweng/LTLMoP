@@ -384,6 +384,12 @@ class SpecCompiler(object):
                         spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans']]+[createIAMaintainDistanceSysTopologyFragment(self.parser.proj.regionMapping, self.proj.rfi.regions,\
                             self.proj.rfi.transitions, use_bits=self.proj.compile_options['use_region_bit_encoding'], other_robot_names_list=self.proj.otherRobot)]))
 
+            # extra specification
+            # first check if file exist
+            if os.path.isfile(self.proj.rfi.filename.replace('.regions','.ltl')):
+                with open(self.proj.rfi.filename.replace('.regions','.ltl'), 'r') as f:
+                    spec["SysTrans"] = '&\n '.join(filter(None,[spec['SysTrans']]+[f.read()]))
+                f.closed
            # --------------------------------------------#
             LTLspec_env = '&\n '.join(filter(None, [spec["EnvInit"], spec["EnvTrans"], spec["EnvGoals"]]))
             LTLspec_sys = '&\n '.join(filter(None, [spec["SysInit"], spec["SysTrans"], spec["SysGoals"]]))

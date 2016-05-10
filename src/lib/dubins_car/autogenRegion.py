@@ -22,6 +22,7 @@ from fmrb.dubins_traffic import RoadNetwork
 import math
 from math import sin, cos
 import Polygon
+import numpy
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -63,6 +64,16 @@ def gen_world_regions(roads, output_file):
     f_lane = open(output_file+'_transitions_to_exclude', 'w')
     f_lane.write(str(lane_list))
     f_lane.close()
+
+    # build restrictions not to go backwards
+    roadTransitions = road_restrictions(interface.transitions, interface.regions)
+    ltl_transitions = []
+    for origin, destList in roadTransitions.iteritems():
+        ltl_transitions.append('[](e.'+origin+'_rc -> (s.'+origin+'|'+"|".join(["s."+x for x in destList])+'))')
+
+    f_transitions = open(output_file.replace('.regions','.ltl'), 'w')
+    f_transitions.write("&\n".join(ltl_transitions))
+    f_transitions.close()
 
     interface.writeFile(output_file)
     return road_regions
@@ -109,6 +120,11 @@ def road_segment_regions(x1, x2, prefix='straightroad',
     length = math.sqrt((x1[0]-x2[0])**2 + (x1[1]-x2[1])**2) # length + 1.2 = with intersection as well
     angle = math.atan2(x2[1]-x1[1], x2[0]-x1[0])
 
+    #-pi to pi
+    if angle == math.pi/2:
+        angle_prefix = "pi2_"
+    else:
+        angle_prefix = ""
 
     intersection_width = 0.6
     outputRegionList = []
@@ -133,23 +149,23 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
         # 4 regions in total
         # intersections
-        region_x1_intersection = createRect(prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
+        region_x1_intersection = createRect(prefix+angle_prefix+'left_full_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*2*scale)
 
         box_right_top_0 = angle_adjusted_x1_0 + length*cos(angle)
         box_right_top_1 = angle_adjusted_x1_1 + length*sin(angle)
-        region_x2_intersection = createRect(prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
+        region_x2_intersection = createRect(prefix+angle_prefix+'right_full_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*2*scale)
 
         # 2 lanes
         shiftedTop_x1_0 = angle_adjusted_x1_0+intersection_width*2*cos(angle)
         shiftedTop_x1_1 = angle_adjusted_x1_1+intersection_width*2*sin(angle)
-        region_lane_top = createRect(prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
+        region_lane_top = createRect(prefix+angle_prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
         shiftedBottom_x1_0 = shiftedTop_x1_0+intersection_width*sin(angle) #height=1.2
         shiftedBottom_x1_1 = shiftedTop_x1_1-intersection_width*cos(angle)
-        region_lane_bottom = createRect(prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
+        region_lane_bottom = createRect(prefix+angle_prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
 
@@ -160,23 +176,23 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
         # 4 regions in total (right intersect smaller)
         # intersections
-        region_x1_intersection = createRect(prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
+        region_x1_intersection = createRect(prefix+angle_prefix+'left_full_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*2*scale)
 
         box_right_top_0 = angle_adjusted_x1_0 + length*cos(angle) + intersection_width*cos(angle)#+ 0.06*cos(angle)
         box_right_top_1 = angle_adjusted_x1_1 + length*sin(angle) + intersection_width*sin(angle)#+ 0.06*sin(angle)
-        region_x2_intersection = createRect(prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
+        region_x2_intersection = createRect(prefix+angle_prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
                                              intersection_width*2*scale, (intersection_width)*scale) #-0.06
 
         # 2 lanes
         shiftedTop_x1_0 = angle_adjusted_x1_0+intersection_width*2*cos(angle)
         shiftedTop_x1_1 = angle_adjusted_x1_1+intersection_width*2*sin(angle)
-        region_lane_top = createRect(prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
+        region_lane_top = createRect(prefix+angle_prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
         shiftedBottom_x1_0 = shiftedTop_x1_0+intersection_width*sin(angle) #height=1.2
         shiftedBottom_x1_1 = shiftedTop_x1_1-intersection_width*cos(angle)
-        region_lane_bottom = createRect(prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
+        region_lane_bottom = createRect(prefix+angle_prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
 
@@ -187,23 +203,23 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
         # 4 regions in total (left intersect smaller)
         # intersections
-        region_x1_intersection = createRect(prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
+        region_x1_intersection = createRect(prefix+angle_prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
                                              intersection_width*2*scale, (intersection_width)*scale) #-0.06
 
         box_right_top_0 = angle_adjusted_x1_0 + length*cos(angle)
         box_right_top_1 = angle_adjusted_x1_1 + length*sin(angle)
-        region_x2_intersection = createRect(prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
+        region_x2_intersection = createRect(prefix+angle_prefix+'right_full_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*2*scale)
 
         # 2 lanes
         shiftedTop_x1_0 = angle_adjusted_x1_0+(intersection_width)*cos(angle) #-0.06
         shiftedTop_x1_1 = angle_adjusted_x1_1+(intersection_width)*sin(angle) #-0.06
-        region_lane_top = createRect(prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
+        region_lane_top = createRect(prefix+angle_prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
         shiftedBottom_x1_0 = shiftedTop_x1_0+intersection_width*sin(angle) #height=1.2
         shiftedBottom_x1_1 = shiftedTop_x1_1-intersection_width*cos(angle)
-        region_lane_bottom = createRect(prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
+        region_lane_bottom = createRect(prefix+angle_prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
                                              intersection_width*scale, lane_marker_length*scale)
 
     else:
@@ -212,23 +228,23 @@ def road_segment_regions(x1, x2, prefix='straightroad',
 
         # 4 regions in total (short intersection)
         # intersections
-        region_x1_intersection = createRect(prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
+        region_x1_intersection = createRect(prefix+angle_prefix+'left_intersect', angle_adjusted_x1_0*scale, angle_adjusted_x1_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*scale)
 
         box_right_top_0 = angle_adjusted_x1_0 + length*cos(angle) + intersection_width*cos(angle)
         box_right_top_1 = angle_adjusted_x1_1 + length*sin(angle) + intersection_width*sin(angle)
-        region_x2_intersection = createRect(prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
+        region_x2_intersection = createRect(prefix+angle_prefix+'right_intersect',box_right_top_0*scale, box_right_top_1*scale, angle,\
                                              intersection_width*2*scale, intersection_width*scale)
 
         # 2 lanes
         shiftedTop_x1_0 = angle_adjusted_x1_0+intersection_width*cos(angle)
         shiftedTop_x1_1 = angle_adjusted_x1_1+intersection_width*sin(angle)
-        region_lane_top = createRect(prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
+        region_lane_top = createRect(prefix+angle_prefix+'top_lane',shiftedTop_x1_0*scale, shiftedTop_x1_1*scale, angle,\
                                              intersection_width*scale, (lane_marker_length)*scale)
 
         shiftedBottom_x1_0 = shiftedTop_x1_0+intersection_width*sin(angle) #height=1.2
         shiftedBottom_x1_1 = shiftedTop_x1_1-intersection_width*cos(angle)
-        region_lane_bottom = createRect(prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
+        region_lane_bottom = createRect(prefix+angle_prefix+'bottom_lane', shiftedBottom_x1_0*scale, shiftedBottom_x1_1*scale, angle,\
                                              intersection_width*scale, (lane_marker_length)*scale)
 
     # do some round off of floating points
@@ -331,6 +347,131 @@ def make_boundary_and_obstacles(regionsList):
     return obstacle_regions_list + [bound_region]
 
 
+def road_restrictions(transitions, regions):
+    """
+    build restrictions (since each lane can only go one way)
+    """
+    roadTransition = {} # store real network info
+
+    for OriginNo in range(len(regions)):
+        # skip boundaries and obstacles
+        if regions[OriginNo].name == 'boundary' or regions[OriginNo].isObstacle:
+            continue
+
+        # find origin center
+        origin_regionPolygon = Polygon.Polygon([(pt.x,pt.y) for pt in regions[OriginNo].getPoints()])
+        origin_center = origin_regionPolygon.center(0)
+
+        for DestNo in range(len(regions)):
+            # skip boundaries and obstacles
+            if regions[DestNo].name == 'boundary' or regions[DestNo].isObstacle:
+                continue
+
+            # find origin center
+            dest_regionPolygon = Polygon.Polygon([(pt.x,pt.y) for pt in regions[DestNo].getPoints()])
+            dest_center = dest_regionPolygon.center(0)
+
+            if transitions[OriginNo][DestNo]:
+                # check where that face is on original region
+                # from center check face center angle
+                for face in transitions[OriginNo][DestNo]:
+                    face_pt0,face_pt1 = face
+                    face_center = ((face_pt0[0] + face_pt1[0])/2.0, (face_pt0[1] + face_pt1[1])/2.0)
+
+                    # calculate angle from face to two regions
+                    angle_origin = math.atan2(face_center[1]-origin_center[1], face_center[0]-origin_center[0])
+                    angle_dest = math.atan2(face_center[1]-dest_center[1], face_center[0]-dest_center[0])
+
+                    # check if region is rotated
+                    if "pi2" in regions[OriginNo].name:
+                        rotate_ninety_origin = True
+                    else:
+                        rotate_ninety_origin = False
+
+                    if "pi2" in regions[DestNo].name:
+                        rotate_ninety_dest = True
+                    else:
+                        rotate_ninety_dest = False
+
+                    #print '==================================================='
+                    #print "face:" + str(face)
+                    #print '---------------------------------------------------'
+                    origin_direction = findDirection(regions, OriginNo, angle_origin, rotate_ninety_origin, True)
+                    #print "Origin: " + regions[OriginNo].name + " - angle: " + str(angle_origin) + " -direction:" + str(origin_direction)
+
+                    #print '---------------------------------------------------'
+                    dest_direction = findDirection(regions, DestNo, angle_dest, rotate_ninety_dest, False)
+                    #print "Dest: " + regions[DestNo].name + " - angle: " + str(angle_dest) + " -direction:" + str(dest_direction)
+
+                    # check where that face is on destination region
+                    if numpy.dot(origin_direction, dest_direction) > 0:
+                        # same direction
+                        # print "Origin:"+regions[OriginNo].name+' and '+regions[DestNo].name +' are connected!'
+                        if regions[OriginNo].name not in roadTransition.keys():
+                            roadTransition[regions[OriginNo].name] = []
+
+                        if regions[DestNo].name not in roadTransition[regions[OriginNo].name]:
+                            roadTransition[regions[OriginNo].name].append(regions[DestNo].name)
+
+    #print roadTransition
+    return roadTransition
+
+def findDirection(regions, idx, faceAngle, rotate_ninety, isOrigin):
+    """
+    find direction of the face
+    origin and dest are different (origin always go out)
+    """
+
+    if "full_intersect" in regions[idx].name:
+        # depends on the angle
+        if faceAngle < 0:
+            faceAngle += 2*math.pi
+
+        if isOrigin:
+            # origin exiting version
+            possible_directions = [[1,0],[0,1],[0,1],[-1,0],\
+                                    [-1,0],[0,-1],[0,-1],[1,0]]
+        else:
+            # dest arriving version
+            possible_directions = [[1,0],[0,-1],[0,1],[1,0],\
+                                   [-1,0],[0,1],[0,-1],[-1,0]]
+            #print 'dest-direction:' + str(possible_directions[int(faceAngle/(math.pi/4))])
+        direction = possible_directions[int(faceAngle/(math.pi/4))]
+
+        return direction
+
+    else:
+        if "top" in regions[idx].name:
+            direction = [1,0]
+        elif "bottom" in regions[idx].name:
+            direction = [-1,0]
+        elif "left_intersect" in regions[idx].name:
+            direction = [0,1]
+        elif "right_intersect" in regions[idx].name:
+            direction = [0,-1]
+        else:
+            print "does not match key word"
+
+        #print "direction:" + str(direction)
+        if rotate_ninety:
+            direction = rotation_matrix(direction, math.pi/2)
+            #print "rotated 90"
+
+        # based on face, find angle vector
+        angle_vector = [math.cos(faceAngle), math.sin(faceAngle)]
+        #print "faceAngle:" + str(faceAngle) + ", angle_vector:"  +str(angle_vector)
+
+        if not isOrigin:
+            #print "not origin"
+            if numpy.dot(angle_vector, direction) <0:
+                angle_vector = [i * -1 for i in angle_vector]
+
+        return angle_vector
+
+def rotation_matrix(axis, theta):
+    rotMatrix = numpy.array([[numpy.cos(theta), -numpy.sin(theta)],
+                             [numpy.sin(theta),  numpy.cos(theta)]])
+    return numpy.dot(rotMatrix, axis)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Supply .json file with rnd dict. e.g:\n\
