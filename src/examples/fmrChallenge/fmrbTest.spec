@@ -29,7 +29,7 @@ basicSim
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-output_2_3/output_2_3.regions
+output_3_4/output_3_4.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 
@@ -56,9 +56,17 @@ segment_1_bottom_lane = p8
 segment_1_top_lane = p6
 
 Spec: # Specification in structured English
-Robot starts in segment_2_bottom_lane
 
-#visit segment_0_top_lane (2_2)
-visit segment_5_bottom_lane
+##### (2_2)
+#visit segment_0_top_lane
+
+##### (2_3)
+#Robot starts in segment_2_bottom_lane
+#visit segment_5_bottom_lane
+#visit segment_4_top_lane
+
+##### (3_4)
+Robot starts in segment_2_bottom_lane
 visit segment_4_top_lane
+visit segment_14_top_lane
 

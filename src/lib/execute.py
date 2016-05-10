@@ -152,6 +152,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         ################# WHAT MODE ARE WE IN
         self.recovery = False
         self.ENVcharacterization = True
+        self.ENV_runtimeMonitoring = False
         #########################################
         
         # -----------------------------------------#
@@ -416,7 +417,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             self.runStrategy.wait()
 
         ######## ENV Assumption Learning ###########
-        if firstRun:
+        if firstRun and self.ENV_runtimeMonitoring:
             ###########
             #self.tracebackTree : separate spec lines to spec groups
             #############
@@ -669,7 +670,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 ltlmop_logger.debug('We finished')
 
         # start checkViolation thread
-        if not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation":
+        if self.ENV_runtimeMonitoring and \
+           (not self.proj.compile_options['neighbour_robot'] or not self.proj.compile_options["multi_robot_mode"] == "negotiation"):
             #self.checkEnvTransViolationThread = threading.Thread(target=self.run_check_envTrans_violations, args=())
             self.checkEnvTransViolationThread = threading.Thread(target=self.run_simple_check_envTrans_violations, args=())
             self.checkEnvTransViolationThread.daemon = True  # Daemonize thread
@@ -714,11 +716,12 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         last_gui_update_time = 0
 
         # track number of goals
-        if not self.spec['SysGoals'].count('[]<>') == 1:
-            self.totalSysGoals = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
-        else:
-            self.totalSysGoals = 1
-        ltlmop_logger.debug("totalSysGoals:" + str(self.totalSysGoals))
+        if self.ENV_runtimeMonitoring:
+            if not self.spec['SysGoals'].count('[]<>') == 1:
+                self.totalSysGoals = len(LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals']))
+            else:
+                self.totalSysGoals = 1
+            ltlmop_logger.debug("totalSysGoals:" + str(self.totalSysGoals))
 
         # FIXME: don't crash if no spec file is loaded initially
         while self.alive.isSet():
@@ -859,10 +862,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             ########## UPDATE GOAL ID #############
             #######################################
             #also make sure we are not in centralized mode to change goal_id
-            if int(self.strategy.current_state.goal_id) < self.totalSysGoals and not self.runCentralizedStrategy:
-                self.prev_z = self.strategy.current_state.goal_id
-            else:
-                pass #stays the same
+            if self.ENV_runtimeMonitoring:
+                if int(self.strategy.current_state.goal_id) < self.totalSysGoals and not self.runCentralizedStrategy:
+                    self.prev_z = self.strategy.current_state.goal_id
+                else:
+                    pass #stays the same
 
             if not (self.proj.compile_options['neighbour_robot'] and self.proj.compile_options["multi_robot_mode"] == "patching" and self.robClient.getCentralizedExecutionStatus()):
                 # set current_next_states to compare with last_next_states
