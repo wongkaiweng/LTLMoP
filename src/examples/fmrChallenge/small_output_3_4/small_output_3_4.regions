@@ -58,7 +58,7 @@ Regions: # Stored as JSON string
         "name": "segment_0_right_full_intersect", 
         "color": [
             255, 
-            128, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -95,8 +95,8 @@ Regions: # Stored as JSON string
         "name": "segment_0_top_lane", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -132,7 +132,7 @@ Regions: # Stored as JSON string
         "name": "segment_0_bottom_lane", 
         "color": [
             255, 
-            255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -242,9 +242,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_1_pi2_bottom_lane", 
         "color": [
-            255, 
             0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -281,7 +281,7 @@ Regions: # Stored as JSON string
         "color": [
             255, 
             0, 
-            0
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -317,8 +317,8 @@ Regions: # Stored as JSON string
         "name": "segment_2_top_lane", 
         "color": [
             255, 
-            0, 
-            255
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -354,8 +354,8 @@ Regions: # Stored as JSON string
         "name": "segment_2_bottom_lane", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -428,8 +428,8 @@ Regions: # Stored as JSON string
         "name": "segment_3_pi2_top_lane", 
         "color": [
             255, 
-            0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -464,7 +464,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_3_pi2_bottom_lane", 
         "color": [
-            0, 
+            255, 
             0, 
             255
         ], 
@@ -501,9 +501,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_4_right_full_intersect", 
         "color": [
-            0, 
             255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -538,7 +538,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_4_top_lane", 
         "color": [
-            0, 
+            255, 
             255, 
             0
         ], 
@@ -575,9 +575,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_4_bottom_lane", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -612,9 +612,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_5_pi2_top_lane", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -649,7 +649,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_5_pi2_bottom_lane", 
         "color": [
-            255, 
+            0, 
             0, 
             255
         ], 
@@ -686,9 +686,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_6_right_full_intersect", 
         "color": [
-            255, 
-            255, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -723,8 +723,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_6_top_lane", 
         "color": [
-            0, 
             255, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -761,8 +761,8 @@ Regions: # Stored as JSON string
         "name": "segment_6_bottom_lane", 
         "color": [
             0, 
-            0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -798,8 +798,8 @@ Regions: # Stored as JSON string
         "name": "segment_7_pi2_right_full_intersect", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -834,9 +834,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_7_pi2_top_lane", 
         "color": [
-            255, 
             0, 
-            255
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -872,8 +872,8 @@ Regions: # Stored as JSON string
         "name": "segment_7_pi2_bottom_lane", 
         "color": [
             255, 
-            0, 
-            255
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -908,9 +908,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_8_right_intersect", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -946,7 +946,7 @@ Regions: # Stored as JSON string
         "name": "segment_8_top_lane", 
         "color": [
             255, 
-            128, 
+            255, 
             0
         ], 
         "holeList": [], 
@@ -982,9 +982,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_8_bottom_lane", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1056,9 +1056,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_9_pi2_bottom_lane", 
         "color": [
+            255, 
             0, 
-            0, 
-            255
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1093,7 +1093,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_10_right_full_intersect", 
         "color": [
-            255, 
+            0, 
             0, 
             255
         ], 
@@ -1131,7 +1131,7 @@ Regions: # Stored as JSON string
         "name": "segment_10_top_lane", 
         "color": [
             255, 
-            255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1168,7 +1168,7 @@ Regions: # Stored as JSON string
         "name": "segment_10_bottom_lane", 
         "color": [
             255, 
-            0, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -1205,8 +1205,8 @@ Regions: # Stored as JSON string
         "name": "segment_11_pi2_right_full_intersect", 
         "color": [
             255, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1242,7 +1242,7 @@ Regions: # Stored as JSON string
         "name": "segment_11_pi2_top_lane", 
         "color": [
             255, 
-            128, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1279,7 +1279,7 @@ Regions: # Stored as JSON string
         "name": "segment_11_pi2_bottom_lane", 
         "color": [
             255, 
-            128, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1315,9 +1315,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_12_top_lane", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1352,9 +1352,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_12_bottom_lane", 
         "color": [
-            255, 
             0, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1390,7 +1390,7 @@ Regions: # Stored as JSON string
         "name": "segment_13_top_lane", 
         "color": [
             255, 
-            255, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -1463,8 +1463,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_14_right_intersect", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1500,9 +1500,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_14_top_lane", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            255, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1537,8 +1537,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_14_bottom_lane", 
         "color": [
+            0, 
             255, 
-            128, 
             0
         ], 
         "holeList": [], 
@@ -1574,8 +1574,8 @@ Regions: # Stored as JSON string
     {
         "name": "segment_15_pi2_top_lane", 
         "color": [
-            0, 
             255, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1611,7 +1611,7 @@ Regions: # Stored as JSON string
     {
         "name": "segment_15_pi2_bottom_lane", 
         "color": [
-            255, 
+            0, 
             255, 
             0
         ], 
@@ -1648,9 +1648,9 @@ Regions: # Stored as JSON string
     {
         "name": "segment_16_pi2_top_lane", 
         "color": [
-            0, 
-            0, 
-            255
+            255, 
+            128, 
+            0
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1686,8 +1686,8 @@ Regions: # Stored as JSON string
         "name": "segment_16_pi2_bottom_lane", 
         "color": [
             0, 
-            255, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1722,7 +1722,7 @@ Regions: # Stored as JSON string
     {
         "name": "hole0", 
         "color": [
-            255, 
+            0, 
             0, 
             255
         ], 
@@ -1760,7 +1760,7 @@ Regions: # Stored as JSON string
         "name": "hole1", 
         "color": [
             255, 
-            128, 
+            0, 
             0
         ], 
         "holeList": [], 
@@ -1797,8 +1797,8 @@ Regions: # Stored as JSON string
         "name": "hole2", 
         "color": [
             255, 
-            128, 
-            0
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1833,8 +1833,8 @@ Regions: # Stored as JSON string
     {
         "name": "hole3", 
         "color": [
-            0, 
             255, 
+            128, 
             0
         ], 
         "holeList": [], 
@@ -1870,9 +1870,9 @@ Regions: # Stored as JSON string
     {
         "name": "hole4", 
         "color": [
-            255, 
-            128, 
-            0
+            0, 
+            0, 
+            255
         ], 
         "holeList": [], 
         "height": 0, 
@@ -1945,7 +1945,7 @@ Regions: # Stored as JSON string
         "name": "boundary", 
         "color": [
             255, 
-            255, 
+            128, 
             0
         ], 
         "holeList": [], 

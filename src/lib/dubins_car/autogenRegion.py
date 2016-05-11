@@ -433,8 +433,10 @@ def findDirection(regions, idx, faceAngle, rotate_ninety, isOrigin):
                                     [-1,0],[0,-1],[0,-1],[1,0]]
         else:
             # dest arriving version
-            possible_directions = [[1,0],[0,-1],[0,1],[1,0],\
-                                   [-1,0],[0,1],[0,-1],[-1,0]]
+            #possible_directions = [[1,0],[0,-1],[0,1],[1,0],\
+            #                       [-1,0],[0,1],[0,-1],[-1,0]]
+            possible_directions = [[-1,0],[0,-1],[0,1],[-1,0],\
+                                   [1,0],[0,1],[0,-1],[1,0]]
             #print 'dest-direction:' + str(possible_directions[int(faceAngle/(math.pi/4))])
         direction = possible_directions[int(faceAngle/(math.pi/4))]
 
@@ -442,13 +444,17 @@ def findDirection(regions, idx, faceAngle, rotate_ninety, isOrigin):
 
     else:
         if "top" in regions[idx].name:
-            direction = [1,0]
-        elif "bottom" in regions[idx].name:
             direction = [-1,0]
+            #direction = [1,0]
+        elif "bottom" in regions[idx].name:
+            #direction = [-1,0]
+            direction = [1,0]
         elif "left_intersect" in regions[idx].name:
-            direction = [0,1]
-        elif "right_intersect" in regions[idx].name:
+            #direction = [0,1]
             direction = [0,-1]
+        elif "right_intersect" in regions[idx].name:
+            #direction = [0,-1]
+            direction = [0,1]
         else:
             print "does not match key word"
 

@@ -24,7 +24,7 @@ decompose: False
 interactive: False
 
 CurrentConfigName:
-basicSim
+ros
 
 Customs: # List of custom propositions
 
