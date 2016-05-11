@@ -32,6 +32,8 @@ RegionFile: # Relative path of region description file
 output_3_4/output_3_4.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
+agent0InTheWay, 1
+agent1InTheWay, 1
 
 
 ======== SPECIFICATION ========

@@ -395,6 +395,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         vicon_object_name (string): name of the vicon object (default='folder:mainBody')
         poseX (float): x-coorindate of the location (default=0.0)
         poseY (float): y-coorindate of the location (default=0.0)
+        range (float): define radius of the area (default=0.5)
         """
         if initial:
             print "Connecting to Vicon server..."
