@@ -106,17 +106,17 @@ def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, sc
 
         if doUpdate[roboName]:
 
-            currRegName = regions[curr[roboName]].name
-            nextRegName = regions[next[roboName]].name
+            currRegName = regions[curr].name
+            nextRegName = regions[next].name
             print "current region: "+currRegName
             print "next region: "+nextRegName
             # print regionNumbers
             currNbr = [[]]; nextNbr =[[]]
             for currRegNbr, region in enumerate(regions):
-                if region.name == regions[curr[roboName]].name:
+                if region.name == regions[curr].name:
                     break
             for nextRegNbr, region in enumerate(regions):
-                if region.name == regions[next[roboName]].name:
+                if region.name == regions[next].name:
                     break
             # print currRegNbr, nextRegNbr
 

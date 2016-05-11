@@ -29,7 +29,7 @@ basicSimUnicycle
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-output_2_3.regions
+output_3_4.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 
@@ -56,7 +56,7 @@ segment_1_bottom_lane = p8
 segment_1_top_lane = p6
 
 Spec: # Specification in structured English
-Robot starts in segment_3_bottom_lane
+Robot starts in segment_3_pi2_bottom_lane
 
 #visit segment_0_top_lane (2_2)
 visit segment_4_top_lane
