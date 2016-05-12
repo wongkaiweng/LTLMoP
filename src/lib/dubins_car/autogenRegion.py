@@ -61,7 +61,7 @@ def gen_world_regions(roads, output_file):
     # here we also want to remove the lanes in the middle
     interface.recalcAdjacency(lane_list)
     # also output lane_list to a file
-    f_lane = open(output_file+'_transitions_to_exclude', 'w')
+    f_lane = open(output_file+'_transitions_to_exclude', 'w+')
     f_lane.write(str(lane_list))
     f_lane.close()
 
@@ -71,9 +71,14 @@ def gen_world_regions(roads, output_file):
     for origin, destList in roadTransitions.iteritems():
         ltl_transitions.append('[](e.'+origin+'_rc -> (s.'+origin+'|'+"|".join(["s."+x for x in destList])+'))')
 
-    f_transitions = open(output_file.replace('.regions','.ltl'), 'w')
+    f_transitions = open(output_file.replace('.regions','.ltl'), 'w+')
     f_transitions.write("&\n".join(ltl_transitions))
     f_transitions.close()
+
+    # also save as a list
+    f_transitions_dict = open(output_file.replace('.regions','_transition_dict.txt'), 'w+')
+    f_transitions_dict.write(str(roadTransitions))
+    f_transitions_dict.close()
 
     interface.writeFile(output_file)
     return road_regions

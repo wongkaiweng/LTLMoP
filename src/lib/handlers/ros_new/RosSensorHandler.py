@@ -9,6 +9,7 @@ import roslib
 import rospy
 import Polygon
 import gazebo_msgs.msg
+import ast
 
 import os, sys
 # Climb the tree to find out where we are
@@ -36,6 +37,7 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         self.rosInitHandler = shared_data['ROS_INIT_HANDLER']
         self.executor = executor
         self.agentPose = {}
+        self.region_transition_dict = {}
 
     ###################################
     ### Available sensor functions: ###
@@ -50,6 +52,11 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         if initial:
             # get pose
             rospy.Subscriber("/gazebo/model_states", gazebo_msgs.msg.ModelStates, self._callback, agent)
+
+            # get transition data
+            f = open(self.executor.proj.rfi.filename.replace('.regions','_transition_dict.txt'), 'r')
+            self.region_transition_dict = ast.literal_eval(f.read())
+            f.close()
         else:
             # now check if agent is at the next region
 
@@ -60,14 +67,18 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
 
             # then obtain current heading region
             if self.executor.strategy:
-                headingRegionObj = self.executor.strategy.current_state.getPropValue('region')
-                headingRegionPolygon = self._createRegionPolygon(headingRegionObj)
+                currentRegionObj = self.executor.strategy.current_state.getPropValue('regionCompleted')
+                for next_region_name in self.region_transition_dict[currentRegionObj.name]:
+                    headingRegionObj = self.executor.proj.rfi.regions[\
+                                        self.executor.proj.rfi.indexOfRegionWithName(next_region_name)]
+                    headingRegionPolygon = self._createRegionPolygon(headingRegionObj)
 
-                #ltlmop_logger.debug(agent+" in next region:" +\
-                #                     str(headingRegionPolygon.isInside(simulation_pose[0], simulation_pose[1])))
-                if headingRegionPolygon.isInside(simulation_pose[0], simulation_pose[1]):
-                    ltlmop_logger.log(4,agent+' is in front of me.')
-                return headingRegionPolygon.isInside(simulation_pose[0], simulation_pose[1])
+                    #ltlmop_logger.debug(agent+" in next region:" +\
+                    #                     str(headingRegionPolygon.isInside(simulation_pose[0], simulation_pose[1])))
+                    if headingRegionPolygon.isInside(simulation_pose[0], simulation_pose[1]):
+                        ltlmop_logger.log(4,agent+' is in front of me.')
+                        return True
+                return False
             else:
                 return False
 

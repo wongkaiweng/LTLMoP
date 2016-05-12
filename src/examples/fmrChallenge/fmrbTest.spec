@@ -21,7 +21,7 @@ include_heading: False
 winning_livenesses: False
 synthesizer: slugs
 decompose: False
-interactive: False
+interactive: True
 
 CurrentConfigName:
 ros
@@ -64,11 +64,17 @@ Spec: # Specification in structured English
 
 ##### (2_3)
 #Robot starts in segment_2_bottom_lane
-#visit segment_5_bottom_lane
-#visit segment_4_top_lane
+#if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_5_bottom_lane
+#if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_4_top_lane
+#if you are sensing (agent0InTheWay or agent1InTheWay) then stay there
+#infinitely often not agent0InTheWay and not agent1InTheWay
 
 ##### (3_4)
 Robot starts in segment_2_bottom_lane
-visit segment_4_top_lane
-visit segment_14_top_lane
+if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_4_top_lane
+if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_14_top_lane
+if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_3_pi2_right_intersect
+
+if you are sensing (agent0InTheWay or agent1InTheWay) then stay there
+infinitely often not agent0InTheWay and not agent1InTheWay
 

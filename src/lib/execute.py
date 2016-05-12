@@ -661,7 +661,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         ltlmop_logger.debug("self.strategy.current_state:" + str(self.strategy.current_state))
         self.last_sensor_state = self.strategy.current_state.getInputs()
 
-        if self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive']:
+        if self.ENV_runtimeMonitoring and \
+            (self.proj.compile_options['symbolic'] or self.proj.compile_options['interactive']):
             self.envTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'EnvTrans')
             self.sysTransCheck = LTLParser.LTLcheck.LTL_Check(None,{}, self.spec, 'SysTrans')
             if self.proj.compile_options['symbolic']:

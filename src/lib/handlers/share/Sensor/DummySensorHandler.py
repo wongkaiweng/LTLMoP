@@ -257,8 +257,8 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
                     ltlmop_logger.debug("Dummy SENSOR: current region changed to:" + str(regionName))
                 self.prev_current_region = regionName
 
-        if not self.currentRegionPoly.overlaps(RobotPoly):
-            ltlmop_logger.warning("not inside next region or overlaps current region?!")
+        #if not self.currentRegionPoly.overlaps(RobotPoly):
+        #    ltlmop_logger.warning("not inside next region or overlaps current region?!")
 
         # also lock locations of environment robots
         if self.executor.proj.compile_options['neighbour_robot'] and self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":
