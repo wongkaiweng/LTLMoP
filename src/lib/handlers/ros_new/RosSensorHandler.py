@@ -9,6 +9,7 @@ import roslib
 import rospy
 import Polygon
 import gazebo_msgs.msg
+import geometry_msgs.msg
 import ast
 
 import os, sys
@@ -51,6 +52,7 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         """
         if initial:
             # get pose
+            self.agentPose[agent] = geometry_msgs.msg.Pose()
             rospy.Subscriber("/gazebo/model_states", gazebo_msgs.msg.ModelStates, self._callback, agent)
 
             # get transition data
@@ -96,6 +98,7 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         return formedPolygon
 
     def _callback(self, msg, agent):
-        egoIdx = msg.name.index(agent)
-        self.agentPose[agent] = msg.pose[egoIdx]
+        if msg is not None:
+            egoIdx = msg.name.index(agent)
+            self.agentPose[agent] = msg.pose[egoIdx]
 
