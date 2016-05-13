@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 import platform
 from collections import OrderedDict
 from math import sin, cos
@@ -66,12 +67,11 @@ def initializeController(fname):
             P = mat_contents['ac_trans_py'][0][i]['P'][0][0]
             pre = mat_contents['ac_trans_py'][0][i]['pre'][0][0]
             post = mat_contents['ac_trans_py'][0][i]['post'][0][0]
-            verts = mat_contents['ac_trans_py'][0][i]['verts'][0][0]
 
-            ac_trans[i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post, 'verts':verts}
+            ac_trans[i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
 
         except:
-            ac_trans[i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[], 'verts':[]}
+            ac_trans[i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}
 
     # Instantiate the system dynamics model
     sysObj = Unicycle()
@@ -91,7 +91,7 @@ def initializeController(fname):
     return sysObj, acLastData, data, aut, ac_trans, ac_inward, cyclicTrinaryVector
 
 def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, scalingPixelsToMeters, doUpdate, acLastData, data, aut, \
-    ac_trans, ac_inward, cyclicTrinaryVector, currRegNbr, nextRegNbr, templateIndex, prevInvTransformationMatrix, invTransformationMatrix, intersectionSuccessor):
+    ac_trans, ac_inward, cyclicTrinaryVector, currRegNbr, nextRegNbr, templateIndex, prevTransformationMatrix, transformationMatrix, thetaIndex, inIntersection):
     """
 
     """
@@ -125,7 +125,7 @@ def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, sc
 
     # Execute one step of the local planner and collect velocity components
     vx,vy,w,acLastData,data = executeSingleStep(sysObj,aut,ac_trans,ac_inward,pose,currRegNbr,nextRegNbr,acLastData,data,cyclicTrinaryVector, \
-        templateIndex, prevInvTransformationMatrix, invTransformationMatrix, intersectionSuccessor)
+        templateIndex, prevTransformationMatrix, transformationMatrix, thetaIndex, inIntersection)
     # try:
     #     vx,vy,w,acLastData,data = executeSingleStep(sysObj,aut,ac_trans,ac_inward,pose,currRegNbr,nextRegNbr,acLastData,data,cyclicTrinaryVector)
     # except:
@@ -144,7 +144,8 @@ def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, sc
     return Vx, Vy, W, acLastData, data, currRegNbr, nextRegNbr
 
 
-def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acLastData, data, cyclicTrinaryVector, templateIndex, prevInvTransformationMatrix, invTransformationMatrix, intersectionSuccessor):
+def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acLastData, data, cyclicTrinaryVector, templateIndex, prevTransformationMatrix, \
+    transformationMatrix, thetaIndex, inIntersection):
 
     debug = False
 
@@ -208,11 +209,13 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         w = 0
         acData = acLastData
     else:
-        currTransIndices = intersectionSuccessor if intersectionSuccessor else 0
+
+        # find out which template to use based on whether or not we are in an intersection, and the rotation index
+        currTransIndices = thetaIndex+1 if inIntersection else 0
 
         # Also, if not in a funnel yet, we need to apply the old transformation matrix
 
-        logging.debug("Found these possible indices for the current transition: "+str(currTransIndices))
+        ltlmop_logger.debug("Found these possible indices for the current transition: "+str(currTransIndices))
 
         # next, attempt to match these indices to stored funnels
         acTransIndex = []
@@ -223,55 +226,73 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         # for ii,currTransIndex in enumerate(currTransIndices):
         currState = trans[currTransIndex][0]
         nextState = trans[currTransIndex][1]
-        logging.debug("currState (as computed from matching current/next regions): "+str(currState))
-        logging.debug("nextState (as computed from matching current/next regions): "+str(nextState))
+        ltlmop_logger.debug("currState (as computed from matching current/next regions): "+str(currState))
+        ltlmop_logger.debug("nextState (as computed from matching current/next regions): "+str(nextState))
 
         for i,ac_test in enumerate(ac_trans):
             # check if there is a stored funnel for this transition
             if ac_test['pre'] == [[currState+1]] and ac_test['post'] == [[nextState+1]]:
-                logging.debug('found ac trans for state transition: '+str(ac_test['pre'])+' '+str(ac_test['post']))
+                ltlmop_logger.debug('found ac trans for state transition: '+str(ac_test['pre'])+' '+str(ac_test['post']))
 
                 # Check if we are inside this funnel
-                if isinternalUnion(ac_test, invTransformationMatrix[:2] * np.mat([x[0,0], x[0,1], 1]).T, cyclicTrinaryVector, sysObj):
-                    logging.debug("found a transition funnel "+str(i))
+                print thetaIndex
+                print x[2]
+                xTmp = (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T
+                xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
+
+                print "inv transformation :"
+                print transformationMatrix
+                print 'x: '
+                print x
+                print xTransformed
+
+                if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
+                    ltlmop_logger.debug("found a transition funnel "+str(i))
                     ac = ac_trans[i]
                     acTransIndex = i
                     break
 
         if not acTransIndex and ac_inward:
-            logging.debug("not inside any transition funnel. attempting to find an inward funnel")
+            ltlmop_logger.debug("not inside any transition funnel. attempting to find an inward funnel")
             # for ii,currTransIndex in enumerate(currTransIndices):
 
             currState = trans[currTransIndex][0]
-            logging.debug("currState (as computed from matching current/next regions): "+str(currState))
+            ltlmop_logger.debug("currState (as computed from matching current/next regions): "+str(currState))
         
             for i,ac_test in enumerate(ac_inward):
 
                 # check if there is a stored funnel for this state
                 if ac_test['pre'] == [[currState+1]]:
-                    logging.debug('found ac inward for state: '+str(ac_test['pre']))
+                    ltlmop_logger.debug('found ac inward for state: '+str(ac_test['pre']))
             
                     # Check if we are inside this funnel
-                    if isinternalUnion(ac_test, invTransformationMatrix[:2] * np.mat([x[0,0], x[0,1], 1]).T, cyclicTrinaryVector, sysObj):
-                        logging.debug("found an inward funnel "+str(i))
+                    xTmp = (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T
+                    xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
+
+                    print 'x: '
+                    print x
+                    print xTransformed
+
+                    if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
+                        ltlmop_logger.debug("found an inward funnel "+str(i))
                         ac = ac_inward[i]
                         acInwardIndex = i
                         break
 
-        logging.debug("acTransIndex"+str(acTransIndex))
-        logging.debug("acInwardIndex"+str(acInwardIndex))
-        logging.debug('pose: '+str(x))
+        ltlmop_logger.debug("acTransIndex"+str(acTransIndex))
+        ltlmop_logger.debug("acInwardIndex"+str(acInwardIndex))
+        ltlmop_logger.debug('pose: '+str(x))
         
         # if no funnels in the new region/transition OR have temporarily left a funnel, then keep activating the previous one.
         currStateOld = []
         nextStateOld = []
         if not acTransIndex and not acInwardIndex:
-            invTransformationMatrix = prevInvTransformationMatrix
+            transformationMatrix = prevTransformationMatrix
 
             acTransIndex = acLastData[0]
             acInwardIndex = acLastData[1]
-            logging.debug('acTransIndex (from last iteration): '+str(acTransIndex))
-            logging.debug('acInwardIndex (from last iteration): '+str(acInwardIndex))
+            ltlmop_logger.debug('acTransIndex (from last iteration): '+str(acTransIndex))
+            ltlmop_logger.debug('acInwardIndex (from last iteration): '+str(acInwardIndex))
             if ~debug:
                 # # propagate the appropriate old states on to the next iteration
                 # if acLastData[4] and acLastData[5]:
@@ -291,14 +312,14 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
                 else:
                     ac = ac_inward[acInwardIndex]
                 prevCtrl = True
-                logging.debug('WARNING: no funnels found! Using the previous controller.')
+                ltlmop_logger.debug('WARNING: no funnels found! Using the previous controller.')
                 print('WARNING: no funnels found! Using the previous controller.')
             else:
                 ac = ac_trans[acLastData[0]]
-                logging.debug('WARNING: no funnels found! Forcing an (unverified) controller.')
+                ltlmop_logger.debug('WARNING: no funnels found! Forcing an (unverified) controller.')
                 print('WARNING: no funnels found! Forcing an (unverified) controller.')
         
-        logging.debug('current funnel states: '+str(ac['pre'])+' '+str(ac['post']))
+        ltlmop_logger.debug('current funnel states: '+str(ac['pre'])+' '+str(ac['post']))
         # determine the new time offset if something has changed
         # TODO: do something smarter here: 
         #       we can remove all the times in the current trajectory prior to the current time, and also possibly add time-weighting to the Euclidean fit
@@ -323,15 +344,20 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
             t_trials = ac['t']
         
         # transform the state
-        x = invTransformationMatrix[:2] * np.mat([x[0], x[1], 1]).T
+        print "transformed state:"
+        print transformationMatrix
+        print (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T 
+        xTmp = (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T 
+        print xTmp
+        xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
 
         minDelta = np.inf
         for i in range(0,len(t_trials),5):
             xtmp = double(ac,'x0',t_trials[i])
             testDist = np.array([
-                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - (sysObj.state2SEconfig(x) + phaseWrap))),
-                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - sysObj.state2SEconfig(x))),
-                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - (sysObj.state2SEconfig(x) - phaseWrap)))])
+                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - (sysObj.state2SEconfig(xTransformed) + phaseWrap))),
+                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - sysObj.state2SEconfig(xTransformed))),
+                np.linalg.norm(weights*np.array(sysObj.state2SEconfig(xtmp) - (sysObj.state2SEconfig(xTransformed) - phaseWrap)))])
 
             testMinDist = min(testDist)
 
@@ -350,9 +376,9 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         #K = K(end-length(u0)+1:end,:)
         
         u_test = np.array([
-                (np.matrix(K)*np.matrix(x - x0 + sysObj.state2SEconfig(phaseWrap)).T),
-                (np.matrix(K)*np.matrix(x - x0).T),
-                (np.matrix(K)*np.matrix(x - x0 - sysObj.state2SEconfig(phaseWrap)).T)])
+                (np.matrix(K)*np.matrix(xTransformed - x0 + sysObj.state2SEconfig(phaseWrap)).T),
+                (np.matrix(K)*np.matrix(xTransformed - x0).T),
+                (np.matrix(K)*np.matrix(xTransformed - x0 - sysObj.state2SEconfig(phaseWrap)).T)])
         u_idx = list(abs(u_test[:,-1]) == min(abs(u_test[:,-1]))).index([True])
         u_ctrl = u_test[u_idx]
 
@@ -361,7 +387,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         # u(2) = max(min(u(2),16),-16);
 
         # Allocate the linear/angular velocities
-        vx, vy, w = sysObj.command2robotInput(x,u)
+        vx, vy, w = sysObj.command2robotInput(xTransformed,u)
 
         #u_sav = [u_sav; t u]
         t_sav = np.append(t_sav, t)
@@ -429,8 +455,6 @@ def double(ac, key, teval):
 
     t = ac['t']
     x = ac[key]
-    print x
-    print x.shape
 
     if len(x.shape) == 2:
         x1 = []        

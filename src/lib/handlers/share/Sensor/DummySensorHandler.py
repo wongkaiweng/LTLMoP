@@ -247,7 +247,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             self.prev_pose = pose
 
         # form polygon for the robot
-        RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))
+        RobotPoly = Polygon.Shapes.Circle(1.2e-6*self.radius,(pose[0],pose[1]))
 
         # check robot location
         for regionName in self.polyRegionList.keys():

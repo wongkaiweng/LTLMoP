@@ -10,6 +10,8 @@ import lib.handlers.handlerTemplates as handlerTemplates
 
 import rospy
 
+from lib.regions import Point
+
 class BasicSimInitHandler(handlerTemplates.InitHandler):
     def __init__(self, executor, init_region, x=0., y=0., theta=0., absolute=False):
         """
@@ -24,6 +26,8 @@ class BasicSimInitHandler(handlerTemplates.InitHandler):
 
         rfi_original = executor.proj.loadRegionFile(decomposed=False)
 
+        coordmap_map2lab = executor.hsub.coordmap_map2lab
+
         # Start in the center of the defined initial region
         init_region_obj = rfi_original.regions[rfi_original.indexOfRegionWithName(init_region)]
         center = init_region_obj.getCenter()
@@ -35,9 +39,14 @@ class BasicSimInitHandler(handlerTemplates.InitHandler):
             center.y = center.y + y
         
         #initialize the simulator
-        center.x = center.x/100
-        center.y = center.y/100
-        print center.x, center.y
+
+        # uncomment the following to incorporate the map scaling for determining the initial pose in the unicycle model
+        print "map to lab conversion of initial state : " + str(map(coordmap_map2lab, [Point(center.x, center.y)]))
+        newPos = map(coordmap_map2lab, [Point(center.x, center.y)])[0]
+        center.x = newPos[0]
+        center.y = newPos[1]
+        print [center.x, center.y]
+        
         self.simulator =  basicSimulator.unicycleSimulator([center[0],center[1],theta])
 
         # rospy.init_node('LTLMoPHandlers')

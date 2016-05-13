@@ -23,8 +23,8 @@ class BasicSimLocomotionCommandHandler(handlerTemplates.LocomotionCommandHandler
 
     def sendCommand(self, cmd):
 
-        vx = self.speed*cmd[0]
-        vy = self.speed*cmd[1]
+        vx = self.speed*cmd[0]/100
+        vy = self.speed*cmd[1]/100
         w = self.speed*cmd[2]
 
         print 'Locomotion Command handler inputs vx:' + str(vx) + 'vy:' + str(vy) + ' w:' + str(w)

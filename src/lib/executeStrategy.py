@@ -213,6 +213,8 @@ class ExecutorStrategyExtensions(object):
             return
 
         # See if we're beginning a new transition
+        #ltlmop_logger.debug(next_states)
+        #ltlmop_logger.debug(self.last_next_states)
         if next_states != self.last_next_states:
             # NOTE: The last_next_states comparison is also to make sure we don't
             # choose a different random next-state each time, in the case of multiple choices

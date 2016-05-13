@@ -29,7 +29,7 @@ class BasicSimPoseHandler(handlerTemplates.PoseHandler):
         if not cached or self.last_pose is None:
             # Get updated information
             self.last_pose = self.simulator.getPose()
-            #print self.last_pose
+            print self.last_pose
         return self.last_pose
 
 
