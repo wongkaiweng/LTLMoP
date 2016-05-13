@@ -32,8 +32,8 @@ RegionFile: # Relative path of region description file
 output_3_4/output_3_4.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
-agent0InTheWay, 1
-agent1InTheWay, 1
+agentAtNextIntersection, 1
+agentInSameLaneInFrontOfMe, 1
 
 
 ======== SPECIFICATION ========
@@ -71,10 +71,10 @@ Spec: # Specification in structured English
 
 ##### (3_4)
 Robot starts in segment_2_bottom_lane
-if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_4_top_lane
-if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_14_top_lane
-if you are not sensing (agent0InTheWay or agent1InTheWay) then visit segment_3_pi2_right_intersect
+infinitely often not agentAtNextIntersection and not agentInSameLaneInFrontOfMe
+if you are sensing (agentAtNextIntersection or agentInSameLaneInFrontOfMe) then stay there
 
-if you are sensing (agent0InTheWay or agent1InTheWay) then stay there
-infinitely often not agent0InTheWay and not agent1InTheWay
+if you are not sensing (agentAtNextIntersection or agentInSameLaneInFrontOfMe) then visit segment_4_top_lane
+if you are not sensing (agentAtNextIntersection or agentInSameLaneInFrontOfMe) then visit segment_14_top_lane
+if you are not sensing (agentAtNextIntersection or agentInSameLaneInFrontOfMe) then visit segment_3_pi2_right_intersect
 
