@@ -13,7 +13,7 @@ import geometry_msgs.msg
 import ast, numpy
 import tf.transformations
 
-import os, sys
+import os, sys, time
 # Climb the tree to find out where we are
 p = os.path.abspath(__file__)
 t = ""
@@ -40,6 +40,9 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         self.executor = executor
         self.agentPose = {}
         self.region_transition_dict = {}
+        self.lastEgoPose = None
+        self.lastEgoPoseTime = 0
+        self.direction = [0,0]
 
     ###################################
     ### Available sensor functions: ###
@@ -135,12 +138,13 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
                                 ego_to_agent = numpy.array(agent_pose)-numpy.array(ego_pose)
 
                                 # based on next region
-                                ego_heading = numpy.array(headingRegionPolygon.center(0))-numpy.array(ego_pose)
+                                #ego_heading = numpy.array(headingRegionPolygon.center(0))-numpy.array(ego_pose)
                                 #ltlmop_logger.debug("ego_heading:" + str(ego_heading))
                                 #ego_heading  = list(tf.transformations.euler_from_quaternion([self.agentPose["ego"].orientation.w,\
                                 #    self.agentPose["ego"].orientation.x, self.agentPose["ego"].orientation.y, self.agentPose["ego"].orientation.z]))
+                                #if numpy.dot(ego_to_agent,ego_heading[0:2]) > 0:
 
-                                if numpy.dot(ego_to_agent,ego_heading[0:2]) > 0:
+                                if numpy.dot(ego_to_agent,self.direction) > 0:
                                     ltlmop_logger.log(4,agent+' is in the same region in front of me.')
                                     return True
                                 else:
@@ -225,3 +229,13 @@ class RosSensorHandler(handlerTemplates.SensorHandler):
         if msg is not None:
             egoIdx = msg.name.index(agent)
             self.agentPose[agent] = msg.pose[egoIdx]
+
+            if self.lastEgoPose is None and agent == 'ego':
+                self.lastEgoPose = self.agentPose['ego']
+                self.lastEgoPoseTime = time.time()
+
+            if agent == 'ego' and time.time() - self.lastEgoPoseTime < 1: #(in seconds)
+                self.direction = [msg.pose[egoIdx].position.x - self.lastEgoPose.position.x,\
+                                  msg.pose[egoIdx].position.y - self.lastEgoPose.position.y]
+                self.lastEgoPose = msg.pose[egoIdx]
+                self.lastEgoPoseTime = time.time()
