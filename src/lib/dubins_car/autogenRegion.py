@@ -440,8 +440,8 @@ def findDirection(regions, idx, faceAngle, rotate_ninety, isOrigin):
             # dest arriving version
             #possible_directions = [[1,0],[0,-1],[0,1],[1,0],\
             #                       [-1,0],[0,1],[0,-1],[-1,0]]
-            possible_directions = [[-1,0],[0,-1],[0,1],[-1,0],\
-                                   [1,0],[0,1],[0,-1],[1,0]]
+            possible_directions = [[-1,0],[0,1],[0,-1],[-1,0],\
+                                   [1,0],[0,-1],[0,1],[1,0]]
             #print 'dest-direction:' + str(possible_directions[int(faceAngle/(math.pi/4))])
         direction = possible_directions[int(faceAngle/(math.pi/4))]
 

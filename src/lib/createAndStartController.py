@@ -94,6 +94,11 @@ f = open(json_file_rnd,'w+')
 f.write(json.dumps(json_dict["rnd"]))
 f.close()
 
+json_file_egents = proj.project_root+proj.project_basename+"_eagents.json"
+f = open(json_file_egents,'w+')
+f.write(json.dumps(json_dict["e-agents"]))
+f.close()
+
 # generate region file, list of transitions to remove, and extra ltl to add to spec
 proc = subprocess.Popen(' '.join(["python", LTLMoP_dir+"src/lib/dubins_car/autogenRegion.py", json_file_rnd, region_output_filename]), \
                          shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -110,12 +115,14 @@ ltlmop_logger.log(4,'-- Loaded region file')
 #### create spec file ####
 ##########################
 # fill in e-agents
-agent_prop_list = []
-for agent_dict in json_dict["e-agents"]:
-    proj.enabled_sensors.append(agent_dict["name"]+'InTheWay')
-    proj.all_sensors.append(agent_dict["name"]+'InTheWay')
-    agent_prop_list.append(agent_dict["name"]+'InTheWay')
-
+#agent_prop_list = []
+#for agent_dict in json_dict["e-agents"]:
+#    proj.enabled_sensors.append(agent_dict["name"]+'InTheWay')
+#    proj.all_sensors.append(agent_dict["name"]+'InTheWay')
+#    agent_prop_list.append(agent_dict["name"]+'InTheWay')
+agent_prop_list = ['agentAtNextIntersection','agentInSameLaneInFrontOfMe']
+proj.enabled_sensors.extend(agent_prop_list)
+proj.all_sensors.extend(agent_prop_list)
 
 spec_list = []
 # Robot starts in ???
@@ -218,11 +225,24 @@ for x in proj.rfi.regions:
         para = m.getParaByName("radius")
         para.setValue(0.1)
         prop_mapping[x.name+'_rc'] = hsub.method2String(m, "share")
-for p in proj.all_sensors:
-    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtNextRegion"))
-    para = m.getParaByName("agent")
-    para.setValue(p.replace('InTheWay',''))
-    prop_mapping[p] = hsub.method2String(m, "ros_new")
+#for p in proj.all_sensors:
+#    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtNextRegion"))
+#    para = m.getParaByName("agent")
+#    para.setValue(p.replace('InTheWay',''))
+#    prop_mapping[p] = hsub.method2String(m, "ros_new")
+
+# agentAtNextIntersection
+m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtIntsection"))
+para = m.getParaByName("json_file_egents")
+para.setValue(json_file_egents)
+prop_mapping["agentAtNextIntersection"] = hsub.method2String(m, "ros_new")
+
+# agentInSameLaneInFrontOfMe
+m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentInSameLane"))
+para = m.getParaByName("json_file_egents")
+para.setValue(json_file_egents)
+prop_mapping["agentInSameLaneInFrontOfMe"] = hsub.method2String(m, "ros_new")
+
 
 experiment_config.normalizePropMapping(prop_mapping)
 
