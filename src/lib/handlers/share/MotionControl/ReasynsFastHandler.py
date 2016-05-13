@@ -35,9 +35,10 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
         fname (string): Name of the .mat file containing the stored atomic controllers
         """
 
-        # filename                = '/home/jon/Dropbox/Repos/LTLMoP/src/lib/handlers/share/MotionControl/resultsPython'
-        filename                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname
-        if not os.path.exists(filename):
+        filename[0]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_right_uturn'
+        filename[1]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_right'
+        filename[2]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_uturn'
+        if not os.path.exists(filename[0]) or not os.path.exists(filename[1]) or not os.path.exists(filename[2]):
             logging.exception('Cannot open the specified reasyns controller file.')
 
         self.numRobots          = []    # number of robots: number of agents in the specification, controlled by the local planner
@@ -66,19 +67,25 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
         self.roadSegmentLength  = 300/const
         self.vertsTemplate      = {}
         self.vertsTemplate[0]   = mat([ \
-            [-60./const,60./const,1], 
+            [60./const,60./const,1], 
             [0./const,60./const,1],
             [0./const,240./const,1],
-            [-60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
-        self.vertsTemplate[0]   = mat([ \
-            [-60./const,60./const,1],
-            [0./const,60./const,1],
+            [60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+        self.vertsTemplate[1]   = mat([ \
+            [60./const,0./const,1],
+            [0./const,0./const,1],
             [0./const,240./const,1],
-            [-60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+            [60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+        self.vertsTemplate[2]   = mat([ \
+            [60./const,60./const,1],
+            [0./const,60./const,1],
+            [0./const,300./const,1],
+            [60./const,300./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
         self.offset             = [xoffset, yoffset]
         self.transformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template
         self.prevTransformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template
         self.thetaIndex         = 0
+        self.lastThetaIndex     = 0
         self.templateIndex      = 0
         self.inIntersection     = False
           #TODO: get this directly from the .regions file used to generate the primitives
@@ -167,14 +174,6 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
                 # self.pose.update([(robot_name,self.pose_handler[robot_name].getPose())])
                 # print "pose: "+str(self.pose[robot_name])
 
-                # Check if Vicon has cut out
-                # TODO: this should probably go in posehandler?
-                if math.isnan(self.pose[robot_name][2]):
-                    print "WARNING: No Vicon data! Pausing."
-                    self.drive_handler[robot_name].setVelocity(0, 0, 0)  # So let's stop
-                    time.sleep(1)
-                    #return False not leaving yet until all robots are checked
-
                 # if self.system_print == True:
                 print "Next Region for " +str(robot_name)+" is: "+str(self.rfi.regions[next_reg].name)
                 print "Current Region for " +str(robot_name)+" is: "+str(self.rfi.regions[current_reg].name)
@@ -211,7 +210,7 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
                     print self.rfi.regions[current_reg].name
                     print self.rfi.regions[next_reg].name
                     if self.initial: 
-                        # Find an initial translation matrix to use.
+                        # Find an initial translation matrix to use.  NB: this script assumes the robot is starting inside a lane.
 
                         if 'intersect' in self.rfi.regions[current_reg].name:
                             vertices = mat(self.next_regVertices[robot_name])
@@ -222,6 +221,8 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
 
                         print "vertices: " + str(vertices)
                         templateIndex, transformationMatrix, thIndex = self.getTransformationMatrixAndTemplate(vertices) 
+
+                        # Store the template index, transition matrix and theta index
                         self.templateIndex = templateIndex
                         self.prevTransformationMatrix = transformationMatrix
                         self.transformationMatrix = transformationMatrix
@@ -231,6 +232,8 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
                         # We have entered a new lane from an intersection; let's figure out how to rotate/translate the lane region to match a template in the database.
 
                         templateIndex, transformationMatrix, thIndex = self.getTransformationMatrixAndTemplate(mat(self.next_regVertices[robot_name])) 
+
+                        # Store the template index, transition matrix and theta index
                         self.templateIndex = templateIndex
                         self.prevTransformationMatrix = self.transformationMatrix
                         self.transformationMatrix = transformationMatrix
@@ -245,7 +248,12 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
                         # templateIndex, transformationMatrix, thIndex = self.getTransformationMatrixAndTemplate(mat([[60,60],[0,60],[0,240],[60,240]]))
                         templateIndex, transformationMatrix, thIndex = self.getTransformationMatrixAndTemplate(mat(self.next_regVertices[robot_name]))
                         print "found template: " + str(transformationMatrix)
+
+                        # Only store the current/previous theta indices -- these will be used to choose the correct successor funnel in the same template
+                        self.lastThetaIndex = self.thetaIndex
                         self.thetaIndex = thIndex
+                        if templateIndex == 1: # The left-right (long lane/small intersection) template
+                            self.thetaIndex = 3  # Force it to be 3 (left-hand turn) regardless, since we want a valid theta for the exisitng template (0)
 
                         self.inIntersection = True
 
@@ -258,7 +266,7 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
         vx, vy, w, acLastData, data, currRegNbr, nextRegNbr = Reasyns.executeController(self.sysObj, self.pose, self.rfi.regions, \
             current_regIndices, next_regIndices, self.coordmap_lab2map, self.scalingPixelsToMeters, doUpdate, self.acLastData, self.data, \
             self.aut, self.ac_trans, self.ac_inward, self.cyclicTrinaryVector,self.currRegNbr,self.nextRegNbr, \
-            self.templateIndex, self.prevTransformationMatrix, self.transformationMatrix, self.thetaIndex, self.inIntersection)
+            self.templateIndex, self.prevTransformationMatrix, self.transformationMatrix, self.thetaIndex, self.lastThetaIndex, self.inIntersection)
 
         self.acLastData = acLastData
         self.data = data
@@ -342,7 +350,7 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
                         print "xIndex: "+str(xIndex)+"   yIndex: "+str(yIndex)+"   thIndex: "+str(thIndex)
                         print (transformationMatrix[:2])
 
-                        a = (transformationMatrix[:2] * self.vertsTemplate[0].T)
+                        a = (transformationMatrix[:2] * self.vertsTemplate[templIndex].T)
                         a0 = a[0].tolist()[0]
                         a1 = a[1].tolist()[0]
                         b0 = mat([[min(a0),max(a0)],[min(a1),max(a1)]])

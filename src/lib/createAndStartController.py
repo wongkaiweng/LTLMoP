@@ -42,7 +42,7 @@ start_time = time.time()
 scale = 500
 offset = [500,500]
 
-json_file = "/home/catherine/Desktop/fmrbenchmark/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json"
+json_file = "/home/jon/Software/fmrbenchmark/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json"
 with open(json_file,'r') as f:
     json_dict = ast.literal_eval(f.read())
 f.closed
@@ -53,7 +53,7 @@ start_list = ["segment_2_bottom_lane"]
 
 ############################################################
 
-LTLMoP_dir = os.environ['LTLMoP_dir']
+LTLMoP_dir = '/home/jon/Dropbox/Repos/LTLMoP/'
 proj = project.Project()
 proj.project_root = LTLMoP_dir+"src/examples/fmr_autospec/"
 proj.project_basename = "fmr_autospec"

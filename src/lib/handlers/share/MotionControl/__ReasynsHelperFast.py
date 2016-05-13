@@ -86,12 +86,13 @@ def initializeController(fname):
 
     # Initialize some other needed data structures TODO: could we simplify?
     data = {'t_offset': [],'t_base': 0,'tend': 0,'t_trials': [],'t_sav': [],'x_sav': [],'x0_sav': [],'t': []}
-    acLastData = [1, 0, 5, 1, [], []]
+    acLastData = [0, 0, 5, 1, [], []]
 
     return sysObj, acLastData, data, aut, ac_trans, ac_inward, cyclicTrinaryVector
 
 def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, scalingPixelsToMeters, doUpdate, acLastData, data, aut, \
-    ac_trans, ac_inward, cyclicTrinaryVector, currRegNbr, nextRegNbr, templateIndex, prevTransformationMatrix, transformationMatrix, thetaIndex, inIntersection):
+    ac_trans, ac_inward, cyclicTrinaryVector, currRegNbr, nextRegNbr, templateIndex, prevTransformationMatrix, transformationMatrix, \
+    thetaIndex, lastThetaIndex, inIntersection):
     """
 
     """
@@ -125,7 +126,7 @@ def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, sc
 
     # Execute one step of the local planner and collect velocity components
     vx,vy,w,acLastData,data = executeSingleStep(sysObj,aut,ac_trans,ac_inward,pose,currRegNbr,nextRegNbr,acLastData,data,cyclicTrinaryVector, \
-        templateIndex, prevTransformationMatrix, transformationMatrix, thetaIndex, inIntersection)
+        templateIndex, prevTransformationMatrix, transformationMatrix, thetaIndex, lastThetaIndex, inIntersection)
     # try:
     #     vx,vy,w,acLastData,data = executeSingleStep(sysObj,aut,ac_trans,ac_inward,pose,currRegNbr,nextRegNbr,acLastData,data,cyclicTrinaryVector)
     # except:
@@ -145,7 +146,7 @@ def executeController(sysObj, poseDic, regions, curr, next, coordmap_lab2map, sc
 
 
 def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acLastData, data, cyclicTrinaryVector, templateIndex, prevTransformationMatrix, \
-    transformationMatrix, thetaIndex, inIntersection):
+    transformationMatrix, thetaIndex, lastThetaIndex, inIntersection):
 
     debug = False
 
@@ -203,17 +204,31 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
     # NB: assumes the appropriate order has been stored in the aut...
 
     if currReg == nextReg:
+
         u = []
         vx = 0
         vy = 0
         w = 0
         acData = acLastData
+
     else:
 
-        # find out which template to use based on whether or not we are in an intersection, and the rotation index
-        currTransIndices = thetaIndex+1 if inIntersection else 0
+        # Find out which template to use based on whether or not we are in an intersection, and the rotation index
+        if templateIndex == 0:
+            # The left-straight-right-uturn (short lane/big intersection) template
+            # Ordering assumes the funnels are stored with indices: 1: Left -- 2: Straight -- 3: Right -- 4: U-turn
+            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
+            currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
 
-        # Also, if not in a funnel yet, we need to apply the old transformation matrix
+        elif templateIndex == 1:
+            # The left-right (long lane/small intersection) template
+            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
+            currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
+            
+        elif templateIndex == 2:
+            # The left-straight-uturn (long-region/big intersection) template
+            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
+            currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
 
         ltlmop_logger.debug("Found these possible indices for the current transition: "+str(currTransIndices))
 
@@ -235,16 +250,8 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
                 ltlmop_logger.debug('found ac trans for state transition: '+str(ac_test['pre'])+' '+str(ac_test['post']))
 
                 # Check if we are inside this funnel
-                print thetaIndex
-                print x[2]
                 xTmp = (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T
                 xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
-
-                print "inv transformation :"
-                print transformationMatrix
-                print 'x: '
-                print x
-                print xTransformed
 
                 if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
                     ltlmop_logger.debug("found a transition funnel "+str(i))
@@ -269,10 +276,6 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
                     xTmp = (transformationMatrix[:2] * np.mat([x[0], x[1], 1]).T).T
                     xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
 
-                    print 'x: '
-                    print x
-                    print xTransformed
-
                     if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
                         ltlmop_logger.debug("found an inward funnel "+str(i))
                         ac = ac_inward[i]
@@ -287,8 +290,11 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         currStateOld = []
         nextStateOld = []
         if not acTransIndex and not acInwardIndex:
+
+            # keep the current transformation and keep the last funnel
             transformationMatrix = prevTransformationMatrix
 
+            # just enforce the region change
             acTransIndex = acLastData[0]
             acInwardIndex = acLastData[1]
             ltlmop_logger.debug('acTransIndex (from last iteration): '+str(acTransIndex))
