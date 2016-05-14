@@ -35,9 +35,9 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
         fname (string): Name of the .mat file containing the stored atomic controllers
         """
 
-        filename[0]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_right_uturn'
-        filename[1]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_right'
-        filename[2]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_uturn'
+        filename[0]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_right_uturn.mat'
+        filename[1]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_right.mat'
+        filename[2]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_uturn.mat'
         if not os.path.exists(filename[0]) or not os.path.exists(filename[1]) or not os.path.exists(filename[2]):
             logging.exception('Cannot open the specified reasyns controller file.')
 
