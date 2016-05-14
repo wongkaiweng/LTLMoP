@@ -70,17 +70,17 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
             [60./const,60./const,1], 
             [0./const,60./const,1],
             [0./const,240./const,1],
-            [60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+            [60./const,240./const,1]])  # The left-straight-right-uturn (short lane/big intersection) template
         self.vertsTemplate[1]   = mat([ \
             [60./const,0./const,1],
             [0./const,0./const,1],
             [0./const,240./const,1],
-            [60./const,240./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+            [60./const,240./const,1]])  # The left-right (long lane/small intersection) template
         self.vertsTemplate[2]   = mat([ \
             [60./const,60./const,1],
             [0./const,60./const,1],
             [0./const,300./const,1],
-            [60./const,300./const,1]])  #vertices (in the primitive map's frame) for matching a transformation matrix to a pre-generated template
+            [60./const,300./const,1]])  # The left-straight-uturn (long-region/big intersection) template
         self.offset             = [xoffset, yoffset]
         self.transformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template
         self.prevTransformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template

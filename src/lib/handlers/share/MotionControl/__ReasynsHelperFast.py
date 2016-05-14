@@ -19,59 +19,60 @@ def initializeController(fname):
 
     # Load the Matlab data
 
-    mat_contents = sio.loadmat(fname)
+    for iTemplate in range(len(fname))
+        mat_contents = sio.loadmat(fname[iTemplate])
 
-    t_base = 0
-    acLastData = [1, 0, 5, 1, [], []]
+        t_base = 0
+        acLastData = [1, 0, 5, 1, [], []]
 
-    numInward = 0 if not len(mat_contents['ac_inward_py']) else len(mat_contents['ac_inward_py'][0])
-    numTrans = 0 if not len(mat_contents['ac_trans_py']) else len(mat_contents['ac_trans_py'][0])
-    #if (not len(mat_contents['ac_inward'][0]) == numDiscStates):
-        #TODO: throw an error!
+        numInward = 0 if not len(mat_contents['ac_inward_py']) else len(mat_contents['ac_inward_py'][0])
+        numTrans = 0 if not len(mat_contents['ac_trans_py']) else len(mat_contents['ac_trans_py'][0])
+        #if (not len(mat_contents['ac_inward'][0]) == numDiscStates):
+            #TODO: throw an error!
 
-    # Unpack the mat file 
-    state = [mat_contents['aut'][0][0]['state'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['state'][0]))]
-    label = [mat_contents['aut'][0][0]['label'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['label'][0]))]
-    trans = [list(mat_contents['aut'][0][0]['trans'][0][i][0]) for i in range(len(mat_contents['aut'][0][0]['trans'][0]))]
+        # Unpack the mat file 
+        state = [mat_contents['aut'][0][0]['state'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['state'][0]))]
+        label = [mat_contents['aut'][0][0]['label'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['label'][0]))]
+        trans = [list(mat_contents['aut'][0][0]['trans'][0][i][0]) for i in range(len(mat_contents['aut'][0][0]['trans'][0]))]
 
-    aut = {'state': state,'label': label,'trans': trans}
+        aut = {'state': state,'label': label,'trans': trans}
 
-    ac_inward = [[]]*numInward
-    for i in range(numInward):
-        print i
-        try:
-            t = mat_contents['ac_inward_py'][0][i]['t'][0][0][0]
-            x0 = mat_contents['ac_inward_py'][0][i]['x0'][0][0]
-            u0 = mat_contents['ac_inward_py'][0][i]['u0'][0][0]
-            K = mat_contents['ac_inward_py'][0][i]['K'][0][0]
-            #Einv = mat_contents['ac_inward_py'][0][i]['Einv'][0][0]['P']
-            rho = mat_contents['ac_inward_py'][0][i]['rho'][0][0][0]
-            P = mat_contents['ac_inward_py'][0][i]['P'][0][0]
-            pre = mat_contents['ac_inward_py'][0][i]['pre'][0][0]
-            post = mat_contents['ac_inward_py'][0][i]['post'][0][0]
+        ac_inward = [[[]]*numInward]*3
+        for i in range(numInward):
+            print i
+            try:
+                t = mat_contents['ac_inward_py'][0][i]['t'][0][0][0]
+                x0 = mat_contents['ac_inward_py'][0][i]['x0'][0][0]
+                u0 = mat_contents['ac_inward_py'][0][i]['u0'][0][0]
+                K = mat_contents['ac_inward_py'][0][i]['K'][0][0]
+                #Einv = mat_contents['ac_inward_py'][0][i]['Einv'][0][0]['P']
+                rho = mat_contents['ac_inward_py'][0][i]['rho'][0][0][0]
+                P = mat_contents['ac_inward_py'][0][i]['P'][0][0]
+                pre = mat_contents['ac_inward_py'][0][i]['pre'][0][0]
+                post = mat_contents['ac_inward_py'][0][i]['post'][0][0]
 
-            ac_inward[i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
+                ac_inward[iTemplate][i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
 
-        except:
-            ac_inward[i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}    
+            except:
+                ac_inward[iTemplate][i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}    
 
-    ac_trans = [[]]*numTrans
-    for i in range(numTrans):
-        try:
-            t = mat_contents['ac_trans_py'][0][i]['t'][0][0][0]
-            x0 = mat_contents['ac_trans_py'][0][i]['x0'][0][0]
-            u0 = mat_contents['ac_trans_py'][0][i]['u0'][0][0]
-            K = mat_contents['ac_trans_py'][0][i]['K'][0][0]
-            #Einv = mat_contents['ac_trans_py'][0][i]['Einv'][0][0]['P']
-            rho = mat_contents['ac_trans_py'][0][i]['rho'][0][0][0]
-            P = mat_contents['ac_trans_py'][0][i]['P'][0][0]
-            pre = mat_contents['ac_trans_py'][0][i]['pre'][0][0]
-            post = mat_contents['ac_trans_py'][0][i]['post'][0][0]
+        ac_trans = [[[]]*numTrans*3]
+        for i in range(numTrans):
+            try:
+                t = mat_contents['ac_trans_py'][0][i]['t'][0][0][0]
+                x0 = mat_contents['ac_trans_py'][0][i]['x0'][0][0]
+                u0 = mat_contents['ac_trans_py'][0][i]['u0'][0][0]
+                K = mat_contents['ac_trans_py'][0][i]['K'][0][0]
+                #Einv = mat_contents['ac_trans_py'][0][i]['Einv'][0][0]['P']
+                rho = mat_contents['ac_trans_py'][0][i]['rho'][0][0][0]
+                P = mat_contents['ac_trans_py'][0][i]['P'][0][0]
+                pre = mat_contents['ac_trans_py'][0][i]['pre'][0][0]
+                post = mat_contents['ac_trans_py'][0][i]['post'][0][0]
 
-            ac_trans[i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
+                ac_trans[iTemplate][i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
 
-        except:
-            ac_trans[i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}
+            except:
+                ac_trans[iTemplate][i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}
 
     # Instantiate the system dynamics model
     sysObj = Unicycle()
@@ -170,18 +171,6 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
     m = sysObj.numConfig
     n = sysObj.numState
 
-    #################
-    # Account for our manual shifting of the map to the left because of the "dead zone" in the Vicon field 
-    #x = x + np.array([0.0043, 0.1629, 0])
-    #################
-
-    #################
-    # Account for our manual shifting of the map
-    #x = x + np.array([-0.9774, 0.0258, 0])
-    #################
-
-    #x[2] = x[2] + 0.2  # theta bias needed to account for misalignment of the youBot's coordinate frame wrt. its true orientation
-
     prevCtrl = False
 
     if not t_base:
@@ -196,15 +185,14 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
     
     # NB: the addtional processing is to correlate to Matlab's indices
     trans = [[i[0]-1, i[1]-1] for i in aut['trans']] # trans contains a list of pairs of states for all transitions in the reduced automaton.
-    state = [i-1 for i in aut['state']]  # q are the region labels for each state in the reduced automaton, where the length of q is equal to the total number of states.
-    region = [i-1 for i in aut['label']]  # q are the region labels for each state in the reduced automaton, where the length of q is equal to the total number of states.
-
+    state = [i-1 for i in aut['state']]  # numbers for each state automaton.
+    region = [i-1 for i in aut['label']]  # associates each state in the automaton with a region label.
 
     # Determine the transition indices as either being an 'intersection' or from matching successor regions to vertices
     # NB: assumes the appropriate order has been stored in the aut...
 
     if currReg == nextReg:
-
+        # Stop the car!
         u = []
         vx = 0
         vy = 0
@@ -212,22 +200,23 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         acData = acLastData
 
     else:
-
         # Find out which template to use based on whether or not we are in an intersection, and the rotation index
         if templateIndex == 0:
             # The left-straight-right-uturn (short lane/big intersection) template
-            # Ordering assumes the funnels are stored with indices: 1: Left -- 2: Straight -- 3: Right -- 4: U-turn
-            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
+            # Ordering assumes the funnels are stored with indices: 0: lane-intersect -- 1: intersect-left -- 2: intersect-straight -- 3: intersect-right -- 4: intersect-u-turn
+            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex > 0 else 4
             currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
 
         elif templateIndex == 1:
             # The left-right (long lane/small intersection) template
-            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
-            currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
+            # Ordering assumes the funnels are stored with indices: 0: lane-intersect -- 1: lane-left -- 2: intersect-right
+            successorFunnelIndexFromLane = 1 if lastThetaIndex-thetaIndex == 1 else 0
+            currTransIndices = 2 if inIntersection else successorFunnelIndexFromLane
             
         elif templateIndex == 2:
             # The left-straight-uturn (long-region/big intersection) template
-            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex < 3 else 1
+            # Ordering assumes the funnels are stored with indices: 0: lane-intersect -- 1: intersect-left -- 2: intersect-straight -- 3: intersect-u-turn
+            successorFunnelIndexFromIntersection = thetaIndex-lastThetaIndex+2 if thetaIndex-lastThetaIndex > 0 else 3
             currTransIndices = successorFunnelIndexFromIntersection if inIntersection else 0
 
         ltlmop_logger.debug("Found these possible indices for the current transition: "+str(currTransIndices))
@@ -244,7 +233,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         ltlmop_logger.debug("currState (as computed from matching current/next regions): "+str(currState))
         ltlmop_logger.debug("nextState (as computed from matching current/next regions): "+str(nextState))
 
-        for i,ac_test in enumerate(ac_trans):
+        for i,ac_test in enumerate(ac_trans[templateIndex]):
             # check if there is a stored funnel for this transition
             if ac_test['pre'] == [[currState+1]] and ac_test['post'] == [[nextState+1]]:
                 ltlmop_logger.debug('found ac trans for state transition: '+str(ac_test['pre'])+' '+str(ac_test['post']))
@@ -255,18 +244,18 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
 
                 if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
                     ltlmop_logger.debug("found a transition funnel "+str(i))
-                    ac = ac_trans[i]
+                    ac = ac_trans[templateIndex][i]
                     acTransIndex = i
                     break
 
-        if not acTransIndex and ac_inward:
+        if not acTransIndex and ac_inward[templateIndex]:
             ltlmop_logger.debug("not inside any transition funnel. attempting to find an inward funnel")
             # for ii,currTransIndex in enumerate(currTransIndices):
 
             currState = trans[currTransIndex][0]
             ltlmop_logger.debug("currState (as computed from matching current/next regions): "+str(currState))
         
-            for i,ac_test in enumerate(ac_inward):
+            for i,ac_test in enumerate(ac_inward[templateIndex]):
 
                 # check if there is a stored funnel for this state
                 if ac_test['pre'] == [[currState+1]]:
@@ -278,7 +267,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
 
                     if isinternalUnion(ac_test, xTransformed, cyclicTrinaryVector, sysObj):
                         ltlmop_logger.debug("found an inward funnel "+str(i))
-                        ac = ac_inward[i]
+                        ac = ac_inward[templateIndex][i]
                         acInwardIndex = i
                         break
 
@@ -301,27 +290,17 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
             ltlmop_logger.debug('acInwardIndex (from last iteration): '+str(acInwardIndex))
             if ~debug:
                 # # propagate the appropriate old states on to the next iteration
-                # if acLastData[4] and acLastData[5]:
-                #     currStateOld = acLastData[4]
-                #     nextStateOld = acLastData[5]
-                # else:
-                #     currStateOld = acLastData[2]
-                #     nextStateOld = acLastData[3]
-
-                # possibleCurrTrans = [i for i in range(len(trans)) if currStateOld == trans[i][0]]
-                # possibleNextTrans = [i for i in range(len(trans)) if nextStateOld == trans[i][1]]
-                # currTransOld = [] if not possibleCurrTrans or not possibleNextTrans else list(set(possibleCurrTrans) & set(possibleNextTrans))[0]
                 
                 # If we were activating a transition funnel previously, then use it; otherwise activate an inward funnel
                 if acTransIndex:
-                    ac = ac_trans[acTransIndex]
+                    ac = ac_trans[templateIndex][acTransIndex]
                 else:
-                    ac = ac_inward[acInwardIndex]
+                    ac = ac_inward[templateIndex][acInwardIndex]
                 prevCtrl = True
                 ltlmop_logger.debug('WARNING: no funnels found! Using the previous controller.')
                 print('WARNING: no funnels found! Using the previous controller.')
             else:
-                ac = ac_trans[acLastData[0]]
+                ac = ac_trans[templateIndex][acLastData[0]]
                 ltlmop_logger.debug('WARNING: no funnels found! Forcing an (unverified) controller.')
                 print('WARNING: no funnels found! Forcing an (unverified) controller.')
         
@@ -345,7 +324,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         acData24 = [acData[i] for i in range(len(acData[2:4])) if acData[i]]
 
         if not all(compareData) or not (set(acLastData04) <= set(acData04) and set(acLastData24) == set(acData24)):
-            # a change has been detected!!
+            # a change has been detected
             t_base = time.time()
             t_trials = ac['t']
         
@@ -357,6 +336,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         print xTmp
         xTransformed = np.array([xTmp[0,0], xTmp[0,1], x[2] - (thetaIndex-1)*np.pi/2])
 
+        # Find the time index by finding the (weighted) closest point in the trajectory to the current state.
         minDelta = np.inf
         for i in range(0,len(t_trials),5):
             xtmp = double(ac,'x0',t_trials[i])
@@ -379,8 +359,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
         x0 = double(ac,'x0',teval) 
         u0 = double(ac,'u0',teval)
         
-        #K = K(end-length(u0)+1:end,:)
-        
+        # Choose, in an absolute sense, the smallest control command of the set
         u_test = np.array([
                 (np.matrix(K)*np.matrix(xTransformed - x0 + sysObj.state2SEconfig(phaseWrap)).T),
                 (np.matrix(K)*np.matrix(xTransformed - x0).T),

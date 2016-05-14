@@ -201,6 +201,8 @@ class Project:
         if self.rfi is not None:
             # Save the path to the region file as relative to the spec file
             # FIXME: relpath has case sensitivity problems on OS X
+            print self.project_root
+            print self.rfi.filename
             data['SETTINGS']['RegionFile'] = os.path.normpath(os.path.relpath(self.rfi.filename, self.project_root))
 
         comments = {"FILE_HEADER": "This is a specification definition file for the LTLMoP toolkit.\n" +
@@ -235,6 +237,7 @@ class Project:
 
         self.regionMapping = self.loadRegionMapping()
         self.rfi = self.loadRegionFile()
+        print self.rfi
         self.determineEnabledPropositions()
         
         ## creates lists of regions and actuators completed if we are using fastslow
