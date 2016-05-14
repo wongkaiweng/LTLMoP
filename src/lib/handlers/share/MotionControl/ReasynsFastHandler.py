@@ -34,7 +34,7 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
         scalingPixelsToMeters (float): Scaling factor between RegionEditor map and the Matlab map
         fname (string): Name of the .mat file containing the stored atomic controllers
         """
-
+        filename = {}
         filename[0]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_right_uturn.mat'
         filename[1]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_right.mat'
         filename[2]                = os.getcwd()+'/examples/fmrChallenge/reasyns_controllers/'+fname+'_left_straight_uturn.mat'
@@ -81,7 +81,7 @@ class ReasynsFastHandler(handlerTemplates.MotionControlHandler):
             [0./const,60./const,1],
             [0./const,300./const,1],
             [60./const,300./const,1]])  # The left-straight-uturn (long-region/big intersection) template
-        self.offset             = [xoffset, yoffset]
+        self.offset             = [xoffset, yoffset]    # offsets to the middle of an intersection to properly rotate the template
         self.transformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template
         self.prevTransformationMatrix = mat([[1,0,0],[0,1,0],[0,0,1]])   # transformation matrix for the template
         self.thetaIndex         = 0

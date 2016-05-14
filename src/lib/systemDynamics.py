@@ -109,7 +109,7 @@ class Unicycle(SystemDynamics):
 
     def command2robotInput(self, x, u):
 
-        vx = 0.5 #u[0]
+        vx = 0.3 #u[0]
         vy = 0.
         print 'Unicycle commands:'
         print u, u[0], self.uLim[0]

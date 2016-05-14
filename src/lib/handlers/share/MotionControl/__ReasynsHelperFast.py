@@ -19,11 +19,16 @@ def initializeController(fname):
 
     # Load the Matlab data
 
-    for iTemplate in range(len(fname))
-        mat_contents = sio.loadmat(fname[iTemplate])
+    t_base = 0
+    acLastData = [1, 0, 5, 1, [], []]
 
-        t_base = 0
-        acLastData = [1, 0, 5, 1, [], []]
+    numTemplates = 3
+
+    ac_inward = [[]]*numTemplates
+    ac_trans = [[]]*numTemplates
+
+    for iTemplate in range(len(fname)):
+        mat_contents = sio.loadmat(fname[iTemplate])
 
         numInward = 0 if not len(mat_contents['ac_inward_py']) else len(mat_contents['ac_inward_py'][0])
         numTrans = 0 if not len(mat_contents['ac_trans_py']) else len(mat_contents['ac_trans_py'][0])
@@ -37,9 +42,9 @@ def initializeController(fname):
 
         aut = {'state': state,'label': label,'trans': trans}
 
-        ac_inward = [[[]]*numInward]*3
+        ac_inward[iTemplate] = [[]]*numInward
+
         for i in range(numInward):
-            print i
             try:
                 t = mat_contents['ac_inward_py'][0][i]['t'][0][0][0]
                 x0 = mat_contents['ac_inward_py'][0][i]['x0'][0][0]
@@ -56,7 +61,8 @@ def initializeController(fname):
             except:
                 ac_inward[iTemplate][i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}    
 
-        ac_trans = [[[]]*numTrans*3]
+        ac_trans[iTemplate] = [[]]*numTrans
+
         for i in range(numTrans):
             try:
                 t = mat_contents['ac_trans_py'][0][i]['t'][0][0][0]
@@ -70,7 +76,7 @@ def initializeController(fname):
                 post = mat_contents['ac_trans_py'][0][i]['post'][0][0]
 
                 ac_trans[iTemplate][i] = {'t':t, 'x0':x0, 'u0':u0, 'K':K, 'rho':rho, 'P':P, 'pre':pre, 'post':post}
-
+                
             except:
                 ac_trans[iTemplate][i] = {'t':[], 'x0':[], 'u0':[], 'K':[], 'rho':[], 'P':[], 'pre':[], 'post':[]}
 
@@ -292,7 +298,7 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
                 # # propagate the appropriate old states on to the next iteration
                 
                 # If we were activating a transition funnel previously, then use it; otherwise activate an inward funnel
-                if acTransIndex:
+                if type(acTransIndex) is int:
                     ac = ac_trans[templateIndex][acTransIndex]
                 else:
                     ac = ac_inward[templateIndex][acInwardIndex]

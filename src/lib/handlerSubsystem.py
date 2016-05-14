@@ -749,10 +749,10 @@ class HandlerSubsystem:
 
         # remove deleted files
         # do not delete unsuccessfully loaded configs
-        for config_file in os.listdir(self.config_path):
-            if (os.path.join(self.config_path, config_file) not in saved_file_name) \
-                    and (os.path.join(self.config_path, config_file) not in self.configs_incomplete):
-                os.remove(os.path.join(self.config_path, config_file))
+        # for config_file in os.listdir(self.config_path):
+        #     if (os.path.join(self.config_path, config_file) not in saved_file_name) \
+        #             and (os.path.join(self.config_path, config_file) not in self.configs_incomplete):
+        #         os.remove(os.path.join(self.config_path, config_file))
 
 
 if __name__ == '__main__':

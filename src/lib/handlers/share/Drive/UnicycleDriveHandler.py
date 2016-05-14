@@ -30,7 +30,6 @@ class UnicycleDriveHandler(handlerTemplates.DriveHandler):
     def setVelocity(self, vx, vy, w, theta=0):
         vx = max(min(vx*self.mul,self.max),-self.max)
         vy = max(min(vy*self.mul,self.max),-self.max)
-        w = max(min(w,2),-2)
 
         #print "VEL:%f,%f" % tuple(self.coordmap([x, y]))
         # print 'Drive handler inputs x:' + str(x) + ' y:' + str(y)
