@@ -53,7 +53,7 @@ start_list = ["segment_2_bottom_lane"]
 
 ############################################################
 
-LTLMoP_dir = '/home/jon/Dropbox/Repos/LTLMoP/'
+LTLMoP_dir = os.environ['LTLMoP_dir']
 proj = project.Project()
 proj.project_root = LTLMoP_dir+"src/examples/fmr_autospec/"
 proj.project_basename = "fmr_autospec"
