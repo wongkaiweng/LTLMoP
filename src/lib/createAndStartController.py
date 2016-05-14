@@ -140,7 +140,9 @@ if agent_prop_list:
     for goal in goal_list:
         spec_list.append("if you are not sensing ("+" or ".join(agent_prop_list)+") then visit "+ goal)
 else:
-    spec_list.append("visit "+goal)
+    # visit goals
+    for goal in goal_list:
+        spec_list.append("visit "+goal)
 
 proj.specText += "\n".join(spec_list)
 proj.writeSpecFile()
@@ -231,17 +233,18 @@ for x in proj.rfi.regions:
 #    para.setValue(p.replace('InTheWay',''))
 #    prop_mapping[p] = hsub.method2String(m, "ros_new")
 
-# agentAtNextIntersection
-m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtIntsection"))
-para = m.getParaByName("json_file_egents")
-para.setValue(json_file_egents)
-prop_mapping["agentAtNextIntersection"] = hsub.method2String(m, "ros_new")
+if agent_prop_list:
+    # agentAtNextIntersection
+    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtIntsection"))
+    para = m.getParaByName("json_file_egents")
+    para.setValue(json_file_egents)
+    prop_mapping["agentAtNextIntersection"] = hsub.method2String(m, "ros_new")
 
-# agentInSameLaneInFrontOfMe
-m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentInSameLane"))
-para = m.getParaByName("json_file_egents")
-para.setValue(json_file_egents)
-prop_mapping["agentInSameLaneInFrontOfMe"] = hsub.method2String(m, "ros_new")
+    # agentInSameLaneInFrontOfMe
+    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentInSameLane"))
+    para = m.getParaByName("json_file_egents")
+    para.setValue(json_file_egents)
+    prop_mapping["agentInSameLaneInFrontOfMe"] = hsub.method2String(m, "ros_new")
 
 
 experiment_config.normalizePropMapping(prop_mapping)
