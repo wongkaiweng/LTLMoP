@@ -26,6 +26,7 @@ def initializeController(fname):
 
     ac_inward = [[]]*numTemplates
     ac_trans = [[]]*numTemplates
+    aut = [[]]*numTemplates
 
     for iTemplate in range(len(fname)):
         mat_contents = sio.loadmat(fname[iTemplate])
@@ -38,9 +39,11 @@ def initializeController(fname):
         # Unpack the mat file 
         state = [mat_contents['aut'][0][0]['state'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['state'][0]))]
         label = [mat_contents['aut'][0][0]['label'][0][i][0][0] for i in range(len(mat_contents['aut'][0][0]['label'][0]))]
-        trans = [list(mat_contents['aut'][0][0]['trans'][0][i][0]) for i in range(len(mat_contents['aut'][0][0]['trans'][0]))]
+        trans = [list(mat_contents['aut'][0][0]['trans'][i][0][0]) for i in range(len(mat_contents['aut'][0][0]['trans']))]
 
-        aut = {'state': state,'label': label,'trans': trans}
+        aut[iTemplate] = {'state': state,'label': label,'trans': trans}
+
+        ltlmop_logger.debug("aut trans: " + str(trans)
 
         ac_inward[iTemplate] = [[]]*numInward
 
@@ -190,9 +193,9 @@ def executeSingleStep(sysObj, aut, ac_trans, ac_inward, x, currReg, nextReg, acL
     teval = 0.02;
     
     # NB: the addtional processing is to correlate to Matlab's indices
-    trans = [[i[0]-1, i[1]-1] for i in aut['trans']] # trans contains a list of pairs of states for all transitions in the reduced automaton.
-    state = [i-1 for i in aut['state']]  # numbers for each state automaton.
-    region = [i-1 for i in aut['label']]  # associates each state in the automaton with a region label.
+    trans = [[i[0]-1, i[1]-1] for i in aut[templateIndex]['trans']] # trans contains a list of pairs of states for all transitions in the reduced automaton.
+    state = [i-1 for i in aut[templateIndex]['state']]  # numbers for each state automaton.
+    region = [i-1 for i in aut[templateIndex]['label']]  # associates each state in the automaton with a region label.
 
     # Determine the transition indices as either being an 'intersection' or from matching successor regions to vertices
     # NB: assumes the appropriate order has been stored in the aut...
