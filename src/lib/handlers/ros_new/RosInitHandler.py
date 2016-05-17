@@ -46,7 +46,9 @@ class RosInitHandler(handlerTemplates.InitHandler):
         rospy.init_node('LTLMoPHandlers')
 
         # set robot start location
-        self.centerTheRobot(init_region)
+        ltlmop_logger.debug("init_region:" + str(init_region))
+        if init_region:
+            self.centerTheRobot(init_region)
 
     def getSharedData(self):
         # TODO: Return a dictionary of any objects that will need to be shared with other handlers

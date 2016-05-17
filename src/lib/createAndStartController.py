@@ -23,6 +23,9 @@ import project, regions, specCompiler
 import hsubConfigObjects, handlerSubsystem
 import lib.handlers.handlerTemplates as handlerTemplates
 
+from gazebo_msgs.srv import GetModelState
+import rospy, Polygon
+
 
 """
 TODO:
@@ -42,18 +45,15 @@ start_time = time.time()
 scale = 500
 offset = [500,500]
 
-json_file = "/home/catherine/Desktop/fmrbenchmark/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json"
+FMRBENCHMARK = os.environ.get("FMRBENCHMARK")
+json_file = FMRBENCHMARK+"/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json"
 with open(json_file,'r') as f:
     json_dict = ast.literal_eval(f.read())
 f.closed
 
-# TODO: this should be provided
-goal_list = ["segment_4_top_lane", "segment_14_top_lane", "segment_3_pi2_right_intersect"] # given?
-start_list = ["segment_2_bottom_lane"]
-
 ############################################################
 
-LTLMoP_dir = os.environ['LTLMoP_dir']
+LTLMoP_dir = os.environ.get("LTLMoP_dir")
 proj = project.Project()
 proj.project_root = LTLMoP_dir+"src/examples/fmr_autospec/"
 proj.project_basename = "fmr_autospec"
@@ -124,9 +124,49 @@ agent_prop_list = ['agentAtNextIntersection','agentInSameLaneInFrontOfMe']
 proj.enabled_sensors.extend(agent_prop_list)
 proj.all_sensors.extend(agent_prop_list)
 
+# populate goal list
+goal_list=[]
+for region in proj.rfi.regions:
+    if "full_intersect" in region.name:
+        goal_list.append(region.name)
+#goal_list = ["segment_4_top_lane", "segment_14_top_lane", "segment_3_pi2_right_intersect"]
+ltlmop_logger.log(4,'-- Finished adding goal regions')
+
+# check starting location of the robot
+def createRegionPolygon(region, hole=None):
+    """
+    This function takes in the region object and make it a Polygon.
+    """
+    if hole == None:
+        pointArray = [x for x in region.getPoints()]
+    else:
+        pointArray = [x for x in region.getPoints(hole_id = hole)]
+    regionPoints = [(pt[0],pt[1]) for pt in pointArray]
+    formedPolygon= Polygon.Polygon(regionPoints)
+    return formedPolygon
+
+ltlmop_logger.log(4,'-- Started adding starts regions')
+#rospy.init_node('createAndStartController')
+rospy.wait_for_service('/gazebo/get_model_state')
+gms = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+resp = gms('ego','world')
+ltlmop_logger.log(4,'-- Starting location: {resp}'.format(resp=resp))
+start_list = []
+if resp is not None:
+    #Cartesian Pose
+    start_pose = [offset[0]+resp.pose.position.x*scale, offset[1]+resp.pose.position.y*scale]
+    for region in proj.rfi.regions:
+        if region.name != 'boundary' and not region.isObstacle:
+            regionPolygon = createRegionPolygon(region)
+            if regionPolygon.isInside(start_pose[0], start_pose[1]):
+                start_list.append(region.name)
+ltlmop_logger.log(4,'-- Finished adding starts regions: {start_list}'.format(start_list=start_list))
+
+
 spec_list = []
 # Robot starts in ???
-spec_list.append("Robot starts in "+ " or ".join(start_list))
+if start_list:
+    spec_list.append("Robot starts in "+ " or ".join(start_list))
 
 # first check if there's agents
 if agent_prop_list:
@@ -140,7 +180,9 @@ if agent_prop_list:
     for goal in goal_list:
         spec_list.append("if you are not sensing ("+" or ".join(agent_prop_list)+") then visit "+ goal)
 else:
-    spec_list.append("visit "+goal)
+    # visit goals
+    for goal in goal_list:
+        spec_list.append("visit "+goal)
 
 proj.specText += "\n".join(spec_list)
 proj.writeSpecFile()
@@ -191,9 +233,9 @@ try:
                           'Type':['ros_new'],
                           'CalibrationMatrix':'[[{scale}, 0, {offset_x}],\
                                                  [0, {scale}, {offset_y}],\
-                                                 [0, 0, 1]]'.format(scale=scale, offset_x=offset[0],offset_y=offset[1]),
-                          'InitHandler': ['ros_new.RosInitHandler(init_region="{start_region}",\
-                                        robotPixelWidth=200,robotPhysicalWidth=0.2)'.format(start_region=start_list[0])]}, hsub)
+                                                 [0, 0, 1]]'.format(scale=scale, offset_x=offset[0],offset_y=offset[1])},hsub)
+                          #'InitHandler': ['ros_new.RosInitHandler(init_region="{start_region}",\
+                          #              robotPixelWidth=200,robotPhysicalWidth=0.2)'.format(start_region=start_list[0])]}, hsub)
 
 except handlerTemplates.LoadingError, msg:
     ltlmop_logger.error(msg)
@@ -231,17 +273,18 @@ for x in proj.rfi.regions:
 #    para.setValue(p.replace('InTheWay',''))
 #    prop_mapping[p] = hsub.method2String(m, "ros_new")
 
-# agentAtNextIntersection
-m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtIntsection"))
-para = m.getParaByName("json_file_egents")
-para.setValue(json_file_egents)
-prop_mapping["agentAtNextIntersection"] = hsub.method2String(m, "ros_new")
+if agent_prop_list:
+    # agentAtNextIntersection
+    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentAtIntsection"))
+    para = m.getParaByName("json_file_egents")
+    para.setValue(json_file_egents)
+    prop_mapping["agentAtNextIntersection"] = hsub.method2String(m, "ros_new")
 
-# agentInSameLaneInFrontOfMe
-m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentInSameLane"))
-para = m.getParaByName("json_file_egents")
-para.setValue(json_file_egents)
-prop_mapping["agentInSameLaneInFrontOfMe"] = hsub.method2String(m, "ros_new")
+    # agentInSameLaneInFrontOfMe
+    m = copy.deepcopy(hsub.handler_configs["ros_new"][handlerTemplates.SensorHandler][0].getMethodByName("checkIfAgentInSameLane"))
+    para = m.getParaByName("json_file_egents")
+    para.setValue(json_file_egents)
+    prop_mapping["agentInSameLaneInFrontOfMe"] = hsub.method2String(m, "ros_new")
 
 
 experiment_config.normalizePropMapping(prop_mapping)
@@ -261,4 +304,3 @@ elapsed_time = time.time() - start_time
 ltlmop_logger.log(4,"== Total time: {elapsed_time}s ==".format(elapsed_time=elapsed_time))
 
 subprocess.Popen([sys.executable, "-u", "-m", "lib.execute", "-a", proj.getStrategyFilename(), "-s", proj.getFilenamePrefix() + ".spec"])
-
