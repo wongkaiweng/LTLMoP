@@ -36,8 +36,8 @@ import regions
 plotting = False
 # scaling and offset for regionEditor.py
 scale = 500  #100
-offset_x = 500 # pixels #100
-offset_y = 500 # pixels #100
+offset_x = 5000 # pixels #100
+offset_y = 5000 # pixels #100
 
 def gen_world_regions(roads, output_file):
     road_regions= []

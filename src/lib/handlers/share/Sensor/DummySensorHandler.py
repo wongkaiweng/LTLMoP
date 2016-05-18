@@ -41,7 +41,7 @@ while t != "share":
 ltlmop_logger.debug(p)
 sys.path.append(os.path.join(p,"share","Pose"))
 sys.path.append(os.path.join(p,"share","MotionControl"))
-import _pyvicon
+import _pyvicon, numpy
 # ------------------------------- #
 
 import lib.handlers.handlerTemplates as handlerTemplates
@@ -71,7 +71,7 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             ltlmop_logger.debug(executor.robClient)
         self.robotRegionStatus  = {} # for keeping track of robot locations
         self.viconServer = {} # dict of vicon poses
-        self.prev_pose = [] # storing prev pose
+        self.prev_pose = [0,0,0,0] # storing prev pose
         self.currentRegionPoly = None # current region polygon
         self.prev_current_region = '' # storing prev region str
         self.polyRegionList = {} # region polygon dict
@@ -240,11 +240,12 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         #########################################
 
         # make sure the pose is valid
-        if sum(pose) == 0:
-            pose = self.prev_pose # maybe do interpolation later?
-            ltlmop_logger.warning("Losing pose... Using old one.")
-        else:
-            self.prev_pose = pose
+        #if pose is None:
+        #    ltlmop_logger.warning("Returned pose is None!")
+        #    pose = self.prev_pose # maybe do interpolation later?
+        #    ltlmop_logger.warning("Losing pose... Using old one.[0,0,0,0]")
+        #else:
+        self.prev_pose = pose
 
         # form polygon for the robot
         RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))

@@ -43,7 +43,7 @@ class RosPoseHandler(handlerTemplates.PoseHandler):
         #In this case it is pr2 and world respectively but can be changed for different robots and environments
         self.model_name = modelName
         self.relative_entity_name = 'world' #implies the gazebo global coordinates
-        self.last_pose = None
+        self.last_pose = [0,0,0,0]
 
         self.shared_data=shared_data['ROS_INIT_HANDLER']
 

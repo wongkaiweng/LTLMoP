@@ -43,7 +43,7 @@ start_time = time.time()
 ############################################################
 # if needed, they can be changed to system arguments
 scale = 500
-offset = [500,500]
+offset = [5000,5000]
 
 FMRBENCHMARK = os.environ.get("FMRBENCHMARK")
 json_file = FMRBENCHMARK+"/domains/dubins_traffic/dubins_traffic_utils/examples/trialsconf/mc-small-4grid-agents2.json"
