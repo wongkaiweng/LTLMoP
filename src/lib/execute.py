@@ -103,7 +103,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         self.current_outputs = {}     # keep track on current outputs values (for actuations)
 
         ######## RUNTIME MONIOTRING #################
-        self.runtimeMonitoring = True
+        self.runtimeMonitoring = False
         self.usingSlugs = True
         #############################################
 

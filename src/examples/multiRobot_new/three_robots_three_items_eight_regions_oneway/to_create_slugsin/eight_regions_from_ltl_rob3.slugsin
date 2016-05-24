@@ -1,0 +1,117 @@
+[INPUT]
+boundary_rc
+r1_rc
+obstacle_rc
+r8_rc
+r7_rc
+r5_rc
+r6_rc
+r4_rc
+r3_rc
+r2_rc
+
+[OUTPUT]
+boundary
+r1
+obstacle
+r8
+r7
+r5
+r6
+r4
+r3
+r2
+
+[ENV_INIT]
+( rob3_r1_rc)
+ 
+ ((rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & rob3_r4_rc & !rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & rob3_r3_rc & !rob3_r2_rc) | (!rob3_r1_rc & !rob3_r8_rc & !rob3_r7_rc & !rob3_r5_rc & !rob3_r6_rc & !rob3_r4_rc & !rob3_r3_rc & rob3_r2_rc))
+
+
+[ENV_TRANS]
+( (rob3_r1_rc & rob3_r1) -> (rob3_r1_rc') )
+( (rob3_r8_rc & rob3_r8) -> (rob3_r8_rc') )
+( (rob3_r7_rc & rob3_r7) -> (rob3_r7_rc') )
+( (rob3_r5_rc & rob3_r5) -> (rob3_r5_rc') )
+( (rob3_r6_rc & rob3_r6) -> (rob3_r6_rc') )
+( (rob3_r4_rc & rob3_r4) -> (rob3_r4_rc') )
+( (rob3_r3_rc & rob3_r3) -> (rob3_r3_rc') )
+( (rob3_r2_rc & rob3_r2) -> (rob3_r2_rc') )
+( (rob3_r1_rc & rob3_r6) -> (rob3_r1_rc' | rob3_r6_rc') )
+( (rob3_r1_rc & rob3_r2) -> (rob3_r1_rc' | rob3_r2_rc') )
+( (rob3_r8_rc & rob3_r7) -> (rob3_r8_rc' | rob3_r7_rc') )
+( (rob3_r7_rc & rob3_r8) -> (rob3_r7_rc' | rob3_r8_rc') )
+( (rob3_r7_rc & rob3_r5) -> (rob3_r7_rc' | rob3_r5_rc') )
+( (rob3_r7_rc & rob3_r6) -> (rob3_r7_rc' | rob3_r6_rc') )
+( (rob3_r5_rc & rob3_r7) -> (rob3_r5_rc' | rob3_r7_rc') )
+( (rob3_r5_rc & rob3_r3) -> (rob3_r5_rc' | rob3_r3_rc') )
+( (rob3_r6_rc & rob3_r1) -> (rob3_r6_rc' | rob3_r1_rc') )
+( (rob3_r6_rc & rob3_r7) -> (rob3_r6_rc' | rob3_r7_rc') )
+( (rob3_r4_rc & rob3_r3) -> (rob3_r4_rc' | rob3_r3_rc') )
+( (rob3_r3_rc & rob3_r5) -> (rob3_r3_rc' | rob3_r5_rc') )
+( (rob3_r3_rc & rob3_r4) -> (rob3_r3_rc' | rob3_r4_rc') )
+( (rob3_r3_rc & rob3_r2) -> (rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r2_rc & rob3_r1) -> (rob3_r2_rc' | rob3_r1_rc') )
+( (rob3_r2_rc & rob3_r3) -> (rob3_r2_rc' | rob3_r3_rc') )
+( (rob3_r1_rc') <-> ! ( rob3_r8_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r8_rc') <-> ! ( rob3_r1_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r7_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r5_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r7_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r6_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r4_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r4_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r3_rc' | rob3_r2_rc') )
+( (rob3_r3_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r2_rc') )
+( (rob3_r2_rc') <-> ! ( rob3_r1_rc' | rob3_r8_rc' | rob3_r7_rc' | rob3_r5_rc' | rob3_r6_rc' | rob3_r4_rc' | rob3_r3_rc') )
+((rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & rob3_r4_rc' & !rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & rob3_r3_rc' & !rob3_r2_rc') | (!rob3_r1_rc' & !rob3_r8_rc' & !rob3_r7_rc' & !rob3_r5_rc' & !rob3_r6_rc' & !rob3_r4_rc' & !rob3_r3_rc' & rob3_r2_rc'))
+
+
+
+&
+<>( (rob3_r1 & rob3_r1_rc') | (rob3_r1 & !rob3_r1')
+				| (rob3_r8 & rob3_r8_rc') | (rob3_r8 & !rob3_r8')
+				| (rob3_r7 & rob3_r7_rc') | (rob3_r7 & !rob3_r7')
+				| (rob3_r5 & rob3_r5_rc') | (rob3_r5 & !rob3_r5')
+				| (rob3_r6 & rob3_r6_rc') | (rob3_r6 & !rob3_r6')
+				| (rob3_r4 & rob3_r4_rc') | (rob3_r4 & !rob3_r4')
+				| (rob3_r3 & rob3_r3_rc') | (rob3_r3 & !rob3_r3')
+				| (rob3_r2 & rob3_r2_rc') | (rob3_r2 & !rob3_r2')
+ ) 
+	);
+
+LTLSPEC -- Guarantees
+	(
+( rob3_r1) &
+ 			[]<>(TRUE)
+&
+
+&
+
+	((rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & rob3_r2))
+&
+
+
+
+SYS_TRANS
+
+(!(rob3_r1 & rob3_r8) & !(rob3_r1 & rob3_r7) & !(rob3_r1 & rob3_r5) & !(rob3_r1 & rob3_r6) & !(rob3_r1 & rob3_r4) & !(rob3_r1 & rob3_r3) & !(rob3_r1 & rob3_r2) & !(rob3_r8 & rob3_r7) & !(rob3_r8 & rob3_r5) & !(rob3_r8 & rob3_r6) & !(rob3_r8 & rob3_r4) & !(rob3_r8 & rob3_r3) & !(rob3_r8 & rob3_r2) & !(rob3_r7 & rob3_r5) & !(rob3_r7 & rob3_r6) & !(rob3_r7 & rob3_r4) & !(rob3_r7 & rob3_r3) & !(rob3_r7 & rob3_r2) & !(rob3_r5 & rob3_r6) & !(rob3_r5 & rob3_r4) & !(rob3_r5 & rob3_r3) & !(rob3_r5 & rob3_r2) & !(rob3_r6 & rob3_r4) & !(rob3_r6 & rob3_r3) & !(rob3_r6 & rob3_r2) & !(rob3_r4 & rob3_r3) & !(rob3_r4 & rob3_r2) & !(rob3_r3 & rob3_r2))
+( (rob3_r1_rc') -> ( (rob3_r1') | (rob3_r6')  | (rob3_r2')  ) )
+( (rob3_r8_rc') -> ( (rob3_r8') | (rob3_r7')  ) )
+( (rob3_r7_rc') -> ( (rob3_r7') | (rob3_r8')  | (rob3_r5')  | (rob3_r6')  ) )
+( (rob3_r5_rc') -> ( (rob3_r5') | (rob3_r7')  | (rob3_r3')  ) )
+( (rob3_r6_rc') -> ( (rob3_r6') | (rob3_r1')  | (rob3_r7')  ) )
+( (rob3_r4_rc') -> ( (rob3_r4') | (rob3_r3')  ) )
+( (rob3_r3_rc') -> ( (rob3_r3') | (rob3_r5')  | (rob3_r4')  | (rob3_r2')  ) )
+( (rob3_r2_rc') -> ( (rob3_r2') | (rob3_r1')  | (rob3_r3')  ) )
+( (rob3_r1') -> ! ( rob3_r8' | rob3_r7' | rob3_r5' | rob3_r6' | rob3_r4' | rob3_r3' | rob3_r2' ) )
+( (rob3_r8') -> ! ( rob3_r1' | rob3_r7' | rob3_r5' | rob3_r6' | rob3_r4' | rob3_r3' | rob3_r2' ) )
+( (rob3_r7') -> ! ( rob3_r1' | rob3_r8' | rob3_r5' | rob3_r6' | rob3_r4' | rob3_r3' | rob3_r2' ) )
+( (rob3_r5') -> ! ( rob3_r1' | rob3_r8' | rob3_r7' | rob3_r6' | rob3_r4' | rob3_r3' | rob3_r2' ) )
+( (rob3_r6') -> ! ( rob3_r1' | rob3_r8' | rob3_r7' | rob3_r5' | rob3_r4' | rob3_r3' | rob3_r2' ) )
+( (rob3_r4') -> ! ( rob3_r1' | rob3_r8' | rob3_r7' | rob3_r5' | rob3_r6' | rob3_r3' | rob3_r2' ) )
+( (rob3_r3') -> ! ( rob3_r1' | rob3_r8' | rob3_r7' | rob3_r5' | rob3_r6' | rob3_r4' | rob3_r2' ) )
+( (rob3_r2') -> ! ( rob3_r1' | rob3_r8' | rob3_r7' | rob3_r5' | rob3_r6' | rob3_r4' | rob3_r3' ) )
+((rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & rob3_r6 & !rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & rob3_r4 & !rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & rob3_r3 & !rob3_r2) | (!rob3_r1 & !rob3_r8 & !rob3_r7 & !rob3_r5 & !rob3_r6 & !rob3_r4 & !rob3_r3 & rob3_r2))
+
+
+
+
+	);

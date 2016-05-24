@@ -8,10 +8,11 @@ Actions: # List of action propositions and their state (enabled = 1, disabled = 
 rob1_pickup, 1
 rob2_pickup, 1
 rob3_pickup, 1
+rob4_pickup, 1
 rob1_drop, 1
 rob2_drop, 1
 rob3_drop, 1
-
+rob4_drop, 1
 
 CompileOptions:
 convexify: True
@@ -35,14 +36,18 @@ rob2_carrying_paper
 rob3_carrying_glass
 rob3_carrying_metal
 rob3_carrying_paper
+rob4_carrying_glass
+rob4_carrying_metal
+rob4_carrying_paper
 all_done
 r1_done
 r3_done
+r4_done
 r6_done
 r8_done
 
 RegionFile: # Relative path of region description file
-eight_regions.regions
+../eight_regions_new.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 rob1_metal, 1
@@ -57,6 +62,10 @@ rob3_metal, 1
 rob3_glass, 1
 rob3_paper, 1
 rob3_pickup_ac, 1
+rob4_metal, 1
+rob4_glass, 1
+rob4_paper, 1
+rob4_pickup_ac, 1
 
 
 ======== SPECIFICATION ========

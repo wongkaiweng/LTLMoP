@@ -268,6 +268,16 @@ rob3_carrying_paper
 | ! rob1_r2' ! | | | | | | rob1_r1' rob1_r8' rob1_r7' rob1_r5' rob1_r6' rob1_r4' rob1_r3'
 | | | | | | | & & & & & & & rob1_r1 ! rob1_r8 ! rob1_r7 ! rob1_r5 ! rob1_r6 ! rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 rob1_r8 ! rob1_r7 ! rob1_r5 ! rob1_r6 ! rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 rob1_r7 ! rob1_r5 ! rob1_r6 ! rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 ! rob1_r7 rob1_r5 ! rob1_r6 ! rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 ! rob1_r7 ! rob1_r5 rob1_r6 ! rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 ! rob1_r7 ! rob1_r5 ! rob1_r6 rob1_r4 ! rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 ! rob1_r7 ! rob1_r5 ! rob1_r6 ! rob1_r4 rob1_r3 ! rob1_r2 & & & & & & & ! rob1_r1 ! rob1_r8 ! rob1_r7 ! rob1_r5 ! rob1_r6 ! rob1_r4 ! rob1_r3 rob1_r2
 ####### END AUTOGEN FROM REGION #############
+#+++ begin one way ++#
+| ! rob1_r1_rc' | rob1_r1' rob1_r2'
+| ! rob1_r8_rc' | rob1_r8' rob1_r7'
+| ! rob1_r7_rc' | | rob1_r7' rob1_r8' rob1_r6'
+| ! rob1_r5_rc' | rob1_r5' rob1_r7'
+| ! rob1_r6_rc' | rob1_r6' rob1_r1'
+| ! rob1_r4_rc' | rob1_r4' rob1_r3'
+| ! rob1_r3_rc' | | rob1_r3' rob1_r5' rob1_r4'
+| ! rob1_r2_rc' | rob1_r2' rob1_r3'
+#+++ end one way ++#
 | ! & rob1_pickup' ! rob1_pickup_ac' | ! rob1_r1_rc' rob1_r1'
 | ! & rob1_pickup' ! rob1_pickup_ac' | ! rob1_r2_rc' rob1_r2'
 | ! & rob1_pickup' ! rob1_pickup_ac' | ! rob1_r3_rc' rob1_r3'
@@ -312,6 +322,16 @@ rob3_carrying_paper
 | ! rob2_r2' ! | | | | | | rob2_r1' rob2_r8' rob2_r7' rob2_r5' rob2_r6' rob2_r4' rob2_r3'
 | | | | | | | & & & & & & & rob2_r1 ! rob2_r8 ! rob2_r7 ! rob2_r5 ! rob2_r6 ! rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 rob2_r8 ! rob2_r7 ! rob2_r5 ! rob2_r6 ! rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 rob2_r7 ! rob2_r5 ! rob2_r6 ! rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 ! rob2_r7 rob2_r5 ! rob2_r6 ! rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 ! rob2_r7 ! rob2_r5 rob2_r6 ! rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 ! rob2_r7 ! rob2_r5 ! rob2_r6 rob2_r4 ! rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 ! rob2_r7 ! rob2_r5 ! rob2_r6 ! rob2_r4 rob2_r3 ! rob2_r2 & & & & & & & ! rob2_r1 ! rob2_r8 ! rob2_r7 ! rob2_r5 ! rob2_r6 ! rob2_r4 ! rob2_r3 rob2_r2
 ####### END AUTOGEN FROM REGION #############
+#+++ begin one way ++#
+| ! rob2_r1_rc' | rob2_r1' rob2_r2'
+| ! rob2_r8_rc' | rob2_r8' rob2_r7'
+| ! rob2_r7_rc' | | rob2_r7' rob2_r8' rob2_r6'
+| ! rob2_r5_rc' | rob2_r5' rob2_r7'
+| ! rob2_r6_rc' | rob2_r6' rob2_r1'
+| ! rob2_r4_rc' | rob2_r4' rob2_r3'
+| ! rob2_r3_rc' | | rob2_r3' rob2_r5' rob2_r4'
+| ! rob2_r2_rc' | rob2_r2' rob2_r3'
+#+++ end one way ++#
 | ! & rob2_pickup' ! rob2_pickup_ac' | ! rob2_r1_rc' rob2_r1'
 | ! & rob2_pickup' ! rob2_pickup_ac' | ! rob2_r2_rc' rob2_r2'
 | ! & rob2_pickup' ! rob2_pickup_ac' | ! rob2_r3_rc' rob2_r3'
@@ -355,6 +375,16 @@ rob3_carrying_paper
 | ! rob3_r2' ! | | | | | | rob3_r1' rob3_r8' rob3_r7' rob3_r5' rob3_r6' rob3_r4' rob3_r3'
 | | | | | | | & & & & & & & rob3_r1 ! rob3_r8 ! rob3_r7 ! rob3_r5 ! rob3_r6 ! rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 rob3_r8 ! rob3_r7 ! rob3_r5 ! rob3_r6 ! rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 rob3_r7 ! rob3_r5 ! rob3_r6 ! rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 ! rob3_r7 rob3_r5 ! rob3_r6 ! rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 ! rob3_r7 ! rob3_r5 rob3_r6 ! rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 ! rob3_r7 ! rob3_r5 ! rob3_r6 rob3_r4 ! rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 ! rob3_r7 ! rob3_r5 ! rob3_r6 ! rob3_r4 rob3_r3 ! rob3_r2 & & & & & & & ! rob3_r1 ! rob3_r8 ! rob3_r7 ! rob3_r5 ! rob3_r6 ! rob3_r4 ! rob3_r3 rob3_r2
 ####### END AUTOGEN FROM REGION #############
+#+++ begin one way ++#
+| ! rob3_r1_rc' | rob3_r1' rob3_r2'
+| ! rob3_r8_rc' | rob3_r8' rob3_r7'
+| ! rob3_r7_rc' | | rob3_r7' rob3_r8' rob3_r6'
+| ! rob3_r5_rc' | rob3_r5' rob3_r7'
+| ! rob3_r6_rc' | rob3_r6' rob3_r1'
+| ! rob3_r4_rc' | rob3_r4' rob3_r3'
+| ! rob3_r3_rc' | | rob3_r3' rob3_r5' rob3_r4'
+| ! rob3_r2_rc' | rob3_r2' rob3_r3'
+#+++ end one way ++#
 | ! & rob3_pickup' ! rob3_pickup_ac' | ! rob3_r1_rc' rob3_r1'
 | ! & rob3_pickup' ! rob3_pickup_ac' | ! rob3_r2_rc' rob3_r2'
 | ! & rob3_pickup' ! rob3_pickup_ac' | ! rob3_r3_rc' rob3_r3'
