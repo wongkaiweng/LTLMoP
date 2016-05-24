@@ -305,10 +305,13 @@ class SimGUI_Frame(wx.Frame):
         dc.DrawBitmap(self.mapBitmap, 0, 0)
 
         # Draw robot
+        color = [wx.WHITE,wx.RED,wx.GREEN,wx.BLUE]
         if self.robotPos is not None:
-            for robot_name, pose in self.robotPos.iteritems():
+            for idx, (robot_name, pose) in enumerate(self.robotPos.iteritems()):
                 [x,y] = map(lambda x: int(self.mapScale*x), pose) 
+                dc.SetBrush(wx.Brush(color[idx]))
                 dc.DrawCircle(x, y, 5)
+                dc.DrawText(robot_name, x, y)
         if self.markerPos is not None:
             [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos) 
             dc.SetBrush(wx.Brush(wx.RED))
