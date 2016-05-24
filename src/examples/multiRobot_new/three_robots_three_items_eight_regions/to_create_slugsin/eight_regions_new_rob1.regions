@@ -1,0 +1,323 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+obstacle
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                0.0
+            ], 
+            [
+                278.0, 
+                0.0
+            ], 
+            [
+                437.0, 
+                0.0
+            ], 
+            [
+                561.0, 
+                0.0
+            ], 
+            [
+                561.0, 
+                120.0
+            ], 
+            [
+                437.0, 
+                120.0
+            ], 
+            [
+                437.0, 
+                249.0
+            ], 
+            [
+                554.0, 
+                249.0
+            ], 
+            [
+                554.0, 
+                351.0
+            ], 
+            [
+                437.0, 
+                351.0
+            ], 
+            [
+                278.0, 
+                351.0
+            ], 
+            [
+                129.0, 
+                351.0
+            ], 
+            [
+                0.0, 
+                351.0
+            ]
+        ], 
+        "position": [
+            45.0, 
+            250.0
+        ], 
+        "type": "poly", 
+        "size": [
+            561.0, 
+            351.0
+        ]
+    }, 
+    {
+        "name": "rob1_r1", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                120.0
+            ], 
+            [
+                129.0, 
+                249.0
+            ], 
+            [
+                129.0, 
+                351.0
+            ], 
+            [
+                0.0, 
+                351.0
+            ]
+        ], 
+        "position": [
+            45.0, 
+            250.0
+        ], 
+        "type": "poly", 
+        "size": [
+            129.0, 
+            351.0
+        ]
+    }, 
+    {
+        "name": "obstacle", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                149.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                149.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            174.0, 
+            370.0
+        ], 
+        "type": "poly", 
+        "size": [
+            149.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "rob1_r8", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            482.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            117.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "rob1_r7", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "rob1_r5", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            370.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "rob1_r6", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            174.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            149.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "rob1_r4", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            482.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            124.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "rob1_r3", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "rob1_r2", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            174.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            149.0, 
+            120.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	rob1_r1	174	250	45	250	45	601	174	601	45	601	45	250
+boundary	rob1_r8	482	601	599	601	599	499	482	499	599	499	599	601
+boundary	rob1_r7	323	601	482	601
+boundary	rob1_r5	482	499	482	370
+boundary	rob1_r6	174	601	323	601
+boundary	rob1_r4	606	250	606	370	606	250	482	250	606	370	482	370
+boundary	rob1_r3	323	250	482	250
+boundary	rob1_r2	323	250	174	250
+rob1_r1	obstacle	174	499	174	370
+rob1_r1	rob1_r6	174	499	174	601
+rob1_r1	rob1_r2	174	250	174	370
+obstacle	rob1_r5	323	370	323	499
+obstacle	rob1_r6	174	499	323	499
+obstacle	rob1_r2	323	370	174	370
+rob1_r8	rob1_r7	482	499	482	601
+rob1_r7	rob1_r5	482	499	323	499
+rob1_r7	rob1_r6	323	601	323	499
+rob1_r5	rob1_r3	323	370	482	370
+rob1_r4	rob1_r3	482	250	482	370
+rob1_r3	rob1_r2	323	370	323	250
+

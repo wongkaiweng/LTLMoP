@@ -1,0 +1,323 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+
+Obstacles: # Names of regions to treat as obstacles
+obstacle
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "boundary", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                0.0
+            ], 
+            [
+                278.0, 
+                0.0
+            ], 
+            [
+                437.0, 
+                0.0
+            ], 
+            [
+                561.0, 
+                0.0
+            ], 
+            [
+                561.0, 
+                120.0
+            ], 
+            [
+                437.0, 
+                120.0
+            ], 
+            [
+                437.0, 
+                249.0
+            ], 
+            [
+                554.0, 
+                249.0
+            ], 
+            [
+                554.0, 
+                351.0
+            ], 
+            [
+                437.0, 
+                351.0
+            ], 
+            [
+                278.0, 
+                351.0
+            ], 
+            [
+                129.0, 
+                351.0
+            ], 
+            [
+                0.0, 
+                351.0
+            ]
+        ], 
+        "position": [
+            45.0, 
+            250.0
+        ], 
+        "type": "poly", 
+        "size": [
+            561.0, 
+            351.0
+        ]
+    }, 
+    {
+        "name": "r1", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                0.0
+            ], 
+            [
+                129.0, 
+                120.0
+            ], 
+            [
+                129.0, 
+                249.0
+            ], 
+            [
+                129.0, 
+                351.0
+            ], 
+            [
+                0.0, 
+                351.0
+            ]
+        ], 
+        "position": [
+            45.0, 
+            250.0
+        ], 
+        "type": "poly", 
+        "size": [
+            129.0, 
+            351.0
+        ]
+    }, 
+    {
+        "name": "obstacle", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                149.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                129.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                149.0, 
+                0.0
+            ]
+        ], 
+        "position": [
+            174.0, 
+            370.0
+        ], 
+        "type": "poly", 
+        "size": [
+            149.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "r8", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            482.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            117.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "r7", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "r5", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            370.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            129.0
+        ]
+    }, 
+    {
+        "name": "r6", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            174.0, 
+            499.0
+        ], 
+        "type": "rect", 
+        "size": [
+            149.0, 
+            102.0
+        ]
+    }, 
+    {
+        "name": "r4", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            482.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            124.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "r3", 
+        "color": [
+            255, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            323.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "r2", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            174.0, 
+            250.0
+        ], 
+        "type": "rect", 
+        "size": [
+            149.0, 
+            120.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+boundary	r1	174.0	250.0	45.0	250.0	45.0	601.0	174.0	601.0	45.0	601.0	45.0	250.0
+boundary	r8	482.0	601.0	599.0	601.0	599.0	499.0	482.0	499.0	599.0	499.0	599.0	601.0
+boundary	r7	323.0	601.0	482.0	601.0
+boundary	r5	482.0	499.0	482.0	370.0
+boundary	r6	174.0	601.0	323.0	601.0
+boundary	r4	606.0	250.0	606.0	370.0	606.0	250.0	482.0	250.0	606.0	370.0	482.0	370.0
+boundary	r3	323.0	250.0	482.0	250.0
+boundary	r2	323.0	250.0	174.0	250.0
+r1	obstacle	174.0	499.0	174.0	370.0
+r1	r6	174.0	499.0	174.0	601.0
+r1	r2	174.0	250.0	174.0	370.0
+obstacle	r5	323.0	370.0	323.0	499.0
+obstacle	r6	174.0	499.0	323.0	499.0
+obstacle	r2	323.0	370.0	174.0	370.0
+r8	r7	482.0	499.0	482.0	601.0
+r7	r5	482.0	499.0	323.0	499.0
+r7	r6	323.0	601.0	323.0	499.0
+r5	r3	323.0	370.0	482.0	370.0
+r4	r3	482.0	250.0	482.0	370.0
+r3	r2	323.0	370.0	323.0	250.0
+
