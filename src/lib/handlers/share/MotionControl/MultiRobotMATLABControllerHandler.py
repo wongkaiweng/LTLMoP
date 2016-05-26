@@ -11,7 +11,7 @@ from numpy import *
 from __is_inside import *
 import time, math
 import logging
-import __MATLABPythonInterface as MATLABPythonInterface
+import __MATLABPythonInterface_direct as MATLABPythonInterface
 from collections import OrderedDict
 import copy
 
