@@ -14,6 +14,12 @@ greet, 1
 sayTicket, 0
 inspect, 0
 sayNo, 0
+sayInvalid, 0
+sayHello, 0
+sayPlay, 0
+sayCheckResearch, 0
+highFive, 0 
+fistBump, 0
 headShake, 0
 tweet, 0
 sayTweet, 0

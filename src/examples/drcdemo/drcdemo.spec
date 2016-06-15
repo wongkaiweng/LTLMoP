@@ -13,8 +13,14 @@ headNod, 1
 greet, 1
 sayTicket, 1
 inspect, 1
-sayNo, 1
+sayNo, 0
+sayInvalid, 1
+sayHello, 0
+sayPlay, 0
+sayCheckResearch, 0
 headShake, 1
+fistBump, 0
+highFive, 0
 tweet, 0
 sayTweet, 0
 
@@ -23,7 +29,7 @@ convexify: True
 parser: structured
 symbolic: False
 use_region_bit_encoding: True
-synthesizer: slugs
+synthesizer: jtlv
 fastslow: False
 decompose: True
 
@@ -49,7 +55,7 @@ do sayTicket and pickup if and only if you are sensing person and you are not ac
 # check ticket
 do inspect if and only if you are activating gotTicket
 do headNod and greet if and only if you are activating gotTicket and you are sensing VIPticket
-do headShake and sayNo if and only if you are activating gotTicket and you are sensing ExpiredTicket
+do headShake and sayInvalid if and only if you are activating gotTicket and you are sensing ExpiredTicket
 
 # return ticket
 do drop if and only if you were activating (headNod or headShake) and you are activating gotTicket
