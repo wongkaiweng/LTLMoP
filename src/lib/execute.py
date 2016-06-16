@@ -139,14 +139,14 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         #region_domain = strategy.Domain("region",  self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)
         enabled_sensors = self.proj.enabled_sensors
 
-        regionSensorList = [x for x in self.proj.enabled_sensors if x.endswith('_rc')]
+        regionSensorList = [x for x in self.proj.enabled_sensors if x.endswith('_rc') and not 'obstacle' in x]
         self.proj.enabled_sensors =  [x for x in self.proj.enabled_sensors if not x.endswith('_rc')]
 
         for robot in self.hsub.executing_config.robots:
             for x in regionSensorList:
                 self.proj.enabled_sensors.append(robot.name+'_' + x)
 
-        self.region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc')]
+        self.region_domain = [x.replace('_rc','') for x in self.proj.enabled_sensors if x.endswith('_rc') and not 'obstacle' in x]
 
         #if self.proj.compile_options['fastslow']:
         #    regionCompleted_domain = [strategy.Domain("regionCompleted", self.proj.rfi.regions, strategy.Domain.B0_IS_MSB)]
@@ -351,7 +351,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         #### new from Jim  ############
         ##############################
         init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors \
-                    if not (x.endswith('_ac'))]))
+                    if not (x.endswith('_ac') or 'obstacle' in x)]))
 
         # update the completion props
         for prop_name in self.proj.enabled_sensors:
