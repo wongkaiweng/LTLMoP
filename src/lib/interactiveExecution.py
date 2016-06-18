@@ -29,14 +29,15 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
 
         self.states = strategy.StateCollection()
 
-    def _loadFromFile(self, filename):
+    def _loadFromFile(self, filename, port_no):
         """
         Create an automaton by reading in a file produced by a synthesizer,
         such as JTLV or Slugs.
 
         Basically just a lot of regexes.
         """
-
+        self.port_no = port_no
+        logging.debug('port_number is: {port_no}'.format(port_no=port_no))
         self.inputAPs = self.getInputs()
         self.outputAPs = self.getOutputs()
         logging.debug("inputAPs:" + str(self.inputAPs))
@@ -151,7 +152,7 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         
         msg options: inputs, outputs, state, trans
         """
-        HOST, PORT = "localhost", 9999
+        HOST, PORT = "localhost", self.port_no
         data = msg
 
         # Create a socket (SOCK_STREAM means a TCP socket)

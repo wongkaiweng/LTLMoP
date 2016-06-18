@@ -23,7 +23,7 @@ import globalConfig
 # TODO: should we be using region names instead of objects to avoid
 # weird errors if two copies of the same map are used?
 
-def createStrategyFromFile(filename, input_propositions, output_propositions):
+def createStrategyFromFile(filename, input_propositions, output_propositions, port_no=9999):
     """ High-level method for loading a strategy of any type from file.
 
         Takes a filename and lists of input and output propositions.
@@ -48,7 +48,7 @@ def createStrategyFromFile(filename, input_propositions, output_propositions):
 
     # Configure and load
     new_strategy.configurePropositions(input_propositions, output_propositions)
-    new_strategy.loadFromFile(filename)
+    new_strategy.loadFromFile(filename, port_no)
 
     return new_strategy
 
@@ -601,18 +601,18 @@ class Strategy(object):
 
         return self.searchForStates({})
 
-    def loadFromFile(self, filename):
+    def loadFromFile(self, filename, port_no=9999):
         """ Load a strategy from a file. """
 
         logging.info("Loading strategy from file '{}'...".format(filename))
 
         tic = globalConfig.best_timer()
-        self._loadFromFile(filename)
+        self._loadFromFile(filename, port_no)
         toc = globalConfig.best_timer()
 
         logging.info("Loaded in {} seconds.".format(toc-tic))
 
-    def _loadFromFile(self, filename):
+    def _loadFromFile(self, filename, port_no=9999):
         """ The inner function that actually performs file loading
             for loadFromFile(). """
 

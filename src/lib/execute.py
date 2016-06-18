@@ -131,7 +131,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         # Tell GUI to load the spec file
         self.postEvent("SPEC", self.proj.getFilenamePrefix() + ".spec")
 
-    def loadAutFile(self, filename):
+    def loadAutFile(self, filename, port_no = 9999):
         """
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
@@ -160,7 +160,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
         logging.debug(self.proj.enabled_actuators + self.proj.all_customs +  self.region_domain)
         strat = strategy.createStrategyFromFile(filename,
                                                 self.proj.enabled_sensors, # + regionCompleted_domain ,
-                                                self.proj.enabled_actuators + self.proj.all_customs +  self.region_domain)
+                                                self.proj.enabled_actuators + self.proj.all_customs +  self.region_domain,\
+                                                port_no)
 
         return strat
 
@@ -283,7 +284,18 @@ class LTLMoPExecutor(ExecutorStrategyExtensions,ExecutorResynthesisExtensions, o
 
         # TODO: maybe an option for BDD here later
         # Load automaton file
-        new_strategy = self.loadAutFile(strategy_file)
+        if 'rob1' in [robot.name for robot in self.hsub.executing_config.robots]:
+            port_no = 9999
+        elif 'rob2' in [robot.name for robot in self.hsub.executing_config.robots]:
+            port_no = 9989
+        elif 'rob3' in [robot.name for robot in self.hsub.executing_config.robots]:
+            port_no = 9979
+        else:
+            logging.error("robot name does not match")
+            port_no = 9999
+
+        logging.debug("port number is: {port_no}".format(port_no=port_no))
+        new_strategy = self.loadAutFile(strategy_file, port_no)
 
         if firstRun:
             ### Wait for the initial start command
