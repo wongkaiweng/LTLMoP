@@ -20,7 +20,7 @@ class HolonomicDriveHandler(handlerTemplates.DriveHandler):
         maxspeed (float): Max speed allowed (default=999.0)
         """
         try:
-            #self.loco = executor.hsub.getHandlerInstanceByType(handlerTemplates.LocomotionCommandHandler)
+            self.loco = executor.hsub.getHandlerInstanceByType(handlerTemplates.LocomotionCommandHandler)
             self.coordmap = executor.hsub.coordmap_lab2map
         except NameError:
             print "(DRIVE) Locomotion Command Handler not found."

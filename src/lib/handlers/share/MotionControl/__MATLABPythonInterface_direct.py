@@ -100,6 +100,49 @@ def initializeMATLABPythonCommunication(regions, coordmap_map2lab):
     # return matlab session
     return eng
 
+def get_robot_list():
+    return robRadius.keys()
+
+def init_singleRobot(eng, robot_name, pose, next_region_idx):
+    if type(pose).__module__ == np.__name__:
+        eng.workspace[robot_name+"_pose"] = matlab.double(pose.tolist()[0:2])
+    else:
+        eng.workspace[robot_name+"_pose"] = matlab.double(pose[0:2])
+    eng.workspace[robot_name+"_dest"] = matlab.int16([next_region_idx+1])
+
+def getSingleMATLABVelocity(eng, robot_name, pose, next_region_idx):
+    if type(pose).__module__ == np.__name__:
+        eng.workspace[robot_name+"_pose"] = matlab.double(pose.tolist()[0:2])
+    else:
+        eng.workspace[robot_name+"_pose"] = matlab.double(pose[0:2])
+
+    if next_region_idx != eng.workspace[robot_name+"_dest"]-1:
+        replan = True
+    else:
+        replan = False
+    eng.workspace['replan'] =  matlab.int16([replan])
+
+    eng.workspace[robot_name+"_dest"] = matlab.int16([next_region_idx+1])
+
+    eng.eval('['+';'.join([x+'_pose' for x in robRadius.keys()])+']',  nargout=0)
+    eng.eval('['+','.join([x+'_dest' for x in robRadius.keys()])+']',  nargout=0)
+    logging.debug("replan: {replan}".format(replan=eng.workspace['replan']))
+
+    getVelocityScript = '[vx, vy, changes, currentLoc] = feval(@getvelocity, ['+\
+            ';'.join([x+'_pose' for x in robRadius.keys()])+'], threshold, vertices, robots, ['+\
+            ','.join([x+'_dest' for x in robRadius.keys()])+'], replan)'
+    eng.eval(getVelocityScript, nargout=0)
+
+    vx = [x[0] for x in eng.workspace['vx']]
+    vy = [x[0] for x in eng.workspace['vy']]
+    if eng.workspace['changes']:
+        regionChanges = [x[0]-1.0 for x in eng.workspace['changes']]
+    else:
+        regionChanges = []
+    currentLoc = [x[0]-1.0 for x in eng.workspace['currentLoc']]
+
+    return vx, vy, regionChanges, currentLoc
+
 def getMATLABVelocity(eng, poseDic, next_regIndicesDict, replan):
     """
     pose  = {'rob1':[-1 ,.5],'rob2':[1,1],'rob3':[3.5 , -1]}
@@ -109,7 +152,10 @@ def getMATLABVelocity(eng, poseDic, next_regIndicesDict, replan):
     #-------------------------------------------------------------------
     #------PYTHON: robotPose, MATLAB: pose  SIZE: n x d-----------------
     #-------------------------------------------------------------------
-    eng.workspace['pose'] = matlab.double([x.tolist()[0:2] for x in poseDic.values()])
+    if type(poseDic.values()[0]).__module__ == np.__name__:
+        eng.workspace['pose'] = matlab.double([x.tolist()[0:2] for x in poseDic.values()])
+    else:
+        eng.workspace['pose'] = matlab.double([x[0:2] for x in poseDic.values()])
     #logging.info('Set robotPose completed')
     #logging.debug("python:" + str(robotPose))
     logging.debug("pose: {pose}".format(pose=eng.workspace['pose']))

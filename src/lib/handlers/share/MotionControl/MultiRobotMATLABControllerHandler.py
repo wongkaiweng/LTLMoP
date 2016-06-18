@@ -136,65 +136,65 @@ class MultiRobotMATLABControllerHandler(handlerTemplates.MotionControlHandler):
         vx = []
         vy = []
         if not current_regIndices.values() == next_regIndices.values():
-            try:
-                if self.old_regionChanges.any() or self.old_next_regIndices != next_regIndices or self.resetMATLAB:  # we will replan
-                    vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [1])
-                else:  # no replanning
-                    vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [0])
-                self.resetMATLAB = False
+            #try:
+            if self.old_regionChanges.any() or self.old_next_regIndices != next_regIndices or self.resetMATLAB:  # we will replan
+                vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [1])
+            else:  # no replanning
+                vx, vy, regionChanges, currentLoc = MATLABPythonInterface.getMATLABVelocity(self.session, pose, next_regIndices, [0])
+            self.resetMATLAB = False
 
-            except:
-                # try to get exception str from matlab
-                self.session.putvalue('MSCRIPT', 'msgString = lasterror')
-                self.session.run('eval(MSCRIPT)')
-                self.session.putvalue('MSCRIPTmsg', 'errMsg = msgString.message')
-                self.session.run('eval(MSCRIPTmsg)')
-                self.session.putvalue('MSCRIPTIdentifier', 'errIdentifier = msgString.identifier')
-                self.session.run('eval(MSCRIPTIdentifier)')
-                logging.error(self.session.getvalue('errMsg'))
-                logging.error(self.session.getvalue('errIdentifier'))
+            # except:
+            #     # try to get exception str from matlab
+            #     self.session.putvalue('MSCRIPT', 'msgString = lasterror')
+            #     self.session.run('eval(MSCRIPT)')
+            #     self.session.putvalue('MSCRIPTmsg', 'errMsg = msgString.message')
+            #     self.session.run('eval(MSCRIPTmsg)')
+            #     self.session.putvalue('MSCRIPTIdentifier', 'errIdentifier = msgString.identifier')
+            #     self.session.run('eval(MSCRIPTIdentifier)')
+            #     logging.error(self.session.getvalue('errMsg'))
+            #     logging.error(self.session.getvalue('errIdentifier'))
 
-                # get size of stack
-                self.session.putvalue('MSCRIPTstackSize', 'stackSize = size(msgString.stack)')
-                self.session.run('eval(MSCRIPTstackSize)')
-                stackSize = self.session.getvalue('stackSize')[0]
-                logging.error('stackSize:' + str(self.session.getvalue('stackSize')) + ' stackSize:' + str(stackSize))
-                for x in range(int(stackSize)):
-                    self.session.putvalue('MSCRIPTmsgStack', 'errStack' + str(x + 1) + '= msgString.stack(' + str(x + 1) + ',1)')
-                    self.session.run('eval(MSCRIPTmsgStack)')
-                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'File', 'errStack' + str(x + 1) + 'File = errStack' + str(x + 1) + '.file')
-                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'File)')
-                    # logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')))
-                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Name', 'errStack' + str(x + 1) + 'Name = errStack' + str(x + 1) + '.name')
-                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Name)')
-                    self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Line', 'errStack' + str(x + 1) + 'Line = errStack' + str(x + 1) + '.line')
-                    self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Line)')
-                    logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')) + \
-                                  'name:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Name')) + \
-                                  'line:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Line')))
-                time.sleep(5)
+            #     # get size of stack
+            #     self.session.putvalue('MSCRIPTstackSize', 'stackSize = size(msgString.stack)')
+            #     self.session.run('eval(MSCRIPTstackSize)')
+            #     stackSize = self.session.getvalue('stackSize')[0]
+            #     logging.error('stackSize:' + str(self.session.getvalue('stackSize')) + ' stackSize:' + str(stackSize))
+            #     for x in range(int(stackSize)):
+            #         self.session.putvalue('MSCRIPTmsgStack', 'errStack' + str(x + 1) + '= msgString.stack(' + str(x + 1) + ',1)')
+            #         self.session.run('eval(MSCRIPTmsgStack)')
+            #         self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'File', 'errStack' + str(x + 1) + 'File = errStack' + str(x + 1) + '.file')
+            #         self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'File)')
+            #         # logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')))
+            #         self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Name', 'errStack' + str(x + 1) + 'Name = errStack' + str(x + 1) + '.name')
+            #         self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Name)')
+            #         self.session.putvalue('MSCRIPTmsgStack' + str(x + 1) + 'Line', 'errStack' + str(x + 1) + 'Line = errStack' + str(x + 1) + '.line')
+            #         self.session.run('eval(MSCRIPTmsgStack' + str(x + 1) + 'Line)')
+            #         logging.error('file:' + str(self.session.getvalue('errStack' + str(x + 1) + 'File')) + \
+            #                       'name:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Name')) + \
+            #                       'line:' + str(self.session.getvalue('errStack' + str(x + 1) + 'Line')))
+            #     time.sleep(5)
 
-                if self.old_vx.any() and self.old_vy.any():  # self.old_vx is None or self.old_vy is None:
-                    for idx, robot_name in enumerate(self.robotList):
-                        vx.append(0)
-                        vy.append(0)
-                    logging.debug('did we come here?')
-                else:
-                    vx = self.old_vx
-                    vy = self.old_vy
-                    logging.debug('did we come here?')
-                    logging.debug("self.old_vx:" + str(self.old_vx))
-                    logging.debug("self.old_vy:" + str(self.old_vy))
+            #     if self.old_vx.any() and self.old_vy.any():  # self.old_vx is None or self.old_vy is None:
+            #         for idx, robot_name in enumerate(self.robotList):
+            #             vx.append(0)
+            #             vy.append(0)
+            #         logging.debug('did we come here?')
+            #     else:
+            #         vx = self.old_vx
+            #         vy = self.old_vy
+            #         logging.debug('did we come here?')
+            #         logging.debug("self.old_vx:" + str(self.old_vx))
+            #         logging.debug("self.old_vy:" + str(self.old_vy))
 
-                regionChanges = array([])
-                currentLoc = array([])
+            #     regionChanges = array([])
+            #     currentLoc = array([])
 
-                # delete and restart MATLAB session
-                MATLABPythonInterface.closeInterface(self.session)
-                logging.info("Restarting the MATLAB interface and hopefully this will solve the problem")
-                # time.sleep(10)
-                self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
-                self.resetMATLAB = True
+            #     # delete and restart MATLAB session
+            #     MATLABPythonInterface.closeInterface(self.session)
+            #     logging.info("Restarting the MATLAB interface and hopefully this will solve the problem")
+            #     # time.sleep(10)
+            #     self.session = MATLABPythonInterface.initializeMATLABPythonCommunication(self.rfi.regions, self.coordmap_map2lab)
+            #     self.resetMATLAB = True
 
         else:
             logging.debug('Staying in place. Velocities are now set to zero.')
