@@ -1,0 +1,4 @@
+single Robot doesn't work with Nora's Controller
+
+To work with single robot scenario, use __testMATLABServer.py to start rob2 and rob3 in MATLAB.
+Then the controller will work.

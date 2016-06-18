@@ -1,0 +1,199 @@
+[INPUT]
+rob2_r1_rc
+rob2_r2_rc
+rob2_r3_rc
+rob2_r4_rc
+rob2_r5_rc
+rob2_r6_rc
+rob2_r7_rc
+rob2_r8_rc
+
+rob2_pickup_ac
+
+rob2_metal
+rob2_glass
+rob2_paper
+
+other_in_r2
+other_in_r4
+other_in_r6
+other_in_r8
+
+[OUTPUT]
+all_done
+r2_done
+r4_done
+r6_done
+r8_done
+
+rob2_r1
+rob2_r2
+rob2_r3
+rob2_r4
+rob2_r5
+rob2_r6
+rob2_r7
+rob2_r8
+
+rob2_pickup
+rob2_drop
+
+rob2_carrying_metal
+rob2_carrying_glass
+rob2_carrying_paper
+
+
+[ENV_TRANS]
+# ------- rob2 -------#
+#restricts sensed completion for actions
+(rob2_pickup_ac & rob2_pickup) -> rob2_pickup_ac'
+(! rob2_pickup_ac & ! rob2_pickup) -> ! rob2_pickup_ac'
+
+#(rob2_metal & ! rob2_pickup_ac) -> rob2_metal'
+#(rob2_glass & ! rob2_pickup_ac) -> rob2_glass'
+#(rob2_paper & ! rob2_pickup_ac) -> rob2_paper'
+
+######## BEGIN AUTOGEN FROM REGION #############
+(rob2_r1_rc) & (rob2_r1) -> (rob2_r1_rc')
+(rob2_r2_rc) & (rob2_r2) -> (rob2_r2_rc')
+(rob2_r3_rc) & (rob2_r3) -> (rob2_r3_rc')
+(rob2_r4_rc) & (rob2_r4) -> (rob2_r4_rc')
+(rob2_r5_rc) & (rob2_r5) -> (rob2_r5_rc')
+(rob2_r6_rc) & (rob2_r6) -> (rob2_r6_rc')
+(rob2_r7_rc) & (rob2_r7) -> (rob2_r7_rc')
+(rob2_r8_rc) & (rob2_r8) -> (rob2_r8_rc')
+
+(rob2_r1_rc) & (rob2_r2) -> ((rob2_r1_rc') | (rob2_r2_rc'))
+
+(rob2_r2_rc) & (rob2_r4) -> ((rob2_r2_rc') | (rob2_r4_rc'))
+(rob2_r2_rc) & (rob2_r1) -> ((rob2_r2_rc') | (rob2_r1_rc'))
+(rob2_r2_rc) & (rob2_r3) -> ((rob2_r2_rc') | (rob2_r3_rc'))
+
+(rob2_r3_rc) & (rob2_r2) -> ((rob2_r2_rc') | (rob2_r3_rc'))
+
+(rob2_r4_rc) & (rob2_r2) -> ((rob2_r4_rc') | (rob2_r2_rc'))
+(rob2_r4_rc) & (rob2_r5) -> ((rob2_r4_rc') | (rob2_r5_rc'))
+
+(rob2_r5_rc) & (rob2_r4) -> ((rob2_r5_rc') | (rob2_r4_rc'))
+(rob2_r5_rc) & (rob2_r7) -> ((rob2_r5_rc') | (rob2_r7_rc'))
+
+(rob2_r6_rc) & (rob2_r7) -> ((rob2_r6_rc') | (rob2_r7_rc'))
+
+(rob2_r7_rc) & (rob2_r6) -> ((rob2_r6_rc') | (rob2_r7_rc'))
+(rob2_r7_rc) & (rob2_r5) -> ((rob2_r5_rc') | (rob2_r7_rc'))
+(rob2_r7_rc) & (rob2_r8) -> ((rob2_r8_rc') | (rob2_r7_rc'))
+
+(rob2_r8_rc) & (rob2_r7) -> ((rob2_r7_rc') | (rob2_r8_rc'))
+
+rob2_r1_rc' -> ! (rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r2_rc' -> ! (rob2_r1_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r3_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r4_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r5_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r6_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r7_rc' | rob2_r8_rc')
+rob2_r7_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r8_rc')
+rob2_r8_rc' -> ! (rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc')
+
+rob2_r1_rc' | rob2_r2_rc' | rob2_r3_rc' | rob2_r4_rc' | rob2_r5_rc' | rob2_r6_rc' | rob2_r7_rc' | rob2_r8_rc'
+
+######## END AUTOGEN FROM REGION #############
+
+
+(rob2_glass | rob2_carrying_glass) -> ! (rob2_metal' | rob2_paper')
+(rob2_metal | rob2_carrying_metal) -> ! (rob2_glass' | rob2_paper')
+(rob2_paper | rob2_carrying_paper) -> ! (rob2_glass' | rob2_metal')
+
+rob2_glass' -> ! rob2_metal' & ! rob2_paper'
+rob2_metal' -> ! rob2_glass' & ! rob2_paper'
+rob2_paper' -> ! rob2_glass' & ! rob2_metal'
+
+rob2_r6_rc' -> ! rob2_metal'
+
+rob2_r8_rc' -> ! rob2_glass'
+
+rob2_r3_rc' -> ! rob2_paper'
+
+
+
+[ENV_LIVENESS]
+((rob2_r1 & rob2_r1_rc') | (rob2_r2 & rob2_r2_rc') | (rob2_r3 & rob2_r3_rc') | (rob2_r4 & rob2_r4_rc') | (rob2_r5 & rob2_r5_rc') | (rob2_r6 & rob2_r6_rc') | (rob2_r7 & rob2_r7_rc') | (rob2_r8 & rob2_r8_rc') | (rob2_r1 & !rob2_r1') | (rob2_r2 & !rob2_r2') | (rob2_r3 & !rob2_r3') | (rob2_r4 & !rob2_r4') | (rob2_r5 & !rob2_r5') | (rob2_r6 & !rob2_r6') | (rob2_r7 & !rob2_r7') | (rob2_r8 & !rob2_r8') ) & ((rob2_pickup & !rob2_pickup') | (!rob2_pickup & rob2_pickup') | (rob2_pickup & rob2_pickup_ac') | (!rob2_pickup & !rob2_pickup_ac'))
+
+[ENV_INIT]
+(!rob2_r1_rc) & (!rob2_r2_rc) & (!rob2_r3_rc) & (!rob2_r4_rc) & (!rob2_r5_rc) & (!rob2_r6_rc) & (!rob2_r7_rc) & (rob2_r8_rc) & ! rob2_metal & ! rob2_glass & ! rob2_paper & ! rob2_pickup_ac & !other_in_r2 & !other_in_r4 & !other_in_r6 & !other_in_r8
+
+[SYS_TRANS]
+#required for one goal
+(r2_done' & r4_done' & r6_done' & r8_done') <-> all_done'
+
+((all_done | ! r2_done) & !(rob2_r2_rc'| other_in_r2')) <-> ! r2_done'
+((all_done | ! r4_done) & !(rob2_r4_rc'| other_in_r4')) <-> ! r4_done'
+((all_done | ! r6_done) & !(rob2_r6_rc'| other_in_r6')) <-> ! r6_done'
+((all_done | ! r8_done) & !(rob2_r8_rc'| other_in_r8')) <-> ! r8_done'
+
+# ------- rob2 -------#
+######## BEGIN AUTOGEN FROM REGION #############
+ (rob2_r1_rc') -> (rob2_r1' | rob2_r2')
+(rob2_r2_rc') -> (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4')
+(rob2_r3_rc') -> (rob2_r2' | rob2_r3')
+(rob2_r4_rc') -> (rob2_r2' | rob2_r4' | rob2_r5')
+(rob2_r5_rc') -> (rob2_r4' | rob2_r5' | rob2_r7')
+(rob2_r6_rc') -> (rob2_r6' | rob2_r7')
+(rob2_r7_rc') -> (rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8')
+(rob2_r8_rc') -> (rob2_r7' | rob2_r8')
+
+
+rob2_r1' -> ! (rob2_r2' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8')
+rob2_r2' -> ! (rob2_r1' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8')
+rob2_r3' -> ! (rob2_r1' | rob2_r2' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8')
+rob2_r4' -> ! (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8')
+rob2_r5' -> ! (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4' | rob2_r6' | rob2_r7' | rob2_r8')
+rob2_r6' -> ! (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r7' | rob2_r8')
+rob2_r7' -> ! (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r8')
+rob2_r8' -> ! (rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r7')
+
+rob2_r1' | rob2_r2' | rob2_r3' | rob2_r4' | rob2_r5' | rob2_r6' | rob2_r7' | rob2_r8'
+####### END AUTOGEN FROM REGION #############
+
+
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r1_rc' -> rob2_r1')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r2_rc' -> rob2_r2')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r3_rc' -> rob2_r3')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r4_rc' -> rob2_r4')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r5_rc' -> rob2_r5')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r6_rc' -> rob2_r6')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r7_rc' -> rob2_r7')
+(rob2_pickup' & ! rob2_pickup_ac') -> (rob2_r8_rc' -> rob2_r8')
+
+
+# how to pick up etc
+(rob2_metal' & ! rob2_carrying_metal & ! rob2_carrying_glass & ! rob2_carrying_paper) -> rob2_pickup'
+((rob2_carrying_metal & ! (rob2_r6_rc' & rob2_drop')) | (rob2_metal' & rob2_pickup_ac')) -> rob2_carrying_metal'
+rob2_carrying_metal' -> ((rob2_carrying_metal & ! (rob2_r6_rc' & rob2_drop')) | (rob2_metal' & rob2_pickup_ac'))
+
+(rob2_glass' & ! rob2_carrying_metal & ! rob2_carrying_glass & ! rob2_carrying_paper) -> rob2_pickup'
+((rob2_carrying_glass & ! (rob2_r8_rc' & rob2_drop')) | (rob2_glass' & rob2_pickup_ac')) -> rob2_carrying_glass'
+rob2_carrying_glass' -> ((rob2_carrying_glass & ! (rob2_r8_rc' & rob2_drop')) | (rob2_glass' & rob2_pickup_ac'))
+
+(rob2_paper' & ! rob2_carrying_metal & ! rob2_carrying_glass & ! rob2_carrying_paper) -> rob2_pickup'
+((rob2_carrying_paper & ! (rob2_r3_rc' & rob2_drop')) | (rob2_paper' & rob2_pickup_ac')) -> rob2_carrying_paper'
+rob2_carrying_paper' -> ((rob2_carrying_paper & ! (rob2_r3_rc' & rob2_drop')) | (rob2_paper' & rob2_pickup_ac'))
+
+(! ((rob2_carrying_metal & rob2_r6_rc') | (rob2_carrying_glass & rob2_r8_rc') | (rob2_carrying_paper & rob2_r3_rc')) -> ! rob2_drop')
+! (rob2_metal' | rob2_glass' | rob2_paper') -> ! rob2_pickup'
+
+rob2_carrying_glass -> ! rob2_carrying_metal & ! rob2_carrying_paper
+rob2_carrying_metal -> ! rob2_carrying_glass & ! rob2_carrying_paper
+rob2_carrying_paper -> ! rob2_carrying_glass & ! rob2_carrying_metal
+
+
+
+[SYS_LIVENESS]
+# what to do when carrying etc.
+(rob2_carrying_metal -> (rob2_r6_rc' & rob2_drop')) & (rob2_carrying_glass -> (rob2_r8_rc' & rob2_drop')) & (rob2_carrying_paper -> (rob2_r3_rc' & rob2_drop')) & (!(rob2_carrying_metal | rob2_carrying_glass | rob2_carrying_paper ) & ! rob2_pickup  -> all_done')
+
+
+[SYS_INIT]
+!rob2_r1 & !rob2_r2 & !rob2_r3 & !rob2_r4 & !rob2_r5 & !rob2_r6 & !rob2_r7 & rob2_r8 & ! rob2_carrying_metal & ! rob2_carrying_glass & ! rob2_carrying_paper & ! rob2_pickup & ! rob2_drop & ! all_done & ! r2_done & ! r4_done & ! r6_done & ! r8_done
+
+
+
