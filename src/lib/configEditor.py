@@ -1285,7 +1285,7 @@ class propMappingDialog(wx.Dialog):
             if p not in mapping or self.mapping[p].strip() == "":
 
                 # do sensor region Prop differently
-                if p in [x.name+'_rc' for x in self.proj.rfi.regions]:
+                if self.proj.rfi and p in [x.name+'_rc' for x in self.proj.rfi.regions]:
                     m = deepcopy(self.hsub.handler_configs["share"][ht.SensorHandler][0].getMethodByName("inRegion"))
                     para = m.getParaByName("regionName")
                     para.setValue(p.replace('_rc',''))

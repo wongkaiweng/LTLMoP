@@ -197,8 +197,9 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         # Make the transition
         self.slugsProcess.stdin.write("XMAKETRANS\n"+nextInput)
         self.slugsProcess.stdin.flush()
-        self.slugsProcess.stdout.readline() # Skip the prompt
-        nextLine = self.slugsProcess.stdout.readline().strip()
+        nextLine = self.slugsProcess.stdout.readline().strip() # Skip the prompt
+        while nextLine.startswith("ERROR") or nextLine.startswith(">"):
+            nextLine = self.slugsProcess.stdout.readline().strip()
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
         else:

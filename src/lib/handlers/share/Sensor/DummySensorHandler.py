@@ -234,31 +234,32 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         """
         This funcion locks the current region pose such that mutual exclusion is enforced.
         """
-        pose =self.executor.hsub.getPose()
-        #########################################
-        ### Copied from vectorController.py #####
-        #########################################
+        if self.proj.rfi:
+            pose =self.executor.hsub.getPose()
+            #########################################
+            ### Copied from vectorController.py #####
+            #########################################
 
-        # make sure the pose is valid
-        if sum(pose) == 0:
-            pose = self.prev_pose # maybe do interpolation later?
-            ltlmop_logger.warning("Losing pose... Using old one.")
-        else:
-            self.prev_pose = pose
+            # make sure the pose is valid
+            if sum(pose) == 0:
+                pose = self.prev_pose # maybe do interpolation later?
+                ltlmop_logger.warning("Losing pose... Using old one.")
+            else:
+                self.prev_pose = pose
 
-        # form polygon for the robot
-        RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))
+            # form polygon for the robot
+            RobotPoly = Polygon.Shapes.Circle(1.2*self.radius,(pose[0],pose[1]))
 
-        # check robot location
-        for regionName in self.polyRegionList.keys():
-            if self.polyRegionList[regionName].covers(RobotPoly):
-                self.currentRegionPoly = self.polyRegionList[regionName]
-                if regionName != self.prev_current_region:
-                    ltlmop_logger.debug("Dummy SENSOR: current region changed to:" + str(regionName))
-                self.prev_current_region = regionName
+            # check robot location
+            for regionName in self.polyRegionList.keys():
+                if self.polyRegionList[regionName].covers(RobotPoly):
+                    self.currentRegionPoly = self.polyRegionList[regionName]
+                    if regionName != self.prev_current_region:
+                        ltlmop_logger.debug("Dummy SENSOR: current region changed to:" + str(regionName))
+                    self.prev_current_region = regionName
 
-        if not self.currentRegionPoly.overlaps(RobotPoly):
-            ltlmop_logger.warning("not inside next region or overlaps current region?!")
+            if not self.currentRegionPoly.overlaps(RobotPoly):
+                ltlmop_logger.warning("not inside next region or overlaps current region?!")
 
         # also lock locations of environment robots
         if self.executor.proj.compile_options['neighbour_robot'] and self.executor.proj.compile_options["multi_robot_mode"] == "d-patching":

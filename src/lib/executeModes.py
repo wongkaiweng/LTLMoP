@@ -37,21 +37,22 @@ class ExecutorModesExtensions(object):
 
             self.sensor_strategy.setPropValue(prop_name, value)
 
-        if self.proj.compile_options['fastslow']:
-        #    curRegionIdx = self._getCurrentRegionFromPose()
-        #    if curRegionIdx is None:
-        #        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
-            currentRegionCompleted_oldName = [prop_name for prop_name, value in sensor_state.iteritems() \
-                if prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)) and value]
+        if self.proj.rfi:
+            if self.proj.compile_options['fastslow']:
+            #    curRegionIdx = self._getCurrentRegionFromPose()
+            #    if curRegionIdx is None:
+            #        curRegionIdx = self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])
+                currentRegionCompleted_oldName = [prop_name for prop_name, value in sensor_state.iteritems() \
+                    if prop_name.endswith('_rc') and not prop_name.startswith(tuple(self.proj.otherRobot)) and value]
 
-            # check we are using decomposition. does it differently
-            if self.proj.compile_options['decompose']:
-                currentRegionCompleted_newName = self.proj.regionMapping[currentRegionCompleted_oldName[0].replace('_rc','')]
-                curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_newName[0])
-            else: # old name is sufficient
-                curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_oldName[0].replace('_rc',''))
+                # check we are using decomposition. does it differently
+                if self.proj.compile_options['decompose']:
+                    currentRegionCompleted_newName = self.proj.regionMapping[currentRegionCompleted_oldName[0].replace('_rc','')]
+                    curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_newName[0])
+                else: # old name is sufficient
+                    curRegionIdx = self.proj.rfi.indexOfRegionWithName(currentRegionCompleted_oldName[0].replace('_rc',''))
 
-            self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
+                self.sensor_strategy.setPropValue("regionCompleted", self.proj.rfi.regions[curRegionIdx])
 
         deepcopy_sensor_state = copy.deepcopy(self.sensor_strategy)
         deepcopy_current_state = copy.deepcopy(self.strategy.current_state)

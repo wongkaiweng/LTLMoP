@@ -136,26 +136,29 @@ class ExecutorStrategyExtensions(object):
 
         # find current region based on region sensors and remove those sensors from sensor_state
         # finally add the "regionCompleted" sensor with region object
-        sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(tuple(self.proj.otherRobot)))
-        for key, value in sensor_region.iteritems():
-            del sensor_state[key]
-        sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
+        if self.proj.rfi:
+            sensor_region = dict((k,v) for k, v in  sensor_state.iteritems() if k.endswith('_rc') and not k.startswith(tuple(self.proj.otherRobot)))
+            for key, value in sensor_region.iteritems():
+                del sensor_state[key]
+            sensor_region_names = [k for k, v in  sensor_region.iteritems() if v]
 
-        # check we are inside any region, if not we will use the previous region detected. (timing issue)
-        if sensor_region_names:
-            sensor_region_name = sensor_region_names[0].replace('_rc','')
-            if self.proj.compile_options["decompose"]:
-                decomposed_region_names = self.proj.regionMapping[sensor_region_name]
-            else: # use original name, not p#
-                decomposed_region_names = [sensor_region_name]
+            # check we are inside any region, if not we will use the previous region detected. (timing issue)
+            if sensor_region_names:
+                sensor_region_name = sensor_region_names[0].replace('_rc','')
+                if self.proj.compile_options["decompose"]:
+                    decomposed_region_names = self.proj.regionMapping[sensor_region_name]
+                else: # use original name, not p#
+                    decomposed_region_names = [sensor_region_name]
 
-            self.prev_decomposed_region_names = decomposed_region_names
+                self.prev_decomposed_region_names = decomposed_region_names
+            else:
+                ltlmop_logger.info('not inside any region!')
+                decomposed_region_names  = self.prev_decomposed_region_names
+
+            sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
+            self.current_region = sensor_state['regionCompleted']
         else:
-            ltlmop_logger.info('not inside any region!')
-            decomposed_region_names  = self.prev_decomposed_region_names
-
-        sensor_state['regionCompleted'] = self.proj.rfi.regions[self.proj.rfi.indexOfRegionWithName(decomposed_region_names[0])]  #should only be one in our case. not taking care of convexify now
-        self.current_region = sensor_state['regionCompleted']
+            self.current_region = None
 
         # Let's try to transition
         # TODO: set current state so that we don't need to call from_state
@@ -233,7 +236,8 @@ class ExecutorStrategyExtensions(object):
 
             self.next_state = random.choice(next_states)
             # find next region
-            self.next_region = self.next_state.getPropValue('region')
+            if self.proj.rfi:
+                self.next_region = self.next_state.getPropValue('region')
             self.postEvent("INFO", "Currently pursuing goal #{}".format(self.next_state.goal_id))
             ltlmop_logger.info("Currently at state %s." % self.next_state.state_id)
 
@@ -353,12 +357,13 @@ class ExecutorStrategyExtensions(object):
             ##########################################
             #### CHECK IF WE ARE ASKED TO PAUSE ######
             ##########################################
-            if self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.dPatchingExecutor.getPauseForControllerSynthesis():
-                # we are asked to pause
-                self.hsub.setVelocity(0, 0)
-            else:
-                # Move one step towards the next region (or stay in the same region)
-                self.hsub.gotoRegion(self.current_region, self.next_region)
+            if self.proj.rfi:
+                if self.proj.compile_options["multi_robot_mode"] == "d-patching" and self.dPatchingExecutor.getPauseForControllerSynthesis():
+                    # we are asked to pause
+                    self.hsub.setVelocity(0, 0)
+                else:
+                    # Move one step towards the next region (or stay in the same region)
+                    self.hsub.gotoRegion(self.current_region, self.next_region)
 
 
     def runStrategyIterationInstanteousActionCentralized(self):

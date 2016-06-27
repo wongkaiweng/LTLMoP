@@ -580,10 +580,11 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 time.sleep(2)
         # -------------------------------- #
 
-        if self.proj.compile_options['fastslow']:
-            init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]))
-        else:
-            init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+        if self.proj.rfi:
+            if self.proj.compile_options['fastslow']:
+                init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]))
+            else:
+                init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
         #search for initial state in the strategy
         if firstRun:

@@ -1597,7 +1597,7 @@ def replaceRegionName(formula,bitEncode,regionList):
     ''' This function replaces the region names with the appropriate bit encoding.
     '''
     tempFormula = formula[:]
-    
+
     # first replace all 'next' region names with the next encoding
     for nextProp in re.findall('(next\(s\.\w+\)|next\(\(s\.\w+\)\))',tempFormula):
         prop = nextProp.replace('next((s.','').replace('next(s.','').replace(')','')
@@ -1623,19 +1623,19 @@ def replaceRegionName(formula,bitEncode,regionList):
     for nextProp in re.findall('(next\(e\.\w+\)|next\(\(e\.\w+\)\))',tempFormula):
         prop = nextProp.replace('next((e.','').replace('next(e.','').replace(')','')
 
-        if prop in regionList:
-            ind = regionList.index(prop)
+        if prop.replace('_rc','') in regionList:
+            ind = regionList.index(prop.replace('_rc',''))
             tempFormula = tempFormula.replace(nextProp, bitEncode['envNext'][ind])
             # 'replace' is fine here because we are replacing next(region) and that cannot be a partial name
 
     # Handle region sensor names
     for prop in re.findall('e\.(\w+)',tempFormula):
-        if prop in regionList:
-            ind = regionList.index(prop)
+
+        if prop.replace('_rc','') in regionList:
+            ind = regionList.index(prop.replace('_rc',''))
             # replace every occurrence of the proposition with the bit encoding
             # it is written this way to prevent partial word replacements (as with the .replace method)
             tempFormula = re.sub('\\be\.'+prop+'\\b', bitEncode['env'][ind],tempFormula)
-    
     LTLsubformula = tempFormula 
 
     return LTLsubformula
