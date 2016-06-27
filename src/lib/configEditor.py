@@ -58,7 +58,7 @@ def drawParamConfigPane(target, method, proj):
         if p.para_type is None:
             continue
 
-        if p.para_type.lower() == "region":
+        if p.para_type.lower() == "region" and proj.rfi:
             r_names = [r.name for r in proj.rfi.regions if r.name.lower() != "boundary" and not r.isObstacle]
             param_controls[p] = wx.ComboBox(target, -1, choices=r_names, style=wx.CB_DROPDOWN)
 
@@ -883,7 +883,11 @@ class simSetupDialog(wx.Dialog):
             return
 
         # clean up prop_mapping of the current executing config
-        default_prop_mapping = self.hsub.getDefaultPropMapping(self.proj.all_sensors, self.proj.all_actuators, regions=self.proj.rfi.regions)
+        if self.proj.rfi:
+            default_prop_mapping = self.hsub.getDefaultPropMapping(self.proj.all_sensors, self.proj.all_actuators, regions=self.proj.rfi.regions)
+        else:
+            default_prop_mapping = self.hsub.getDefaultPropMapping(self.proj.all_sensors, self.proj.all_actuators, regions=[])
+
         self.hsub.executing_config.normalizePropMapping(default_prop_mapping)
 
         # Save the config files

@@ -166,7 +166,6 @@ def findGuiltyLTLConjuncts(cmd, depth, numProps, init, trans, goals, mapping,  c
         #note that init contains one-step unrolling of trans already
         if timing: 
             cmd = ["time"]+cmd
-        
             
         mapping = deepcopy(mapping)
         #precompute p and n
@@ -203,6 +202,7 @@ def findGuiltyLTLConjuncts(cmd, depth, numProps, init, trans, goals, mapping,  c
             return (False, False, [], "")   
                 
         #start a reader thread        
+        start = time.time()
         subp = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)                                            
         readThread =  threading.Thread(target = subprocessReadThread, args=(subp.stdout,output))
         readThread.daemon = True
@@ -279,6 +279,9 @@ def findGuiltyLTLConjuncts(cmd, depth, numProps, init, trans, goals, mapping,  c
 #        ltlmop_logger.debug("wrote {}".format(satFileName))
 #        inputFile.close()
             
+        if timing:
+            print 'ELAPSED TIME:',time.time()-start
+
         if any(["WARNING: core extraction disabled" in s for s in output]):
             # never again
             ltlmop_logger.error("************************************************")

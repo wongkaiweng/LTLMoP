@@ -91,17 +91,16 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     # List of all robot prpositions
     allRobotProp = regionList + robotPropList
 
-    # Define the number of bits needed to encode the regions
-    numBits = int(numpy.ceil(numpy.log2(len(regionList))))
+    if regionList:
+        # Define the number of bits needed to encode the regions
+        numBits = int(numpy.ceil(numpy.log2(len(regionList))))
 
-    # creating the region bit encoding
-    bitEncode = bitEncoding(len(regionList),numBits)
-    currBitEnc = bitEncode['current']
-    nextBitEnc = bitEncode['next']
-    envBitEnc = bitEncode['env']
-    envNextBitEnc = bitEncode['envNext']
-
-  
+        # creating the region bit encoding
+        bitEncode = bitEncoding(len(regionList),numBits)
+        currBitEnc = bitEncode['current']
+        nextBitEnc = bitEncode['next']
+        envBitEnc = bitEncode['env']
+        envNextBitEnc = bitEncode['envNext']
 
     # Regular expressions to help us out
     EnvInitRE = re.compile('^(environment|env) starts with',re.IGNORECASE)
@@ -130,7 +129,8 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
     internal_props = []
     # Creating the 'Stay' formula - it is a constant formula given the number of bits.
-    StayFormula = createStayFormula(regionList, use_bits=use_bits, fastslow=fastslow)
+    if regionList:
+        StayFormula = createStayFormula(regionList, use_bits=use_bits, fastslow=fastslow)
 
     lineInd = 0
     
@@ -260,9 +260,11 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
             spec['EnvInit']= '&\n'.join(filter(None, [spec['EnvInit'], "(" + LTLsubformula + ")"]))
             #####################################################################
             linemap['EnvInit'].append(lineInd)
-            
-            LTL2LineNo[replaceRegionName(LTLsubformula,bitEncode,regionList)] = lineInd
-            
+            if regionList:
+                LTL2LineNo[replaceRegionName(LTLsubformula,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[LTLsubformula] = lineInd
+
         # If the sentence describes the initial state of the robot
         elif SysInitRE.search(line):
             # remove the first words     
@@ -322,13 +324,15 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
             spec['SysInit']= '& '.join(filter(None,[x.strip().rstrip('&') for x in [spec['SysInit'], LTLRegSubformula, LTLActSubformula]]))
             ######################################################################
             linemap['SysInit'].append(lineInd)            
-            LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd    
-            # also add to envInit if we are running instantaneous action
-            if fastslow:
-                spec['EnvInit']= '& '.join(filter(None, [x.strip().rstrip('&') for x in [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]]))
-                linemap['EnvInit'].append(lineInd)
-                LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
-
+            if regionList:
+                LTL2LineNo[replaceRegionName(LTLRegSubformula + LTLActSubformula,bitEncode,regionList)] = lineInd
+                # also add to envInit if we are running instantaneous action
+                if fastslow:
+                    spec['EnvInit']= '& '.join(filter(None, [x.strip().rstrip('&') for x in [spec['EnvInit'], LTLEnvRegSubformula, LTLEnvActSubformula]]))
+                    linemap['EnvInit'].append(lineInd)
+                    LTL2LineNo[replaceRegionName(LTLEnvRegSubformula + LTLEnvActSubformula,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[LTLRegSubformula + LTLActSubformula] = lineInd
         # If the sentence is a conditional 
         elif IfThenRE.search(line) or UnlessRE.search(line) or IffRE.search(line) :
 
@@ -408,7 +412,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
                     spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                     linemap[CondFormulaInfo['type']].append(lineInd)
-                    LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                    if regionList:
+                        LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                    else:
+                        LTL2LineNo[CondFormulaInfo['formula']] = lineInd
 
                 # check for "at least once" condition
                 elif AtLeastOnceRE.search(Requirement):
@@ -466,7 +473,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
                         spec[condStayFormula['type']] = spec[condStayFormula['type']] + condStayFormula['formula']
                         linemap[condStayFormula['type']].append(lineInd)
-                        LTL2LineNo[replaceRegionName(condStayFormula['formula'],bitEncode,regionList)] = lineInd
+                        if regionList:
+                            LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                        else:
+                            LTL2LineNo[CondFormulaInfo['formula']] = lineInd
 
                     ReqFormulaInfo['formula'] = '\t\t\t []<>(' + ' & '.join(memPropNames) + ') & \n'
                 else:
@@ -525,7 +535,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 if CondFormulaInfo['formula'] == '': failed = True
                 spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                 linemap[CondFormulaInfo['type']].append(lineInd)
-                LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
             elif QuantifierFlag == "ALL":
                 for r in RegionGroups[quant_group]:
                     tmp_req = copy.deepcopy(ReqFormulaInfo)
@@ -536,14 +546,14 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                     if CondFormulaInfo['formula'] == '': failed = True
                     spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                     linemap[CondFormulaInfo['type']].append(lineInd)
-                    LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                    if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
             else:
                 # Parse the condition and add it to the requirement
                 CondFormulaInfo = parseConditional(Condition,ReqFormulaInfo,CondType,sensorList,regionList,actuatorList,customsList,lineInd,fastslow)
                 if CondFormulaInfo['formula'] == '': failed = True
                 spec[CondFormulaInfo['type']] = spec[CondFormulaInfo['type']] + CondFormulaInfo['formula']
                 linemap[CondFormulaInfo['type']].append(lineInd)
-                LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
+                if regionList: LTL2LineNo[replaceRegionName(CondFormulaInfo['formula'],bitEncode,regionList)] = lineInd
                 
         # An "after each time" implicit memory statement
         elif AfterEachTimeRE.search(line):
@@ -580,11 +590,17 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             spec["SysTrans"] += AETFormula_Safety
             linemap["SysTrans"].append(lineInd)
-            LTL2LineNo[replaceRegionName(AETFormula_Safety,bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(AETFormula_Safety,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[AETFormula_Safety] = lineInd
 
             spec["SysGoals"] += AETFormula_Goal
             linemap["SysGoals"].append(lineInd)
-            LTL2LineNo[replaceRegionName(AETFormula_Goal,bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(AETFormula_Goal,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[AETFormula_Goal] = lineInd
 
             internal_props.append(mem_prop)
 
@@ -611,7 +627,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             spec['SysTrans'] = spec['SysTrans'] + EventFormula
             linemap['SysTrans'].append(lineInd)
-            LTL2LineNo[replaceRegionName(EventFormula,bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(EventFormula,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[EventFormula] = lineInd
 
 
         # A toggle event definition
@@ -636,7 +655,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             spec['SysTrans'] = spec['SysTrans'] + EventFormula
             linemap['SysTrans'].append(lineInd)
-            LTL2LineNo[replaceRegionName(EventFormula,bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(EventFormula,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[EventFormula] = lineInd
 
         # A 'Go to and stay there' requirement
         elif LivenessRE.search(line) and StayRE.search(line):
@@ -668,7 +690,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
             # Add the liveness ('go to') to the spec
             spec[formulaInfo['type']] = spec[formulaInfo['type']] + formulaInfo['formula']
             linemap[formulaInfo['type']].append(lineInd)
-            LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[formulaInfo['formula']] = lineInd
 
             # add the 'stay there' as a condition (if R then stay there)
             regCond = formulaInfo['formula'].replace('\t\t\t []<>','')
@@ -677,8 +702,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
 
             spec['SysTrans'] = spec['SysTrans'] + condStayFormula
             linemap['SysTrans'].append(lineInd)
-            LTL2LineNo[replaceRegionName(condStayFormula,bitEncode,regionList)] = lineInd
-
+            if regionList:
+                LTL2LineNo[replaceRegionName(condStayFormula,bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[condStayFormula] = lineInd
 
 
         # A liveness requirement
@@ -705,8 +732,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 spec[formulaInfo['type']] = spec[formulaInfo['type']] + formulaInfo['formula']
                 linemap[formulaInfo['type']].append(lineInd)
            
-            
-            LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[formulaInfo['formula']] = lineInd
 
 
         # A safety requirement
@@ -749,7 +778,10 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 spec[formulaInfo['type']] = spec[formulaInfo['type']] + formulaInfo['formula']
                 linemap[formulaInfo['type']].append(lineInd)
             
-            LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            if regionList:
+                LTL2LineNo[replaceRegionName(formulaInfo['formula'],bitEncode,regionList)] = lineInd
+            else:
+                LTL2LineNo[formulaInfo['formula']] = lineInd
 
 
             
@@ -834,7 +866,7 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
     #### Rewritten by Catherine for ENV Assumption mining ###############
     #### don't want to print out warning for NOW
     # if there are unused propositions, print out a warning
-    
+
     #if unusedProp:
     #    print '##############################################'
     #    print 'Warning:'

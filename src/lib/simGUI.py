@@ -299,11 +299,12 @@ class SimGUI_Frame(wx.Frame):
 
     def onResize(self, event=None): # wxGlade: SimGUI_Frame.<event_handler>
         size = self.window_1_pane_1.GetSize()
-        self.mapBitmap = wx.EmptyBitmap(size.x, size.y)
-        self.mapScale = mapRenderer.drawMap(self.mapBitmap, self.proj.rfi, scaleToFit=True, drawLabels=mapRenderer.LABELS_ALL_EXCEPT_OBSTACLES, memory=True)
+        if self.proj.rfi:
+            self.mapBitmap = wx.EmptyBitmap(size.x, size.y)
+            self.mapScale = mapRenderer.drawMap(self.mapBitmap, self.proj.rfi, scaleToFit=True, drawLabels=mapRenderer.LABELS_ALL_EXCEPT_OBSTACLES, memory=True)
 
-        self.Refresh()
-        self.Update()
+            self.Refresh()
+            self.Update()
 
         if event is not None:
             event.Skip()
@@ -330,14 +331,15 @@ class SimGUI_Frame(wx.Frame):
         # Draw background
         dc.DrawBitmap(self.mapBitmap, 0, 0)
 
-        # Draw robot
-        if self.robotPos is not None:
-            [x,y] = map(lambda x: int(self.mapScale*x), self.robotPos) 
-            dc.DrawCircle(x, y, 5)
-        if self.markerPos is not None:
-            [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos) 
-            dc.SetBrush(wx.Brush(wx.RED))
-            dc.DrawCircle(m, n, 5)
+        if self.proj.rfi:
+            # Draw robot
+            if self.robotPos is not None:
+                [x,y] = map(lambda x: int(self.mapScale*x), self.robotPos)
+                dc.DrawCircle(x, y, 5)
+            if self.markerPos is not None:
+                [m,n] = map(lambda m: int(self.mapScale*m), self.markerPos)
+                dc.SetBrush(wx.Brush(wx.RED))
+                dc.DrawCircle(m, n, 5)
 
         # Draw velocity vector of robot (for debugging)
         #dc.DrawLine(self.robotPos[0], self.robotPos[1], 

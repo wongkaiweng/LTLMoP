@@ -219,42 +219,54 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         This function loads the the .aut/.bdd file named filename and returns the strategy object.
         filename (string): name of the file with path included
         """
-
-        if self.proj.compile_options["use_region_bit_encoding"]:
-            sysRegions = copy.copy(self.proj.rfi.regions)
-            if self.proj.compile_options["recovery"]:
-                # need to add dummy region as recovery allows extra environment bits
-                # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
-                num_props = max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))
-
-                for x in range(2**num_props-len(self.proj.rfi.regions)):
-                    sysRegions.append(None)
-
-            region_domain = [strategy.Domain("region", sysRegions, strategy.Domain.B0_IS_MSB)]
-        else:
-            region_domain = [x.name for x in self.proj.rfi.regions]
         enabled_sensors = self.proj.enabled_sensors
 
-        if self.proj.compile_options['fastslow'] :
+        if self.proj.rfi:
             if self.proj.compile_options["use_region_bit_encoding"]:
-
-                envRegions = copy.copy(self.proj.rfi.regions)
+                sysRegions = copy.copy(self.proj.rfi.regions)
                 if self.proj.compile_options["recovery"]:
                     # need to add dummy region as recovery allows extra environment bits
-
                     # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
                     num_props = max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))
 
                     for x in range(2**num_props-len(self.proj.rfi.regions)):
-                        envRegions.append(None)
+                        sysRegions.append(None)
 
-                regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
-                enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
+                region_domain = [strategy.Domain("region", sysRegions, strategy.Domain.B0_IS_MSB)]
+            else:
+                if self.proj.compile_options["decompose"]:
+                    region_domain = [x.name for x in self.parser.proj.rfi.regions]
+                else:
+                    region_domain = [x.name for x in self.proj.rfi.regions if not x.isObstacle and x.name != 'boundary']
+                    #region_domain = [strategy.Domain("region", region_domain)]
+                    #ltlmop_logger.debug(region_domain[0].valueToPropAssignments('kitchen'))
+
+            if self.proj.compile_options['fastslow'] :
+                if self.proj.compile_options["use_region_bit_encoding"]:
+
+                    envRegions = copy.copy(self.proj.rfi.regions)
+                    if self.proj.compile_options["recovery"]:
+                        # need to add dummy region as recovery allows extra environment bits
+
+                        # Calculate the minimum number of bits necessary; note that we use max(1,...) because log(1)==0
+                        num_props = max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))
+
+                        for x in range(2**num_props-len(self.proj.rfi.regions)):
+                            envRegions.append(None)
+
+                    regionCompleted_domain = [strategy.Domain("regionCompleted", envRegions, strategy.Domain.B0_IS_MSB)]
+                    enabled_sensors = [x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
+                else:
+                    regionCompleted_domain = []
+                    enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
+                    if self.proj.compile_options["decompose"]:
+                        enabled_sensors.extend([r.name+"_rc" for r in self.parser.proj.rfi.regions])
+                    else:
+                        enabled_sensors.extend([r.name+"_rc" for r in self.proj.rfi.regions])
             else:
                 regionCompleted_domain = []
-                enabled_sensors = [x for x in enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
-                enabled_sensors.extend([r.name+'_rc' for r in self.proj.rfi.regions])
         else:
+            region_domain = []
             regionCompleted_domain = []
 
         # figure out slugs option even if it's not used
@@ -394,7 +406,8 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
             # synthesize our controller again just to see if it's realizable and replace spec if FALSE
             self.compiler = specCompiler.SpecCompiler(spec_file)
-            self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
+            if self.proj.rfi and self.proj.compile_options['decompose']:
+                self.compiler._decompose()  # WHAT DOES IT DO? DECOMPOSE REGIONS?
         else:
             #print "Reloading motion control handler..."
             #self.proj.importHandlers(['motionControl'])
@@ -475,19 +488,21 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
 
         ## Region
         # FIXME: make getcurrentregion return object instead of number, also fix the isNone check
-        init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
-        if init_region is None:
-            ltlmop_logger.error("Initial pose not inside any region!")
-            sys.exit(-1)
+        if self.proj.rfi:
+            init_region = self.proj.rfi.regions[self._getCurrentRegionFromPose()]
+            if init_region is None:
+                ltlmop_logger.error("Initial pose not inside any region!")
+                sys.exit(-1)
 
-        ltlmop_logger.info("Starting from initial region: " + init_region.name)
-        # include initial regions in picking states
-        if self.proj.compile_options['fastslow']:
-            init_prop_assignments = {"regionCompleted": init_region}
-            # TODO: check init_region format
+            ltlmop_logger.info("Starting from initial region: " + init_region.name)
+            # include initial regions in picking states
+            if self.proj.compile_options['fastslow']:
+                init_prop_assignments = {"regionCompleted": init_region}
+                # TODO: check init_region format
+            else:
+                init_prop_assignments = {"region": init_region}
         else:
-            init_prop_assignments = {"region": init_region}
-
+            init_prop_assignments = {}
         ## outputs
         if firstRun or self.strategy is None:
             # initialize all sensor and actuator methods
@@ -568,7 +583,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         if self.proj.compile_options['fastslow']:
             init_prop_assignments.update(self.hsub.getSensorValue([x for x in self.proj.enabled_sensors if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]))
         else:
-        	init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
+            init_prop_assignments.update(self.hsub.getSensorValue(self.proj.enabled_sensors))
 
         #search for initial state in the strategy
         if firstRun:

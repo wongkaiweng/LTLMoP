@@ -973,7 +973,7 @@ class ExecutorResynthesisExtensions(object):
         
         if spec == None:
             spec = self.spec
-        
+
         if export:
             ltl_filename = proj.getFilenamePrefix() + "Generated.ltl"
         else:

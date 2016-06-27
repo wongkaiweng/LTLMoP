@@ -2,7 +2,7 @@
     ===============================================
     createJTLVinput.py - LTL Pre-Processor Routines
     ===============================================
-    
+
     Module that creates the input files for the JTLV based synthesis algorithm.
     Its functions create the skeleton .smv file and the .ltl file which
     includes the topological relations and the given spec.
@@ -74,36 +74,37 @@ def createIASysPropImpliesEnvPropLivenessFragment(sysProp, regions, envProp, adj
                             (actionProp & !next(actionProp)) |
                             (!actionProp & next(actionProp)) )"
     """
-    if use_bits:
-        numBits = int(math.ceil(math.log(len(adjData),2)))
-        # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
-        currBitEnc = bitEncode['current']
-        nextBitEnc = bitEncode['next']
-        envBitEnc = bitEncode['env']
-        envNextBitEnc = bitEncode['envNext']
-
     # The topological relation (adjacency)
     adjFormulas = []
 
-    adjFormula = '\t\t\t []<>( '
-    adjSubFormulaArray = []
-    for Origin in range(len(regions)):
-        # skip boundary and obstacles
-        if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
-            continue
+    if regions:
+        if use_bits:
+            numBits = int(math.ceil(math.log(len(adjData),2)))
+            # TODO: only calc bitencoding once
+            bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+            currBitEnc = bitEncode['current']
+            nextBitEnc = bitEncode['next']
+            envBitEnc = bitEncode['env']
+            envNextBitEnc = bitEncode['envNext']
 
-        curProp = (currBitEnc[Origin] if use_bits else "s." +regions[Origin].name)
-        nextProp = (nextBitEnc[Origin] if use_bits else "next(s."+regions[Origin].name+")")
-        # TODO: maybe pass in env region list and use it here instead
-        nextEnvProp = (envNextBitEnc[Origin] if use_bits else "next(e."+ regions[Origin].name+"_rc)")
-        adjSubFormulaArray.append('('+curProp+' & '+nextEnvProp+') | ('+curProp+' & !'+nextProp+')\n')
+        adjFormula = '\t\t\t []<>( '
+        adjSubFormulaArray = []
+        for Origin in range(len(regions)):
+            # skip boundary and obstacles
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
 
-    # closing the formula
-    adjFormula = adjFormula + "\t\t\t\t| ".join(adjSubFormulaArray)
-    adjFormula = adjFormula + ' ) '
+            curProp = (currBitEnc[Origin] if use_bits else "s." +regions[Origin].name)
+            nextProp = (nextBitEnc[Origin] if use_bits else "next(s."+regions[Origin].name+")")
+            # TODO: maybe pass in env region list and use it here instead
+            nextEnvProp = (envNextBitEnc[Origin] if use_bits else "next(e."+ regions[Origin].name+"_rc)")
+            adjSubFormulaArray.append('('+curProp+' & '+nextEnvProp+') | ('+curProp+' & !'+nextProp+')\n')
 
-    adjFormulas.append(adjFormula)
+        # closing the formula
+        adjFormula = adjFormula + "\t\t\t\t| ".join(adjSubFormulaArray)
+        adjFormula = adjFormula + ' ) '
+
+        adjFormulas.append(adjFormula)
 
     if len(sysProp):
         adjFormula = '\t\t\t []<>( '
@@ -223,98 +224,94 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     """
     Obtain []( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))
     """
-    if use_bits:
-        numBits = int(math.ceil(math.log(len(adjData),2)))
-        # TODO: only calc bitencoding once
-        bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
-        currBitEnc = bitEncode['current']
-        nextBitEnc = bitEncode['next']
-        envBitEnc = bitEncode['env']
-        envNextBitEnc = bitEncode['envNext']
-
-
     # The topological relation (adjacency)
     adjFormulas = []
+    if regions:
+        if use_bits:
+            numBits = int(math.ceil(math.log(len(adjData),2)))
+            # TODO: only calc bitencoding once
+            bitEncode = parseEnglishToLTL.bitEncoding(len(adjData), numBits)
+            currBitEnc = bitEncode['current']
+            nextBitEnc = bitEncode['next']
+            envBitEnc = bitEncode['env']
+            envNextBitEnc = bitEncode['envNext']
 
-    for Origin in range(len(adjData)):
-        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
-            continue
-
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+regions[Origin].name + "_rc")
-        adjFormula = adjFormula + ' & '
-        adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "s."+regions[Origin].name)
-
-        adjFormula = adjFormula + ') -> ('
-
-        adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name+"_rc)")
-        adjFormula = adjFormula + ") ) "
-
-        adjFormulas.append(adjFormula)
-
-    if onDebugMode:
-        ltlmop_logger.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
-        ltlmop_logger.debug(adjFormulas)
-
-    """
-    Obtain []( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))
-    """
-    for Origin in range(len(adjData)):
-        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
-            continue
-
-        for dest in range(len(adjData)):
-            if regions[dest].name == 'boundary' or regions[dest].isObstacle:
+        for Origin in range(len(adjData)):
+            if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
                 continue
 
-            if adjData[Origin][dest]:
-                # from region i we can head to dest stay in Origin
-                adjFormula = '\t\t\t []( ('
-                adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+regions[Origin].name + "_rc")
-                adjFormula = adjFormula + ' & '
-                adjFormula = adjFormula + (currBitEnc[dest] if use_bits else "s."+regions[dest].name)
-                adjFormula = adjFormula + ') -> ('
-                # still in the current region
-                adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
+            # from region i we can stay in region i
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+regions[Origin].name + "_rc")
+            adjFormula = adjFormula + ' & '
+            adjFormula = adjFormula + (currBitEnc[Origin] if use_bits else "s."+regions[Origin].name)
 
-                # not empty, hence there is a transition
-                adjFormula = adjFormula + ' | '
-                adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+regions[dest].name+"_rc)")
-                adjFormula = adjFormula + ') )'
-                adjFormulas.append(adjFormula)
+            adjFormula = adjFormula + ') -> ('
 
-    if onDebugMode:
-        ltlmop_logger.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
-        ltlmop_logger.debug(adjFormula)
+            adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name+"_rc)")
+            adjFormula = adjFormula + ") ) "
 
-    """
-    []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
-    """
-    for Origin in range(len(adjData)):
-        if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
-            continue
+            adjFormulas.append(adjFormula)
 
-        # from region i we can stay in region i
-        adjFormula = '\t\t\t []( ('
-        adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
-        adjFormula = adjFormula + ') <-> ! ( '
-        regPropRCs = []
-        for Others in range(len(adjData)):
-            if regions[Others].name == 'boundary' or regions[Others].isObstacle:
+        if onDebugMode:
+            ltlmop_logger.debug("[]( (regionProp1_rc & regionProp1) -> (next(regionProp1_rc)))")
+            ltlmop_logger.debug(adjFormulas)
+
+        """
+        Obtain []( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))
+        """
+        for Origin in range(len(adjData)):
+            if regions[Origin].name == 'boundary' or regions[Origin].isObstacle:
                 continue
 
-            if not regions[Origin].name == regions[Others].name:
-                # not empty, hence there is a transition
-                regPropRCs.append(envNextBitEnc[Others] if use_bits else "next(e."+regions[Others].name+"_rc)")
+            for dest in range(len(adjData)):
+                if regions[dest].name == 'boundary' or regions[dest].isObstacle:
+                    continue
 
-        adjFormula = adjFormula + " | ".join(regPropRCs)
-        adjFormula = adjFormula + ") ) "
-        adjFormulas.append(adjFormula)
+                if adjData[Origin][dest]:
+                    # from region i we can head to dest stay in Origin
+                    adjFormula = '\t\t\t []( ('
+                    adjFormula = adjFormula + (envBitEnc[Origin] if use_bits else "e."+regions[Origin].name + "_rc")
+                    adjFormula = adjFormula + ' & '
+                    adjFormula = adjFormula + (currBitEnc[dest] if use_bits else "s."+regions[dest].name)
+                    adjFormula = adjFormula + ') -> ('
+                    # still in the current region
+                    adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
 
-    if onDebugMode:
-        ltlmop_logger.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
-        ltlmop_logger.debug(adjFormula)
+                    # not empty, hence there is a transition
+                    adjFormula = adjFormula + ' | '
+                    adjFormula = adjFormula + (envNextBitEnc[dest] if use_bits else "next(e."+regions[dest].name+"_rc)")
+                    adjFormula = adjFormula + ') )'
+                    adjFormulas.append(adjFormula)
+
+        if onDebugMode:
+            ltlmop_logger.debug("[]( (regionProp1_rc & regionProp2)) -> (next(regionProp1_rc)|next(regionProp2_rc))")
+            ltlmop_logger.debug(adjFormula)
+
+        """
+        []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
+        """
+        for Origin in range(len(adjData)):
+            # from region i we can stay in region i
+            adjFormula = '\t\t\t []( ('
+            adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")
+            adjFormula = adjFormula + ') <-> ! ( '
+            regPropRCs = []
+            for Others in range(len(adjData)):
+                if regions[Others].name == 'boundary' or regions[Others].isObstacle:
+                    continue
+
+                if not regions[Origin].name == regions[Others].name:
+                    # not empty, hence there is a transition
+                    regPropRCs.append(envNextBitEnc[Others] if use_bits else "next(e."+regions[Others].name+"_rc)")
+
+            adjFormula = adjFormula + " | ".join(regPropRCs)
+            adjFormula = adjFormula + ") ) "
+            adjFormulas.append(adjFormula)
+
+            if onDebugMode:
+                ltlmop_logger.debug("[]regionProp1_rc' -> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')")
+                ltlmop_logger.debug(adjFormula)
 
     """
     [](action_ac & action) -> action_ac'
@@ -329,13 +326,13 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
     """
     [] regionProp1' | regionProp2' | regionProp3'
     """
+    if regions:
+        # In a BDD strategy, it's best to explicitly exclude these
+        adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
-    # In a BDD strategy, it's best to explicitly exclude these
-    adjFormulas.append("\t\t\t []"+createIAInitialEnvRegionFragment(regions, use_bits,True))
-
-    if onDebugMode:
-        ltlmop_logger.debug("[] regionProp1' | regionProp2' | regionProp3'")
-        ltlmop_logger.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
+        if onDebugMode:
+            ltlmop_logger.debug("[] regionProp1' | regionProp2' | regionProp3'")
+            ltlmop_logger.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
 
     return " & \n".join(adjFormulas)
 
@@ -577,7 +574,7 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
     #  region (encoding). This may be redundant if an initial region is
     #  specified, but it is here to ensure the system cannot start from
     #  an invalid, or empty region (encoding).
-    
+
     # skip boundary and obstacles
     regions_old = regions
     regions = []
@@ -586,7 +583,7 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
             continue
         else:
             regions.append(reg)
-    
+
     if use_bits:
         numBits = int(math.ceil(math.log(len(regions),2)))
         # TODO: only calc bitencoding once
@@ -609,7 +606,7 @@ def createInitialEnvRegionFragment(regions, use_bits=True, nextProp = True, othe
             initreg_formula = "\n\t({})".format(" |\n ".join(["({})".format(" & ".join(["next(e."+other_robot_name + '_' +r2.name + suffix + ')' if r is r2 else "!next(e."+other_robot_name + '_' +r2.name + suffix +")" for r2 in regions])) for r in regions]))
         else:
             initreg_formula = "\n\t({})".format(" |\n ".join(["({})".format(" & ".join(["e."+other_robot_name + '_' +r2.name + suffix if r is r2 else "!e."+other_robot_name + '_' +r2.name + suffix for r2 in regions])) for r in regions]))
-        
+
     return initreg_formula
 
 def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_name = '', use_robot_heading = False, fastslow = False):
@@ -633,10 +630,10 @@ def createSysMutualExclusion(regionMapping, regions, use_bits=True, other_robot_
         nextBitEnc = bitEncode['next']
         envBitEnc = bitEncode['env']
         envNextBitEnc = bitEncode['envNext']
-        
+
     # The topological relation (adjacency)
     adjFormulas = []
-    
+
     if not other_robot_name:
         ltlmop_logger.info('robot_name not provided!')
         return
@@ -703,7 +700,7 @@ def createTopologyFragment(adjData, regions, use_bits=True):
         adjFormula = adjFormula + ') -> ( ('
         adjFormula = adjFormula + (nextBitEnc[Origin] if use_bits else "next(s."+regions[Origin].name+")")
         adjFormula = adjFormula + ')'
-        
+
         for dest in range(len(adjData)):
             if (regions[dest].name == 'boundary' or regions[dest].isObstacle):
                 continue
@@ -753,7 +750,7 @@ def createInitialRegionFragment(regions, use_bits=True):
                 region_filtered.append(r)
 
         initreg_formula = "\n\t({})".format(" | ".join(["({})".format(" & ".join(["s."+r2.name if r is r2 else "!s."+r2.name for r2 in region_filtered])) for r in region_filtered]))
-        
+
     return initreg_formula
 
 def createNecessaryFillerSpec(spec_part):
@@ -777,7 +774,7 @@ def createNecessaryFillerSpec(spec_part):
         if not formula.getConjunctsByType(LTLFormulaType.LIVENESS):
             filler_spec.append("[]<>(TRUE)")
 
-    return " & ".join(filler_spec) 
+    return " & ".join(filler_spec)
 
 def flattenLTLFormulas(f):
     if isinstance(f, LTLFormula):
@@ -793,8 +790,8 @@ def flattenLTLFormulas(f):
     raise ValueError("Invalid formula type: must be either string, LTLFormula, or LTLFormula list")
 
 def createLTLfile(fileName, spec_env, spec_sys):
-    ''' This function writes the LTL file. It encodes the specification and 
-    topological relation. 
+    ''' This function writes the LTL file. It encodes the specification and
+    topological relation.
     It takes as input a filename, the list of the
     sensor propositions, the list of robot propositions (without the regions),
     the adjacency data (transition data structure) and
@@ -819,12 +816,12 @@ def createLTLfile(fileName, spec_env, spec_sys):
     ltlFile.write('LTLSPEC -- Assumptions\n')
     ltlFile.write('\t(\n')
 
-    filler = createNecessaryFillerSpec(spec_env) 
-    if filler: 
+    filler = createNecessaryFillerSpec(spec_env)
+    if filler:
         ltlFile.write('\t' + filler)
 
     # Write the environment assumptions
-    # from the 'spec' input 
+    # from the 'spec' input
     if spec_env.strip() != "":
         if filler:
             ltlFile.write('& \n')
@@ -834,8 +831,8 @@ def createLTLfile(fileName, spec_env, spec_sys):
     ltlFile.write('LTLSPEC -- Guarantees\n')
     ltlFile.write('\t(\n')
 
-    filler = createNecessaryFillerSpec(spec_sys) 
-    if filler: 
+    filler = createNecessaryFillerSpec(spec_sys)
+    if filler:
         ltlFile.write('\t' + filler)
 
     # Write the desired robot behavior

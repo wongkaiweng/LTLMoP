@@ -1149,11 +1149,11 @@ class SpecEditorFrame(wx.Frame):
         self.text_ctrl_spec.MarkerDeleteAll(MARKER_LIVE)
         self.text_ctrl_spec.MarkerDeleteAll(MARKER_PARSEERROR)
 
-		# Let's make sure we have everything!
-        if self.proj.rfi is None:
-            wx.MessageBox("Please define regions before compiling.", "Error",
-                        style = wx.OK | wx.ICON_ERROR)
-            return
+        # Let's make sure we have everything!
+        #if self.proj.rfi is None:
+        #    wx.MessageBox("Please define regions before compiling.", "Error",
+        #                style = wx.OK | wx.ICON_ERROR)
+        #    return
 
         if self.proj.specText.strip() == "":
             wx.MessageBox("Please write a specification before compiling.", "Error",
@@ -1166,7 +1166,7 @@ class SpecEditorFrame(wx.Frame):
             return
 
         # Check that there's a boundary region
-        if self.proj.compile_options["decompose"] and self.proj.rfi.indexOfRegionWithName("boundary") < 0:
+        if self.proj.rfi is not None and self.proj.compile_options["decompose"] and self.proj.rfi.indexOfRegionWithName("boundary") < 0:
             wx.MessageBox("Please define a boundary region before compiling.\n(Just add a region named 'boundary' in RegionEditor.)", "Error",
                         style = wx.OK | wx.ICON_ERROR)
             return
@@ -1188,12 +1188,14 @@ class SpecEditorFrame(wx.Frame):
 
         self.appendLog("Decomposing map into convex regions...\n", "BLUE")
 
-        compiler._decompose()
-        self.proj = compiler.proj
-        if self.proj.compile_options['decompose']:
-            self.decomposedRFI = compiler.parser.proj.rfi
-        else:
-            self.decomposedRFI = compiler.proj.rfi
+        if self.proj.rfi is not None:
+            if self.proj.compile_options['decompose']:
+                compiler._decompose()
+                self.proj = compiler.proj
+                self.decomposedRFI = compiler.parser.proj.rfi
+            else:
+                self.decomposedRFI = compiler.proj.rfi
+
 
         # Update workspace decomposition listbox
         if self.proj.regionMapping is not None:
@@ -1440,13 +1442,7 @@ class SpecEditorFrame(wx.Frame):
             # If we already have a region file defined, open it up for editing
             fileName = self.proj.rfi.filename
             self.lastRegionModTime = os.path.getmtime(fileName)
-
-            if os.path.isfile(self.proj.rfi.filename+"_transitions_to_exclude"):
-                exclude_fileName = self.proj.rfi.filename+"_transitions_to_exclude"
-                self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName, exclude_fileName], regedCallback, None)
-            else:
-                self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName], regedCallback, None)
-
+            self.subprocess["Region Editor"] = WxAsynchronousProcessThread([sys.executable, "-u", "regionEditor.py", fileName], regedCallback, None)
         else:
             # Otherwise let's create a new region file
             if self.proj.project_basename is None:
@@ -1495,10 +1491,15 @@ class SpecEditorFrame(wx.Frame):
         self.subprocess["Simulation Configuration"] = WxAsynchronousProcessThread([sys.executable, "-u", "-m", "lib.configEditor", self.proj.getFilenamePrefix()+".spec"], simConfigCallback, None)
 
     def _exportDotFile(self):
-        region_domain = strategy.Domain("region",  self.decomposedRFI.regions, strategy.Domain.B0_IS_MSB)
-        strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
+        if self.decomposedRFI:
+            region_domain = strategy.Domain("region",  self.decomposedRFI.regions, strategy.Domain.B0_IS_MSB)
+            strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
                                                 self.proj.enabled_sensors,
                                                 self.proj.enabled_actuators + self.proj.all_customs +  [region_domain])
+        else:
+            strat = strategy.createStrategyFromFile(self.proj.getStrategyFilename(),
+                                                self.proj.enabled_sensors,
+                                                self.proj.enabled_actuators + self.proj.all_customs)
 
         strat.exportAsDotFile(self.proj.getFilenamePrefix()+".dot", self.proj.regionMapping)
 
