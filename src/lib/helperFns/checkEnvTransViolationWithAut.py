@@ -266,6 +266,7 @@ if __name__ == '__main__':
                         logging.info('-------------------------')
                         logging.info('Printing violations of State ' + str(stateNo) + ' and transition to State ' + str(successorStateObject.state_id))
                         logging.info('State props:' + str([k for k, v in currentStateObject.getAll(expand_domains=True).iteritems() if v]))
+                        logging.info('Next State props:' + str([k for k, v in successorStateObject.getAll(expand_domains=True).iteritems() if v]))
                         logging.info("EnvTransHolds:" + str(LTLViolationCheck.checkViolation(currentStateObject, successorStateObject, LTLMoP = False)))
                         logging.info("Specific line in .spec file:" + str(LTLViolationCheck.violated_specStr))
                         logging.info("SysTransHolds:" + str(LTLViolationCheckSysTrans.checkViolation(currentStateObject, successorStateObject, LTLMoP = False)))

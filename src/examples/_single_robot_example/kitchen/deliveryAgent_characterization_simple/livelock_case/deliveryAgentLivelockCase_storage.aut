@@ -1,0 +1,16 @@
+State 0 with rank (0,0) -> <order:0, doorOpen:0, doorBroken:1, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 1, 2
+State 1 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 3, 4
+State 2 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 1, 2
+State 3 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 5, 6, 7
+State 4 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 1, 2
+State 5 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 5, 6, 7
+State 6 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:1>
+	With successors : 1, 2
+State 7 with rank (0,0) -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 1, 2
