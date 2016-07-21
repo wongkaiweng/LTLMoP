@@ -1,0 +1,114 @@
+State 0 with rank 0 -> <order:0, doorOpen:0, doorBroken:1, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 1, 2, 3, 4, 5
+State 1 with rank 1 -> <order:0, doorOpen:0, doorBroken:1, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 1, 6, 2, 7, 3, 8, 4, 9, 5
+State 2 with rank 1 -> <order:0, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 6, 2, 7, 3, 8, 4, 9, 5
+State 3 with rank 1 -> <order:0, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 6, 2, 7, 3, 8, 4, 9, 5
+State 4 with rank 1 -> <order:1, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 11, 12, 13, 14, 15, 16, 17
+State 5 with rank 1 -> <order:1, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 11, 12, 13, 14, 15, 16, 17
+State 6 with rank 1 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:1>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 24, 25, 26, 27
+State 7 with rank 1 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:1>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 24, 25, 26, 27
+State 8 with rank 1 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 12, 14, 16
+State 9 with rank 1 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 12, 14, 16
+State 10 with rank 0 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 28, 29, 8, 9
+State 11 with rank 0 -> <order:0, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 28, 2, 29, 3, 8, 4, 9, 5
+State 12 with rank 0 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 28, 29, 8, 9
+State 13 with rank 0 -> <order:0, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 28, 2, 29, 3, 8, 4, 9, 5
+State 14 with rank 0 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 12, 30, 31
+State 15 with rank 0 -> <order:1, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 11, 12, 13, 30, 32, 31, 33
+State 16 with rank 0 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 12, 30, 31
+State 17 with rank 0 -> <order:1, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 11, 12, 13, 30, 32, 31, 33
+State 18 with rank 1 -> <order:0, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 18, 19, 20, 21, 34, 35, 36, 37
+State 19 with rank 1 -> <order:0, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 18, 19, 20, 21, 34, 35, 36, 37
+State 20 with rank 1 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 18, 19, 20, 21, 34, 35, 36, 37
+State 21 with rank 1 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 18, 19, 20, 21, 34, 35, 36, 37
+State 22 with rank 1 -> <order:1, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 14, 44, 16, 45
+State 23 with rank 1 -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 46, 43, 14, 44, 16, 45
+State 24 with rank 1 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:1>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 14, 44, 16, 45
+State 25 with rank 1 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 14, 44, 16, 45
+State 26 with rank 1 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:1>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 14, 44, 16, 45
+State 27 with rank 1 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 14, 44, 16, 45
+State 28 with rank 1 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 6, 7, 8, 9
+State 29 with rank 1 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 6, 7, 8, 9
+State 30 with rank 0 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 47, 11, 48, 13, 30, 32, 31, 33
+State 31 with rank 0 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 47, 11, 48, 13, 30, 32, 31, 33
+State 32 with rank 0 -> <order:1, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 49, 50, 32, 33
+State 33 with rank 0 -> <order:1, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 49, 50, 32, 33
+State 34 with rank 1 -> <order:1, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 38, 39, 40, 41, 42, 43, 44, 45
+State 35 with rank 1 -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 38, 39, 40, 41, 42, 46, 43, 44, 45
+State 36 with rank 1 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 38, 39, 40, 41, 42, 43, 44, 45
+State 37 with rank 1 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:1>
+	With successors : 38, 39, 40, 41, 42, 43, 44, 45
+State 38 with rank 0 -> <order:0, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 51, 52, 28, 53, 29, 54, 22, 23, 8, 25, 9, 27
+State 39 with rank 0 -> <order:0, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 51, 52, 28, 53, 29, 54, 22, 23, 8, 25, 9, 27
+State 40 with rank 0 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 51, 52, 28, 53, 29, 54, 22, 23, 8, 25, 9, 27
+State 41 with rank 0 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 51, 52, 28, 53, 29, 54, 22, 23, 8, 25, 9, 27
+State 42 with rank 0 -> <order:1, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 30, 44, 31, 45
+State 43 with rank 0 -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 55, 43, 30, 44, 31, 45
+State 44 with rank 0 -> <order:1, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 30, 44, 31, 45
+State 45 with rank 0 -> <order:1, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 38, 39, 10, 40, 12, 41, 42, 43, 30, 44, 31, 45
+State 46 with rank 0 -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:0, bit0:0, bit1:0>
+	With successors : 10, 12, 56, 30, 31
+State 47 with rank 0 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 28, 2, 29, 3, 8, 4, 9, 5
+State 48 with rank 0 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 28, 2, 29, 3, 8, 4, 9, 5
+State 49 with rank 0 -> <order:0, doorOpen:1, doorBroken:0, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 2, 3, 4, 5
+State 50 with rank 0 -> <order:0, doorOpen:1, doorBroken:1, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 2, 3, 4, 5
+State 51 with rank 1 -> <order:0, doorOpen:0, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 8, 25, 9, 27
+State 52 with rank 1 -> <order:0, doorOpen:0, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 8, 25, 9, 27
+State 53 with rank 1 -> <order:0, doorOpen:1, doorBroken:0, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 8, 25, 9, 27
+State 54 with rank 1 -> <order:0, doorOpen:1, doorBroken:1, sbit0:0, sbit1:1, bit0:0, bit1:0>
+	With successors : 18, 19, 6, 20, 7, 21, 22, 23, 8, 25, 9, 27
+State 55 with rank 0 -> <order:1, doorOpen:0, doorBroken:1, sbit0:0, sbit1:0, bit0:1, bit1:0>
+	With successors : 47, 11, 48, 13, 56, 30, 32, 31, 33
+State 56 with rank 0 -> <order:1, doorOpen:0, doorBroken:1, sbit0:1, sbit1:0, bit0:1, bit1:0>
+	With successors : 0, 49, 50, 32, 33
