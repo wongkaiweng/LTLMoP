@@ -292,6 +292,9 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         []regionProp1_rc' <-> ! (regionProp2_rc' | regionProp3_rc' | regionProp4_rc')
         """
         for Origin in range(len(adjData)):
+            if (regions[Origin].name == 'boundary' or regions[Origin].isObstacle):
+                continue
+
             # from region i we can stay in region i
             adjFormula = '\t\t\t []( ('
             adjFormula = adjFormula + (envNextBitEnc[Origin] if use_bits else "next(e."+regions[Origin].name + "_rc)")

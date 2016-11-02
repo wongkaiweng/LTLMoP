@@ -159,7 +159,7 @@ class SpecCompiler(object):
                     # added in region_rc with the original region names
                     if self.proj.compile_options['fastslow']:
                         sensorList = [x for x in sensorList if not x.endswith('_rc') or x.startswith(tuple(self.proj.otherRobot))]
-                        sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions])
+                        sensorList.extend([r.name+"_rc" for r in self.proj.rfi.regions if r.name != 'boundary' and not r.isObstacle])
 
         self.propList = sensorList + robotPropList
 

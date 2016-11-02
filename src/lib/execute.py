@@ -875,7 +875,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             ########## UPDATE GOAL ID #############
             #######################################
             #also make sure we are not in centralized mode to change goal_id
-            if int(self.strategy.current_state.goal_id) < self.totalSysGoals and not self.runCentralizedStrategy:
+            if self.strategy.current_state.goal_id and int(self.strategy.current_state.goal_id) < self.totalSysGoals and not self.runCentralizedStrategy:
                 self.prev_z = self.strategy.current_state.goal_id
             else:
                 pass #stays the same
