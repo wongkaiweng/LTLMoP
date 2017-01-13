@@ -20,4 +20,4 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     print args
 
-    regionToJSON(args.region_file, args.json_file)
+    region2json(args.region_file, args.json_file)

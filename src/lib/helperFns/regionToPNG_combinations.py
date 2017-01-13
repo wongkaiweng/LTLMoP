@@ -6,6 +6,7 @@ p = os.path.abspath(__file__)
 sys.path.append(os.path.join(os.path.dirname(p), "../"))
 import cairo, rsvg
 import itertools
+import math
 
 import regions
 
@@ -98,7 +99,26 @@ def svg2png(svgFile):
     ctx = cairo.Context(img)
     handler = rsvg.Handle(svgFile)
     handler.render_cairo(ctx)
-    img.write_to_png(svgFile.replace(".svg",".png"))
+
+    # flip x, y
+    pat = cairo.SurfacePattern(img)
+
+    # another way to flip an image on the Y axis
+    # the order of the translate and scale are important
+    m = cairo.Matrix()
+    m.translate(0, img.get_height())
+    m.scale(1, -1)
+
+    pat.set_matrix(m)
+
+    dest = cairo.ImageSurface(cairo.FORMAT_ARGB32, img.get_width(), img.get_height())
+    cr = cairo.Context(dest)
+    cr.set_source(pat)
+    cr.paint()
+
+    dest.write_to_png(svgFile.replace(".svg",".png"))
+
+    #img.write_to_png(svgFile.replace(".svg",".png"))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert region file to PNG file. Output to the same directory.")
@@ -107,7 +127,7 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
     print args
 
-    svgFile_list = region2svg(args.region_file)
+    svgFile_list = region2svg(args.region_file, args.region_file.replace('.regions','.png'))
 
     for svgFile in svgFile_list:
         svg2png(svgFile)
