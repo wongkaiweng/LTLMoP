@@ -165,11 +165,12 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         self.slugsProcess.stdout.readline() # only read Position:
 
-        ltlmop_logger.debug('goal_id:' + str(goal_id))
+        ltlmop_logger.debug("goal_id: {0}".format(goal_id))
         if goal_id is not None:
             ltlmop_logger.debug('rewriting goals... ')
             self.slugsProcess.stdin.write("XMAKEGOAL\n" + str(goal_id) + "\n")
             self.slugsProcess.stdin.flush()
+            self.slugsProcess.stdout.readline() # only read Position:
             self.slugsProcess.stdout.readline() # only read Position:
 
         # get and set current state id
@@ -198,7 +199,8 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.write("XMAKETRANS\n"+nextInput)
         self.slugsProcess.stdin.flush()
         nextLine = self.slugsProcess.stdout.readline().strip() # Skip the prompt
-        while nextLine.startswith("ERROR") or nextLine.startswith(">"):
+        while nextLine.startswith(">"):
+            ltlmop_logger.debug("while-nextLine:" + str(nextLine))
             nextLine = self.slugsProcess.stdout.readline().strip()
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
