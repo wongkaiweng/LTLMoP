@@ -241,7 +241,10 @@ class Project:
         if self.compile_options['fastslow']:
             if self.rfi:
                 # for region completion sensors
-                self.rfi.regionsCompleted = self.populateCompletedPropositions([str(x.name) for x in self.rfi.regions if not "boundary" in x.name and not x.isObstacle])
+                if self.compile_options['convexify']:
+                    self.rfi.regionsCompleted = self.populateCompletedPropositions([str(x.name) for x in self.rfi.regions if not "boundary" in x.name and not x.isObstacle])
+                else:
+                    self.rfi.regionsCompleted = self.populateCompletedPropositions(self.regionMapping.keys())
                 self.all_sensors.extend(self.rfi.regionsCompleted)
                 self.enabled_sensors.extend(self.rfi.regionsCompleted)
 

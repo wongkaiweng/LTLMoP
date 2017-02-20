@@ -297,22 +297,29 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
         """
         if initial:
             self.prev_pose = self.executor.hsub.getPose()
-            if self.proj.compile_options['decompose']:
-                regionNo = self.proj.rfiold.indexOfRegionWithName(regionName)
-                pointArray = [x for x in self.proj.rfiold.regions[regionNo].getPoints()]
-            else:
-                regionNo = self.proj.rfi.indexOfRegionWithName(regionName)
+
+            self.polyRegionList[regionName] = Polygon.Polygon()
+            decomposedRegionList = self.proj.regionMapping[regionName]
+            for region in decomposedRegionList:
+                regionNo = self.proj.rfi.indexOfRegionWithName(region)
+                #ltlmop_logger.debug('regionNo:{0}'.format(regionNo))
                 pointArray = [x for x in self.proj.rfi.regions[regionNo].getPoints()]
+                pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+                self.polyRegionList[regionName] += Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
+                #ltlmop_logger.debug('regionName {0} : {1}'.format(decomposedRegionList, self.polyRegionList[regionName]))
+                #ltlmop_logger.debug('holeList length : {0}'.format(len(self.proj.rfi.regions[regionNo].holeList)))
 
-            pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
-            vertices = numpy.mat(pointArray).T
+                if len(self.proj.rfi.regions[regionNo].holeList):
+                    for hole_idx in range(len(self.proj.rfi.regions[regionNo].holeList)):
+                        pointArray = [x for x in self.proj.rfi.regions[regionNo].getPoints(hole_id=hole_idx)]
+                        pointArray = map(self.executor.hsub.coordmap_map2lab, pointArray)
+                        self.polyRegionList[regionName] -= Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
 
-            if is_inside([self.prev_pose[0], self.prev_pose[1]], vertices):
+            if self.polyRegionList[regionName].isInside(self.prev_pose[0], self.prev_pose[1]):
                 self.prev_current_region = regionName
-                self.currentRegionPoly = Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
-
-            self.polyRegionList[regionName] = Polygon.Polygon([(pt[0],pt[1]) for pt in pointArray])
+                self.currentRegionPoly = self.polyRegionList[regionName]
             self.radius = radius
+
         else:
             if regionName == self.prev_current_region:
                 return True
@@ -437,6 +444,19 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             #    ltlmop_logger.log(6, self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName])
             return self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]
 
+    def button_state(self, actuatorName, initial=False):
+        """
+        check if the image display action is completed
+        actuatorName (string): name of the corresponding actuator
+        """
+        if initial:
+            if not self.dummyActuatorHandler:
+                self.dummyActuatorHandler = self.executor.hsub.getHandlerInstanceByName("DummyActuatorHandler")
+        else:
+            #if self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName]:
+            #    ltlmop_logger.log(6, self.dummyActuatorHandler.imageDisplayCompletionStatus[actuatorName])
+            return self.dummyActuatorHandler.buttonPressCompletionStatus[actuatorName]
+
     def checkBroadcast(self, port, initialValue, initial=False):
         """
         This function checks broadcasting msg.
@@ -448,13 +468,14 @@ class DummySensorHandler(handlerTemplates.SensorHandler):
             self.sock[port].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.sock[port].bind(('', port))
             self.sock[port].setblocking(0)
-            self.boolValue[port] = False
+            self.boolValue[port] = initialValue
         else:
             #print hasattr(self.sock, 'select')
             ready = select.select([self.sock[port]], [], [],0)
             if ready[0]:
                 self.boolValue[port] = ast.literal_eval(self.sock[port].recv(4096))
-                ltlmop_logger.debug("valueChanged:" + str(self.boolValue[port]))
+                ltlmop_logger.debug("{0} - valueChanged: {1}".format(port, self.boolValue[port]))
+                self.executor.postEvent("INFO", "(SENS) Port {0} changed to {1}".format(port, self.boolValue[port]))
             return self.boolValue[port]
 
 if __name__ == "__main__":
