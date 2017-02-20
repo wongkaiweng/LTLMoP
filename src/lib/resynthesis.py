@@ -943,7 +943,7 @@ class ExecutorResynthesisExtensions(object):
             current_sys_init_state  = self.strategy.current_state.getLTLRepresentation(mark_players=True, use_next=False, include_inputs=False, include_outputs=True)
 
             # if using fastslow set env init bits to be the same as sys init bits
-            if self.proj.compile_options['fastslow']:
+            if self.proj.compile_options['fastslow'] and hasattr(self.proj.rfi, 'regions'):
                 # iterate each bit
                 for x in range(max(1, int(math.ceil(math.log(len(self.proj.rfi.regions), 2))))):
                     negate = False
@@ -1025,34 +1025,35 @@ class ExecutorResynthesisExtensions(object):
             checker = self.LTLViolationCheck
 
         ############ COPIED FROM SPECCOMPILER LINE 285 ###########
-        if self.proj.compile_options["decompose"]:
-            # substitute the regions name in specs
-            for m in re.finditer(r'near (?P<rA>\w+)', envLiveness):
-                envLiveness=re.sub(r'near (?P<rA>\w+)', "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+str(50)]])+")", envLiveness)
-            for m in re.finditer(r'within (?P<dist>\d+) (from|of) (?P<rA>\w+)', envLiveness):
-                envLiveness=re.sub(r'within ' + m.group('dist')+' (from|of) '+ m.group('rA'), "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+m.group('dist')]])+")", envLiveness)
-            for m in re.finditer(r'between (?P<rA>\w+) and (?P<rB>\w+)', envLiveness):
-                envLiveness=re.sub(r'between ' + m.group('rA')+' and '+ m.group('rB'),"("+' or '.join(["s."+r for r in self.proj.regionMapping['between$'+m.group('rA')+'$and$'+m.group('rB')+"$"]])+")", envLiveness)
+        if hasattr(self.proj.rfi, 'regions'):
+            if self.proj.compile_options["decompose"]:
+                # substitute the regions name in specs
+                for m in re.finditer(r'near (?P<rA>\w+)', envLiveness):
+                    envLiveness=re.sub(r'near (?P<rA>\w+)', "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+str(50)]])+")", envLiveness)
+                for m in re.finditer(r'within (?P<dist>\d+) (from|of) (?P<rA>\w+)', envLiveness):
+                    envLiveness=re.sub(r'within ' + m.group('dist')+' (from|of) '+ m.group('rA'), "("+' or '.join(["s."+r for r in self.proj.regionMapping['near$'+m.group('rA')+'$'+m.group('dist')]])+")", envLiveness)
+                for m in re.finditer(r'between (?P<rA>\w+) and (?P<rB>\w+)', envLiveness):
+                    envLiveness=re.sub(r'between ' + m.group('rA')+' and '+ m.group('rB'),"("+' or '.join(["s."+r for r in self.proj.regionMapping['between$'+m.group('rA')+'$and$'+m.group('rB')+"$"]])+")", envLiveness)
 
-            # substitute decomposed region
-            for r in self.proj.regionMapping.keys():
-                envLiveness = re.sub('\\b' + r + '\\b', "("+' | '.join(["s."+x for x in self.proj.regionMapping[r]])+")", envLiveness)
+                # substitute decomposed region
+                for r in self.proj.regionMapping.keys():
+                    envLiveness = re.sub('\\b' + r + '\\b', "("+' | '.join(["s."+x for x in self.proj.regionMapping[r]])+")", envLiveness)
 
-        else:
-            for r in self.proj.regionMapping.keys():
-                if not (r.lower() == "boundary"):
-                    envLiveness = re.sub('\\b' + r + '\\b', "s."+r, envLiveness)
+            else:
+                for r in self.proj.regionMapping.keys():
+                    if not (r.lower() == "boundary"):
+                        envLiveness = re.sub('\\b' + r + '\\b', "s."+r, envLiveness)
 
-        regionList = ["s."+x.name for x in self.proj.rfi.regions]
-        regionListCompleted = [x.name+"_rc" for x in self.proj.rfi.regions]
+            regionList = [x.name.encode('ascii','ignore') for x in self.proj.rfi.regions]
         ##################################################
 
         try:
             spec, traceback, failed, LTL2SpecLineNumber, internal_props = parseEnglishToLTL.writeSpec(envLiveness, \
                 self.compiler.sensorList, self.compiler.regionList, self.compiler.actuatorList,\
-                self.compiler.customsList, fastslow=self.proj.compile_options['fastslow'])
+                self.compiler.customsList, fastslow=self.proj.compile_options['fastslow'],\
+                use_bits = self.proj.compile_options["use_region_bit_encoding"])
 
-            if self.proj.compile_options["use_region_bit_encoding"]:
+            if hasattr(self.proj.rfi, 'regions') and self.proj.compile_options["use_region_bit_encoding"]:
                 # Define the number of bits needed to encode the regions
                 numBits = int(math.ceil(math.log(len(regionList),2)))
 
@@ -1061,7 +1062,6 @@ class ExecutorResynthesisExtensions(object):
 
                 # switch to bit encodings for regions
                 spec["EnvGoals"] = parseEnglishToLTL.replaceRegionName(spec["EnvGoals"], bitEncode, regionList)
-                spec["EnvGoals"] = parseEnglishToLTL.replaceRegionName(spec["EnvGoals"], bitEncode, regionListCompleted)
 
         except:
             ltlmop_logger.debug('envLiveness:' + str(envLiveness))
@@ -1079,8 +1079,8 @@ class ExecutorResynthesisExtensions(object):
         if "TRUE" in self.spec["EnvGoals"]: 
             currentSpec["EnvGoals"] =  spec["EnvGoals"]  #envLiveness
         else:
-            currentSpec["EnvGoals"] += ' &\n' + spec["EnvGoals"] #envLiveness
-            
+            currentSpec["EnvGoals"] = '&\n '.join(filter(None, [currentSpec["EnvGoals"], spec["EnvGoals"]])) #envLiveness
+
         for x in range(len(checker.env_safety_assumptions_stage)):
             checker.modify_stage  = x+1
             currentSpec["EnvTrans"] = checker.modify_LTL_file("")
