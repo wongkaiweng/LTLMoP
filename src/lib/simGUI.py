@@ -136,6 +136,10 @@ class SimGUI_Frame(wx.Frame):
         self.currentColor = "BLACK"
         ################################################################
 
+        ### RRT Path ####
+        self.RRTPath = None
+        #################
+
     def loadRegionFile(self, filename):
         self.proj.rfi = regions.RegionFileInterface()
         self.proj.rfi.readFile(filename)
@@ -181,6 +185,13 @@ class SimGUI_Frame(wx.Frame):
             [x,y] = eventData
             [x,y] = map(int, (self.mapScale*x, self.mapScale*y)) 
             self.robotVel = (x, y)
+        #########################
+        elif eventType == "RRT":
+            self.RRTPath = []
+            for [x,y] in eventData:
+                self.RRTPath.append(map(int, (self.mapScale*x, self.mapScale*y)))
+            wx.CallAfter(self.onPaint)
+        ##########################
         elif eventType == "PAUSE":
             wx.CallAfter(self.sb.SetStatusText, "PAUSED.", 0)
         elif eventType == "SPEC":
@@ -331,6 +342,16 @@ class SimGUI_Frame(wx.Frame):
         # Draw background
         dc.DrawBitmap(self.mapBitmap, 0, 0)
 
+        # Draw RRT Path
+        if self.RRTPath is not None:
+            for [x,y] in self.RRTPath:
+                dc.SetBrush(wx.Brush(wx.BLUE))
+                dc.DrawCircle(x, y, 3)
+
+            for [x1,y1],[x2,y2] in zip(self.RRTPath[:-1], self.RRTPath[1:]):
+                dc.DrawLine(x1, y1, x2, y2)
+
+        dc.SetBrush(wx.Brush(wx.WHITE))
         if self.proj.rfi:
             # Draw robot
             if self.robotPos is not None:

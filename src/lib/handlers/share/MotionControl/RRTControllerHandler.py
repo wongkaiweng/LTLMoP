@@ -610,6 +610,13 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
                     self.ax.text(V[1,E[0,i]],V[2,E[0,i]], V[0,E[0,i]], fontsize=12)
                     self.ax.text(V[1,E[1,i]],V[2,E[1,i]], V[0,E[1,i]], fontsize=12)
 
+        # plot in simGUI
+        self.path = []
+        for i in range(shape(E)[1]):
+            self.path.append(tuple(map(int, self.executor.hsub.coordmap_lab2map([V[1,E[0,i]],V[2,E[0,i]]]))))
+        self.path.append(tuple(map(int, self.executor.hsub.coordmap_lab2map([V[1,E[1,i]],V[2,E[1,i]]]))))
+        self.executor.postEvent("RRT", self.path)
+
         #return V, E, and the current node number on the tree
         V = array(V)
         return V, E, 0
