@@ -345,6 +345,8 @@ class SpecEditorFrame(wx.Frame):
         global MENU_IMPORT_REGION; MENU_IMPORT_REGION = wx.NewId()
         global MENU_COMPILE; MENU_COMPILE = wx.NewId()
         global MENU_COMPILECONFIG; MENU_COMPILECONFIG = wx.NewId()
+        global MENU_DECOMPOSITION; MENU_DECOMPOSITION = wx.NewId()
+        global MENU_DECOMPOSE; MENU_DECOMPOSE = wx.NewId()
         global MENU_CONVEXIFY; MENU_CONVEXIFY = wx.NewId()
         global MENU_FASTSLOW; MENU_FASTSLOW = wx.NewId()
         global MENU_BITVECTOR; MENU_BITVECTOR = wx.NewId()
@@ -396,7 +398,10 @@ class SpecEditorFrame(wx.Frame):
         wxglade_tmp_menu = wx.Menu()
         wxglade_tmp_menu.Append(MENU_COMPILE, "&Compile\tF5", "", wx.ITEM_NORMAL)
         wxglade_tmp_menu_sub = wx.Menu()
-        wxglade_tmp_menu_sub.Append(MENU_CONVEXIFY, "Decompose workspace into convex regions", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub_sub = wx.Menu()
+        wxglade_tmp_menu_sub_sub.Append(MENU_DECOMPOSE, "Decompose workspace", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub_sub.Append(MENU_CONVEXIFY, "Convexify Regions", "", wx.ITEM_CHECK)
+        wxglade_tmp_menu_sub.AppendMenu(MENU_DECOMPOSITION, "Decomposition", wxglade_tmp_menu_sub_sub, "")
         wxglade_tmp_menu_sub.Append(MENU_FASTSLOW, "Enable \"fast-slow\" synthesis", "", wx.ITEM_CHECK)
         wxglade_tmp_menu_sub.Append(MENU_BITVECTOR, "Use bit-vector region encoding", "", wx.ITEM_CHECK)
         wxglade_tmp_menu_sub_sub = wx.Menu()
@@ -491,6 +496,7 @@ class SpecEditorFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onMenuCopy, id=wx.ID_COPY)
         self.Bind(wx.EVT_MENU, self.onMenuPaste, id=wx.ID_PASTE)
         self.Bind(wx.EVT_MENU, self.onMenuCompile, id=MENU_COMPILE)
+        self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_DECOMPOSE)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_CONVEXIFY)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_FASTSLOW)
         self.Bind(wx.EVT_MENU, self.onMenuSetCompileOptions, id=MENU_BITVECTOR)
@@ -1040,6 +1046,7 @@ class SpecEditorFrame(wx.Frame):
 
     def updateMenusFromProjectOptions(self):
         self.frame_1_menubar.Check(MENU_CONVEXIFY, self.proj.compile_options["convexify"])
+        self.frame_1_menubar.Check(MENU_DECOMPOSE, self.proj.compile_options["decompose"])
         self.frame_1_menubar.Check(MENU_BITVECTOR, self.proj.compile_options["use_region_bit_encoding"])
         self.frame_1_menubar.Check(MENU_FASTSLOW, self.proj.compile_options["fastslow"])
         self.frame_1_menubar.Check(MENU_REALIZABILITY, self.proj.compile_options["only_realizability"])
@@ -1862,7 +1869,7 @@ class SpecEditorFrame(wx.Frame):
 
     def onMenuSetCompileOptions(self, event):  # wxGlade: SpecEditorFrame.<event_handler>
         self.proj.compile_options["convexify"] = self.frame_1_menubar.IsChecked(MENU_CONVEXIFY)
-        self.proj.compile_options["decompose"] = self.frame_1_menubar.IsChecked(MENU_CONVEXIFY)
+        self.proj.compile_options["decompose"] = self.frame_1_menubar.IsChecked(MENU_DECOMPOSE)
         self.proj.compile_options["fastslow"] = self.frame_1_menubar.IsChecked(MENU_FASTSLOW)
         self.proj.compile_options["use_region_bit_encoding"] = self.frame_1_menubar.IsChecked(MENU_BITVECTOR)
         self.proj.compile_options["only_realizability"] = self.frame_1_menubar.IsChecked(MENU_REALIZABILITY)
