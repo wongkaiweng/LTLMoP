@@ -29,6 +29,7 @@ import Tkinter as tk
 from PIL import Image, ImageTk
 import threading
 
+import lib.handlers.share.Actuator.__light_switches as light_switches
 import lib.handlers.handlerTemplates as handlerTemplates
 
 class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
@@ -39,6 +40,8 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
 
         self.tkRootThread = None # store tk root
         self.tkWindows = {} # dict of windows derived from root
+        self.tkButtonWindow = None
+        self.buttonPressCompletionStatus = {}
         self.imageDisplayCompletionStatus = {}
 
     def _stop(self):
@@ -132,6 +135,31 @@ class DummyActuatorHandler(handlerTemplates.ActuatorHandler):
             ltlmop_logger.debug(self.imageDisplayCompletionStatus)
 
 
+    def buttonPress(self, actuatorName, actuatorVal, initial):
+        """
+        Press button. push button down when true and release button when false
+
+        actuatorName (string): Name of the actuator whose state is interested.
+        """
+        if initial:
+            ltlmop_logger.log(4,'we are initializing...')
+
+            # first check if the tk root has started
+            if not self.tkRootThread:
+                self.tkRootThread = _tkRoot()
+                # start tk window
+                self.tkButtonWindow = light_switches._tkButtonWindow(self.tkRootThread.root, self.buttonPressCompletionStatus)
+                time.sleep(2)
+
+            # add button
+            self.tkButtonWindow.add_button(actuatorName, actuatorVal)
+
+        else:
+            # update actuator value
+            self.tkButtonWindow.update_actuatorVal(actuatorName, actuatorVal)
+            ltlmop_logger.debug('Completion of button press: {0}'.format(self.buttonPressCompletionStatus[actuatorName]))
+
+
 class _tkImageWindow(object):
     def __init__(self, master, actuatorVal, trueImage, falseImage, imageDisplayCompletionStatusDict, actuatorName):
         """
@@ -208,17 +236,36 @@ class _tkRoot(threading.Thread):
         self.root.mainloop()
 
 if __name__ == "__main__":
+    # a = DummyActuatorHandler(None, None)
+
+    # #falseImage = '/home/catherine/Desktop/test.jpg'
+    # falseImage ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_with_door_nao-01.png'
+    # trueImage  ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_without_door_nao-01.png'
+
+    # a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=True)
+    # time.sleep(2)
+    # a.imageDisplay("updateBackground", falseImage, trueImage, True, initial=False)
+    # time.sleep(2)
+    # a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=False)
+    # time.sleep(2)
+    # a._stop()
+
     a = DummyActuatorHandler(None, None)
+    #tkRootThread = _tkRoot()
+    #a =_tkButtonWindow(tkRootThread.root)
 
-    #falseImage = '/home/catherine/Desktop/test.jpg'
-    falseImage ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_with_door_nao-01.png'
-    trueImage  ='/home/catherine/LTLMoP/src/examples/_single_robot_example/kitchen/pic_map/mapDashed_without_door_nao-01.png'
+    a.buttonPress('button_1', False, initial=True)
+    time.sleep(2)
+    a.buttonPress('button_1', True, initial=False)
+    time.sleep(2)
+    a.buttonPress('button_1', False, initial=False)
+    time.sleep(2)
 
-    a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=True)
+    # button 2
+    a.buttonPress('button_2', False, initial=True)
     time.sleep(2)
-    a.imageDisplay("updateBackground", falseImage, trueImage, True, initial=False)
+    a.buttonPress('button_2', True, initial=False)
     time.sleep(2)
-    a.imageDisplay("updateBackground", falseImage, trueImage, False, initial=False)
+    a.buttonPress('button_2', False, initial=False)
     time.sleep(2)
     a._stop()
-
