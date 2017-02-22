@@ -1029,8 +1029,8 @@ def parseLiveness(sentence,sensorList,regionList,actuatorList,customsList,lineIn
 
     SafetyCompletionRE = re.compile('^\s*(finished|not finished|have not finished|have finished|do not finish|finish|not finish)',re.IGNORECASE)
     SafetyRE = re.compile('^\s*(always|always do |do|always sense|sense|finished|finish|have)',re.IGNORECASE)
-    MatchStr = '((?:finish(?:ed)?\s+)?\(?[\w\.]+\)?)'
-    MatchPropStr = '((finish(ed)?\s+)?\(?(?P<prop>[\w\.]+)\)?)'
+    MatchStr = '((?:finish(?:ed)?\s+)?\(?(?:s\.|e\.)[\w]+\)?)'
+    MatchPropStr = '((finish(ed)?\s+)?\(?(?P<prop>(s\.|e\.)[\w]+)\)?)'
 
     # Replace logic operations with TLV convention
     tempFormula = replaceLogicOp(tempFormula)
