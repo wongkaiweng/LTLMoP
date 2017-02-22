@@ -696,6 +696,15 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             #self.possibleStatesCheckEnvTransViolationThread.start()
             self.runRuntimeMonitoring.set() # start checking violations
 
+        # set up check for goals
+        if not self.spec['SysGoals'].count('[]<>') == 1:
+            self.sysGoalsList  = LTLParser.LTLcheck.ltlStrToList(self.spec['SysGoals'])
+        else:
+            self.sysGoalsList =[self.spec['SysGoals']]
+        self.LTLViolationCheckSysGoalslist = []
+        for ltlStr in self.sysGoalsList:
+            self.LTLViolationCheckSysGoalslist.append(LTLParser.LTLcheck.LTL_Check("",{},{'SysGoals':ltlStr},specType='SysGoals'))
+
         return  init_state, self.strategy
 
     def stopMotionAndAction(self):
@@ -762,6 +771,16 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
             tic = self.timer_func()
             ###### ENV VIOLATION CHECK ######  
             last_next_states = self.last_next_states
+
+            #check if goal is satisfied
+            if self.proj.compile_options['fastslow']:
+                goal_id = int(self.prev_z)
+                deepcopy_sensor_state = copy.deepcopy(self.sensor_strategy)
+                deepcopy_current_state = copy.deepcopy(self.strategy.current_state)
+                if self.LTLViolationCheckSysGoalslist[goal_id].checkViolation(deepcopy_current_state, deepcopy_sensor_state):
+                    ltlmop_logger.info("+++++++++++++")
+                    ltlmop_logger.info("System Goal {0}: {1} is True.".format(self.prev_z, self.sysGoalsList[goal_id]))
+                    ltlmop_logger.info("+++++++++++++")
 
             ####################################
             ###### RUN STRATEGY ITERATION ######
