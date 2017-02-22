@@ -667,8 +667,11 @@ class SpecCompiler(object):
                 ltlmop_logger.debug('Synthesizing strategy with recovery')
 
             if (self.proj.compile_options["only_realizability"] or (self.proj.compile_options['interactive'] and not execution)):
-                cmd.append("--onlyRealizability")
                 ltlmop_logger.debug('Only checking realizability')
+
+            if not self.proj.compile_options["symbolic"] and not self.proj.compile_options['interactive']:
+                cmd.append("--explicitStrategy")
+                ltlmop_logger.debug('Synthesizing explicit strategy')
 
             if self.proj.compile_options["symbolic"]:
                 cmd.append("--symbolicStrategy")
