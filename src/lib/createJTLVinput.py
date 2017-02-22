@@ -317,16 +317,6 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
                 ltlmop_logger.debug(adjFormula)
 
     """
-    [](action_ac & action) -> action_ac'
-    [](! action_ac & ! action) -> ! action_ac'
-    """
-    for prop in actuatorList:
-        adjFormula = '\t\t\t []( (e.' + prop + '_ac & s.' + prop + ') -> next(e.' + prop + '_ac) )'
-        adjFormulas.append(adjFormula)
-        adjFormula = '\t\t\t []( (!(e.' + prop + '_ac) & !(s.' + prop + ')) -> !next(e.' + prop + '_ac) )'
-        adjFormulas.append(adjFormula)
-
-    """
     [] regionProp1' | regionProp2' | regionProp3'
     """
     if regions:
@@ -336,6 +326,20 @@ def createIAEnvTopologyFragment(adjData, regions, actuatorList, use_bits=True):
         if onDebugMode:
             ltlmop_logger.debug("[] regionProp1' | regionProp2' | regionProp3'")
             ltlmop_logger.debug("[]"+createIAInitialEnvRegionFragment(regions, use_bits,True))
+
+    return " & \n".join(adjFormulas)
+
+def createIAEnvActFragment(actuatorList):
+    """
+    [](action_ac & action) -> action_ac'
+    [](! action_ac & ! action) -> ! action_ac'
+    """
+    adjFormulas = []
+    for prop in actuatorList:
+        adjFormula = '\t\t\t []( (e.' + prop + '_ac & s.' + prop + ') -> next(e.' + prop + '_ac) )'
+        adjFormulas.append(adjFormula)
+        adjFormula = '\t\t\t []( (!(e.' + prop + '_ac) & !(s.' + prop + ')) -> !next(e.' + prop + '_ac) )'
+        adjFormulas.append(adjFormula)
 
     return " & \n".join(adjFormulas)
 

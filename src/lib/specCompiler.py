@@ -12,7 +12,7 @@ from multiprocessing import Pool
 import project
 import regions
 import parseLP
-from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createEnvTopologyFragmentNoHeading, createIAMaintainDistanceSysTopologyFragment
+from createJTLVinput import createLTLfile, createSMVfile, createTopologyFragment, createInitialRegionFragment, createIASysTopologyFragment, createIAEnvActFragment, createIAEnvTopologyFragment, createIAInitialEnvRegionFragment, createIASysPropImpliesEnvPropLivenessFragment, createEnvTopologyFragment, createInitialEnvRegionFragment, createSysMutualExclusion, createEnvTopologyFragmentNoHeading, createIAMaintainDistanceSysTopologyFragment
 from parseEnglishToLTL import bitEncoding, replaceRegionName, createStayFormula
 import fsa
 import strategy
@@ -459,6 +459,10 @@ class SpecCompiler(object):
             self.spec['EnvTopo'] = createIAEnvTopologyFragment([], [], actuatorList, use_bits=self.proj.compile_options["use_region_bit_encoding"])
             self.spec['SysImplyEnv'] = createIASysPropImpliesEnvPropLivenessFragment(actuatorList, [], sensorList, [], use_bits=self.proj.compile_options["use_region_bit_encoding"])
             self.spec['Topo'] = None
+
+        # Environment prop of actuators
+        if self.proj.compile_options["fastslow"]:
+            self.spec['EnvTopo'] = '&\n '.join(filter(None, [createIAEnvActFragment(actuatorList), self.spec['EnvTopo']]))
 
         if self.proj.rfi:
             # Substitute any macros that the parsers passed us
