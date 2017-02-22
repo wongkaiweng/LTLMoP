@@ -8,6 +8,8 @@ import re
 import logging
 ltlmop_logger = logging.getLogger('ltlmop_logger')
 
+DEBUGGING_MODE = False
+
 # Allocate global parser
 p = LTLParser.Parser()
 
@@ -194,6 +196,14 @@ def flatten_as_much_as_possible(tree):
 # =====================================================
 def parseLTL(ltlTxt):
     try:
+        if DEBUGGING_MODE:
+            ltlTxtList = ltlTxt.split('&\n')
+            for x in ltlTxtList:
+               ltlmop_logger.warning(x)
+               tokens = tokenize(x)
+               tree = p.parse(tokens)
+            ltlmop_logger.warning('---------------')
+            ltlmop_logger.warning(ltlTxt)
         tokens = tokenize(ltlTxt)
         tree = p.parse(tokens)
     except p.ParseErrors as exc:
