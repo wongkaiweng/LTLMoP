@@ -6,7 +6,9 @@ naoActuator.py - Nao Actuator Handler
 
 Control predefined Nao motion besides walking
 """
-
+# logger for ltlmop
+import logging
+ltlmop_logger = logging.getLogger('ltlmop_logger')
 import time
 import threading
 

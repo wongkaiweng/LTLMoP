@@ -30,9 +30,12 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
         self.behaviorProxy = None
         if executor:
             self.proj = executor.proj
+            self.executor = executor
 
         self.behaviorCompleted = {} # true if completed. False otherwise
         self.behaviorCompletionThread = {} # store threads for updating completion
+
+        self.landmark_timestamp = {}
 
     ###################################
     ### Available sensor functions: ###
@@ -58,6 +61,8 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
             if "ltlmop_sensorhandler" in subs:
                 self.ldmProxy.unsubscribe("ltlmop_sensorhandler")
             self.ldmProxy.subscribe("ltlmop_sensorhandler", 100, 0.0)
+
+            self.landmark_timestamp[landMark_id] = None
             return True
         else:
             val = self.memProxy.getData("LandmarkDetected",0)
@@ -83,13 +88,20 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
 
                         #if float(markShapeInfo[3])>0.05 and float(markShapeInfo[4])>0.05:
                         if landMark_id in markExtraInfo:
+                            self.landmark_timestamp[landMark_id] = time.time()
                             return True
 
                 except Exception, e:
                     print "Naomarks detected, but it seems getData is invalid. ALValue ="
                     print val
                     print "Error msg %s" % (str(e))
-            return False
+
+            if self.landmark_timestamp[landMark_id] and \
+                time.time() - self.landmark_timestamp[landMark_id] < 2:
+                return True
+            else:
+                self.landmark_timestamp[landMark_id]  = None
+                return False
     """
     def hearAnything(self, threshold ,initial=False):
 
@@ -168,7 +180,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
 
             for wd, prob in zip(wds[0::2], wds[1::2]):
                 if wd == word and prob > threshold:
-                    self.proj.executor.postEvent("INFO", "Recognized word '%s' with p = %f" % (wd, prob))
+                    self.executor.postEvent("INFO", "Recognized word '%s' with p = %f" % (wd, prob))
                     return True
 
             return False
@@ -208,7 +220,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
             return True
         else:
             if bool(self.memProxy.getData('FrontTactilTouched',0)):
-                self.proj.executor.postEvent("INFO","sensor.py: headTapped is True now!")
+                self.executor.postEvent("INFO","sensor.py: headTapped is True now!")
             return bool(self.memProxy.getData('FrontTactilTouched',0))
     
     def headTappedBack(self, initial=False):
@@ -222,7 +234,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
             return True
         else:
             if bool(self.memProxy.getData('RearTactilTouched',0)):
-                self.proj.executor.postEvent("INFO","sensor.py: headTappedBack is True now!")    
+                self.executor.postEvent("INFO","sensor.py: headTappedBack is True now!")
             return bool(self.memProxy.getData('RearTactilTouched',0))
 
     def handIsClosed(self, hand=True, threshold=0.1, useSensors=False):
@@ -309,7 +321,7 @@ class NaoSensorHandler(handlerTemplates.SensorHandler):
                         #ltlmop_logger.log(4,'behavior is true')
                         #ltlmop_logger.log(2,self.behaviorProxy.isBehaviorRunning(behaviorName))
                     else:
-                        time.sleep(0.2)
+                        time.sleep(0.5)
                         self.behaviorCompleted[behaviorName] = False
                         #ltlmop_logger.debug('behavior completion ended.')
                 else:
