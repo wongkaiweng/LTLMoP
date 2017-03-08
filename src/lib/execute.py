@@ -186,7 +186,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         if self.proj.compile_options['neighbour_robot'] and self.proj.compile_options['multi_robot_mode'] == 'negotiation':
             self.envViolationThres = 0 # currently for negotiation
         else:
-            self.envViolationThres = 100
+            self.envViolationThres = 150 #100
 
     def postEvent(self, eventType, eventData=None):
         """ Send a notice that an event occurred, if anyone wants it """
@@ -704,6 +704,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
         self.LTLViolationCheckSysGoalslist = []
         for ltlStr in self.sysGoalsList:
             self.LTLViolationCheckSysGoalslist.append(LTLParser.LTLcheck.LTL_Check("",{},{'SysGoals':ltlStr},specType='SysGoals'))
+        self.goals_checker = False
 
         return  init_state, self.strategy
 
@@ -778,9 +779,13 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                 deepcopy_sensor_state = copy.deepcopy(self.sensor_strategy)
                 deepcopy_current_state = copy.deepcopy(self.strategy.current_state)
                 if self.LTLViolationCheckSysGoalslist[goal_id].checkViolation(deepcopy_current_state, deepcopy_sensor_state):
-                    ltlmop_logger.info("+++++++++++++")
-                    ltlmop_logger.info("System Goal {0}: {1} is True.".format(self.prev_z, self.sysGoalsList[goal_id]))
-                    ltlmop_logger.info("+++++++++++++")
+                    if not self.goals_checker:
+                        ltlmop_logger.info("+++++++++++++")
+                        ltlmop_logger.info("System Goal {0}: {1} is True.".format(self.prev_z, self.sysGoalsList[goal_id]))
+                        ltlmop_logger.info("+++++++++++++")
+                    self.goals_checker = True
+                else:
+                    self.goals_checker = False
 
             ####################################
             ###### RUN STRATEGY ITERATION ######
@@ -1109,7 +1114,7 @@ class LTLMoPExecutor(ExecutorStrategyExtensions, ExecutorResynthesisExtensions, 
                                 ########################################
 
                                 if str(self.strategy.current_state.state_id) in [x.state_id for x in last_next_states] \
-                                and self.envViolationCount >= self.envViolationThres:
+                                or self.envViolationCount >= self.envViolationThres:
 
                                     # reset next state difference count
                                     self.envViolationCount = 0

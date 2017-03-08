@@ -200,7 +200,6 @@ class SLUGSInteractiveStrategy(strategy.Strategy):
         self.slugsProcess.stdin.flush()
         nextLine = self.slugsProcess.stdout.readline().strip() # Skip the prompt
         while nextLine.startswith(">"):
-            ltlmop_logger.debug("while-nextLine:" + str(nextLine))
             nextLine = self.slugsProcess.stdout.readline().strip()
         if not nextLine.startswith("ERROR"):
             currentState = nextLine
