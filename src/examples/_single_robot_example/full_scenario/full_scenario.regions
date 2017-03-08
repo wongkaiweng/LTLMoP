@@ -1,0 +1,256 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	3
+boundary	10
+office	2
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "glass_deposit", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            454.0, 
+            90.0
+        ], 
+        "type": "rect", 
+        "size": [
+            196.0, 
+            128.0
+        ]
+    }, 
+    {
+        "name": "paper_deposit", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                5.0
+            ], 
+            [
+                0.0, 
+                3.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                177.0, 
+                0.0
+            ], 
+            [
+                178.0, 
+                0.0
+            ], 
+            [
+                178.0, 
+                128.0
+            ], 
+            [
+                177.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                128.0
+            ]
+        ], 
+        "position": [
+            276.0, 
+            90.0
+        ], 
+        "type": "poly", 
+        "size": [
+            178.0, 
+            128.0
+        ]
+    }, 
+    {
+        "name": "metal_deposit", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                203.0, 
+                0.0
+            ], 
+            [
+                203.0, 
+                3.0
+            ], 
+            [
+                203.0, 
+                5.0
+            ], 
+            [
+                203.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                128.0
+            ]
+        ], 
+        "position": [
+            73.0, 
+            90.0
+        ], 
+        "type": "poly", 
+        "size": [
+            203.0, 
+            128.0
+        ]
+    }, 
+    {
+        "name": "entrance", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            506.0, 
+            355.0
+        ], 
+        "type": "rect", 
+        "size": [
+            144.0, 
+            120.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "holeList": [], 
+        "height": 0.0, 
+        "points": [
+            [
+                0.0, 
+                256.0
+            ], 
+            [
+                0.0, 
+                247.0
+            ], 
+            [
+                0.0, 
+                128.0
+            ], 
+            [
+                0.0, 
+                0.0
+            ], 
+            [
+                203.0, 
+                0.0
+            ], 
+            [
+                380.0, 
+                0.0
+            ], 
+            [
+                381.0, 
+                0.0
+            ], 
+            [
+                577.0, 
+                0.0
+            ], 
+            [
+                577.0, 
+                128.0
+            ], 
+            [
+                577.0, 
+                265.0
+            ], 
+            [
+                577.0, 
+                385.0
+            ], 
+            [
+                433.0, 
+                385.0
+            ], 
+            [
+                159.0, 
+                385.0
+            ], 
+            [
+                0.0, 
+                385.0
+            ]
+        ], 
+        "position": [
+            73.0, 
+            90.0
+        ], 
+        "type": "poly", 
+        "size": [
+            577.0, 
+            385.0
+        ]
+    }, 
+    {
+        "name": "office", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            73.0, 
+            346.0
+        ], 
+        "type": "rect", 
+        "size": [
+            159.0, 
+            129.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+glass_deposit	paper_deposit	454	90	454	218
+glass_deposit	boundary	454	90	650	90	650	218	650	90
+paper_deposit	metal_deposit	276	218	276	95	276	93	276	95	276	93	276	90
+paper_deposit	boundary	276	90	453	90	454	90	453	90
+metal_deposit	boundary	73	90	276	90	73	218	73	90
+entrance	boundary	506	475	650	475	650	475	650	355
+boundary	office	232	475	73	475	73	346	73	475
+

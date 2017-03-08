@@ -1,0 +1,128 @@
+# This is a region definition file for the LTLMoP toolkit.
+# Format details are described at the beginning of each section below.
+# Note that all values are separated by *tabs*.
+
+Background: # Relative path of background image file
+None
+
+CalibrationPoints: # Vertices to use for map calibration: (vertex_region_name, vertex_index)
+boundary	0
+boundary	2
+office	2
+
+Obstacles: # Names of regions to treat as obstacles
+
+Regions: # Stored as JSON string
+[
+    {
+        "name": "glass_deposit", 
+        "color": [
+            255, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            433.0, 
+            98.0
+        ], 
+        "type": "rect", 
+        "size": [
+            98.0, 
+            89.0
+        ]
+    }, 
+    {
+        "name": "paper_deposit", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            315.0, 
+            97.0
+        ], 
+        "type": "rect", 
+        "size": [
+            103.0, 
+            90.0
+        ]
+    }, 
+    {
+        "name": "metal_deposit", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            190.0, 
+            97.0
+        ], 
+        "type": "rect", 
+        "size": [
+            102.0, 
+            87.0
+        ]
+    }, 
+    {
+        "name": "entrance", 
+        "color": [
+            255, 
+            128, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            537.0, 
+            253.0
+        ], 
+        "type": "rect", 
+        "size": [
+            99.0, 
+            80.0
+        ]
+    }, 
+    {
+        "name": "boundary", 
+        "color": [
+            0, 
+            0, 
+            255
+        ], 
+        "height": 0.0, 
+        "position": [
+            73.0, 
+            90.0
+        ], 
+        "type": "rect", 
+        "size": [
+            577.0, 
+            385.0
+        ]
+    }, 
+    {
+        "name": "office", 
+        "color": [
+            0, 
+            255, 
+            0
+        ], 
+        "height": 0.0, 
+        "position": [
+            86.0, 
+            249.0
+        ], 
+        "type": "rect", 
+        "size": [
+            105.0, 
+            85.0
+        ]
+    }
+]
+
+Transitions: # Region 1 Name, Region 2 Name, Bidirectional transition faces (face1_x1, face1_y1, face1_x2, face1_y2, face2_x1, ...)
+
