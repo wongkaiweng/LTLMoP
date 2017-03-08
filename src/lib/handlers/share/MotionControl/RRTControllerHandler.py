@@ -112,7 +112,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         #  self.step_size  : the length of each step for connection to goal point
         #  self.velocity   : Velocity of the robot in m/s in control space (m/s)
         if self.system  == 1:
-            self.radius = 25 #15#5
+            self.radius = 5 #25#15#5
             self.step_size  = 25
             self.timeStep = 10
             self.velocity = 2    # 1.5
@@ -200,8 +200,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
             self.currentRegionPoly = self.map[self.proj.rfi.regions[current_reg].name]
 
             if self.system_print == True:
-                print "next Region is " + str(self.proj.rfi.regions[next_reg].name)
-                print "Current Region is " + str(self.proj.rfi.regions[current_reg].name)
+                ltlmop_logger.debug("next Region is {0} : {1}".format(self.proj.rfi.regions[next_reg].name, self.nextRegionPoly))
+                ltlmop_logger.debug("Current Region is {0} : {1}".format(self.proj.rfi.regions[current_reg].name, self.currentRegionPoly))
 
             #set to zero velocity before tree is generated
             self.drive_handler.setVelocity(0, 0)
@@ -267,6 +267,8 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         # scale velocity for Johnny5
         if self.system == 6:
             self.Velocity = self.Velocity*1.5 #2
+        elif self.system == 1:
+            self.Velocity = self.Velocity*3
 
         #self.Node = self.getNode([pose[0], pose[1]], self.RRT_V,self.RRT_E)
         self.previous_next_reg = next_reg
