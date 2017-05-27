@@ -59,6 +59,7 @@ class RRTControllerHandler(handlerTemplates.MotionControlHandler):
         # Get references to handlers we'll need to communicate with
         self.drive_handler = executor.hsub.getHandlerInstanceByType(handlerTemplates.DriveHandler)
         self.pose_handler = executor.hsub.getHandlerInstanceByType(handlerTemplates.PoseHandler)
+        self.executor = executor
 
         # Get information about regions
         self.proj              = executor.proj
