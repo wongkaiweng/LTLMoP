@@ -482,6 +482,11 @@ def writeSpec(text, sensorList, regionList, actuatorList, customsList, fastslow=
                 else:
                     # parse requirement normally
                     ReqFormulaInfo = parseLiveness(Requirement,sensorList,regionList,actuatorList,customsList,lineInd,fastslow)
+                    if ('QUANTIFIER_PLACEHOLDER' in ReqFormulaInfo['formula'] and 'e.' in quant_or_string['current']) or \
+                       ('next(QUANTIFIER_PLACEHOLDER)'in ReqFormulaInfo['formula'] and 'e.' in quant_or_string['next']):
+                        ReqFormulaInfo['type'] = 'EnvGoals'
+                    else:
+                        ReqFormulaInfo['type'] = 'SysGoals'
                     if ReqFormulaInfo['formula'] == '': failed = True
             elif SafetyRE.search(Requirement):
                 if fastslow:
