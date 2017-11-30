@@ -191,6 +191,7 @@ if __name__ == '__main__':
     # argv[1] = fileName
     # argv[2] = list of states wanted
     """
+
     try:
         fileName = sys.argv[1]
     except:
@@ -286,3 +287,14 @@ if __name__ == '__main__':
 
     elif propDict:
         checkViolationWithGivenPropsDict(fileName, currentStateObject.getAll(expand_domains=True))
+
+
+    print "\
+    ---------------------------------------------------------------------------\n\
+    Example: python extractStates.py '../../examples/firefighting/firefighting'\n\
+    This function needs .aut, .ltl and .smv file to work\n\
+    look at what is violated for no successor states\n\
+    \n\
+    argv[1] = fileName\n\
+    argv[2] = list of states wanted\n\
+    ---------------------------------------------------------------------------"

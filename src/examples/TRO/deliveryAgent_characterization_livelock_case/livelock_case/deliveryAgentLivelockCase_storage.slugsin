@@ -1,0 +1,46 @@
+[INPUT]
+order
+doorOpen
+doorBroken
+sbit0
+sbit1
+
+[OUTPUT]
+bit0
+bit1
+
+[ENV_TRANS]
+| | | & & & & & & & & & & & | ! | & ! sbit0' ! sbit1' & sbit0' ! sbit1' doorOpen' | ! & & & ! sbit0 ! sbit1 ! bit0 ! bit1 & ! sbit0' ! sbit1' | ! & & & ! sbit0 sbit1 ! bit0 bit1 & ! sbit0' sbit1' | ! & & & sbit0 ! sbit1 bit0 ! bit1 & sbit0' ! sbit1' | ! & & & ! sbit0 ! sbit1 ! bit0 bit1 | & ! sbit0' ! sbit1' & ! sbit0' sbit1' | ! & & & ! sbit0 ! sbit1 bit0 ! bit1 | & ! sbit0' ! sbit1' & sbit0' ! sbit1' | ! & & & ! sbit0 sbit1 ! bit0 ! bit1 | & ! sbit0' sbit1' & ! sbit0' ! sbit1' | ! & & & sbit0 ! sbit1 ! bit0 ! bit1 | & sbit0' ! sbit1' & ! sbit0' ! sbit1' | & ! & ! sbit0' ! sbit1' ! ! | & ! sbit0' sbit1' & sbit0' ! sbit1' & & ! sbit0' ! sbit1' ! | & ! sbit0' sbit1' & sbit0' ! sbit1' | & ! & ! sbit0' sbit1' ! ! | & ! sbit0' ! sbit1' & sbit0' ! sbit1' & & ! sbit0' sbit1' ! | & ! sbit0' ! sbit1' & sbit0' ! sbit1' | & ! & sbit0' ! sbit1' ! ! | & ! sbit0' ! sbit1' & ! sbit0' sbit1' & & sbit0' ! sbit1' ! | & ! sbit0' ! sbit1' & ! sbit0' sbit1' | | & & & ! sbit0' ! sbit1' ! & ! sbit0' sbit1' ! & sbit0' ! sbit1' & & & ! sbit0' sbit1' ! & ! sbit0' ! sbit1' ! & sbit0' ! sbit1' & & & sbit0' ! sbit1' ! & ! sbit0' ! sbit1' ! & ! sbit0' sbit1' & & & & ! doorOpen' ! sbit1' order' ! sbit0' doorBroken' & & & & ! doorOpen' ! sbit1' order' sbit0' doorBroken' & & & & ! doorOpen' ! sbit1' ! order' sbit0' doorBroken'
+
+[ENV_LIVENESS]
+| | | | | & & & ! bit0 ! bit1 ! sbit0' ! sbit1' & & ! bit0 ! bit1 ! & ! bit0' ! bit1' & & & ! bit0 bit1 ! sbit0' sbit1' & & ! bit0 bit1 ! & ! bit0' bit1' & & & bit0 ! bit1 sbit0' ! sbit1' & & bit0 ! bit1 ! & bit0' ! bit1'
+
+[ENV_INIT]
+| | & & & ! sbit0 ! sbit1 ! & ! sbit0 sbit1 ! & sbit0 ! sbit1 & & & ! sbit0 sbit1 ! & ! sbit0 ! sbit1 ! & sbit0 ! sbit1 & & & sbit0 ! sbit1 ! & ! sbit0 ! sbit1 ! & ! sbit0 sbit1
+! doorOpen
+! sbit1
+! order
+sbit0
+doorBroken
+
+[SYS_TRANS]
+| ! order | ! & & & bit0 ! bit1 sbit0 ! sbit1 & | & ! sbit0' ! bit0' & sbit0' bit0' | & ! sbit1' ! bit1' & sbit1' bit1'
+| ! ! | doorOpen' doorBroken' ! & bit0' ! bit1'
+| ! ! order | ! & & & ! bit0 bit1 ! sbit0 sbit1 & | & ! sbit0' ! bit0' & sbit0' bit0' | & ! sbit1' ! bit1' & sbit1' bit1'
+| ! & ! sbit0' ! sbit1' | | & ! bit0' ! bit1' & ! bit0' bit1' & bit0' ! bit1'
+| ! & ! sbit0' sbit1' | & ! bit0' bit1' & ! bit0' ! bit1'
+| ! & sbit0' ! sbit1' | & bit0' ! bit1' & ! bit0' ! bit1'
+| ! & ! bit0' ! bit1' ! | & ! bit0' bit1' & bit0' ! bit1'
+| ! & ! bit0' bit1' ! | & ! bit0' ! bit1' & bit0' ! bit1'
+| ! & bit0' ! bit1' ! | & ! bit0' ! bit1' & ! bit0' bit1'
+| | & & & ! bit0 ! bit1 ! & ! bit0 bit1 ! & bit0 ! bit1 & & & ! bit0 bit1 ! & ! bit0 ! bit1 ! & bit0 ! bit1 & & & bit0 ! bit1 ! & ! bit0 ! bit1 ! & ! bit0 bit1
+
+[SYS_LIVENESS]
+| ! order & & & bit0 ! bit1 sbit0 ! sbit1
+| ! ! order & & & ! bit0 bit1 ! sbit0 sbit1
+
+[SYS_INIT]
+bit0
+! bit1
+| | & & & ! bit0 ! bit1 ! & ! bit0 bit1 ! & bit0 ! bit1 & & & ! bit0 bit1 ! & ! bit0 ! bit1 ! & bit0 ! bit1 & & & bit0 ! bit1 ! & ! bit0 ! bit1 ! & ! bit0 bit1
+
